@@ -138,11 +138,21 @@ body {
 }
 
 .nav__logo {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
   text-decoration: none;
-  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+}
+
+.nav__logo-img {
+  height: 36px;
+  width: auto;
+  display: block;
+}
+
+.footer__logo-img {
+  height: 40px;
+  width: auto;
+  display: block;
 }
 
 /* ==========================================
