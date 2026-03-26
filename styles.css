@@ -9,20 +9,20 @@
 }
 
 :root {
-  --bg:           #080808;
-  --bg-surface:   #0f0f0f;
-  --bg-elevated:  #161616;
-  --border:       rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  --bg:           #ffffff;
+  --bg-surface:   #f8f9fb;
+  --bg-elevated:  #f0f3f7;
+  --border:       rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
 
-  --text:         #efefef;
-  --text-muted:   #666;
-  --text-subtle:  #3d3d3d;
+  --text:         #0f172a;
+  --text-muted:   #475569;
+  --text-subtle:  #94a3b8;
 
-  --accent:       #38bdf8;
-  --accent-soft:  #7dd3fc;
-  --accent-dim:   rgba(56, 189, 248, 0.1);
-  --accent-glow:  rgba(56, 189, 248, 0.2);
+  --accent:       #2563eb;
+  --accent-soft:  #3b82f6;
+  --accent-dim:   rgba(37, 99, 235, 0.08);
+  --accent-glow:  rgba(37, 99, 235, 0.2);
 
   --radius:    12px;
   --radius-sm: 8px;
@@ -121,7 +121,7 @@ body {
 }
 
 .nav.scrolled {
-  background: rgba(8, 8, 8, 0.82);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-bottom-color: var(--border);
@@ -181,7 +181,7 @@ body {
 
 .btn--accent {
   background: var(--accent);
-  color: #000;
+  color: #fff;
 }
 
 .btn--accent:hover {
@@ -212,7 +212,7 @@ body {
   font-size: 15px;
   font-family: var(--font);
   color: var(--text);
-  background: var(--bg-elevated);
+  background: var(--bg);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   outline: none;
@@ -247,8 +247,8 @@ body {
   width: 900px;
   height: 700px;
   background: radial-gradient(ellipse at 50% 30%,
-    rgba(56, 189, 248, 0.14) 0%,
-    rgba(56, 189, 248, 0.04) 40%,
+    rgba(37, 99, 235, 0.07) 0%,
+    rgba(37, 99, 235, 0.02) 40%,
     transparent 70%);
   pointer-events: none;
 }
@@ -549,7 +549,7 @@ body {
   width: 700px;
   height: 500px;
   background: radial-gradient(ellipse at center,
-    rgba(56, 189, 248, 0.09) 0%,
+    rgba(37, 99, 235, 0.06) 0%,
     transparent 65%);
   pointer-events: none;
 }
@@ -673,7 +673,7 @@ body {
   gap: 10px;
   padding: 13px 22px;
   background: var(--accent);
-  color: #000;
+  color: #fff;
   font-size: 14px;
   font-weight: 600;
   border-radius: 100px;
