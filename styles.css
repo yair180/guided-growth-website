@@ -31,7 +31,10 @@
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --t: 0.2s ease;
 
-  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --second:       #f97316;
+  --second-dim:   rgba(249, 115, 22, 0.1);
+
+  --font:         'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 html {
@@ -104,6 +107,10 @@ body {
 
 .accent {
   color: var(--accent);
+}
+
+.accent-second {
+  color: var(--second);
 }
 
 /* ==========================================
@@ -188,6 +195,17 @@ body {
   background: var(--accent-soft);
   transform: translateY(-1px);
   box-shadow: 0 6px 24px var(--accent-glow);
+}
+
+.btn--second {
+  background: var(--second);
+  color: #fff;
+}
+
+.btn--second:hover {
+  background: #ea6c00;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px var(--second-dim);
 }
 
 .btn--accent:active {
@@ -385,7 +403,7 @@ body {
 .step__number {
   font-size: 48px;
   font-weight: 800;
-  color: var(--accent);
+  color: var(--second);
   letter-spacing: -0.02em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -497,7 +515,7 @@ body {
 }
 
 .who__check {
-  color: var(--accent);
+  color: var(--second);
   font-weight: 700;
   font-size: 14px;
   flex-shrink: 0;
@@ -549,7 +567,7 @@ body {
   width: 700px;
   height: 500px;
   background: radial-gradient(ellipse at center,
-    rgba(37, 99, 235, 0.06) 0%,
+    rgba(249, 115, 22, 0.06) 0%,
     transparent 65%);
   pointer-events: none;
 }
