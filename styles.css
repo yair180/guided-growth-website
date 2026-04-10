@@ -148,12 +148,41 @@ body {
   text-decoration: none;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .nav__logo-img {
   height: 38px;
   width: auto;
   display: block;
+}
+
+.nav__brand {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav__link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-subtle);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.nav__link:hover {
+  color: var(--text);
 }
 
 .footer__logo-img {
