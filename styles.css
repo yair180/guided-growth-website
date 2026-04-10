@@ -19,10 +19,10 @@
   --text-muted:   #475569;
   --text-subtle:  #94a3b8;
 
-  --accent:       #2563eb;
-  --accent-soft:  #3b82f6;
-  --accent-dim:   rgba(37, 99, 235, 0.08);
-  --accent-glow:  rgba(37, 99, 235, 0.2);
+  --accent:       #135BEC;
+  --accent-soft:  #3a7af0;
+  --accent-dim:   rgba(19, 91, 236, 0.08);
+  --accent-glow:  rgba(19, 91, 236, 0.2);
 
   --radius:    12px;
   --radius-sm: 8px;
@@ -151,13 +151,13 @@ body {
 }
 
 .nav__logo-img {
-  height: 120px;
+  height: 90px;
   width: auto;
   display: block;
 }
 
 .footer__logo-img {
-  height: 56px;
+  height: 42px;
   width: auto;
   display: block;
 }
