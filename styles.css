@@ -151,7 +151,7 @@ body {
 }
 
 .nav__logo-img {
-  height: 54px;
+  height: 38px;
   width: auto;
   display: block;
 }
@@ -183,7 +183,7 @@ body {
   line-height: 1;
 }
 
-.btn--sm  { padding: 8px 16px; font-size: 13px; }
+.btn--sm  { padding: 11px 22px; font-size: 15px; }
 .btn--lg  { padding: 16px 32px; font-size: 16px; }
 
 .btn--accent {
