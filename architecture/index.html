@@ -207,19 +207,23 @@
     #tutorial-banner {
       background: linear-gradient(135deg, #1e3a5f, #0d2845);
       border-bottom: 2px solid #5bc0de;
-      padding: 18px 28px;
+      padding: 16px 28px;
       display: none;
       gap: 20px;
       align-items: flex-start;
+      max-height: 220px;
+      overflow-y: auto;
+      box-sizing: border-box;
+      flex-shrink: 0;
     }
     #tutorial-banner.visible { display: flex; }
     #tutorial-banner .banner-content { flex: 1; min-width: 0; }
     #tutorial-banner .step-title {
-      font-size: 19px; color: #fff; font-weight: 600;
-      margin-bottom: 8px; line-height: 1.3;
+      font-size: 18px; color: #fff; font-weight: 600;
+      margin-bottom: 6px; line-height: 1.3;
     }
     #tutorial-banner .step-desc {
-      font-size: 16px; color: #d4e0f0; line-height: 1.55;
+      font-size: 14px; color: #d4e0f0; line-height: 1.5;
       white-space: pre-wrap;
     }
     .branch-buttons { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
@@ -235,8 +239,10 @@
     .branch-switch-btn:hover { background: #8b5cf6 !important; }
 
     /* === MAIN CONTAINER === */
+    /* Default: header is ~76px tall. Tutorial mode: strip 38px + banner up to 220px = 258px reserved.
+       Banner has max-height + overflow-y:auto so it never exceeds 220px. */
     #container { display: flex; height: calc(100vh - 76px); }
-    #container.tutorial-active { height: calc(100vh - 38px - 110px); }
+    #container.tutorial-active { height: calc(100vh - 38px - 220px); }
     #canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #0a1420; }
     #canvas { width: 100%; height: 100%; cursor: grab; user-select: none; }
     #canvas:active { cursor: grabbing; }
@@ -355,11 +361,129 @@
   </style>
 </head>
 <body>
+  <!-- ============================================================
+       PASSWORD GATE - client-side. Internal use only.
+       The hash below is SHA-256 of the password.
+       Cleared via localStorage.removeItem('gg_arch_auth_v1') in console.
+       ============================================================ -->
+  <div id="auth-gate" style="
+    position: fixed; inset: 0; z-index: 9999;
+    background: #060d18; color: #e0e6ed;
+    display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  ">
+    <div style="
+      background: #0a1420; border: 1px solid #2d5080; border-radius: 8px;
+      padding: 32px 36px; max-width: 380px; width: 90%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    ">
+      <h2 style="margin: 0 0 6px; font-size: 18px; color: #fff; font-weight: 600;">
+        Guided Growth - Architecture Map
+      </h2>
+      <div style="font-size: 12px; color: #6b8aaf; margin-bottom: 22px;">
+        Internal team only. Enter password to continue.
+      </div>
+      <input type="password" id="auth-input" autocomplete="current-password"
+        placeholder="Password"
+        style="
+          width: 100%; box-sizing: border-box;
+          background: #060d18; color: #fff;
+          border: 1px solid #1e3a5f; border-radius: 4px;
+          padding: 10px 12px; font-size: 14px; font-family: inherit;
+          outline: none; margin-bottom: 8px;
+        " />
+      <div id="auth-error" style="
+        color: #f87171; font-size: 12px; min-height: 18px; margin-bottom: 8px;
+      "></div>
+      <button id="auth-submit" style="
+        width: 100%; background: #0d9488; color: #fff;
+        border: 1px solid #2dd4bf; border-radius: 4px;
+        padding: 10px; font-size: 13px; font-weight: 600;
+        cursor: pointer; font-family: inherit;
+        transition: background 0.15s;
+      ">Unlock</button>
+      <div style="font-size: 10px; color: #475569; margin-top: 16px; text-align: center;">
+        Password is remembered on this browser after first unlock.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === PASSWORD GATE LOGIC ===
+    (function() {
+      const PASSWORD_HASH = "60a1181b0a0fd58ea52572cfb977176796bf66302588071bf5914fe4b3e98662";
+      const STORAGE_KEY = "gg_arch_auth_v1";
+
+      async function sha256(str) {
+        const buf = new TextEncoder().encode(str);
+        const hash = await crypto.subtle.digest("SHA-256", buf);
+        return Array.from(new Uint8Array(hash))
+          .map(b => b.toString(16).padStart(2, "0")).join("");
+      }
+
+      // Hide everything else on the page until unlocked
+      document.documentElement.style.overflow = "hidden";
+
+      function unlock() {
+        const gate = document.getElementById("auth-gate");
+        if (gate) gate.remove();
+        document.documentElement.style.overflow = "";
+      }
+
+      // Already unlocked on this browser?
+      try {
+        if (localStorage.getItem(STORAGE_KEY) === PASSWORD_HASH) {
+          // Defer unlock until DOM is ready so #auth-gate exists to remove
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", unlock);
+          } else {
+            unlock();
+          }
+          return;
+        }
+      } catch (e) { /* localStorage blocked, fall through to prompt */ }
+
+      function setupGate() {
+        const input = document.getElementById("auth-input");
+        const errorEl = document.getElementById("auth-error");
+        const btn = document.getElementById("auth-submit");
+        if (!input || !btn) return;
+
+        async function tryUnlock() {
+          const v = input.value.trim();
+          if (!v) return;
+          errorEl.textContent = "";
+          btn.disabled = true; btn.textContent = "Checking...";
+          const h = await sha256(v);
+          if (h === PASSWORD_HASH) {
+            try { localStorage.setItem(STORAGE_KEY, PASSWORD_HASH); } catch (e) {}
+            unlock();
+          } else {
+            btn.disabled = false; btn.textContent = "Unlock";
+            errorEl.textContent = "Wrong password. Try again.";
+            input.value = "";
+            input.focus();
+          }
+        }
+        btn.addEventListener("click", tryUnlock);
+        input.addEventListener("keydown", (e) => { if (e.key === "Enter") tryUnlock(); });
+        // Auto-focus the input
+        setTimeout(() => input.focus(), 50);
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", setupGate);
+      } else {
+        setupGate();
+      }
+    })();
+  </script>
+
   <!-- Top header: visible when no tutorial running -->
   <div id="header">
     <div>
       <h1>Guided Growth - Data Architecture Map <span style="font-size:11px;color:#5bc0de;font-weight:500;margin-left:6px;">v5.0</span></h1>
-      <div class="subtitle">v2 plan locked May 2026. Three LLM paths (Cartesia Line, Async Reflection, Direct), anon_id in MVP. Hover for quick info, click for details, or pick a walkthrough.</div>
+      <div class="subtitle">v2 plan locked May 2026. Three LLM paths (Cartesia Line, Async Reflection, Direct), anon_id in MVP, frontend talks directly to Supabase. Hover for quick info, click for details, or pick a walkthrough.</div>
     </div>
     <div id="controls-bar">
       <div class="tutorial-launcher">
@@ -509,8 +633,8 @@
           description: "The human using the app. The starting point of every interaction.\n\nThree input modalities:\n\n(1) Voice (mic active): user speaks. Audio captured by browser, streamed to Cartesia Ink STT, transcribed to text, sent to callLLM. Path depends on screen group: Cartesia Line (onboarding) | Async Reflection (check-ins) | Direct + Cartesia Sonic API (everything else).\n\n(2) Tap / click (UI buttons): user taps a habit checkmark, picks a category, presses a button. No LLM fires - Frontend handles directly. Writes to user_data + session_log + PostHog.\n\n(3) Text input (typing in a field): user types into a text field on screen. Frontend sends the text directly to callLLM via the Direct LLM path (no STT, no voice infrastructure).\n\nAll three are MVP. The split shows up architecturally because each takes a different first hop - voice through Cartesia, tap stays in Frontend, text goes Frontend → callLLM." },
         { id: "supabase", label: "Supabase", group: "hub-data", x: 290, y: 440, width: 220, height: 90, isHub: true,
           owners: "Engineering team",
-          summary: "PostgreSQL database, auth, storage. The runtime data backbone.",
-          description: "PostgreSQL database, auth service, file storage, Edge Functions, real-time subscriptions, row-level security policies. The runtime data backbone for the entire app.\n\nWhat lives inside Supabase: auth (user accounts), three context tables for the LLM (session_log, screen_contexts, global_context), MP3 storage bucket, plus all user data and the anon_id mapping. Each shown as a child node so connections stay honest." },
+          summary: "PostgreSQL database, auth, storage. The runtime data backbone. Frontend talks to it directly by design.",
+          description: "PostgreSQL database, auth service, file storage, Edge Functions, real-time subscriptions, row-level security policies. The runtime data backbone for the entire app.\n\nWhat lives inside Supabase: auth (user accounts), three context tables for the LLM (session_log, screen_contexts, global_context), MP3 storage bucket, plus all user data and the anon_id mapping. Each shown as a child node so connections stay honest.\n\n=== ARCHITECTURAL PRINCIPLE (settled May 1) ===\nFrontend talks DIRECTLY to Supabase. This is by design, not an oversight.\n\nSupabase is a Backend-as-a-Service - PostgREST, RLS, Realtime, Storage, Auth are all engineered for safe direct client access. RLS policies enforced at the database level are the security layer. Adding a custom backend tier in front of Supabase would duplicate what RLS already does, add a network hop, and slow everything down.\n\nWhen you DO want a backend layer (we have one for these):\n- Cartesia Line agent orchestration\n- callLLM wrapper (server-side for prompt assembly + LLM API key safety)\n- Phase 2 MP3 batch generation pipeline\n\nWhen you do NOT proxy through a backend:\n- Reading/writing user_profiles, habits, checkins, session_log → direct\n- Auth → direct Supabase Auth\n- Storage (MP3 fetch) → direct Supabase Storage\n\nThis only works if RLS policies are rigorous. The anon_id ↔ user_id join MUST be service_role only (P1-46). Audit RLS as part of Stage 4 (P1-49)." },
         { id: "supabase-auth", label: "Auth", group: "supabase-svc", x: 175, y: 580, width: 140, height: 62,
           owners: "Engineering team",
           summary: "Supabase Auth. Sign up, sign in, sessions, OAuth.",
@@ -565,14 +689,14 @@
           description: "Large language model that powers all coaching responses.\n\nGPT-4o mini for MVP per v2 plan (cost optimization). Provider-agnostic via callLLM() abstraction - swappable to Gemini Flash for further cost cuts, or Groq/Llama for lowest latency. Never Claude/Anthropic for this use case (cost rule).\n\nSame LLM serves all three paths (Cartesia Line, Async Reflection, Direct LLM) - the path differs in how the response is delivered, not which model generates it.\n\nLong-term per Asana Future Features: post-MVP self-hosted on our infrastructure, eventually local on-device for trivial inference." },
         { id: "frontend", label: "Frontend", group: "frontend", x: 720, y: 500, width: 200, height: 90,
           owners: "Frontend team",
-          summary: "React + Vite web app. Handles three LLM paths via dedicated hooks.",
-          description: "React + Vite + TypeScript web app. The thing users actually touch.\n\nReads/writes user data tables in Supabase directly via the Supabase client. Talks to Supabase Auth for sign in/up. Writes session_log events on every meaningful action. Loads pre-recorded MP3s from Supabase Storage. Captures live mic audio and streams to Cartesia STT.\n\nThree path-specific hooks (v2 plan):\n- useRealtimeVoice (Cartesia Line, onboarding)\n- useAsyncReflection (state machine for check-ins)\n- useLLM (Direct LLM, optionally with Sonic API for voice TTS)\n\nEvery hook ultimately routes through the backend's callLLM() wrapper.\n\nSends product analytics events to PostHog with anon_id." },
+          summary: "React + Vite web app. Talks directly to Supabase. Three LLM paths via dedicated hooks.",
+          description: "React + Vite + TypeScript web app. The thing users actually touch.\n\nReads/writes user data tables in Supabase directly via the Supabase client (settled May 1 - this is by design, RLS enforces security at the DB layer). Talks to Supabase Auth for sign in/up. Writes session_log events on every meaningful action. Loads pre-recorded MP3s from Supabase Storage. Captures live mic audio and streams to Cartesia STT.\n\nThree path-specific hooks (v2 plan):\n- useRealtimeVoice (Cartesia Line, onboarding)\n- useAsyncReflection (state machine for check-ins)\n- useLLM (Direct LLM, optionally with Sonic API for voice TTS)\n\nEvery hook ultimately routes through the backend's callLLM() wrapper for LLM calls. Direct DB calls do NOT go through the backend.\n\nSends product analytics events to PostHog with anon_id." },
         { id: "app-master", label: "App Master Sheet", group: "source", x: 720, y: 80, width: 240, height: 70, isAppMaster: true,
           owners: "Yair",
           summary: "Master product spec workbook. 13 tabs.",
           description: "Master product spec workbook (.xlsx, also live as Google Sheet). 13 tabs covering Screens, LLM Activation, Global Context, UX Rules, Tooltips, Tasks, PostHog Events, session_log Events, Architecture, MP3 Files, Coaching Styles, Glossary, plus Read Me.\n\nv2 plan: Future Features (FF-XX) and Brainstorm (BR-XX) migrated out to Asana - they're living idea backlogs and the lockable sheet was friction. FF-XX and BR-XX IDs are still referenced from Global Context.\n\nClick the tabs list below to see exactly which tabs flow to which systems." },
         { id: "posthog", label: "PostHog", group: "external", x: 920, y: 855, width: 200, height: 68,
-          owners: "Backend team (Said handing over to Amit)",
+          owners: "Backend team",
           summary: "Product analytics. 70 events. Identifies users by anon_id only.",
           description: "Product analytics. 70 events tracked across the app per the App Master Sheet's PostHog Events tab (v6.0 added 3 new: llm_call, cartesia_latency_ms, anon_id flow).\n\nFrontend sends events directly via posthog.capture(). Identifies users by anon_id ONLY (never email or auth user_id) per v2 plan anonymization.\n\nNote: PostHog is a separate database. It does NOT feed back into Supabase or the LLM context. It exists to let the team analyze user behavior, not to drive product decisions in real time.\n\nPhase 3: auto-register event definitions via PostHog API." },
         { id: "figma", label: "Figma", group: "build", x: 985, y: 80, width: 165, height: 68,
@@ -921,7 +1045,8 @@
 
     // ============================================================
     // TUTORIAL MENU - two-section dropdown (Flows + Tasks)
-    // Tasks section is empty until populated. Stages 1-5 per v2 plan.
+    // Flows: 8 high-level walkthroughs. Tasks: 46 across Stages 1-5.
+    // Stage walkthroughs: combined per-stage tour built dynamically.
     // ============================================================
     const FLOW_TUTORIALS = [
       { id: "onboarding",      name: "Full onboarding (founding user)" },
@@ -934,12 +1059,12 @@
       { id: "mp3pipeline",     name: "MP3 generation pipeline (Phase 2 auto)" }
     ];
 
-    // === TASK_TUTORIALS - 42 active tasks across Stages 1-5 (Done/Obsolete excluded) ===
+    // === TASK_TUTORIALS - 46 active tasks across Stages 1-5 (Done/Obsolete excluded) ===
     // Each task has: id, taskId, name, stage, status, steps[]
     // Status values: "notstarted" | "inprogress" | "done"  (done tasks are filtered out of the menu)
     const TASK_TUTORIALS = [
   // ============================================================
-  // STAGE 1 - FOUNDATION (10 tasks)
+  // STAGE 1 - FOUNDATION (11 tasks)
   // ============================================================
   {
     id: "p1-11", taskId: "P1-11", name: "Build VoiceContext Provider", stage: 1, status: "inprogress",
@@ -1000,8 +1125,8 @@
     steps: [{
       title: "P1-32: session_log table + POST /api/session_log",
       desc: "Create Supabase table: session_log {id, anon_id, session_id, timestamp, event_type, screen_id, payload JSONB}. Append-only event stream. Build POST /api/session_log endpoint that frontend calls on every meaningful user action.\n\nTHIS IS THE STATE DELTA SOURCE - what callLLM reads to catch up on what's happened since the last LLM call. Critical foundation for the 'caught up' principle.\n\nKeyed on anon_id per P1-46 (NOT auth user_id).\n\nOwner: Amit. Status: Not Started.",
-      highlight: ["frontend", "session-log", "anon-mapping"],
-      highlightEdges: ["frontend-session-log", "anon-mapping-session-log"]
+      highlight: ["frontend", "session-log", "anon-mapping", "call-llm"],
+      highlightEdges: ["frontend-session-log", "anon-mapping-session-log", "call-llm-session-log"]
     }]
   },
   {
@@ -1009,8 +1134,8 @@
     steps: [{
       title: "P1-33: GET /api/context endpoint",
       desc: "GET /api/context?screen_id=X&anon_id=Y&since_ts=Z\n\nReturns: { screen_id, context_block, version, state_delta: [...] }\n\nReads screen_contexts (Layer 1) for the current screen. Reads session_log (Layer 2) for events since since_ts. Cache context_block 60s; state_delta always fresh.\n\nThe data feed for callLLM. P1-34 wraps this.\n\nOwner: Amit. Status: Not Started.",
-      highlight: ["call-llm", "screen-contexts", "session-log"],
-      highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log"]
+      highlight: ["call-llm", "screen-contexts", "session-log", "anon-mapping"],
+      highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log", "anon-mapping-call-llm"]
     }]
   },
   {
@@ -1034,10 +1159,19 @@
       {
         title: "P1-46 (2/2): PostHog + LLM context use anon_id only",
         desc: "Update PostHog identify() calls to use anon_id (never email or auth user_id).\n\nUpdate LLM context builder to never include email or last_name fields. callLLM receives anon_id, never user_id.\n\nTest: confirm a row in session_log cannot be traced to email without going through service_role.\n\nFoundation for Phase 2 open-source AnonShield tool (FF-10) and support tokens (FF-09).",
-        highlight: ["anon-mapping", "posthog", "call-llm"],
-        highlightEdges: ["anon-mapping-posthog", "anon-mapping-call-llm"]
+        highlight: ["anon-mapping", "posthog", "call-llm", "session-log"],
+        highlightEdges: ["anon-mapping-posthog", "anon-mapping-call-llm", "anon-mapping-session-log"]
       }
     ]
+  },
+  {
+    id: "p1-48", taskId: "P1-48", name: "Bundle anon_id generation into the auth fix", stage: 1, status: "notstarted",
+    steps: [{
+      title: "P1-48: Add anon_id generation while fixing TestFlight auth",
+      desc: "REFINEMENT of P1-46 (raised by Yair on May 4 1708). The auth flow isn't working in TestFlight - while Amit is in there fixing it, generate the anon_id at the same time.\n\nTwo separate Supabase tables result:\n• identity_table: username, password, email, auth_user_id (the connector)\n• user_profiles + all behavioral tables: keyed on anon_id ONLY\n\nNo separate sweep needed later. Means P1-46's downstream wiring (session_log, posthog, callLLM all using anon_id) lands cleanly the first time without a retrofit.\n\nDepends on: existing TestFlight auth bug fix (already in flight).\nOwner: Amit. Status: Not Started. Bundles into the auth fix.",
+      highlight: ["frontend", "supabase-auth", "anon-mapping", "user-data", "session-log", "call-llm", "posthog"],
+      highlightEdges: ["frontend-supabase-auth", "supabase-auth-anon-mapping", "anon-mapping-user-data", "anon-mapping-session-log", "anon-mapping-call-llm", "anon-mapping-posthog"]
+    }]
   },
 
   // ============================================================
@@ -1048,8 +1182,8 @@
     steps: [{
       title: "P1-15: Deploy Cartesia Line agent",
       desc: "Push the configured Line agent (main.py from P1-13 + tool definitions from P1-14) to Cartesia. Verify it accepts WebSocket connections from frontend.\n\nThis is the runtime endpoint that Path 1 (Cartesia Line) connects to during onboarding.\n\nOwner: Amit. Status: In Progress.",
-      highlight: ["cartesia-line"],
-      highlightEdges: []
+      highlight: ["cartesia-line", "frontend"],
+      highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend"]
     }]
   },
   {
@@ -1067,8 +1201,8 @@
       {
         title: "P1-34 (1/2): callLLM() - the architectural keystone",
         desc: "THE MOST IMPORTANT NEW TASK. Backend function that wraps EVERY LLM call in the app.\n\nSignature: callLLM(anon_id, screen_id, user_input, options)\n\nFetches context_block + state_delta via /api/context. Prepends both (plus crisis safety rule from P1-47) to base system prompt.\n\nSINGLE ENTRY POINT - no developer adds another path. No exceptions. Audit codebase to enforce.",
-        highlight: ["call-llm", "screen-contexts", "session-log", "global-context"],
-        highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log", "call-llm-global-context"]
+        highlight: ["call-llm", "screen-contexts", "session-log", "global-context", "anon-mapping"],
+        highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log", "call-llm-global-context", "anon-mapping-call-llm"]
       },
       {
         title: "P1-34 (2/2): Path routing decision",
@@ -1092,8 +1226,8 @@
     steps: [{
       title: "P1-37: Shared LLM tool definitions",
       desc: "Move LLM tool definitions (lookup_global_context, navigate_next, complete_onboarding, etc.) into a shared backend module.\n\nPath 1 (Cartesia Line agent) and Path 3 (direct LLM via /api/llm) both import from here. Single source of truth - update a tool once, all paths see it.\n\nOwner: Amit. Status: Not Started.",
-      highlight: ["call-llm", "cartesia-line", "llm-api"],
-      highlightEdges: ["call-llm-llm-api", "call-llm-cartesia-line"]
+      highlight: ["call-llm", "cartesia-line", "llm-api", "global-context"],
+      highlightEdges: ["call-llm-llm-api", "call-llm-cartesia-line", "call-llm-global-context"]
     }]
   },
   {
@@ -1110,8 +1244,8 @@
     steps: [{
       title: "P1-40: logEvent() everywhere meaningful happens",
       desc: "Wire frontend to call POST /api/session_log on every meaningful user action: tap habit complete, navigate, mood select, settings change, mic activation, voice start/end.\n\nFrontend rule: ALWAYS call logEvent() on meaningful actions, even when no LLM call. Otherwise the LLM is blind to user activity and can't 'catch up' on next callLLM().\n\nWrites are anon_id-keyed.\n\nOwner: Mint. Status: Not Started.",
-      highlight: ["frontend", "session-log", "anon-mapping"],
-      highlightEdges: ["frontend-session-log", "anon-mapping-session-log"]
+      highlight: ["frontend", "session-log", "anon-mapping", "call-llm"],
+      highlightEdges: ["frontend-session-log", "anon-mapping-session-log", "call-llm-session-log"]
     }]
   },
   {
@@ -1132,8 +1266,8 @@
     steps: [{
       title: "P1-21: ONBOARD-01 - first two-way Line conversation",
       desc: "FIRST REAL-TIME AGENT SCREEN. Line agent speaks introduction, listens via Ink STT, responds with user's NAME via live TTS in cloned voice. Magic moment #1: voice auto-fills form. Magic moment #2: AI says user's name back.\n\nParse voice for {name, age, gender, referral_source}. Auto-fill UI in real-time. On 'Let's Begin' validate fields, save to user_profile, navigate to ONBOARD-02 (Line session stays open).\n\nOwner: Mint. Status: Not Started.",
-      highlight: ["frontend", "user", "cartesia-stt", "cartesia-line", "call-llm", "llm-api", "user-data"],
-      highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-cartesia-line", "cartesia-line-frontend", "call-llm-llm-api", "frontend-user-data"]
+      highlight: ["frontend", "user", "cartesia-stt", "cartesia-line", "cartesia-tts", "call-llm", "llm-api", "user-data"],
+      highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-cartesia-line", "cartesia-line-frontend", "cartesia-line-cartesia-tts", "call-llm-llm-api", "frontend-user-data"]
     }]
   },
   {
@@ -1183,7 +1317,7 @@
   },
 
   // ============================================================
-  // STAGE 4 - QA + SAFETY + POLISH (9 tasks)
+  // STAGE 4 - QA + SAFETY + POLISH (11 tasks)
   // ============================================================
   {
     id: "p1-26", taskId: "P1-26", name: "Test Full Happy Path (Voice)", stage: 4, status: "notstarted",
@@ -1226,8 +1360,8 @@
     steps: [{
       title: "P1-43: All 3 paths see consistent context (HARD GATE)",
       desc: "HARD GATE before launch. Verify:\n• Path 1 (Cartesia Line) sees the same screen_contexts + session_log delta as...\n• Path 2 (Async Reflection / Sonic API) and...\n• Path 3 (Direct LLM)\n\nTest: complete habits via tap (no LLM). Then start each path and ask 'what did I do today?' All three must reference the tap-completions correctly. If any path is blind, fix before launch.\n\nOwner: Yair + Amit. Status: Not Started.",
-      highlight: ["call-llm", "cartesia-line", "cartesia-sonic-api", "llm-api", "screen-contexts", "session-log"],
-      highlightEdges: ["call-llm-cartesia-line", "call-llm-cartesia-sonic-api", "call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log"]
+      highlight: ["frontend", "call-llm", "cartesia-line", "cartesia-sonic-api", "llm-api", "screen-contexts", "session-log", "user-data"],
+      highlightEdges: ["call-llm-cartesia-line", "call-llm-cartesia-sonic-api", "call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log", "frontend-user-data", "frontend-session-log"]
     }]
   },
   {
@@ -1243,7 +1377,7 @@
     id: "p1-45", taskId: "P1-45", name: "Test cost and latency budget", stage: 4, status: "notstarted",
     steps: [{
       title: "P1-45: Verify cost + latency targets",
-      desc: "Measure end-to-end:\n• GPT-4o mini cost per turn (~$0.0005 target)\n• Cartesia Line per onboarding session\n• Cartesia Sonic API per check-in (target ~$0.006)\n• Path 3 Direct LLM (cheapest)\n• Latency: voice round-trip target <2 sec for Line, ~2-3 sec hidden by ack MP3 for Async Reflection\n\nLog cartesia_latency_ms PostHog event (replaces ElevenLabs ref). Insights inform Phase 2 cost optimization.\n\nOwner: Amit. Status: Not Started.",
+      desc: "Measure end-to-end:\n• GPT-4o mini cost per turn (~$0.0005 target)\n• Cartesia Line per onboarding session\n• Cartesia Sonic API per check-in (target ~$0.006)\n• Path 3 Direct LLM (cheapest)\n• Latency: voice round-trip target <2 sec for Line, ~2-3 sec hidden by ack MP3 for Async Reflection\n\nLog cartesia_latency_ms PostHog event. Insights inform Phase 2 cost optimization.\n\nOwner: Amit. Status: Not Started.",
       highlight: ["call-llm", "cartesia-line", "cartesia-sonic-api", "llm-api", "posthog"],
       highlightEdges: ["call-llm-llm-api", "call-llm-cartesia-line", "call-llm-cartesia-sonic-api", "frontend-posthog"]
     }]
@@ -1258,6 +1392,15 @@
     }]
   },
   {
+    id: "p1-49", taskId: "P1-49", name: "RLS policy audit (HARD GATE for direct-Supabase access)", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P1-49: Audit Supabase RLS policies before launch",
+      desc: "HARD GATE. Frontend talks directly to Supabase by design (settled May 1) - this only works if Row Level Security policies are rigorous.\n\nAudit checklist:\n• user_profiles: user can read/update own row only (auth.uid() = id)\n• anon_id ↔ user_id join: service_role ONLY. RLS denies auth.uid() access.\n• habits, habit_completions, checkins, journal_entries, daily_goals: user can read/write rows where anon_id matches their own (via user_profiles join)\n• session_log: append-only for the user's own anon_id. No cross-user reads.\n• MP3 storage bucket: read-only for authenticated users, write blocked\n• Try-to-break test: log in as user A, attempt to read user B's data. Confirm denial at every table.\n\nWithout this, the anonymization promise (P1-46) and the direct-Supabase architecture both break. Owner: Amit + Yair (security review).\nStatus: Not Started. Stage 4 hard gate.",
+      highlight: ["frontend", "supabase", "supabase-auth", "anon-mapping", "user-data", "session-log", "mp3-storage"],
+      highlightEdges: ["frontend-user-data", "frontend-session-log", "frontend-mp3-storage", "frontend-supabase-auth", "supabase-auth-anon-mapping"]
+    }]
+  },
+  {
     id: "p2-37", taskId: "P2-37", name: "Stage 5 prep: scaffold async reflection state machine", stage: 4, status: "notstarted",
     steps: [{
       title: "P2-37: Pre-build the Async Reflection state machine",
@@ -1266,9 +1409,26 @@
       highlightEdges: ["frontend-mp3-storage", "frontend-cartesia-stt", "cartesia-sonic-api-frontend"]
     }]
   },
+  {
+    id: "p1-52", taskId: "P1-52", name: "Team process improvements (Mattermost templates + acceptance criteria)", stage: 4, status: "notstarted",
+    steps: [
+      {
+        title: "P1-52 (1/2): Two-checklist Mattermost issue template",
+        desc: "Process improvement (not architectural - bundled here so it appears in the team's Stage 4 view).\n\nCurrently issues have a single acceptance criteria checklist. Split into TWO:\n• Task Owner checklist - what the assignee verifies before marking done\n• Task Reviewer checklist - what Mint or Alejandro independently verifies before closing\n\nCloses the gap where someone says 'it works' but the reviewer never independently verified. Both must be checked off before issue closes.\n\nOwner: Mint coordinates with Alejandro on Mattermost / GitLab template config. Status: Not Started.",
+        highlight: ["app-master", "gitlab"],
+        highlightEdges: ["app-master-gitlab"]
+      },
+      {
+        title: "P1-52 (2/2): Mandatory acceptance criteria on every backend task",
+        desc: "'It works' is not an acceptance criterion. Every backend task must have at least one specific, measurable, testable, agreed-upfront condition.\n\nFormat: 'Given X, when Y, then Z.' Or: a specific endpoint + expected response shape + edge cases.\n\nWorkflow:\n• When a backend task moves to In Progress in the master sheet, it must already have ≥1 acceptance criterion\n• Reviewer confirms criteria are testable before approving\n• At review, reviewer runs through the criteria - no subjective 'works on my machine'\n\nOwner: Mint + Alejandro define the template. Yair enforces via master sheet review.",
+        highlight: ["app-master", "gitlab"],
+        highlightEdges: ["app-master-gitlab"]
+      }
+    ]
+  },
 
   // ============================================================
-  // STAGE 5 - CHECK-INS + TEXT CHAT + FEEDBACK (9 tasks)
+  // STAGE 5 - CHECK-INS + TEXT CHAT + FEEDBACK (10 tasks)
   // ============================================================
   {
     id: "p2-16", taskId: "P2-16", name: "Phase 2: Add new tools to shared module", stage: 5, status: "notstarted",
@@ -1300,8 +1460,8 @@
       {
         title: "P2-29 (2/2): Sonic API for personalized response",
         desc: "RESPONDING state: callLLM streams text to Cartesia Sonic API for live TTS in cloned voice. NOT Cartesia Line. Frontend plays audio + displays text alongside (UX-22 voice + text sync).\n\nWhy cheaper than Line: predictable parts (prompt, ack, closing) are MP3s. Only the personalized response runs through live LLM + Sonic API. Cuts cost ~10x.\n\nOwner: Mint + Amit. Status: Not Started.",
-        highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts", "frontend"],
-        highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-cartesia-tts", "cartesia-sonic-api-frontend"]
+        highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts", "frontend", "mp3-storage"],
+        highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-cartesia-tts", "cartesia-sonic-api-frontend", "frontend-mp3-storage"]
       }
     ]
   },
@@ -1328,8 +1488,8 @@
     steps: [{
       title: "P2-32: Text chat = Path 3 Direct LLM",
       desc: "Wire the text chat UI surface. User types in field → frontend POSTs to /api/llm via useLLM hook (P1-38) → callLLM Path 3 (Direct LLM) → GPT-4o mini → text response back.\n\nNo voice infrastructure. Cheapest path. Same context layers, same anon_id, same crisis safety rule as the other two paths.\n\nUX-22: text and voice in sync (text chat reads same session state).\n\nOwner: Mint + Amit. Status: Not Started.",
-      highlight: ["user", "frontend", "call-llm", "llm-api"],
-      highlightEdges: ["user-frontend", "frontend-call-llm", "call-llm-llm-api"]
+      highlight: ["user", "frontend", "call-llm", "llm-api", "anon-mapping"],
+      highlightEdges: ["user-frontend", "frontend-call-llm", "call-llm-llm-api", "anon-mapping-call-llm"]
     }]
   },
   {
@@ -1353,8 +1513,8 @@
       {
         title: "P2-34 (2/2): callLLM + Sonic API for personalized responses",
         desc: "Each check-in screen's LLM-generated personalized response goes through callLLM → Cartesia Sonic API → live TTS in cloned voice → frontend.\n\nVoice + text sync (UX-22) shows text alongside audio. Save check-in data to Supabase user_data tables (checkins, daily_goals, journal_entries) keyed on anon_id.\n\nOwner: Mint + Amit. Status: Not Started.",
-        highlight: ["call-llm", "cartesia-sonic-api", "user-data", "session-log"],
-        highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-frontend", "frontend-user-data", "frontend-session-log"]
+        highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts", "frontend", "user-data", "session-log", "anon-mapping"],
+        highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-cartesia-tts", "cartesia-sonic-api-frontend", "frontend-user-data", "frontend-session-log", "anon-mapping-user-data"]
       }
     ]
   },
@@ -1365,6 +1525,15 @@
       desc: "Document containing canonical voice content for the ~65 check-in MP3s (P2-30): exact wording, tone notes, pronunciation guides, mood-matched closing variants. The voice text source for the VA.\n\nAlso the reference for any future Cartesia clone retraining or coach style work. Not user-facing - team reference.\n\nOwner: Yair. Status: Not Started.",
       highlight: ["app-master"],
       highlightEdges: []
+    }]
+  },
+  {
+    id: "p2-38", taskId: "P2-38", name: "Streaming text input UX + always-open input box", stage: 5, status: "notstarted",
+    steps: [{
+      title: "P2-38: Streaming text + always-open input field",
+      desc: "Two related text-input UX details (raised May 4 1708 with Mint).\n\n1. STREAMING TEXT INPUT: when the LLM responds, words appear one at a time as they stream in (like ChatGPT or iPhone dictation), not as a single block of text dropping in.\n\n2. ALWAYS-OPEN INPUT BOX: as soon as the user submits an input, a fresh empty input field appears below it. User never has to wait or tap to start typing the next message. Continuous flow.\n\nBoth feed UX-22 (voice + text sync) - text behavior should feel as alive as voice does.\n\nOwner: Mint (frontend) + Timothy (Figma update). Coordinate on Figma first since this changes the chat overlay design.\nStatus: Not Started. Stage 5 polish, do alongside text chat (P2-32).",
+      highlight: ["frontend", "user", "call-llm"],
+      highlightEdges: ["user-frontend", "frontend-call-llm"]
     }]
   }
 ];
@@ -1392,7 +1561,7 @@
     // ============================================================
     const STAGE_INTROS = {
       1: {
-        subtitle: "10 tasks. Schema, tables, Supabase setup, anonymization. The data backbone.",
+        subtitle: "11 tasks. Schema, tables, Supabase setup, anonymization. The data backbone.",
         focus: ["frontend", "supabase-auth", "session-log", "screen-contexts", "global-context", "user-data", "anon-mapping", "app-master"]
       },
       2: {
@@ -1404,11 +1573,11 @@
         focus: ["frontend", "cartesia-line", "cartesia-stt", "cartesia-tts", "call-llm", "user-data"]
       },
       4: {
-        subtitle: "9 tasks. End-to-end testing, hard gates, crisis safety, Stage 5 prep.",
-        focus: ["frontend", "call-llm", "cartesia-line", "cartesia-sonic-api", "session-log", "anon-mapping", "global-context", "posthog"]
+        subtitle: "11 tasks. End-to-end testing, hard gates (RLS audit), crisis safety, process improvements, Stage 5 prep.",
+        focus: ["frontend", "call-llm", "cartesia-line", "cartesia-sonic-api", "session-log", "anon-mapping", "global-context", "posthog", "supabase"]
       },
       5: {
-        subtitle: "9 tasks. Check-ins (Async Reflection), text chat (Direct), feedback sessions, MP3 generation.",
+        subtitle: "10 tasks. Check-ins (Async Reflection), text chat (Direct), feedback sessions, MP3 generation, streaming text UX.",
         focus: ["frontend", "mp3-storage", "cartesia-stt", "cartesia-sonic-api", "cartesia-line", "call-llm", "user-data", "session-log"]
       }
     };
@@ -1486,7 +1655,7 @@
       html += '<div class="tm-section-header">Task walkthroughs</div>';
 
       if (filteredTasks.length === 0) {
-        html += '<div class="tm-empty-tasks">Task walkthroughs coming next pass.<br>Stages 1-5 will appear here.</div>';
+        html += '<div class="tm-empty-tasks">No tasks match your search.<br>Try a different keyword or clear the search.</div>';
       } else {
         // Group by stage
         const byStage = {};
@@ -1501,8 +1670,8 @@
           const stageLabel = STAGE_LABELS[stage] || `Stage ${stage}`;
           const stageWalkthroughId = `stage-${stage}`;
           const stageWalkthroughExists = !!TUTORIALS[stageWalkthroughId];
-          // Auto-open if filter is active OR stage 1 by default
-          const autoOpen = !!f;
+          // Auto-open if filter is active OR if this is Stage 1 (default starting point)
+          const autoOpen = !!f || String(stage) === "1";
           const openClass = autoOpen ? " open" : "";
           const stageActiveClass = (activeTutorial && activeTutorial._id === stageWalkthroughId) ? " active" : "";
           html += `<div class="tm-stage-group">`;
@@ -2122,9 +2291,14 @@
     // canvas as possible, capped by maxZoom for sanity.
     // ============================================================
     function fitViewToNodes(nodeIds, options = {}) {
-      const padding = options.padding || 60;
+      // Smarter padding: more breathing room when few nodes are highlighted
+      // (so the user sees surrounding context, not just a tight zoom)
+      const numNodes = (nodeIds || []).length;
+      const dynamicPadding = numNodes <= 2 ? 180 : (numNodes <= 4 ? 130 : 100);
+      const padding = options.padding !== undefined ? options.padding : dynamicPadding;
       const minZoomFloor = options.minZoom || 0.7;
-      const maxZoomCeil = options.maxZoom || 2.2;  // raised from 1.4
+      // Lower max so we never zoom in absurdly tight on a 1-2 node highlight
+      const maxZoomCeil = options.maxZoom || 1.5;
 
       const viewportW = 1500;
       const viewportH = 920;
@@ -2161,16 +2335,18 @@
       const canvasW = rect.width;
       const canvasH = rect.height;
 
+      // Guard against zero/tiny canvas (race during animation)
+      if (canvasW < 50 || canvasH < 50) {
+        // Try again on next frame
+        requestAnimationFrame(() => fitViewToNodes(nodeIds, options));
+        return;
+      }
+
       // SVG fits viewBox into canvas with xMidYMid meet (preserve aspect, contain)
       // pixels-per-viewBoxUnit at zoom=1:
       const fitScale = Math.min(canvasW / viewportW, canvasH / viewportH);
 
       // Target: bbox should fill the canvas (using letterbox space too)
-      // bbox_pixels_at_zoom_1 = bboxW * fitScale
-      // We want: bboxW * fitScale * targetZoom = canvasW (or canvasH for vertical)
-      // So: targetZoom_W = canvasW / (bboxW * fitScale)
-      //     targetZoom_H = canvasH / (bboxH * fitScale)
-      // Take min so bbox fits both ways.
       const targetZoomW = canvasW / (bboxW * fitScale);
       const targetZoomH = canvasH / (bboxH * fitScale);
       let targetZoom = Math.min(targetZoomW, targetZoomH);
@@ -2179,11 +2355,6 @@
       targetZoom = Math.max(minZoomFloor, Math.min(maxZoomCeil, targetZoom));
 
       // Pan: center the bbox in the visible canvas
-      // The center of the visible canvas in viewBox coords (at zoom=1, pan=0) is (viewportW/2, viewportH/2)
-      // because the SVG is centered and viewBox is centered within it.
-      // After transform `translate(panX, panY) scale(zoom)`, viewBox point (bboxCx, bboxCy) maps to:
-      //   (bboxCx*zoom + panX, bboxCy*zoom + panY) in viewBox units pre-render
-      // We want that to land at (viewportW/2, viewportH/2):
       const targetPanX = (viewportW / 2) - bboxCx * targetZoom;
       const targetPanY = (viewportH / 2) - bboxCy * targetZoom;
 
