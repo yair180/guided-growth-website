@@ -1,0 +1,2397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guided Growth - Data Architecture Map (v5.0)</title>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0a1420; color: #e0e6ed; overflow: hidden;
+    }
+
+    /* === TOP HEADER (full mode, no tutorial active) === */
+    #header {
+      padding: 12px 20px;
+      background: #060d18;
+      border-bottom: 1px solid #1a2942;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+      flex-wrap: wrap;
+    }
+    #header.hidden { display: none; }
+    #header h1 { font-size: 16px; margin: 0; font-weight: 600; color: #fff; }
+    #header .subtitle { font-size: 11px; color: #6b8aaf; margin-top: 2px; }
+    #controls-bar { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+
+    .tutorial-launcher { display: flex; gap: 6px; align-items: center; font-size: 12px; color: #8fa8c4; position: relative; }
+    .tutorial-launcher select {
+      background: #1e3a5f; color: #fff; border: 1px solid #2d5080;
+      padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* === TUTORIAL MENU (two-section dropdown) === */
+    .tutorial-menu-trigger {
+      background: #1e3a5f; color: #fff; border: 1px solid #2d5080;
+      padding: 5px 10px 5px 12px; border-radius: 4px; font-size: 12px;
+      cursor: pointer; font-family: inherit; font-weight: 500;
+      display: inline-flex; align-items: center; gap: 6px;
+      min-width: 220px; justify-content: space-between;
+      transition: background 0.15s;
+    }
+    .tutorial-menu-trigger:hover { background: #2d5080; }
+    .tutorial-menu-trigger .caret { font-size: 9px; opacity: 0.7; }
+    .tutorial-menu-trigger .selected-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+    .tutorial-menu-panel {
+      position: absolute; top: 100%; left: 0; margin-top: 6px;
+      background: #060d18; border: 1px solid #2d5080; border-radius: 6px;
+      width: 380px; max-height: 70vh; overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      z-index: 30; display: none;
+      backdrop-filter: blur(8px);
+    }
+    .tutorial-menu-panel.open { display: block; }
+
+    .tm-search {
+      position: sticky; top: 0; background: #060d18;
+      padding: 10px 12px; border-bottom: 1px solid #1a2942; z-index: 2;
+    }
+    .tm-search input {
+      width: 100%; background: #0a1420; color: #e0e6ed;
+      border: 1px solid #1e3a5f; border-radius: 4px;
+      padding: 6px 10px; font-size: 12px; font-family: inherit;
+      outline: none;
+    }
+    .tm-search input:focus { border-color: #5bc0de; }
+
+    .tm-section { padding: 6px 0; }
+    .tm-section-header {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px;
+      color: #6b8aaf; padding: 6px 14px 4px; font-weight: 700;
+    }
+    .tm-item {
+      padding: 7px 14px; font-size: 12px; color: #c2cee0;
+      cursor: pointer; transition: background 0.12s;
+      display: flex; align-items: center; gap: 8px;
+      border-left: 2px solid transparent;
+    }
+    .tm-item:hover { background: rgba(45, 80, 128, 0.4); }
+    .tm-item.active { background: rgba(13, 148, 136, 0.18); border-left-color: #5bc0de; color: #fff; }
+    .tm-item .tm-name { flex: 1; }
+    .tm-item .tm-id { color: #6b8aaf; font-size: 10px; font-family: ui-monospace, monospace; }
+
+    .tm-stage-group { border-top: 1px solid #1a2942; }
+    .tm-stage-group:first-child { border-top: none; }
+    .tm-stage-header {
+      padding: 7px 14px; font-size: 11px; color: #8fa8c4;
+      cursor: pointer; user-select: none;
+      display: flex; align-items: center; gap: 8px;
+      transition: background 0.12s; font-weight: 500;
+    }
+    .tm-stage-header:hover { background: rgba(30, 58, 95, 0.5); color: #fff; }
+    .tm-stage-header .tm-chevron { font-size: 9px; transition: transform 0.15s; color: #5bc0de; }
+    .tm-stage-header.open .tm-chevron { transform: rotate(90deg); }
+    .tm-stage-header .tm-stage-count { color: #6b8aaf; font-size: 10px; }
+    .tm-stage-body { display: none; padding-left: 12px; padding-bottom: 4px; }
+    .tm-stage-body.open { display: block; }
+    .tm-stage-walkthrough {
+      padding: 7px 12px 7px 14px; font-size: 11px;
+      background: rgba(13, 148, 136, 0.1);
+      color: #5bc0de; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      border-left: 2px solid #0d9488;
+      margin: 4px 8px 6px 8px; border-radius: 4px;
+      font-weight: 600;
+      transition: background 0.12s;
+    }
+    .tm-stage-walkthrough:hover { background: rgba(13, 148, 136, 0.25); color: #fff; }
+    .tm-stage-walkthrough.active { background: rgba(13, 148, 136, 0.3); color: #fff; border-left-color: #5bc0de; }
+    .tm-stage-walkthrough .tm-walk-icon { font-size: 9px; letter-spacing: -1px; }
+    .tm-stage-walkthrough .tm-walk-label { flex: 1; }
+    .tm-task-item {
+      padding: 5px 12px 5px 22px; font-size: 11px; color: #c2cee0;
+      cursor: pointer; transition: background 0.12s;
+      display: flex; align-items: center; gap: 6px; min-height: 26px;
+      border-left: 2px solid transparent;
+    }
+    .tm-task-item:hover { background: rgba(45, 80, 128, 0.4); }
+    .tm-task-item.active { background: rgba(13, 148, 136, 0.18); border-left-color: #5bc0de; color: #fff; }
+    .tm-task-item .tm-status { font-size: 10px; }
+    .tm-task-item .tm-status.notstarted { color: #6b8aaf; }
+    .tm-task-item .tm-status.inprogress { color: #facc15; }
+    .tm-task-item .tm-status.done { color: #34d399; }
+    .tm-task-item .tm-task-id {
+      font-family: ui-monospace, monospace; font-size: 10px;
+      color: #5bc0de; min-width: 38px;
+    }
+    .tm-task-item .tm-task-name { flex: 1; }
+
+    .tm-empty-tasks {
+      padding: 12px 14px; font-size: 11px; color: #6b8aaf;
+      font-style: italic; text-align: center;
+    }
+
+    .phase-toggle { display: flex; gap: 6px; align-items: center; font-size: 12px; color: #8fa8c4; }
+    .phase-toggle > span.label { font-weight: 500; margin-right: 2px; }
+    .phase-toggle label {
+      cursor: pointer; padding: 4px 10px; border-radius: 4px;
+      border: 1px solid #1e3a5f; background: rgba(30, 58, 95, 0.3);
+      transition: all 0.15s; font-weight: 500; user-select: none;
+    }
+    .phase-toggle input { display: none; }
+    .phase-toggle .ph1 input:checked + label { background: #0d9488; border-color: #2dd4bf; color: #fff; }
+    .phase-toggle .ph2 input:checked + label { background: #ca8a04; border-color: #facc15; color: #fff; }
+    .phase-toggle .ph3 input:checked + label { background: #7c3aed; border-color: #a78bfa; color: #fff; }
+
+    /* === STAGE TOGGLE (within MVP - 5 build stages from v2 plan) === */
+    .stage-toggle { display: flex; gap: 4px; align-items: center; font-size: 12px; color: #8fa8c4; flex-wrap: wrap; }
+    .stage-toggle > span.label { font-weight: 500; margin-right: 2px; }
+    .stage-toggle label {
+      cursor: pointer; padding: 3px 8px; border-radius: 4px;
+      border: 1px solid #1e3a5f; background: rgba(30, 58, 95, 0.3);
+      transition: all 0.15s; font-weight: 500; user-select: none; font-size: 11px;
+    }
+    .stage-toggle input { display: none; }
+    .stage-toggle .stg input:checked + label { background: #1e40af; border-color: #60a5fa; color: #fff; }
+    .stage-toggle button {
+      background: rgba(30, 58, 95, 0.5); color: #8fa8c4; border: 1px solid #1e3a5f;
+      padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;
+      font-family: inherit;
+    }
+    .stage-toggle button:hover { background: rgba(45, 80, 128, 0.7); color: #fff; }
+
+    #legend { display: flex; gap: 12px; font-size: 11px; color: #8fa8c4; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-line { width: 18px; height: 2px; border-radius: 1px; }
+    .legend-line.solid { background: #5bc0de; }
+    .legend-line.dashed { background: transparent; border-top: 2px dashed #f59e0b; height: 0; }
+    .legend-line.dotted { background: transparent; border-top: 2px dotted #94a3b8; height: 0; }
+
+    /* === TUTORIAL THIN STRIP (replaces #header during tutorial) === */
+    #tutorial-strip {
+      display: none;
+      padding: 8px 16px;
+      background: #060d18;
+      border-bottom: 1px solid #1a2942;
+      align-items: center; gap: 14px;
+      flex-wrap: nowrap;
+    }
+    #tutorial-strip.visible { display: flex; }
+    #tutorial-strip .strip-counter {
+      font-size: 16px; color: #ffffff; font-weight: 800;
+      letter-spacing: 0.3px; white-space: nowrap; flex-shrink: 0;
+      background: #5bc0de; padding: 7px 14px; border-radius: 5px;
+      border: 2px solid #ffffff;
+    }
+    #tutorial-strip .strip-divider {
+      height: 22px; width: 1px; background: #1e3a5f; flex-shrink: 0;
+    }
+    #tutorial-strip .strip-controls { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    #tutorial-strip button {
+      background: #2d5080; color: #fff; border: 1px solid #5bc0de;
+      padding: 5px 12px; border-radius: 4px; cursor: pointer;
+      font-size: 12px; font-weight: 500; font-family: inherit;
+      transition: background 0.15s;
+    }
+    #tutorial-strip button:hover { background: #3a6ba8; }
+    #tutorial-strip button:disabled { background: #1a2942; color: #6b8aaf; cursor: not-allowed; border-color: #1e3a5f; }
+    #tutorial-strip button.close-btn { background: transparent; border-color: #6b8aaf; }
+    #tutorial-strip button.close-btn:hover { background: rgba(107, 138, 175, 0.15); }
+    #tutorial-strip .strip-spacer { flex: 1; }
+
+    /* === MAIN BANNER (large during tutorial) === */
+    #tutorial-banner {
+      background: linear-gradient(135deg, #1e3a5f, #0d2845);
+      border-bottom: 2px solid #5bc0de;
+      padding: 18px 28px;
+      display: none;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    #tutorial-banner.visible { display: flex; }
+    #tutorial-banner .banner-content { flex: 1; min-width: 0; }
+    #tutorial-banner .step-title {
+      font-size: 19px; color: #fff; font-weight: 600;
+      margin-bottom: 8px; line-height: 1.3;
+    }
+    #tutorial-banner .step-desc {
+      font-size: 16px; color: #d4e0f0; line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .branch-buttons { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .branch-buttons button {
+      background: #ca8a04; color: #fff; border: 1px solid #facc15;
+      padding: 7px 14px; border-radius: 4px; cursor: pointer;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .branch-buttons button:hover { background: #d97706; }
+    .branch-buttons button.current { background: #facc15; color: #0a1420; }
+    .branch-switch-btn { background: #7c3aed !important; border-color: #a78bfa !important; }
+    .branch-switch-btn:hover { background: #8b5cf6 !important; }
+
+    /* === MAIN CONTAINER === */
+    #container { display: flex; height: calc(100vh - 76px); }
+    #container.tutorial-active { height: calc(100vh - 38px - 110px); }
+    #canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #0a1420; }
+    #canvas { width: 100%; height: 100%; cursor: grab; user-select: none; }
+    #canvas:active { cursor: grabbing; }
+
+    .controls-bottom { position: absolute; bottom: 16px; left: 16px; display: flex; gap: 8px; z-index: 10; }
+    .controls-bottom button {
+      background: rgba(30, 58, 95, 0.85); color: #e0e6ed;
+      border: 1px solid #2d5080; padding: 6px 12px; border-radius: 4px;
+      cursor: pointer; font-size: 12px; backdrop-filter: blur(4px);
+      font-family: inherit;
+    }
+    .controls-bottom button:hover { background: rgba(45, 80, 128, 0.95); }
+
+    /* === TOOLTIP === */
+    #tooltip {
+      position: absolute; pointer-events: none;
+      background: rgba(6, 13, 24, 0.97);
+      border: 1px solid #2d5080; border-radius: 6px;
+      padding: 10px 12px; font-size: 12px; max-width: 280px;
+      z-index: 20; opacity: 0; transition: opacity 0.15s;
+      backdrop-filter: blur(8px);
+    }
+    #tooltip.visible { opacity: 1; }
+    #tooltip .tt-name { color: #fff; font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+    #tooltip .tt-owner { color: #5bc0de; font-size: 11px; margin-bottom: 4px; }
+    #tooltip .tt-summary { color: #c2cee0; line-height: 1.45; }
+
+    /* === SIDE PANEL === */
+    #panel {
+      width: 400px; background: #060d18;
+      border-left: 1px solid #1a2942;
+      padding: 22px; overflow-y: auto;
+      transition: margin-right 0.2s ease;
+    }
+    #panel.hidden { margin-right: -400px; }
+    #panel h2 { margin: 0 0 6px 0; font-size: 19px; color: #fff; }
+    #panel .group-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 12px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 14px;
+    }
+    #panel .description {
+      font-size: 13px; line-height: 1.6; color: #c2cee0;
+      margin: 12px 0 16px 0; white-space: pre-wrap;
+    }
+    #panel .owners {
+      font-size: 12px; color: #8fa8c4; margin-bottom: 12px;
+      padding: 8px 12px; background: rgba(30, 58, 95, 0.3); border-radius: 4px;
+    }
+    #panel .owners strong { color: #e0e6ed; }
+    #panel .connections { margin-top: 12px; padding-top: 12px; border-top: 1px solid #1e3a5f; }
+    #panel .connections h3 {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: #6b8aaf; margin: 14px 0 8px 0;
+    }
+    #panel .connection-item {
+      font-size: 12px; padding: 8px 10px; color: #c2cee0;
+      background: rgba(30, 58, 95, 0.3); border-radius: 4px;
+      margin-bottom: 4px; cursor: pointer; transition: background 0.15s;
+      line-height: 1.5;
+    }
+    #panel .connection-item:hover { background: rgba(45, 80, 128, 0.5); }
+    #panel .connection-item .arrow { color: #5bc0de; margin: 0 6px; font-weight: 500; }
+    #panel .connection-item .target { color: #fff; font-weight: 500; }
+    #panel .connection-item .phase-tag {
+      display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 8px;
+      margin-left: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .phase-tag.p1 { background: #0d9488; color: #fff; }
+    .phase-tag.p2 { background: #ca8a04; color: #fff; }
+    .phase-tag.p3 { background: #7c3aed; color: #fff; }
+
+    #panel .tabs-list { list-style: none; padding: 0; margin: 8px 0 0 0; display: flex; flex-direction: column; gap: 4px; }
+    #panel .tabs-list li {
+      padding: 8px 10px; background: rgba(30, 58, 95, 0.25); border-radius: 4px;
+      font-size: 12px; line-height: 1.5;
+    }
+    #panel .tabs-list li.flow { border-left: 2px solid #5bc0de; }
+    #panel .tabs-list .tab-name { color: #fff; font-weight: 500; }
+    #panel .tabs-list .tab-flow { color: #8fa8c4; font-size: 11px; margin-top: 2px; }
+
+    #panel .empty-state { color: #8fa8c4; font-style: italic; font-size: 13px; margin-top: 40px; text-align: center; }
+    #close-panel {
+      position: absolute; top: 12px; right: 14px;
+      background: none; border: none; color: #6b8aaf;
+      font-size: 22px; cursor: pointer; padding: 4px 10px;
+    }
+    #close-panel:hover { color: #fff; }
+
+    /* === SVG === */
+    .node { cursor: pointer; }
+    .node rect, .node circle { transition: filter 0.15s, stroke-width 0.15s; }
+    .node:hover rect, .node:hover circle { filter: brightness(1.15); }
+    .node.dimmed { opacity: 0.15; }
+    .node.tutorial-highlighted rect, .node.tutorial-highlighted circle {
+      filter: drop-shadow(0 0 10px #5bc0de) drop-shadow(0 0 4px #5bc0de);
+      stroke-width: 3.5 !important;
+      stroke: #ffffff !important;
+    }
+    .node.highlighted rect, .node.highlighted circle { filter: brightness(1.15); stroke-width: 3 !important; }
+    .edge { transition: opacity 0.2s, stroke-width 0.2s; }
+    .edge.dimmed { opacity: 0.06; }
+    .edge.highlighted { opacity: 1; stroke-width: 2.5 !important; }
+    .edge.tutorial-highlighted {
+      opacity: 1 !important; stroke-width: 3 !important;
+      filter: drop-shadow(0 0 4px currentColor);
+    }
+    .edge.hidden-by-phase { display: none; }
+    .edge-label { transition: opacity 0.2s; pointer-events: none; }
+    .edge-label.dimmed { opacity: 0; }
+    .edge-label.hidden-by-phase { display: none; }
+    .container-box { pointer-events: none; }
+    .container-label { pointer-events: none; user-select: none; }
+
+    #viewport.animating { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+  </style>
+</head>
+<body>
+  <!-- Top header: visible when no tutorial running -->
+  <div id="header">
+    <div>
+      <h1>Guided Growth - Data Architecture Map <span style="font-size:11px;color:#5bc0de;font-weight:500;margin-left:6px;">v5.0</span></h1>
+      <div class="subtitle">v2 plan locked May 2026. Three LLM paths (Cartesia Line, Async Reflection, Direct), anon_id in MVP. Hover for quick info, click for details, or pick a walkthrough.</div>
+    </div>
+    <div id="controls-bar">
+      <div class="tutorial-launcher">
+        <span>Walkthrough:</span>
+        <button type="button" class="tutorial-menu-trigger" id="tm-trigger" onclick="toggleTutorialMenu(event)">
+          <span class="selected-name" id="tm-selected">Pick one...</span>
+          <span class="caret">▾</span>
+        </button>
+        <div class="tutorial-menu-panel" id="tm-panel">
+          <div class="tm-search">
+            <input type="text" id="tm-search-input" placeholder="Search walkthroughs and tasks..." oninput="filterTutorialMenu(this.value)" />
+          </div>
+          <div id="tm-content"><!-- populated by JS --></div>
+        </div>
+      </div>
+      <div class="phase-toggle" id="phase-toggle-main">
+        <span class="label">Phase:</span>
+        <span class="ph1"><input type="checkbox" id="ph1" checked /><label for="ph1">P1 today</label></span>
+        <span class="ph2"><input type="checkbox" id="ph2" checked /><label for="ph2">P2 MVP req</label></span>
+        <span class="ph3"><input type="checkbox" id="ph3" /><label for="ph3">P3 post-MVP</label></span>
+      </div>
+      <div class="stage-toggle" id="stage-toggle-main">
+        <span class="label">MVP Stage:</span>
+        <span class="stg"><input type="checkbox" id="stg1" checked /><label for="stg1">1</label></span>
+        <span class="stg"><input type="checkbox" id="stg2" checked /><label for="stg2">2</label></span>
+        <span class="stg"><input type="checkbox" id="stg3" checked /><label for="stg3">3</label></span>
+        <span class="stg"><input type="checkbox" id="stg4" checked /><label for="stg4">4</label></span>
+        <span class="stg"><input type="checkbox" id="stg5" checked /><label for="stg5">5</label></span>
+        <button onclick="toggleAllStages(true)" title="Show all stages">all</button>
+        <button onclick="toggleAllStages(false)" title="Hide all stages">none</button>
+      </div>
+      <div id="legend">
+        <div class="legend-item"><span class="legend-line solid"></span><span>data flow</span></div>
+        <div class="legend-item"><span class="legend-line dashed"></span><span>sync pipeline</span></div>
+        <div class="legend-item"><span class="legend-line dotted"></span><span>human-mediated</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial mode: thin strip with phase toggles + step counter + nav buttons -->
+  <div id="tutorial-strip">
+    <div class="phase-toggle" id="phase-toggle-tutorial">
+      <span class="ph1"><input type="checkbox" id="ph1-t" checked /><label for="ph1-t">P1</label></span>
+      <span class="ph2"><input type="checkbox" id="ph2-t" checked /><label for="ph2-t">P2</label></span>
+      <span class="ph3"><input type="checkbox" id="ph3-t" /><label for="ph3-t">P3</label></span>
+    </div>
+    <div class="strip-spacer"></div>
+    <div class="strip-controls">
+      <div class="strip-counter" id="strip-counter">Step 1/13</div>
+      <div class="strip-divider"></div>
+      <button onclick="tutorialPrev()" id="prev-btn">← Previous</button>
+      <button onclick="tutorialNext()" id="next-btn">Next →</button>
+      <button onclick="endTutorial()" class="close-btn">Close ✕</button>
+    </div>
+  </div>
+
+  <!-- Main banner: title + description (large, easier to read) -->
+  <div id="tutorial-banner">
+    <div class="banner-content">
+      <div class="step-title" id="step-title">Loading...</div>
+      <div class="step-desc" id="step-desc">Loading...</div>
+      <div class="branch-buttons" id="branch-buttons" style="display: none;"></div>
+    </div>
+  </div>
+
+  <div id="container">
+    <div id="canvas-wrap">
+      <svg id="canvas" viewBox="0 0 1500 920" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="arrow-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#5bc0de" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </marker>
+          <marker id="arrow-sync" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </marker>
+          <marker id="arrow-human" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </marker>
+          <marker id="arrow-future" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </marker>
+          <radialGradient id="hub-glow-supabase" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.13" />
+            <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+          </radialGradient>
+          <radialGradient id="hub-glow-llm" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.13" />
+            <stop offset="100%" stop-color="#7c3aed" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <g id="viewport">
+          <circle cx="290" cy="630" r="320" fill="url(#hub-glow-supabase)" class="container-box" />
+          <circle cx="1020" cy="500" r="240" fill="url(#hub-glow-llm)" class="container-box" />
+          <rect class="container-box" x="100" y="370" width="380" height="520" rx="20"
+                fill="rgba(16, 185, 129, 0.04)" stroke="#10b981" stroke-width="1" stroke-dasharray="6 4" />
+          <text class="container-label" x="290" y="395" text-anchor="middle" fill="#34d399" font-size="13" font-weight="600">Supabase platform</text>
+          <rect class="container-box" x="1240" y="280" width="220" height="440" rx="16"
+                fill="rgba(220, 38, 38, 0.05)" stroke="#dc2626" stroke-width="1" stroke-dasharray="4 4" />
+          <text class="container-label" x="1350" y="270" text-anchor="middle" fill="#f87171" font-size="13" font-weight="600">Cartesia</text>
+          <g id="edges-layer"></g>
+          <g id="edge-labels-layer"></g>
+          <g id="nodes-layer"></g>
+        </g>
+      </svg>
+      <div class="controls-bottom">
+        <button onclick="resetView()">Reset view</button>
+        <button onclick="zoomIn()">Zoom +</button>
+        <button onclick="zoomOut()">Zoom -</button>
+      </div>
+      <div id="tooltip"></div>
+    </div>
+    <div id="panel" class="hidden">
+      <button id="close-panel" onclick="closePanel()">×</button>
+      <div id="panel-content">
+        <div class="empty-state">Click a node to see details and all its connections.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // GROUPS
+    // ============================================================
+    const GROUPS = {
+      "hub-data":      { color: "#047857", border: "#34d399", label: "Data hub" },
+      "hub-routing":   { color: "#7c3aed", border: "#a78bfa", label: "Routing hub" },
+      "table":         { color: "#0d9488", border: "#2dd4bf", label: "Supabase table" },
+      "table-future":  { color: "#7c3aed", border: "#a78bfa", label: "Supabase table (P3)" },
+      "supabase-svc":  { color: "#0e7490", border: "#22d3ee", label: "Supabase service" },
+      "frontend":      { color: "#2563eb", border: "#60a5fa", label: "App layer" },
+      "cartesia-sub":  { color: "#dc2626", border: "#f87171", label: "Cartesia component" },
+      "external":      { color: "#b91c1c", border: "#ef4444", label: "External service" },
+      "source":        { color: "#ca8a04", border: "#facc15", label: "Source of truth" },
+      "build":         { color: "#475569", border: "#94a3b8", label: "Build / deploy" },
+      "user":          { color: "#1e293b", border: "#cbd5e1", label: "User (human)" }
+    };
+
+    // ============================================================
+    // GRAPH_DATA
+    // PostHog moved off x=720 (was passing through Frontend) to x=560
+    // ============================================================
+    const GRAPH_DATA = {
+      nodes: [
+        { id: "user", label: "User", group: "user", x: 540, y: 290, width: 200, height: 80,
+          owners: "Founding users",
+          summary: "The human. Inputs arrive via voice (mic), tap (UI), or text (typing).",
+          description: "The human using the app. The starting point of every interaction.\n\nThree input modalities:\n\n(1) Voice (mic active): user speaks. Audio captured by browser, streamed to Cartesia Ink STT, transcribed to text, sent to callLLM. Path depends on screen group: Cartesia Line (onboarding) | Async Reflection (check-ins) | Direct + Cartesia Sonic API (everything else).\n\n(2) Tap / click (UI buttons): user taps a habit checkmark, picks a category, presses a button. No LLM fires - Frontend handles directly. Writes to user_data + session_log + PostHog.\n\n(3) Text input (typing in a field): user types into a text field on screen. Frontend sends the text directly to callLLM via the Direct LLM path (no STT, no voice infrastructure).\n\nAll three are MVP. The split shows up architecturally because each takes a different first hop - voice through Cartesia, tap stays in Frontend, text goes Frontend → callLLM." },
+        { id: "supabase", label: "Supabase", group: "hub-data", x: 290, y: 440, width: 220, height: 90, isHub: true,
+          owners: "Engineering team",
+          summary: "PostgreSQL database, auth, storage. The runtime data backbone.",
+          description: "PostgreSQL database, auth service, file storage, Edge Functions, real-time subscriptions, row-level security policies. The runtime data backbone for the entire app.\n\nWhat lives inside Supabase: auth (user accounts), three context tables for the LLM (session_log, screen_contexts, global_context), MP3 storage bucket, plus all user data and the anon_id mapping. Each shown as a child node so connections stay honest." },
+        { id: "supabase-auth", label: "Auth", group: "supabase-svc", x: 175, y: 580, width: 140, height: 62,
+          owners: "Engineering team",
+          summary: "Supabase Auth. Sign up, sign in, sessions, OAuth.",
+          description: "Supabase Auth service. Handles sign up, sign in, OAuth (Apple, Google), email/password, session management.\n\nIssues a user_id that becomes the foreign key on user_profiles. Behavioral tables key on anon_id (set on signup) instead, per v2 plan anonymization (P1-46). Row-level security policies use auth.uid() to scope queries to the current user automatically.\n\nFrontend talks to Auth directly (it's safe - Supabase Auth is designed for client use)." },
+        { id: "session-log", label: "session_log", group: "table", x: 405, y: 580, width: 165, height: 62,
+          owners: "Backend team",
+          summary: "Append-only event stream. The LLM's memory of what just happened. Keyed on anon_id.",
+          description: "Append-only event stream. Every meaningful user action writes here: taps, navigations, habit completions, mood logs, mic activations, settings changes. Keyed on anon_id (NOT auth user_id) per v2 plan anonymization (P1-46).\n\nThe LLM reads this on every callLLM() to catch up on what changed since its last call. This is what makes 'tap-only actions don't trigger the LLM directly' work - they write here, the LLM picks them up next time it speaks.\n\nDistinct from PostHog: PostHog is for product analytics (team reads it later). session_log is for the LLM (read in real time)." },
+        { id: "screen-contexts", label: "screen_contexts", group: "table", x: 175, y: 675, width: 165, height: 62,
+          owners: "Yair + Backend team",
+          summary: "Per-screen rules and content the LLM reads on every call.",
+          description: "Per-screen context block. The LLM reads this for the current screen on every call to know what UX rules apply, what the user is looking at, what tooltips exist.\n\nSynced from the App Master Sheet's Screens tab via seed_contexts.py." },
+        { id: "global-context", label: "global_context", group: "table", x: 405, y: 675, width: 165, height: 62,
+          owners: "Yair + Backend team",
+          summary: "Knowledge base the LLM looks up on demand.",
+          description: "Knowledge base the LLM looks up on demand via lookup_global_context(topic). Layer 2 of the context architecture.\n\n16 entries (GC-01 to GC-16) covering capabilities, missing features, philosophy, founding user, pricing, safety (GC-15), anonymization message (GC-16).\n\nSynced from the App Master Sheet's Global Context tab via seed_global_context.py." },
+        { id: "user-data", label: "User data tables", group: "table", x: 175, y: 770, width: 165, height: 62,
+          owners: "Backend team",
+          summary: "habits, check-ins, journal entries, profiles.",
+          description: "All the user-domain tables: user_profiles, habits, habit_completions, checkins, journal_entries, daily_goals, focus_sessions.\n\nuser_profiles is the only table that holds identity (email, name, auth_user_id). All other behavioral tables key on anon_id per v2 plan (P1-46).\n\nThe frontend reads/writes these directly via Supabase client (auth-protected by RLS). The LLM reads them via callLLM context fetch when relevant." },
+        { id: "mp3-storage", label: "MP3 storage", group: "table", x: 405, y: 770, width: 165, height: 62,
+          owners: "Yair (P1) + Backend (P2)",
+          summary: "Supabase Storage bucket for pre-recorded system speech (check-ins + voice cap).",
+          description: "Supabase Storage bucket holding pre-recorded MP3s in Yair's cloned voice.\n\nv2 plan MVP inventory:\n- ~65 check-in MP3s (prompts, thinking acks, mood-matched closings) for Async Reflection on the 9 check-in screens. VA-generated per P2-30.\n- 1 voice cap MP3.\n\nNO MP3s in onboarding (changed in v2 plan - onboarding is all-Cartesia-Line live TTS now).\n\nPhase 2 adds 8 category + 29 subcategory + 8 milestone = 45 more MP3s.\n\nPhase 1: manual generation + manual upload. Phase 2: automated pipeline reads voice text from App Master, calls Cartesia TTS, uploads here. Concurrency relief - every MP3 played is a Cartesia agent NOT being burned during peak times." },
+        { id: "anon-mapping", label: "anon_id mapping", group: "table", x: 290, y: 855, width: 180, height: 56,
+          owners: "Backend team",
+          summary: "MVP (P1-46, Stage 1). Hashed anon_id separates identity from behavior.",
+          description: "MVP per v2 plan - anonymized data architecture (P1-46, Stage 1, ~3 hours).\n\nA hashed anon_id (UUID, set on signup) separates user identity from behavioral data. Identity (email, name, auth_user_id) lives in user_profiles. Behavioral data (session_log, habits, checkins, journal entries, PostHog events, LLM context) keys on anon_id ONLY.\n\nResult: even our team can't directly link a row of behavioral data back to a person. RLS policy restricts the user_id ↔ anon_id join to service_role only.\n\nUser-facing message: GC-16. POST-AUTH-01 welcome script references it ('anonymized from the first second').\n\nFoundation for future support tokens (FF-09, post-MVP) and open-source AnonShield tool (FF-10, post-MVP)." },
+        { id: "call-llm", label: "callLLM()", group: "hub-routing", x: 1020, y: 500, width: 220, height: 90, isHub: true,
+          owners: "Backend team",
+          summary: "Single entry point for all LLM calls. Routes to one of three paths.",
+          description: "Single entry point for every LLM call in the app. The architectural keystone.\n\nReads context layers (screen_contexts + session_log delta + on-demand global_context lookups), assembles the prompt, decides the path, returns response.\n\nThree paths (v2 plan):\n(1) Cartesia Line - onboarding only (live voice agent, most expensive).\n(2) Async Reflection - check-ins only (MP3 prompt + Cartesia Sonic API for response, ~$0.006/check-in).\n(3) Direct LLM - everything else (text chat, voice convos, settings, insights).\n\nPath decision: Cartesia Line if onboarding voice session active, Async Reflection if on a check-in screen, Direct otherwise. Routing logic lives here.\n\nGlobal crisis safety rule (P1-47, UX-06, GC-15) is part of the base system prompt and applies to every response on every path.\n\nAlways receives anon_id, never auth user_id (P1-46)." },
+        { id: "cartesia-line", label: "Line SDK", group: "cartesia-sub", x: 1350, y: 320, width: 165, height: 58,
+          owners: "Backend team",
+          summary: "Path 1: live voice agent. Onboarding only.",
+          description: "Cartesia's real-time voice agent framework. The CONDUCTOR of voice conversations.\n\nUsed for Path 1 (Cartesia Line) - ONBOARDING ONLY in v2 plan. Screens: WELCOME-01, PREF-01, MIC-01, POST-AUTH-01, ONBOARD-01 to ONBOARD-09, HOME-RETURN, ADV-01, ADV-02.\n\nManages turn-taking, interruption handling, latency optimization, the buffering loop between STT, the LLM, and TTS. When the user stops speaking, Line knows to send the transcript through. When the LLM responds, Line streams it to TTS without waiting for the whole response.\n\nLine doesn't decide WHAT to say - that's the LLM. Line manages WHEN and HOW SMOOTHLY.\n\nMost expensive Cartesia path per minute - reserved for high-trust onboarding moment." },
+        { id: "cartesia-stt", label: "Ink STT", group: "cartesia-sub", x: 1350, y: 408, width: 165, height: 58,
+          owners: "Backend team",
+          summary: "Speech-to-text. Used by all 3 paths when user speaks.",
+          description: "Cartesia's speech-to-text. Converts the audio captured from the user's mic into text the LLM can read.\n\nUsed across all three paths whenever the user speaks:\n- Cartesia Line path (orchestrated by Line SDK)\n- Async Reflection path (called directly by frontend during LISTENING state)\n- Direct LLM path with voice (free-form voice convos)" },
+        { id: "cartesia-sonic-api", label: "Sonic API", group: "cartesia-sub", x: 1350, y: 496, width: 165, height: 58,
+          owners: "Backend team",
+          summary: "Path 2 + 3: TTS-only HTTP endpoint. Cheaper than Line.",
+          description: "Cartesia's TTS-only HTTP API endpoint. New in v2 plan.\n\nUsed by:\n- Path 2 (Async Reflection) for check-in personalized responses - LLM text streamed here for live TTS in cloned voice.\n- Path 3 (Direct LLM) for free-form voice conversations - no Line agent, just Sonic API for the spoken response.\n\nCheaper per minute than Cartesia Line because there's no agent orchestration - we just send text and get audio back. Underlying TTS engine is Sonic-3.\n\nBypasses Line's turn-taking and interruption handling. Frontend manages those concerns directly via the Async Reflection state machine (PROMPT → LISTENING → THINKING → RESPONDING → FOLLOWUP_OPTIONAL → CLOSING → DONE)." },
+        { id: "cartesia-tts", label: "Sonic-3 TTS", group: "cartesia-sub", x: 1350, y: 584, width: 165, height: 58,
+          owners: "Backend + Yair voice",
+          summary: "Underlying TTS engine. Powers Line, Sonic API, and Phase 2 batch.",
+          description: "Cartesia's underlying text-to-speech engine. Generates voice audio from text using Yair's cloned voice.\n\nThree consumers:\n(1) Cartesia Line uses Sonic-3 internally for live agent speech (Path 1).\n(2) Sonic API uses Sonic-3 internally for HTTP TTS calls (Paths 2 and 3).\n(3) Phase 2: batch pre-generation pipeline reads voice text from App Master, calls Sonic-3 directly via REST, uploads MP3s to Supabase Storage." },
+        { id: "llm-api", label: "LLM API", group: "external", x: 1020, y: 720, width: 200, height: 68,
+          owners: "Backend team",
+          summary: "GPT-4o mini for MVP cost. Provider-agnostic via callLLM().",
+          description: "Large language model that powers all coaching responses.\n\nGPT-4o mini for MVP per v2 plan (cost optimization). Provider-agnostic via callLLM() abstraction - swappable to Gemini Flash for further cost cuts, or Groq/Llama for lowest latency. Never Claude/Anthropic for this use case (cost rule).\n\nSame LLM serves all three paths (Cartesia Line, Async Reflection, Direct LLM) - the path differs in how the response is delivered, not which model generates it.\n\nLong-term per Asana Future Features: post-MVP self-hosted on our infrastructure, eventually local on-device for trivial inference." },
+        { id: "frontend", label: "Frontend", group: "frontend", x: 720, y: 500, width: 200, height: 90,
+          owners: "Frontend team",
+          summary: "React + Vite web app. Handles three LLM paths via dedicated hooks.",
+          description: "React + Vite + TypeScript web app. The thing users actually touch.\n\nReads/writes user data tables in Supabase directly via the Supabase client. Talks to Supabase Auth for sign in/up. Writes session_log events on every meaningful action. Loads pre-recorded MP3s from Supabase Storage. Captures live mic audio and streams to Cartesia STT.\n\nThree path-specific hooks (v2 plan):\n- useRealtimeVoice (Cartesia Line, onboarding)\n- useAsyncReflection (state machine for check-ins)\n- useLLM (Direct LLM, optionally with Sonic API for voice TTS)\n\nEvery hook ultimately routes through the backend's callLLM() wrapper.\n\nSends product analytics events to PostHog with anon_id." },
+        { id: "app-master", label: "App Master Sheet", group: "source", x: 720, y: 80, width: 240, height: 70, isAppMaster: true,
+          owners: "Yair",
+          summary: "Master product spec workbook. 13 tabs.",
+          description: "Master product spec workbook (.xlsx, also live as Google Sheet). 13 tabs covering Screens, LLM Activation, Global Context, UX Rules, Tooltips, Tasks, PostHog Events, session_log Events, Architecture, MP3 Files, Coaching Styles, Glossary, plus Read Me.\n\nv2 plan: Future Features (FF-XX) and Brainstorm (BR-XX) migrated out to Asana - they're living idea backlogs and the lockable sheet was friction. FF-XX and BR-XX IDs are still referenced from Global Context.\n\nClick the tabs list below to see exactly which tabs flow to which systems." },
+        { id: "posthog", label: "PostHog", group: "external", x: 920, y: 855, width: 200, height: 68,
+          owners: "Backend team (Said handing over to Amit)",
+          summary: "Product analytics. 70 events. Identifies users by anon_id only.",
+          description: "Product analytics. 70 events tracked across the app per the App Master Sheet's PostHog Events tab (v6.0 added 3 new: llm_call, cartesia_latency_ms, anon_id flow).\n\nFrontend sends events directly via posthog.capture(). Identifies users by anon_id ONLY (never email or auth user_id) per v2 plan anonymization.\n\nNote: PostHog is a separate database. It does NOT feed back into Supabase or the LLM context. It exists to let the team analyze user behavior, not to drive product decisions in real time.\n\nPhase 3: auto-register event definitions via PostHog API." },
+        { id: "figma", label: "Figma", group: "build", x: 985, y: 80, width: 165, height: 68,
+          owners: "Timothy",
+          summary: "Design tool. Designs become code via frontend team.",
+          description: "Design tool. 11 voice flows. Light/dark mode design system using Figma variables.\n\nDesigns flow into the frontend via manual implementation - no automated handoff." },
+        { id: "gitlab", label: "GitLab", group: "build", x: 1170, y: 80, width: 165, height: 68,
+          owners: "Alejandro",
+          summary: "Source code repo. Vercel watches it. Tasks sync from App Master.",
+          description: "Source code repository. Frontend code lives here. Vercel watches the repo and auto-deploys on push to main.\n\nAlso the issue tracker. Tasks from the App Master Sheet's Tasks tab sync to GitLab issues via Alejandro's sync script (first 8 columns of Tasks tab match the sync schema)." },
+        { id: "vercel", label: "Vercel", group: "build", x: 1355, y: 80, width: 165, height: 68,
+          owners: "Frontend + Alejandro",
+          summary: "Hosts the live web app. Auto-deploys from GitLab.",
+          description: "Hosting and deployment platform for the frontend. Watches GitLab repo, auto-deploys on push to main. Domain: guidedgrowthos.com." }
+      ],
+      edges: [
+        // === USER + FRONTEND ===
+        { from: "user", to: "frontend", label: "voice / tap / text", type: "data", phase: 1, stage: 1 },
+
+        // === FRONTEND -> SUPABASE (data writes/reads) ===
+        { from: "frontend", to: "supabase-auth", label: "auth", type: "data", phase: 1, stage: 1 },
+        { from: "frontend", to: "user-data", label: "habits, check-ins", type: "data", phase: 1, stage: 1 },
+        { from: "frontend", to: "session-log", label: "logEvent (anon_id)", type: "data", phase: 1, stage: 1 },
+        { from: "frontend", to: "mp3-storage", label: "loads check-in MP3s", type: "data", phase: 1, stage: 5 },
+        { from: "frontend", to: "posthog", label: "analytics (anon_id)", type: "data", phase: 1, stage: 1 },
+
+        // === FRONTEND -> CALL-LLM (text path) ===
+        { from: "frontend", to: "call-llm", label: "text input (Path 3)", type: "data", phase: 1, stage: 2 },
+
+        // === FRONTEND -> CARTESIA (voice in) ===
+        { from: "frontend", to: "cartesia-stt", label: "live mic audio", type: "data", phase: 1, stage: 3 },
+
+        // === CARTESIA -> CALL-LLM (transcribed user speech) ===
+        { from: "cartesia-stt", to: "call-llm", label: "user speech", type: "data", phase: 1, stage: 2 },
+
+        // === CALL-LLM CONTEXT FETCHES ===
+        { from: "call-llm", to: "screen-contexts", label: "current screen", type: "data", phase: 1, stage: 2 },
+        { from: "call-llm", to: "session-log", label: "state delta", type: "data", phase: 1, stage: 2 },
+        { from: "call-llm", to: "global-context", label: "topic lookups", type: "data", phase: 1, stage: 2 },
+        { from: "call-llm", to: "llm-api", label: "sends prompt", type: "data", phase: 1, stage: 2 },
+
+        // === PATH 1 - CARTESIA LINE (onboarding) ===
+        { from: "call-llm", to: "cartesia-line", label: "Path 1: live agent", type: "data", phase: 1, stage: 3 },
+        { from: "cartesia-line", to: "frontend", label: "live voice (Line)", type: "data", phase: 1, stage: 3 },
+
+        // === PATH 2 - ASYNC REFLECTION (check-ins) ===
+        { from: "call-llm", to: "cartesia-sonic-api", label: "Path 2 + 3: TTS text", type: "data", phase: 1, stage: 5 },
+        { from: "cartesia-sonic-api", to: "frontend", label: "live voice (Sonic)", type: "data", phase: 1, stage: 5 },
+
+        // === SONIC-3 IS UNDERLYING ENGINE FOR LINE + SONIC API + BATCH ===
+        { from: "cartesia-line", to: "cartesia-tts", label: "uses Sonic-3", type: "data", phase: 1, stage: 3 },
+        { from: "cartesia-sonic-api", to: "cartesia-tts", label: "uses Sonic-3", type: "data", phase: 1, stage: 5 },
+
+        // === ANONYMIZATION (MVP per v2 plan, P1-46, Stage 1) ===
+        { from: "supabase-auth", to: "anon-mapping", label: "issues anon_id on signup", type: "data", phase: 1, stage: 1 },
+        { from: "anon-mapping", to: "session-log", label: "anon_id (FK)", type: "data", phase: 1, stage: 1 },
+        { from: "anon-mapping", to: "user-data", label: "anon_id (FK)", type: "data", phase: 1, stage: 1 },
+        { from: "anon-mapping", to: "posthog", label: "anon_id only", type: "data", phase: 1, stage: 1 },
+        { from: "anon-mapping", to: "call-llm", label: "anon_id, never user_id", type: "data", phase: 1, stage: 2 },
+
+        // === APP MASTER SHEET PIPELINES ===
+        { from: "app-master", to: "screen-contexts", label: "Screens → seed_contexts", type: "sync", phase: 1, stage: 1 },
+        { from: "app-master", to: "global-context", label: "Global Context tab", type: "sync", phase: 1, stage: 1 },
+        { from: "app-master", to: "gitlab", label: "Tasks → GitLab issues", type: "sync", phase: 1, stage: null },
+        { from: "app-master", to: "posthog", label: "PostHog Events spec", type: "human", phase: 1, stage: null },
+        { from: "app-master", to: "mp3-storage", label: "manual MP3 upload (P1)", type: "human", phase: 1, stage: 5 },
+
+        // === BUILD / DEPLOY ===
+        { from: "figma", to: "frontend", label: "designs → code", type: "human", phase: 1, stage: null },
+        { from: "gitlab", to: "vercel", label: "watches repo", type: "sync", phase: 1, stage: null },
+        { from: "vercel", to: "frontend", label: "hosts app", type: "sync", phase: 1, stage: null },
+
+        // === PHASE 2: AUTO TTS PIPELINE ===
+        { from: "app-master", to: "cartesia-tts", label: "auto TTS pipeline", type: "sync", phase: 2, stage: null },
+        { from: "cartesia-tts", to: "mp3-storage", label: "auto upload MP3s", type: "sync", phase: 2, stage: null },
+
+        // === PHASE 3: POST-MVP ===
+        { from: "app-master", to: "posthog", label: "auto-register via API", type: "future", phase: 3, stage: null }
+      ]
+    };
+
+    const APP_MASTER_TABS = [
+      { name: "Read Me", flow: "workbook overview + v2 plan summary", live: false },
+      { name: "Screens", flow: "67 screens. Syncs to screen_contexts (Stage 1)", live: true },
+      { name: "LLM Activation", flow: "reference: which path each screen uses (Cartesia Line / Async Reflection / Direct)", live: false },
+      { name: "Global Context", flow: "16 entries. Syncs to global_context (Stage 1)", live: true },
+      { name: "UX Rules", flow: "23 rules. Embedded in screen_contexts content", live: false },
+      { name: "Tooltips", flow: "12 canonical tooltips. Embedded in screen_contexts content", live: false },
+      { name: "Tasks", flow: "59 engineering tasks. Syncs to GitLab issues (Stage 1-5)", live: true },
+      { name: "PostHog Events", flow: "70 events + 3 v6.0 new. Spec source. Auto-register Phase 3", live: true },
+      { name: "session_log Events", flow: "25 events. Reference for backend wiring", live: false },
+      { name: "Architecture", flow: "canonical prose reference (Three LLM Paths, Async Reflection, Anonymization)", live: false },
+      { name: "MP3 Files", flow: "5 entries. Drives ~65 check-in MP3s + Phase 2 auto-pipeline", live: true },
+      { name: "Coaching Styles", flow: "39 scenarios. Reference today, future Layer 3 context", live: false },
+      { name: "Glossary", flow: "41 terms. Team vocabulary reference", live: false },
+      { name: "[Migrated to Asana]", flow: "Future Features (FF-XX, 35 items) + Brainstorm (BR-XX, 18 items). Still referenced from Global Context.", live: false }
+    ];
+
+    // ============================================================
+    // TUTORIALS (v2 plan aligned)
+    // ============================================================
+    const TUTORIALS = {
+      onboarding: {
+        name: "Full onboarding (founding user)",
+        steps: [
+          { highlight: ["frontend", "vercel"], highlightEdges: ["vercel-frontend"],
+            title: "1. Splash screen loads",
+            desc: "User opens guidedgrowthos.com. Vercel serves the React app. Splash logo shows briefly while the frontend initializes Supabase and Cartesia clients. SPLASH-01 is silent - no voice, no LLM, no MP3." },
+          { highlight: ["frontend", "cartesia-line", "cartesia-tts", "call-llm"],
+            highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend", "cartesia-line-cartesia-tts"],
+            title: "2. WELCOME-01: voice hook (Cartesia Line, no MP3)",
+            desc: "v2 plan change: NO MP3 here. Frontend opens a Cartesia Line agent session. Agent speaks the ~8 sec voice hook live via Sonic-3 in cloned voice. One-way broadcast - mic isn't granted yet. Auto-terminates the Line session if user taps any auth button." },
+          { highlight: ["frontend", "supabase-auth", "anon-mapping", "user-data"],
+            highlightEdges: ["frontend-supabase-auth", "supabase-auth-anon-mapping", "anon-mapping-user-data", "frontend-user-data"],
+            title: "3. Auth + anon_id issued",
+            desc: "User taps an auth button. Frontend calls Supabase Auth (Apple, Google, or email). Auth returns user_id. v2 plan: a hashed anon_id is also generated on signup (P1-46). user_profiles holds identity (email, name, auth user_id). All other behavioral tables key on anon_id only." },
+          { highlight: ["frontend", "cartesia-line", "cartesia-tts", "call-llm"],
+            highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend"],
+            title: "4. PREF-01 + MIC-01: voice pref + mic permission (all Line, no MP3)",
+            desc: "v2 plan change: NO MP3s here either. PREF-01 opens a Line session, agent speaks 'Can I talk?' live (~6 sec one-way). User taps 'Talk to me' or 'Screen is fine.' Then MIC-01 opens a new Line session, agent speaks the pre-permission explanation live (~8 sec), browser prompt fires, agent confirms or reassures. Tap-only response - mic isn't yet granted before the browser prompt." },
+          { highlight: ["frontend", "cartesia-line", "cartesia-tts", "call-llm"],
+            highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend"],
+            title: "5. POST-AUTH-01: welcome from the coach (~85 sec, all Line)",
+            desc: "v2 plan change: NO MP3 here. The trust-building moment is now all-Line. Agent speaks the welcome live (~60 sec) via cloned voice. After 'I'm ready' tap, a new Line session speaks the presence ask (~25 sec). Total ~85 sec across two moments. Includes the privacy line: 'anonymized from the first second' (references P1-46)." },
+          { highlight: ["user", "frontend", "cartesia-stt", "cartesia-line", "call-llm", "screen-contexts", "llm-api", "cartesia-tts"],
+            highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-screen-contexts", "call-llm-llm-api", "call-llm-cartesia-line", "cartesia-line-frontend", "cartesia-line-cartesia-tts"],
+            title: "6. ONBOARD-01: first two-way Line conversation",
+            desc: "First time the user actually talks back. User says their name. Browser captures mic → Frontend streams to Ink STT → callLLM. callLLM reads screen_contexts for ONBOARD-01, builds the prompt with anon_id, sends to GPT-4o mini. LLM returns 'Great to meet you, Sarah.' Line speaks it via Sonic-3 in cloned voice. The agent says the user's actual name back - magic moment.\n\nLLM = the brain (decides words). Sonic-3 = the voice engine. Line = the conductor (orchestrates STT, LLM, TTS, turn-taking)." },
+          { highlight: ["call-llm", "screen-contexts", "session-log"], highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log"],
+            title: "7. ONBOARD-02: experience fork (the split)",
+            desc: "User answers 'have you tracked habits before?'. Line session continues from ONBOARD-01 (same conversation context). callLLM reads the new screen_contexts (ONBOARD-02). Two routes diverge from here. Pick a branch below to follow.",
+            branch: {
+              branchA: {
+                label: "→ New to habit tracking",
+                steps: [
+                  { highlight: ["call-llm", "cartesia-line", "screen-contexts", "user-data"],
+                    highlightEdges: ["call-llm-screen-contexts", "call-llm-cartesia-line"],
+                    title: "8a. ONBOARD-03: pick a category",
+                    desc: "User picks one of 8 areas (sleep, move, eat, energy, stress, focus, break habits, organize). callLLM reads ONBOARD-03 context. Category-specific response spoken via Line for MVP. (Phase 2 may pre-record the 8 category responses as MP3s for cost.)" },
+                  { highlight: ["call-llm", "cartesia-line", "screen-contexts", "user-data", "frontend"],
+                    highlightEdges: ["frontend-user-data", "call-llm-cartesia-line"],
+                    title: "9a. ONBOARD-04 + 05: subcategory + habit selection",
+                    desc: "User narrows to 1-2 subcategories. Each subcategory gets a unique coaching response via Line (29 SUB-* responses planned, may become MP3 in Phase 2). User picks 1-3 habits or creates custom. Each habit row written to user_data.habits keyed on anon_id." },
+                  { highlight: ["frontend", "user-data", "session-log"], highlightEdges: ["frontend-user-data", "frontend-session-log"],
+                    title: "10a. ONBOARD-06: habit configuration loop",
+                    desc: "Voice auto-fills time, frequency, reminder for each habit. 'Every day at 9:30 PM' parses to all 7 days, 21:30, reminder=true. Loops per habit. session_log records every form_submit (with anon_id)." }
+                ]
+              },
+              branchB: {
+                label: "→ Already have experience",
+                steps: [
+                  { highlight: ["user", "frontend", "cartesia-stt", "call-llm"], highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm"],
+                    title: "8b. ADV-01: voice goals submission",
+                    desc: "User describes existing habits free-form by voice. 'I do gym 3x a week, meditate mornings, read before bed.' Browser mic → Frontend streams → Ink STT transcribes the full transcript. The transcript flows into callLLM as the user's first input on this screen." },
+                  { highlight: ["call-llm", "llm-api", "user-data", "frontend"], highlightEdges: ["call-llm-llm-api", "frontend-user-data"],
+                    title: "9b. ADV-02: AI-generated plan review",
+                    desc: "callLLM sends the transcript to GPT-4o mini with an 'organize these into structured habits' prompt. LLM returns a clean structured habit list (name, category, suggested frequency). User reviews on screen and can confirm, regenerate, or edit. Approved habits get written as rows in user_data.habits keyed on anon_id." },
+                  { highlight: ["frontend", "user-data", "session-log"], highlightEdges: ["frontend-user-data", "frontend-session-log"],
+                    title: "10b. ADV-03: habit configuration loop",
+                    desc: "For each approved habit, voice auto-fills time, frequency, and reminder. 'Every day at 9:30 PM' parses to all 7 days, 21:30, reminder=true. Same loop as branch A - just operating on the AI-organized list. session_log records every form_submit." }
+                ]
+              }
+            }
+          },
+          { highlight: ["frontend", "user-data", "call-llm"], highlightEdges: ["frontend-user-data"],
+            title: "11. ONBOARD-07-08: review + reflection setup",
+            desc: "User reviews the configured plan. Picks reflection style (guided / custom / freeform - mandatory choice per the v2 plan). Sets evening check-in time. Each preference saved to user_data.user_profile (reflection_style)." },
+          { highlight: ["frontend", "call-llm", "cartesia-line", "cartesia-tts", "user-data"],
+            highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend"],
+            title: "12. ONBOARD-09: founding user moment",
+            desc: "callLLM generates the founding user message: 'as one of the first 50 people to use Guided Growth...'. Line speaks it via Sonic-3 in cloned voice. user_profile.onboarding_state = 'complete'. All habits activated. Reminders scheduled. Line session terminates - this was the longest single Line session of MVP." },
+          { highlight: ["frontend", "user-data", "session-log"], highlightEdges: ["frontend-user-data", "frontend-session-log"],
+            title: "13. HOME-FIRST: arrival",
+            desc: "Frontend renders home screen. Loads today's habits. Writes navigate event to session_log. Onboarding complete.\n\nUser has been touched by Frontend, Auth, anon_id mapping, callLLM, all Cartesia components (Line, Ink STT, Sonic-3), GPT-4o mini, and 4 Supabase tables. Zero MP3s used (v2 plan)." }
+        ]
+      },
+
+      voice: {
+        name: "Real-time voice flow (Cartesia Line - onboarding only)",
+        steps: [
+          { highlight: ["user", "frontend", "session-log"], highlightEdges: ["user-frontend", "frontend-session-log"],
+            title: "1. Cartesia Line activates on an onboarding screen",
+            desc: "v2 plan: Cartesia Line is reserved for ONBOARDING ONLY (most expensive Cartesia path). Frontend opens a WebSocket to Cartesia Line on these screens: WELCOME-01, PREF-01, MIC-01, POST-AUTH-01, ONBOARD-01 to ONBOARD-09, HOME-RETURN, ADV-01, ADV-02. mic_tapped or screen_loaded event written to session_log." },
+          { highlight: ["user", "frontend", "cartesia-stt", "cartesia-line"], highlightEdges: ["user-frontend", "frontend-cartesia-stt", "call-llm-cartesia-line"],
+            title: "2. User speaks - Ink STT captures",
+            desc: "User speaks. Browser captures mic via getUserMedia. Frontend streams audio chunks to Cartesia Ink STT. Cartesia Line SDK manages the streaming - silence detection, decides when the user has finished speaking, forwards the transcript." },
+          { highlight: ["cartesia-stt", "call-llm", "cartesia-line"], highlightEdges: ["cartesia-stt-call-llm"],
+            title: "3. Transcript routed to callLLM",
+            desc: "Once the user pauses, Ink STT sends the final transcript to callLLM. SINGLE entry point for all LLM calls regardless of path. Voice or text input, doesn't matter, it goes through here. callLLM detects the active Line session and routes Path 1." },
+          { highlight: ["call-llm", "screen-contexts", "session-log", "global-context"], highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log", "call-llm-global-context"],
+            title: "4. callLLM reads 3 context layers",
+            desc: "Layer 1: screen_contexts (current screen rules). Layer 2: session_log delta (what's changed since the last llm_call - taps, navigations, completions). Layer 3 (on demand): global_context (knowledge base lookups). Layers prepended to the base prompt. Crisis safety rule (P1-47, UX-06) is part of the base prompt itself." },
+          { highlight: ["call-llm", "llm-api"], highlightEdges: ["call-llm-llm-api"],
+            title: "5. Prompt sent to GPT-4o mini",
+            desc: "Final prompt: BASE_PROMPT (with crisis safety rule) + screen_contexts + state_delta + user_input. Sent to GPT-4o mini. Returns text response. Cost: ~$0.0005 per turn. The LLM is the BRAIN - it decides what to say." },
+          { highlight: ["cartesia-line", "cartesia-tts", "call-llm"], highlightEdges: ["call-llm-cartesia-line", "cartesia-line-cartesia-tts"],
+            title: "6. WHAT IS LINE vs SONIC-3 vs SONIC API vs the LLM?",
+            desc: "LLM = the brain. Decides the words.\nSonic-3 = the underlying TTS engine. Generates audio in cloned voice.\nLine SDK = Path 1 conductor. Wraps Sonic-3 with turn-taking, interruption, latency optimization. Used for onboarding only.\nSonic API = Path 2 + 3 alternative. TTS-only HTTP endpoint that uses Sonic-3 internally. Cheaper than Line because no orchestration. Used for check-ins (Async Reflection) and free-form voice convos." },
+          { highlight: ["cartesia-line", "frontend", "session-log"], highlightEdges: ["cartesia-line-frontend", "frontend-session-log"],
+            title: "7. Audio streams back to Frontend",
+            desc: "Sonic-3 generates audio. Line streams it to the frontend over the open WebSocket. Frontend plays it. User hears the response. Mic stays listening (UX-02) - they can speak again without re-tapping. llm_call event written to session_log so the next call's delta starts here." }
+        ]
+      },
+
+      asyncreflection: {
+        name: "Async Reflection (check-ins, v2 plan)",
+        steps: [
+          { highlight: ["user", "frontend"], highlightEdges: ["user-frontend"],
+            title: "1. User opens evening check-in",
+            desc: "User taps mic or check-in button on HOME-EVENING. Routes to ECHECK-01. v2 plan: check-ins use the Async Reflection pattern - NOT Cartesia Line. Cost target: ~$0.006/check-in (vs ~$0.05+ if it were Line). Used by all 9 check-in screens: MCHECK-01, MCHECK-02, ECHECK-01 to ECHECK-06." },
+          { highlight: ["frontend", "mp3-storage"], highlightEdges: ["frontend-mp3-storage"],
+            title: "2. PROMPT state: pre-recorded MP3 plays",
+            desc: "Frontend enters PROMPT state. Loads the prompt MP3 from Supabase Storage in Yair's cloned voice. 'Hey [Name] - let's wrap up your day. Would you like to go through your habits yourself, or want me to read them off?' Pre-recorded once via Cartesia playground (per P2-30). The predictable parts of every check-in are MP3s - that's where the cost savings come from." },
+          { highlight: ["frontend", "cartesia-stt"], highlightEdges: ["frontend-cartesia-stt"],
+            title: "3. LISTENING state: mic opens, user responds",
+            desc: "MP3 finishes. Frontend enters LISTENING state. Opens Cartesia Ink STT for streaming transcription (parallel with tap UI - user can choose). User responds: 'I'll do it' / 'Read them off' / or just taps." },
+          { highlight: ["frontend", "mp3-storage", "cartesia-stt", "call-llm"], highlightEdges: ["frontend-mp3-storage", "cartesia-stt-call-llm"],
+            title: "4. THINKING state: ack MP3 plays while LLM processes",
+            desc: "User finishes speaking (silence detection) or taps Check In. Frontend enters THINKING state. Plays a brief MP3 acknowledgment ('Got it...' / 'Hmm, let me see...' / 'OK...') from Supabase Storage while callLLM processes. Target: 2-3 sec of perceived latency hidden by the ack MP3. callLLM runs the same context+delta logic as any other path." },
+          { highlight: ["call-llm", "llm-api", "screen-contexts", "session-log"], highlightEdges: ["call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log"],
+            title: "5. callLLM generates personalized response",
+            desc: "callLLM reads screen_contexts (ECHECK-01), session_log delta (today's habit completions captured via tap throughout the day), generates anon_id-keyed prompt, sends to GPT-4o mini. LLM returns personalized response text: 'Three out of four today - solid day. Rest well, [Name].'" },
+          { highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts"], highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-cartesia-tts"],
+            title: "6. RESPONDING state: Sonic API streams TTS (NOT Line)",
+            desc: "callLLM streams the response text to Cartesia Sonic API (TTS-only HTTP endpoint, uses Sonic-3 underneath). NOT Cartesia Line. Sonic API returns TTS audio in cloned voice. Cheaper than Line because there's no agent orchestration - just text-in, audio-out." },
+          { highlight: ["cartesia-sonic-api", "frontend", "session-log"], highlightEdges: ["cartesia-sonic-api-frontend", "frontend-session-log"],
+            title: "7. Audio plays + voice/text sync",
+            desc: "Frontend plays the Sonic API audio AND displays text alongside (UX-22 voice + text sync). User can read along or just listen. llm_call event written to session_log with anon_id." },
+          { highlight: ["frontend", "mp3-storage"], highlightEdges: ["frontend-mp3-storage"],
+            title: "8. FOLLOWUP_OPTIONAL → CLOSING → DONE",
+            desc: "If LLM determined a follow-up is needed (FOLLOWUP_OPTIONAL), state machine loops back to LISTENING. Otherwise CLOSING state plays a mood-matched MP3 closing from Supabase Storage (4 evening closings: all-done / most / few / none). State machine ends in DONE.\n\nv2 plan inventory: ~65 MP3s total per P2-30 (prompts, thinking acks, mood-matched closings) - VA-generated via Cartesia playground. Filenames TBD per P2-36 (Yair tone bible)." }
+        ]
+      },
+
+      direct: {
+        name: "Direct LLM (text chat + voice convos)",
+        steps: [
+          { highlight: ["user", "frontend"], highlightEdges: ["user-frontend"],
+            title: "1. User opens text chat or VOICE-01",
+            desc: "v2 plan Path 3: Direct LLM. Used for everything except onboarding (Path 1) and check-ins (Path 2). Includes: text chat, free-form voice conversations (VOICE-01, capped at 5/day per UX-12), habit edits, settings, insights, focus sessions, milestones." },
+          { highlight: ["user", "frontend", "call-llm"], highlightEdges: ["user-frontend", "frontend-call-llm"],
+            title: "2. Text path: typing → callLLM directly",
+            desc: "Text input case: user types in a chat field. Frontend POSTs to /api/llm. callLLM runs context fetch + state delta + GPT-4o mini call. Pure text round-trip. No voice infrastructure involved. Cheapest path - just LLM API tokens." },
+          { highlight: ["user", "frontend", "cartesia-stt", "call-llm"], highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm"],
+            title: "3. Voice path: Ink STT → callLLM (no Line)",
+            desc: "Voice input case (VOICE-01 free-form): user taps mic, speaks. Frontend streams mic audio to Cartesia Ink STT. STT sends transcript to callLLM. NO Cartesia Line agent here - this is a one-shot transcription, not a managed conversation. callLLM detects no Line session active and routes Path 3." },
+          { highlight: ["call-llm", "llm-api", "screen-contexts", "session-log"], highlightEdges: ["call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log"],
+            title: "4. callLLM does its standard thing",
+            desc: "Same wrapper, same context layers, same anon_id. Crisis safety rule (P1-47) applies as always. Returns text response." },
+          { highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts", "frontend"], highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-frontend"],
+            title: "5. Optional voice TTS via Sonic API",
+            desc: "If voice mode (ai_output_mode = 'voice'): callLLM streams the response text to Sonic API for live TTS in cloned voice. Frontend plays audio. Same Sonic API used by Async Reflection - just no MP3 brackets around it. If text mode: response just renders as text. No Line, no MP3, no async state machine. Simplest path." }
+        ]
+      },
+
+      taponly: {
+        name: "Tap-only action (no LLM)",
+        steps: [
+          { highlight: ["user", "frontend"], highlightEdges: ["user-frontend"],
+            title: "1. User taps a habit complete button",
+            desc: "User is on HOME-EVENING and taps the checkmark on 'gym' (tap input). No mic. No voice. Pure tap. THIS DOES NOT FIRE THE LLM." },
+          { highlight: ["user", "frontend", "user-data", "session-log", "posthog"], highlightEdges: ["user-frontend", "frontend-user-data", "frontend-session-log", "frontend-posthog"],
+            title: "2. Three writes happen, no LLM",
+            desc: "Frontend writes three things in parallel:\n(a) user_data.habit_completions row (keyed on anon_id)\n(b) session_log event 'habit_completed' with payload (keyed on anon_id)\n(c) PostHog event 'complete_habit' for analytics (identified by anon_id only - NEVER email)\n\nNotice what's NOT happening: no callLLM call. Cost so far: zero LLM dollars." },
+          { highlight: ["session-log"], highlightEdges: [],
+            title: "3. session_log accumulates the state delta",
+            desc: "Throughout the day, the user might tap-complete several habits, change a setting, navigate around. Each action writes to session_log. The LLM is silent the whole time. session_log is building up a delta the LLM hasn't seen yet." },
+          { highlight: ["frontend", "mp3-storage", "call-llm", "session-log"], highlightEdges: ["frontend-mp3-storage", "call-llm-session-log"],
+            title: "4. Later: user opens evening check-in (Async Reflection fires)",
+            desc: "Later, when the user opens the evening check-in, the Async Reflection state machine starts (NOT Cartesia Line - this is a check-in). PROMPT MP3 plays first. Then in the THINKING state, callLLM fires. callLLM reads the session_log delta since the last llm_call event - all those taps from earlier are right there in the prompt." },
+          { highlight: ["call-llm", "llm-api", "session-log", "cartesia-sonic-api"], highlightEdges: ["call-llm-llm-api", "call-llm-session-log", "call-llm-cartesia-sonic-api"],
+            title: "5. LLM is fully caught up, responds via Sonic API",
+            desc: "Prompt to LLM includes: 'Recent activity: habit_completed gym at 14:30, habit_completed water at 15:00, settings_changed (evening reminder time)...'. LLM responds: 'I see you knocked out gym and water already. Solid day. How are you feeling about your evening?'\n\nResponse goes through Sonic API for TTS (Async Reflection RESPONDING state), not Line.\n\nThe LLM was silent for the taps but is now fully aware of them. THIS is the 'caught up' principle." }
+        ]
+      },
+
+      mp3pipeline: {
+        name: "MP3 generation pipeline (check-ins, Phase 2 auto)",
+        phaseRequired: 2,
+        steps: [
+          { highlight: ["app-master", "mp3-storage"], highlightEdges: ["app-master-mp3-storage"],
+            title: "1. v2 plan inventory: ~65 check-in MP3s + voice cap",
+            desc: "What's pre-recorded in MVP: ~65 Async Reflection MP3s for the 9 check-in screens (prompts, thinking acks, mood-matched closings) per P2-30 + the voice cap message. NO onboarding MP3s anymore (changed in v2 plan - onboarding is all-Cartesia-Line live TTS)." },
+          { highlight: ["app-master", "mp3-storage"], highlightEdges: ["app-master-mp3-storage"],
+            title: "2. Today (Stage 5): manual VA generation",
+            desc: "Yair (or VA per P2-30) reads voice text from the App Master Sheet's MP3 Files tab + Yair tone bible (P2-36). Goes to cartesia.ai playground. Pastes text. Generates MP3. Downloads. Uploads to Supabase MP3 storage manually. Updates URL in MP3 Files tab. Slow and not idempotent." },
+          { highlight: ["app-master"], highlightEdges: [],
+            title: "3. Phase 2: sheet schema gets a content hash column",
+            desc: "Before automation works, the MP3 Files tab needs schema changes: text_hash (hash of source voice text), last_generated_at (timestamp), current_storage_url (where the MP3 lives), version (bump on regenerate). Without text_hash we can't detect what changed. Without version we can't roll back." },
+          { highlight: ["app-master", "cartesia-tts"], highlightEdges: ["app-master-cartesia-tts"],
+            title: "4. Pipeline script reads sheet, hashes text",
+            desc: "generate_mp3.py reads the MP3 Files tab. For each row, computes hash(voice_text). Compares to the sheet's stored text_hash. Only rows where the hash differs (or has no current_storage_url) get queued for regeneration. Idempotent re-runs are free.\n\nNote: this calls Cartesia's REST API to Sonic-3 directly. NOT through Line, NOT through Sonic API runtime. Batch generation is just HTTPS POST to Sonic-3 directly." },
+          { highlight: ["cartesia-tts", "mp3-storage"], highlightEdges: ["cartesia-tts-mp3-storage"],
+            title: "5. Sonic-3 returns MP3, pipeline uploads with version",
+            desc: "Sonic-3 returns MP3 binary in Yair's cloned voice. Pipeline uploads to Supabase Storage at a versioned path (e.g. voice-assets/checkin/morning_prompt_v3.mp3). Old version stays in storage for safe rollback. Sheet row is updated: text_hash, last_generated_at, current_storage_url, version all written back via Sheets API." },
+          { highlight: ["frontend", "mp3-storage"], highlightEdges: ["frontend-mp3-storage"],
+            title: "6. Frontend reads current MP3 URL from manifest",
+            desc: "Frontend loads a voice-manifest.json (built at deploy time, or queried from sheet on app start). Manifest maps screen_id → current_storage_url. New MP3s appear automatically on next deploy or manifest refresh. The Async Reflection state machine reads from this manifest in PROMPT, THINKING, and CLOSING states." }
+        ]
+      },
+
+      context: {
+        name: "Context assembly (3 layers)",
+        steps: [
+          { highlight: ["call-llm"], highlightEdges: [],
+            title: "1. callLLM is invoked (any path)",
+            desc: "Voice or text input arrives. callLLM is the single entry point regardless of which path will deliver the response (Cartesia Line, Async Reflection via Sonic API, or Direct LLM). Before sending anything to the LLM API, it has to assemble the prompt. The prompt has 3 dynamic layers on top of the base coaching prompt." },
+          { highlight: ["call-llm", "screen-contexts"], highlightEdges: ["call-llm-screen-contexts"],
+            title: "2. Layer 1: screen_contexts (always)",
+            desc: "callLLM fetches the current screen's context block. Tells the LLM what screen the user is on, what UX rules apply (UX-01 mic persistence, UX-02 mic stays listening, etc.), what tooltips exist. Mostly static - changes when the user navigates." },
+          { highlight: ["call-llm", "session-log"], highlightEdges: ["call-llm-session-log"],
+            title: "3. Layer 2: session_log delta (always)",
+            desc: "callLLM reads session_log events since the last llm_call timestamp. Tells the LLM what's happened since it last spoke - habits completed, navigations, settings changed, mic activations. Dynamic - rebuilt on every call. Filtered by anon_id (P1-46)." },
+          { highlight: ["call-llm", "global-context"], highlightEdges: ["call-llm-global-context"],
+            title: "4. Layer 3: global_context (on demand)",
+            desc: "If the LLM decides it needs to look something up (capability info, FAQ, founding user info, philosophy, anonymization message GC-16, crisis safety message GC-15), it calls the lookup_global_context(topic) tool mid-response. Layer 3 is NOT always-injected - it's pulled only when needed to keep prompts lean." },
+          { highlight: ["call-llm", "llm-api", "session-log"], highlightEdges: ["call-llm-llm-api", "call-llm-session-log"],
+            title: "5. Final assembled prompt sent",
+            desc: "BASE_PROMPT (with crisis safety rule from P1-47) + Layer 1 (screen rules) + Layer 2 (recent activity) + Layer 3 (any topic lookups) + user_input. Total: target <2000 prompt tokens average. Sent to GPT-4o mini. Response comes back. callLLM logs llm_call event - the timestamp source for the NEXT call's delta. The cycle continues." }
+        ]
+      },
+
+      anonymization: {
+        name: "Anonymization (P1-46, MVP)",
+        steps: [
+          { highlight: ["frontend", "supabase-auth", "user-data"], highlightEdges: ["frontend-supabase-auth"],
+            title: "1. User signs up - identity captured",
+            desc: "v2 plan: anonymization is MVP, not Phase 3 (P1-46, Stage 1, ~3 hours). On signup, Supabase Auth captures identity (email, password). user_profiles row created with auth_user_id, email, name." },
+          { highlight: ["supabase-auth", "anon-mapping", "user-data"], highlightEdges: ["supabase-auth-anon-mapping"],
+            title: "2. anon_id generated and mapped",
+            desc: "Database trigger (or backend on signup) generates a UUID anon_id. Stored on user_profiles. user_id ↔ anon_id mapping is locked behind Supabase RLS to service_role only. Even our team can't directly correlate anon_id → email without service_role access." },
+          { highlight: ["anon-mapping", "session-log", "user-data", "posthog"],
+            highlightEdges: ["anon-mapping-session-log", "anon-mapping-user-data", "anon-mapping-posthog"],
+            title: "3. All behavioral tables key on anon_id",
+            desc: "session_log, habits, habit_completions, checkins, journal_entries, daily_goals all key on anon_id (NOT auth user_id). PostHog identify() also uses anon_id only - never email, never auth user_id. Frontend reads anon_id from user_profiles after auth and uses it everywhere downstream." },
+          { highlight: ["call-llm", "anon-mapping", "screen-contexts", "global-context"],
+            highlightEdges: ["anon-mapping-call-llm"],
+            title: "4. callLLM receives anon_id, never user_id",
+            desc: "Every callLLM() invocation receives anon_id, never auth user_id. The LLM context never includes email or last_name fields. The callLLM wrapper handles the lookup once at the boundary. Backend services use anon_id everywhere downstream." },
+          { highlight: ["call-llm", "global-context"], highlightEdges: ["call-llm-global-context"],
+            title: "5. User-facing message: GC-16",
+            desc: "If asked about privacy, the LLM looks up GC-16 (Anonymization / privacy) via lookup_global_context. Standard message. Also referenced in POST-AUTH-01 welcome script: 'anonymized from the first second.' Foundation for future support tokens (Asana FF-09, post-MVP) that let users generate a temporary code for support troubleshooting." }
+        ]
+      }
+    };
+
+    // ============================================================
+    // TUTORIAL MENU - two-section dropdown (Flows + Tasks)
+    // Tasks section is empty until populated. Stages 1-5 per v2 plan.
+    // ============================================================
+    const FLOW_TUTORIALS = [
+      { id: "onboarding",      name: "Full onboarding (founding user)" },
+      { id: "voice",           name: "Real-time voice flow (Cartesia Line)" },
+      { id: "asyncreflection", name: "Async Reflection (check-ins, v2 plan)" },
+      { id: "direct",          name: "Direct LLM (text chat + voice convos)" },
+      { id: "taponly",         name: "Tap-only action (no LLM)" },
+      { id: "context",         name: "Context assembly (3 layers)" },
+      { id: "anonymization",   name: "Anonymization (P1-46, MVP)" },
+      { id: "mp3pipeline",     name: "MP3 generation pipeline (Phase 2 auto)" }
+    ];
+
+    // === TASK_TUTORIALS - 42 active tasks across Stages 1-5 (Done/Obsolete excluded) ===
+    // Each task has: id, taskId, name, stage, status, steps[]
+    // Status values: "notstarted" | "inprogress" | "done"  (done tasks are filtered out of the menu)
+    const TASK_TUTORIALS = [
+  // ============================================================
+  // STAGE 1 - FOUNDATION (10 tasks)
+  // ============================================================
+  {
+    id: "p1-11", taskId: "P1-11", name: "Build VoiceContext Provider", stage: 1, status: "inprogress",
+    steps: [{
+      title: "P1-11: VoiceContext Provider (Stage 1)",
+      desc: "Frontend React Context provider that holds voice state across the app: ai_output_mode (voice/screen), mic_permission (granted/denied), Cartesia session lifecycle, current voice path.\n\nEvery LLM-active screen wraps in this provider. P1-39 extends it to track Cartesia session lifecycle for callLLM path routing.\n\nOwner: Mint (frontend). Status: In Progress.",
+      highlight: ["frontend"],
+      highlightEdges: []
+    }]
+  },
+  {
+    id: "p1-17", taskId: "P1-17", name: "Wire SPLASH-01", stage: 1, status: "inprogress",
+    steps: [{
+      title: "P1-17: Wire SPLASH-01 (loading screen)",
+      desc: "Silent loading screen. No voice, no LLM, no MP3. Display logo while frontend initializes Supabase + Cartesia clients. Auto-navigate to WELCOME-01 when ready.\n\nNo backend touch needed - pure frontend wire-up.\n\nOwner: Mint. Status: In Progress.",
+      highlight: ["frontend", "vercel"],
+      highlightEdges: ["vercel-frontend"]
+    }]
+  },
+  {
+    id: "p1-18", taskId: "P1-18", name: "Wire PREF-01", stage: 1, status: "inprogress",
+    steps: [{
+      title: "P1-18: Wire PREF-01 (Voice/Screen Preference)",
+      desc: "v2 plan: Cartesia Line agent speaks 'Can I talk?' live (~6 sec one-way broadcast, NO MP3). User taps 'Talk to me' or 'Screen is fine.' Save user_profile.ai_output_mode. Mic isn't granted yet - tap-only response.\n\nDepends on P1-42 (shared context builder) + Line being deployed (P1-15).\n\nOwner: Mint. Status: In Progress.",
+      highlight: ["frontend", "cartesia-line", "cartesia-tts", "user-data"],
+      highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend", "cartesia-line-cartesia-tts", "frontend-user-data"]
+    }]
+  },
+  {
+    id: "p1-19", taskId: "P1-19", name: "Wire MIC-01", stage: 1, status: "inprogress",
+    steps: [{
+      title: "P1-19: Wire MIC-01 (Mic Permission)",
+      desc: "v2 plan: Line agent speaks pre-permission explanation live (~8 sec, NO MP3). Button triggers browser's getUserMedia() prompt. Line agent confirms (granted) or reassures (denied). Save user_profile.mic_permission.\n\nThe single biggest friction point in the funnel.\n\nOwner: Mint. Status: In Progress.",
+      highlight: ["frontend", "cartesia-line", "cartesia-tts", "user-data"],
+      highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend", "frontend-user-data"]
+    }]
+  },
+  {
+    id: "p1-20", taskId: "P1-20", name: "Wire POST-AUTH-01 (Welcome)", stage: 1, status: "inprogress",
+    steps: [{
+      title: "P1-20: Wire POST-AUTH-01 (Coach Welcome ~85 sec)",
+      desc: "v2 plan: ALL-Cartesia-Line live TTS (NO MP3). Welcome speech (~60s) covers what the app is, how check-ins work, anonymization promise. After 'I'm ready' tap, separate Line session for presence ask (~25s). Includes: 'anonymized from the first second' (references P1-46).\n\nThe trust-building moment. Total ~85 sec across two Line sessions.\n\nOwner: Mint. Status: In Progress.",
+      highlight: ["frontend", "cartesia-line", "cartesia-tts", "anon-mapping"],
+      highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend", "supabase-auth-anon-mapping"]
+    }]
+  },
+  {
+    id: "p1-31", taskId: "P1-31", name: "Seed AI Context into Supabase", stage: 1, status: "notstarted",
+    steps: [{
+      title: "P1-31: Seed screen_contexts + global_context",
+      desc: "Run seed_contexts.py and seed_global_context.py. These read the App Master Sheet (Screens tab → screen_contexts table; Global Context tab → global_context table).\n\nFirst-time seed populates Supabase. Subsequent runs update changed rows by hash. This is what lets the LLM read screen rules and the knowledge base on every callLLM().\n\nOwner: Amit (backend). Status: Not Started.",
+      highlight: ["app-master", "screen-contexts", "global-context"],
+      highlightEdges: ["app-master-screen-contexts", "app-master-global-context"]
+    }]
+  },
+  {
+    id: "p1-32", taskId: "P1-32", name: "Build session_log Table + Write API", stage: 1, status: "notstarted",
+    steps: [{
+      title: "P1-32: session_log table + POST /api/session_log",
+      desc: "Create Supabase table: session_log {id, anon_id, session_id, timestamp, event_type, screen_id, payload JSONB}. Append-only event stream. Build POST /api/session_log endpoint that frontend calls on every meaningful user action.\n\nTHIS IS THE STATE DELTA SOURCE - what callLLM reads to catch up on what's happened since the last LLM call. Critical foundation for the 'caught up' principle.\n\nKeyed on anon_id per P1-46 (NOT auth user_id).\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["frontend", "session-log", "anon-mapping"],
+      highlightEdges: ["frontend-session-log", "anon-mapping-session-log"]
+    }]
+  },
+  {
+    id: "p1-33", taskId: "P1-33", name: "Build Context API Endpoint", stage: 1, status: "notstarted",
+    steps: [{
+      title: "P1-33: GET /api/context endpoint",
+      desc: "GET /api/context?screen_id=X&anon_id=Y&since_ts=Z\n\nReturns: { screen_id, context_block, version, state_delta: [...] }\n\nReads screen_contexts (Layer 1) for the current screen. Reads session_log (Layer 2) for events since since_ts. Cache context_block 60s; state_delta always fresh.\n\nThe data feed for callLLM. P1-34 wraps this.\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["call-llm", "screen-contexts", "session-log"],
+      highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log"]
+    }]
+  },
+  {
+    id: "p1-39", taskId: "P1-39", name: "Extend VoiceContext for Cartesia session lifecycle", stage: 1, status: "notstarted",
+    steps: [{
+      title: "P1-39: Track Cartesia session in VoiceContext",
+      desc: "FOLLOW-UP on P1-11. Add cartesiaSessionActive boolean to VoiceContext. Set true when Line session starts, false when it ends or user navigates away.\n\nThe callLLM() wrapper checks this to decide path: Cartesia Line if onboarding session active, else Async Reflection or Direct.\n\nAlso handles cleanup so we don't burn Cartesia minutes after user leaves a screen.\n\nOwner: Mint. Status: Not Started. (Pending Amit verification - if his current implementation already supports this, this task gets deleted.)",
+      highlight: ["frontend", "cartesia-line", "call-llm"],
+      highlightEdges: ["call-llm-cartesia-line"]
+    }]
+  },
+  {
+    id: "p1-46", taskId: "P1-46", name: "Anonymization MVP - anon_id everywhere", stage: 1, status: "notstarted",
+    steps: [
+      {
+        title: "P1-46 (1/2): Add anon_id column + update FKs",
+        desc: "Schema: ALTER TABLE user_profiles ADD COLUMN anon_id UUID DEFAULT gen_random_uuid() NOT NULL UNIQUE.\n\nUpdate all downstream tables (session_log, habits, habit_completions, checkins, journal_entries, daily_goals) to use anon_id as the foreign key (NOT auth user_id).\n\nRLS policy on user_profiles restricts user_id ↔ anon_id join to service_role only.\n\nOwner: Amit. Status: Not Started. ~3 hours total.",
+        highlight: ["supabase-auth", "anon-mapping", "user-data", "session-log"],
+        highlightEdges: ["supabase-auth-anon-mapping", "anon-mapping-user-data", "anon-mapping-session-log"]
+      },
+      {
+        title: "P1-46 (2/2): PostHog + LLM context use anon_id only",
+        desc: "Update PostHog identify() calls to use anon_id (never email or auth user_id).\n\nUpdate LLM context builder to never include email or last_name fields. callLLM receives anon_id, never user_id.\n\nTest: confirm a row in session_log cannot be traced to email without going through service_role.\n\nFoundation for Phase 2 open-source AnonShield tool (FF-10) and support tokens (FF-09).",
+        highlight: ["anon-mapping", "posthog", "call-llm"],
+        highlightEdges: ["anon-mapping-posthog", "anon-mapping-call-llm"]
+      }
+    ]
+  },
+
+  // ============================================================
+  // STAGE 2 - callLLM() WRAPPER + INTEGRATIONS (8 tasks)
+  // ============================================================
+  {
+    id: "p1-15", taskId: "P1-15", name: "Deploy Line Agent", stage: 2, status: "inprogress",
+    steps: [{
+      title: "P1-15: Deploy Cartesia Line agent",
+      desc: "Push the configured Line agent (main.py from P1-13 + tool definitions from P1-14) to Cartesia. Verify it accepts WebSocket connections from frontend.\n\nThis is the runtime endpoint that Path 1 (Cartesia Line) connects to during onboarding.\n\nOwner: Amit. Status: In Progress.",
+      highlight: ["cartesia-line"],
+      highlightEdges: []
+    }]
+  },
+  {
+    id: "p1-16", taskId: "P1-16", name: "Build useRealtimeVoice Hook", stage: 2, status: "inprogress",
+    steps: [{
+      title: "P1-16: useRealtimeVoice hook",
+      desc: "Frontend React hook that manages Cartesia Line session lifecycle from the frontend side. Opens WebSocket, streams mic to Ink STT, plays Line audio response, handles interruption, closes session on navigate.\n\nUsed exclusively by Cartesia Line path (Path 1, onboarding only). Check-ins use useAsyncReflection instead. Direct LLM uses useLLM.\n\nOwner: Mint. Status: In Progress.",
+      highlight: ["frontend", "cartesia-line", "cartesia-stt"],
+      highlightEdges: ["frontend-cartesia-stt", "cartesia-line-frontend", "call-llm-cartesia-line"]
+    }]
+  },
+  {
+    id: "p1-34", taskId: "P1-34", name: "Build callLLM() Wrapper - THE ENTRY POINT", stage: 2, status: "notstarted",
+    steps: [
+      {
+        title: "P1-34 (1/2): callLLM() - the architectural keystone",
+        desc: "THE MOST IMPORTANT NEW TASK. Backend function that wraps EVERY LLM call in the app.\n\nSignature: callLLM(anon_id, screen_id, user_input, options)\n\nFetches context_block + state_delta via /api/context. Prepends both (plus crisis safety rule from P1-47) to base system prompt.\n\nSINGLE ENTRY POINT - no developer adds another path. No exceptions. Audit codebase to enforce.",
+        highlight: ["call-llm", "screen-contexts", "session-log", "global-context"],
+        highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log", "call-llm-global-context"]
+      },
+      {
+        title: "P1-34 (2/2): Path routing decision",
+        desc: "Decides path based on context:\n• Cartesia Line if onboarding voice session active for this user (Path 1)\n• Async Reflection if on a check-in screen (Path 2)\n• Direct LLM otherwise (Path 3)\n\nRouting logic lives here. Provider-agnostic - LLM can be GPT-4o mini (MVP), Gemini Flash, etc. Returns response.\n\nOwner: Amit. Status: Not Started. Pseudo-code in Architecture tab.",
+        highlight: ["call-llm", "cartesia-line", "cartesia-sonic-api", "llm-api"],
+        highlightEdges: ["call-llm-cartesia-line", "call-llm-cartesia-sonic-api", "call-llm-llm-api"]
+      }
+    ]
+  },
+  {
+    id: "p1-36", taskId: "P1-36", name: "Refactor agent system prompt for context + delta injection", stage: 2, status: "notstarted",
+    steps: [{
+      title: "P1-36: Refactor system prompt for v6.0 context",
+      desc: "Update the Cartesia Line agent's system prompt template to accept BASE_PROMPT + screen_contexts + state_delta + user_input.\n\nEnsures Path 1 (Cartesia Line) uses the same context structure as Path 2 (Async Reflection) and Path 3 (Direct). Consistent context = consistent coaching across paths.\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "screen-contexts"],
+      highlightEdges: ["call-llm-cartesia-line", "call-llm-screen-contexts"]
+    }]
+  },
+  {
+    id: "p1-37", taskId: "P1-37", name: "Extract tool definitions to shared module", stage: 2, status: "notstarted",
+    steps: [{
+      title: "P1-37: Shared LLM tool definitions",
+      desc: "Move LLM tool definitions (lookup_global_context, navigate_next, complete_onboarding, etc.) into a shared backend module.\n\nPath 1 (Cartesia Line agent) and Path 3 (direct LLM via /api/llm) both import from here. Single source of truth - update a tool once, all paths see it.\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "llm-api"],
+      highlightEdges: ["call-llm-llm-api", "call-llm-cartesia-line"]
+    }]
+  },
+  {
+    id: "p1-38", taskId: "P1-38", name: "Build useLLM hook (non-voice path)", stage: 2, status: "notstarted",
+    steps: [{
+      title: "P1-38: useLLM hook for Direct LLM (Path 3)",
+      desc: "Frontend React hook for Direct LLM calls. POSTs to /api/llm with anon_id, screen_id, user_input. Returns text response.\n\nUsed for: text chat, free-form voice convos (combined with Cartesia Sonic API for TTS), habit edits, settings, insights, milestones.\n\nNo Line, no async state machine - simplest path.\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["frontend", "call-llm", "llm-api"],
+      highlightEdges: ["frontend-call-llm", "call-llm-llm-api"]
+    }]
+  },
+  {
+    id: "p1-40", taskId: "P1-40", name: "Frontend: Instrument session_log writes", stage: 2, status: "notstarted",
+    steps: [{
+      title: "P1-40: logEvent() everywhere meaningful happens",
+      desc: "Wire frontend to call POST /api/session_log on every meaningful user action: tap habit complete, navigate, mood select, settings change, mic activation, voice start/end.\n\nFrontend rule: ALWAYS call logEvent() on meaningful actions, even when no LLM call. Otherwise the LLM is blind to user activity and can't 'catch up' on next callLLM().\n\nWrites are anon_id-keyed.\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["frontend", "session-log", "anon-mapping"],
+      highlightEdges: ["frontend-session-log", "anon-mapping-session-log"]
+    }]
+  },
+  {
+    id: "p1-41", taskId: "P1-41", name: "Frontend: useScreenContext + useLLM hooks", stage: 2, status: "notstarted",
+    steps: [{
+      title: "P1-41: useScreenContext hook + useLLM wiring",
+      desc: "useScreenContext(screen_id): fetches AI context block from /api/context. EVERY LLM-active screen imports this.\n\nuseLLM(): wraps direct LLM calls. Combined with useRealtimeVoice (P1-16) and useAsyncReflection (built in P2-29), this is the full hook surface for the frontend.\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["frontend", "call-llm", "screen-contexts"],
+      highlightEdges: ["frontend-call-llm", "call-llm-screen-contexts"]
+    }]
+  },
+
+  // ============================================================
+  // STAGE 3 - ONBOARDING LLM-ACTIVE SCREENS (6 tasks)
+  // ============================================================
+  {
+    id: "p1-21", taskId: "P1-21", name: "Wire ONBOARD-01 (Profile Setup)", stage: 3, status: "notstarted",
+    steps: [{
+      title: "P1-21: ONBOARD-01 - first two-way Line conversation",
+      desc: "FIRST REAL-TIME AGENT SCREEN. Line agent speaks introduction, listens via Ink STT, responds with user's NAME via live TTS in cloned voice. Magic moment #1: voice auto-fills form. Magic moment #2: AI says user's name back.\n\nParse voice for {name, age, gender, referral_source}. Auto-fill UI in real-time. On 'Let's Begin' validate fields, save to user_profile, navigate to ONBOARD-02 (Line session stays open).\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["frontend", "user", "cartesia-stt", "cartesia-line", "call-llm", "llm-api", "user-data"],
+      highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-cartesia-line", "cartesia-line-frontend", "call-llm-llm-api", "frontend-user-data"]
+    }]
+  },
+  {
+    id: "p1-22", taskId: "P1-22", name: "Wire ONBOARD-02 (Experience Fork)", stage: 3, status: "notstarted",
+    steps: [{
+      title: "P1-22: ONBOARD-02 - the experience fork",
+      desc: "Line session continues from ONBOARD-01 (same conversation context). Agent asks 'have you tracked habits before?'\n\nParse intent: NEW → beginner path (ONBOARD-03 to 09). EXPERIENCED → advanced path (ADV-01 to 03). AMBIGUOUS → clarify.\n\nSave onboarding_path to user_profile. The branching point of the entire onboarding flow.\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "screen-contexts", "user-data"],
+      highlightEdges: ["call-llm-cartesia-line", "call-llm-screen-contexts", "frontend-user-data"]
+    }]
+  },
+  {
+    id: "p1-23", taskId: "P1-23", name: "Wire ONBOARD-03 to ONBOARD-05", stage: 3, status: "notstarted",
+    steps: [{
+      title: "P1-23: ONBOARD-03/04/05 - category, subcategory, habits",
+      desc: "Three screens, all Cartesia Line:\n• ONBOARD-03: pick 1 of 8 categories. Each gets a unique coaching response.\n• ONBOARD-04: narrow to 1-2 subcategories (29 SUB-* responses planned, MP3 in Phase 2).\n• ONBOARD-05: pick 1-3 habits or create custom. Save habit rows to user_data.habits.\n\nLine session stays open across all 3 screens.\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "screen-contexts", "user-data"],
+      highlightEdges: ["call-llm-cartesia-line", "call-llm-screen-contexts", "frontend-user-data"]
+    }]
+  },
+  {
+    id: "p1-24", taskId: "P1-24", name: "Wire ONBOARD-06 to ONBOARD-08", stage: 3, status: "notstarted",
+    steps: [{
+      title: "P1-24: ONBOARD-06/07/08 - configure, review, reflection setup",
+      desc: "Three screens:\n• ONBOARD-06: voice auto-fills time/frequency/reminder per habit. Loops per habit.\n• ONBOARD-07: review configured plan. Edit or add via voice.\n• ONBOARD-08: pick reflection style (guided/custom/freeform - mandatory). Set evening check-in time.\n\nAll Cartesia Line. Save to user_data.habits + user_profile.reflection_style.\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "user-data", "session-log"],
+      highlightEdges: ["call-llm-cartesia-line", "frontend-user-data", "frontend-session-log"]
+    }]
+  },
+  {
+    id: "p1-25", taskId: "P1-25", name: "Wire ONBOARD-09 (Plan Summary + Start)", stage: 3, status: "notstarted",
+    steps: [{
+      title: "P1-25: ONBOARD-09 - founding user moment",
+      desc: "Final onboarding screen. Cartesia Line agent generates the founding user message ('as one of the first 50 people to use Guided Growth...'). Sonic-3 speaks it via Line in cloned voice.\n\nOn 'Start plan': activate all habits, schedule reminders, terminate Line session, navigate to HOME-FIRST.\n\nThis is the longest single Line session of MVP. Emotional peak before entering the app.\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["frontend", "call-llm", "cartesia-line", "cartesia-tts", "user-data"],
+      highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend", "cartesia-line-cartesia-tts", "frontend-user-data"]
+    }]
+  },
+  {
+    id: "p1-42", taskId: "P1-42", name: "Wire Cartesia Line to use shared context builder", stage: 3, status: "notstarted",
+    steps: [{
+      title: "P1-42: Cartesia Line uses shared context builder",
+      desc: "Wire the Cartesia Line agent backend to call /api/context (built in P1-33) instead of any agent-specific context fetching. Line gets the same screen_contexts + state_delta as Direct LLM and Async Reflection.\n\nResult: ONE context builder serves all three paths. Edit context once, all paths see it.\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "screen-contexts", "session-log"],
+      highlightEdges: ["call-llm-cartesia-line", "call-llm-screen-contexts", "call-llm-session-log"]
+    }]
+  },
+
+  // ============================================================
+  // STAGE 4 - QA + SAFETY + POLISH (9 tasks)
+  // ============================================================
+  {
+    id: "p1-26", taskId: "P1-26", name: "Test Full Happy Path (Voice)", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P1-26: End-to-end voice happy path test",
+      desc: "Run full voice onboarding: SPLASH-01 → WELCOME-01 → AUTH → PREF-01 (voice) → MIC-01 (granted) → POST-AUTH-01 → ONBOARD-01 to 09 → HOME-FIRST.\n\nVerify: Cartesia Line works on every screen. Voice auto-fills forms. Agent says user's name back. session_log writes happen. Anonymization respected (no email in LLM context).\n\nOwner: Yair (or QA). Status: Not Started.",
+      highlight: ["user", "frontend", "cartesia-line", "cartesia-stt", "cartesia-tts", "call-llm", "user-data", "session-log"],
+      highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-cartesia-line", "cartesia-line-frontend", "frontend-user-data", "frontend-session-log"]
+    }]
+  },
+  {
+    id: "p1-27", taskId: "P1-27", name: "Test Full Happy Path (Manual)", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P1-27: End-to-end manual happy path test",
+      desc: "Same flow as P1-26 but mic DENIED. Verify every screen still completes via taps and typing through Direct LLM path. UX-09: voice and text/tap always work.\n\nVerify: text input goes through callLLM Direct path. Forms submit cleanly. session_log fires on tap actions. Onboarding completes.\n\nOwner: Yair (or QA). Status: Not Started.",
+      highlight: ["user", "frontend", "call-llm", "llm-api", "user-data", "session-log"],
+      highlightEdges: ["user-frontend", "frontend-call-llm", "call-llm-llm-api", "frontend-user-data", "frontend-session-log"]
+    }]
+  },
+  {
+    id: "p1-28", taskId: "P1-28", name: "Test Voice-Driven Navigation Edge Cases", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P1-28: Edge cases for voice navigation (UX-03)",
+      desc: "Test navigate_next tool reliability. Cases:\n• User trails off mid-sentence - does agent know to wait?\n• User says 'go back' - does agent route correctly?\n• User says 'I'm done' before all fields filled - does agent re-ask only missing fields?\n• Network drop mid-Line session - does it reconnect?\n\nUX-03: voice-driven navigation, no tap to advance.\n\nOwner: Yair. Status: Not Started.",
+      highlight: ["frontend", "cartesia-line", "call-llm"],
+      highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend"]
+    }]
+  },
+  {
+    id: "p1-30", taskId: "P1-30", name: "Test on Android APK + Web", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P1-30: Cross-platform smoke test",
+      desc: "Verify the web app works in: desktop Safari, desktop Chrome, mobile Safari (iOS), mobile Chrome (Android), Android APK wrapper.\n\nKey concerns: getUserMedia() permission UX varies per browser. WebSocket to Cartesia Line may behave differently on mobile networks. MP3 autoplay rules differ.\n\nOwner: Yair (or QA). Status: Not Started.",
+      highlight: ["frontend", "vercel"],
+      highlightEdges: ["vercel-frontend"]
+    }]
+  },
+  {
+    id: "p1-43", taskId: "P1-43", name: "Test AI Context across all channels (HARD GATE)", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P1-43: All 3 paths see consistent context (HARD GATE)",
+      desc: "HARD GATE before launch. Verify:\n• Path 1 (Cartesia Line) sees the same screen_contexts + session_log delta as...\n• Path 2 (Async Reflection / Sonic API) and...\n• Path 3 (Direct LLM)\n\nTest: complete habits via tap (no LLM). Then start each path and ask 'what did I do today?' All three must reference the tap-completions correctly. If any path is blind, fix before launch.\n\nOwner: Yair + Amit. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "cartesia-sonic-api", "llm-api", "screen-contexts", "session-log"],
+      highlightEdges: ["call-llm-cartesia-line", "call-llm-cartesia-sonic-api", "call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log"]
+    }]
+  },
+  {
+    id: "p1-44", taskId: "P1-44", name: "Test session_log integrity", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P1-44: session_log writes are reliable + anon_id-correct",
+      desc: "Verify:\n• Every meaningful action writes a session_log row\n• All rows are keyed on anon_id, NOT auth user_id (P1-46 enforcement)\n• Rows survive network drops (client-side queue per Architecture tab Level 1 offline handling)\n• callLLM reads delta correctly across reconnects\n\nNo silent drops. The 'caught up' principle depends on this being airtight.\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["frontend", "session-log", "anon-mapping", "call-llm"],
+      highlightEdges: ["frontend-session-log", "anon-mapping-session-log", "call-llm-session-log"]
+    }]
+  },
+  {
+    id: "p1-45", taskId: "P1-45", name: "Test cost and latency budget", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P1-45: Verify cost + latency targets",
+      desc: "Measure end-to-end:\n• GPT-4o mini cost per turn (~$0.0005 target)\n• Cartesia Line per onboarding session\n• Cartesia Sonic API per check-in (target ~$0.006)\n• Path 3 Direct LLM (cheapest)\n• Latency: voice round-trip target <2 sec for Line, ~2-3 sec hidden by ack MP3 for Async Reflection\n\nLog cartesia_latency_ms PostHog event (replaces ElevenLabs ref). Insights inform Phase 2 cost optimization.\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "cartesia-sonic-api", "llm-api", "posthog"],
+      highlightEdges: ["call-llm-llm-api", "call-llm-cartesia-line", "call-llm-cartesia-sonic-api", "frontend-posthog"]
+    }]
+  },
+  {
+    id: "p1-47", taskId: "P1-47", name: "Add crisis safety rule to base system prompt", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P1-47: Crisis safety rule (1 hour, single global rule)",
+      desc: "Add ONE rule to the base coaching system prompt used by callLLM():\n\nIf user mentions self-harm, suicidal thoughts, or wanting to die: STOP coaching, respond ONCE with care + 988 number, do not continue normal conversation.\n\nApplies to ALL paths (Cartesia Line, Async Reflection, Direct LLM) because they all share callLLM's base prompt. See UX-06 + GC-15 for full message text.\n\nHARD GATE before launch. ~1 hour total.\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["call-llm", "global-context"],
+      highlightEdges: ["call-llm-global-context"]
+    }]
+  },
+  {
+    id: "p2-37", taskId: "P2-37", name: "Stage 5 prep: scaffold async reflection state machine", stage: 4, status: "notstarted",
+    steps: [{
+      title: "P2-37: Pre-build the Async Reflection state machine",
+      desc: "Pre-Stage-5 scaffold. Build empty useAsyncReflection() hook with state machine: PROMPT → LISTENING → THINKING → RESPONDING → FOLLOWUP_OPTIONAL → CLOSING → DONE.\n\nUI doesn't need to work yet - just the state transition logic + hooks for MP3 playback, Ink STT, Sonic API. Lets Stage 5 wiring (P2-29, P2-34) plug straight in.\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["frontend", "mp3-storage", "cartesia-stt", "cartesia-sonic-api"],
+      highlightEdges: ["frontend-mp3-storage", "frontend-cartesia-stt", "cartesia-sonic-api-frontend"]
+    }]
+  },
+
+  // ============================================================
+  // STAGE 5 - CHECK-INS + TEXT CHAT + FEEDBACK (9 tasks)
+  // ============================================================
+  {
+    id: "p2-16", taskId: "P2-16", name: "Phase 2: Add new tools to shared module", stage: 5, status: "notstarted",
+    steps: [{
+      title: "P2-16: Add Phase 2 tools (analytics queries, etc.)",
+      desc: "Extend the shared LLM tool module (P1-37) with new tools needed for Stage 5 + Phase 2 features: query habit completion stats, fetch streak data, look up insights triggers (UX-11: 3+ data points), etc.\n\nKeeps the single-source-of-truth pattern from P1-37.\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["call-llm", "user-data", "llm-api"],
+      highlightEdges: ["call-llm-llm-api", "frontend-user-data"]
+    }]
+  },
+  {
+    id: "p2-28", taskId: "P2-28", name: "Phase 2: Cross-channel QA (HARD GATE)", stage: 5, status: "notstarted",
+    steps: [{
+      title: "P2-28: Cross-channel QA (HARD GATE)",
+      desc: "HARD GATE for Stage 5 launch. Test:\n• Voice check-in (Async Reflection) → text chat (Direct) → voice convo (Direct + Sonic API): all paths see consistent state\n• Anonymization holds across all paths\n• Crisis safety triggers regardless of path\n• Session_log delta survives switching paths mid-day\n\nFinal sign-off before MVP launch.\n\nOwner: Yair + Amit. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "cartesia-sonic-api", "session-log", "anon-mapping"],
+      highlightEdges: ["call-llm-cartesia-line", "call-llm-cartesia-sonic-api", "call-llm-session-log", "anon-mapping-call-llm"]
+    }]
+  },
+  {
+    id: "p2-29", taskId: "P2-29", name: "Async reflection check-in flow / state machine", stage: 5, status: "notstarted",
+    steps: [
+      {
+        title: "P2-29 (1/2): Implement Async Reflection state machine",
+        desc: "Build out useAsyncReflection() hook (scaffolded in P2-37). Full implementation of PROMPT → LISTENING → THINKING → RESPONDING → FOLLOWUP_OPTIONAL → CLOSING → DONE.\n\nState transitions driven by: MP3 playback completion, Cartesia Ink STT silence detection, callLLM() response, mood-matched closing selection logic.\n\nThis is the v2 plan check-in pattern. NOT Cartesia Line (cost reasons). Cost target: ~$0.006/check-in.",
+        highlight: ["frontend", "mp3-storage", "cartesia-stt", "call-llm"],
+        highlightEdges: ["frontend-mp3-storage", "frontend-cartesia-stt", "cartesia-stt-call-llm"]
+      },
+      {
+        title: "P2-29 (2/2): Sonic API for personalized response",
+        desc: "RESPONDING state: callLLM streams text to Cartesia Sonic API for live TTS in cloned voice. NOT Cartesia Line. Frontend plays audio + displays text alongside (UX-22 voice + text sync).\n\nWhy cheaper than Line: predictable parts (prompt, ack, closing) are MP3s. Only the personalized response runs through live LLM + Sonic API. Cuts cost ~10x.\n\nOwner: Mint + Amit. Status: Not Started.",
+        highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts", "frontend"],
+        highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-cartesia-tts", "cartesia-sonic-api-frontend"]
+      }
+    ]
+  },
+  {
+    id: "p2-30", taskId: "P2-30", name: "Generate 65 MP3s (VA-driven, manual)", stage: 5, status: "notstarted",
+    steps: [{
+      title: "P2-30: Pre-record ~65 check-in MP3s",
+      desc: "VA generates ~65 MP3s in Yair's cloned voice via Cartesia playground. Inventory:\n• Morning prompts + thinking acks + closings\n• Evening prompts + thinking acks + mood-matched closings (4 variants: all-done, most, few, none)\n• Reflection prompts (guided/custom/freeform variants)\n\nFilenames + scripts come from P2-36 (Yair tone bible). Upload to Supabase Storage. Manual for MVP - Phase 2 automates via the auto-pipeline (mp3pipeline tutorial).\n\nOwner: Yair (with VA). Status: Not Started.",
+      highlight: ["app-master", "mp3-storage", "cartesia-tts"],
+      highlightEdges: ["app-master-mp3-storage"]
+    }]
+  },
+  {
+    id: "p2-31", taskId: "P2-31", name: "Feedback sessions via Cartesia Line (scheduled triggers)", stage: 5, status: "notstarted",
+    steps: [{
+      title: "P2-31: Scheduled feedback sessions via Line",
+      desc: "Schedule Cartesia Line agent triggers at: 1 week post-onboarding, 1 month post-onboarding, manual (user-initiated).\n\nUses Path 1 (Cartesia Line) - feedback sessions are conversational, deserve the higher-trust live agent experience. Distinct from check-ins (Async Reflection).\n\nDelivers founding-user feedback collection per the v2 plan founding-user incentive (free 6 months for honest feedback).\n\nOwner: Amit. Status: Not Started.",
+      highlight: ["call-llm", "cartesia-line", "cartesia-tts", "frontend"],
+      highlightEdges: ["call-llm-cartesia-line", "cartesia-line-frontend"]
+    }]
+  },
+  {
+    id: "p2-32", taskId: "P2-32", name: "Text chat integration (GPT-4o mini direct)", stage: 5, status: "notstarted",
+    steps: [{
+      title: "P2-32: Text chat = Path 3 Direct LLM",
+      desc: "Wire the text chat UI surface. User types in field → frontend POSTs to /api/llm via useLLM hook (P1-38) → callLLM Path 3 (Direct LLM) → GPT-4o mini → text response back.\n\nNo voice infrastructure. Cheapest path. Same context layers, same anon_id, same crisis safety rule as the other two paths.\n\nUX-22: text and voice in sync (text chat reads same session state).\n\nOwner: Mint + Amit. Status: Not Started.",
+      highlight: ["user", "frontend", "call-llm", "llm-api"],
+      highlightEdges: ["user-frontend", "frontend-call-llm", "call-llm-llm-api"]
+    }]
+  },
+  {
+    id: "p2-33", taskId: "P2-33", name: "Wire HOME-FIRST/MORNING/EVENING/RETURN", stage: 5, status: "notstarted",
+    steps: [{
+      title: "P2-33: Home screens (4 states)",
+      desc: "Wire 4 home screens:\n• HOME-FIRST: first visit after onboarding. 5-sec orientation pause then sequential spotlight tour (TT-01 to TT-08). Cartesia Line welcome.\n• HOME-MORNING / HOME-EVENING: regular states. NO auto-play. Mic tap routes to MCHECK-01 / ECHECK-01 (Async Reflection) or VOICE-01 (Direct LLM).\n• HOME-RETURN: 3+ days inactive. Cartesia Line agent welcomes back, no judgment.\n\nOwner: Mint. Status: Not Started.",
+      highlight: ["frontend", "user-data", "session-log", "cartesia-line"],
+      highlightEdges: ["frontend-user-data", "frontend-session-log", "call-llm-cartesia-line", "cartesia-line-frontend"]
+    }]
+  },
+  {
+    id: "p2-34", taskId: "P2-34", name: "Wire MCHECK-01, MCHECK-02, ECHECK-01 to ECHECK-06", stage: 5, status: "notstarted",
+    steps: [
+      {
+        title: "P2-34 (1/2): Wire 9 check-in screens (Async Reflection)",
+        desc: "Wire all 9 check-in screens to use the useAsyncReflection hook (P2-29):\n• MCHECK-01: Morning Check-in (sleep/mood/energy/stress)\n• MCHECK-02: Morning Goal\n• ECHECK-01: Evening opening\n• ECHECK-02: Evening Self-Report\n• ECHECK-03: Evening AI-Read\n• ECHECK-04: Goal Check\n• ECHECK-05: Daily Reflection\n• ECHECK-06: Evening Wrap-up\n\nAll use Path 2 (Async Reflection). NONE use Cartesia Line.",
+        highlight: ["frontend", "mp3-storage", "cartesia-stt", "user-data"],
+        highlightEdges: ["frontend-mp3-storage", "frontend-cartesia-stt", "frontend-user-data"]
+      },
+      {
+        title: "P2-34 (2/2): callLLM + Sonic API for personalized responses",
+        desc: "Each check-in screen's LLM-generated personalized response goes through callLLM → Cartesia Sonic API → live TTS in cloned voice → frontend.\n\nVoice + text sync (UX-22) shows text alongside audio. Save check-in data to Supabase user_data tables (checkins, daily_goals, journal_entries) keyed on anon_id.\n\nOwner: Mint + Amit. Status: Not Started.",
+        highlight: ["call-llm", "cartesia-sonic-api", "user-data", "session-log"],
+        highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-frontend", "frontend-user-data", "frontend-session-log"]
+      }
+    ]
+  },
+  {
+    id: "p2-36", taskId: "P2-36", name: "Yair tone bible (voice content reference)", stage: 5, status: "notstarted",
+    steps: [{
+      title: "P2-36: Yair tone bible",
+      desc: "Document containing canonical voice content for the ~65 check-in MP3s (P2-30): exact wording, tone notes, pronunciation guides, mood-matched closing variants. The voice text source for the VA.\n\nAlso the reference for any future Cartesia clone retraining or coach style work. Not user-facing - team reference.\n\nOwner: Yair. Status: Not Started.",
+      highlight: ["app-master"],
+      highlightEdges: []
+    }]
+  }
+];
+
+    // Register each task's steps in TUTORIALS so startTutorial(id) finds them.
+    // Done dynamically here so we don't have to repeat the steps in two places.
+    TASK_TUTORIALS.forEach(t => {
+      if (t.steps && t.steps.length > 0) {
+        TUTORIALS[t.id] = { name: `${t.taskId}: ${t.name}`, steps: t.steps };
+      }
+    });
+
+    const STAGE_LABELS = {
+      1: "Stage 1: Foundation",
+      2: "Stage 2: callLLM wrapper + integrations",
+      3: "Stage 3: Onboarding LLM-active screens",
+      4: "Stage 4: QA + safety + polish",
+      5: "Stage 5: Check-ins + text chat + feedback"
+    };
+
+    // ============================================================
+    // STAGE WALKTHROUGHS - one combined tutorial per stage
+    // Concatenates all that stage's task steps into a single chain.
+    // Auto-built from TASK_TUTORIALS, so always in sync.
+    // ============================================================
+    const STAGE_INTROS = {
+      1: {
+        subtitle: "10 tasks. Schema, tables, Supabase setup, anonymization. The data backbone.",
+        focus: ["frontend", "supabase-auth", "session-log", "screen-contexts", "global-context", "user-data", "anon-mapping", "app-master"]
+      },
+      2: {
+        subtitle: "8 tasks. Build callLLM() wrapper + the 3 path-specific hooks. The architectural keystone.",
+        focus: ["call-llm", "cartesia-line", "cartesia-stt", "screen-contexts", "session-log", "global-context", "llm-api", "frontend"]
+      },
+      3: {
+        subtitle: "6 tasks. Wire all 9 onboarding screens to Cartesia Line. The first user touchpoint.",
+        focus: ["frontend", "cartesia-line", "cartesia-stt", "cartesia-tts", "call-llm", "user-data"]
+      },
+      4: {
+        subtitle: "9 tasks. End-to-end testing, hard gates, crisis safety, Stage 5 prep.",
+        focus: ["frontend", "call-llm", "cartesia-line", "cartesia-sonic-api", "session-log", "anon-mapping", "global-context", "posthog"]
+      },
+      5: {
+        subtitle: "9 tasks. Check-ins (Async Reflection), text chat (Direct), feedback sessions, MP3 generation.",
+        focus: ["frontend", "mp3-storage", "cartesia-stt", "cartesia-sonic-api", "cartesia-line", "call-llm", "user-data", "session-log"]
+      }
+    };
+
+    function buildStageWalkthrough(stageNum) {
+      const tasks = TASK_TUTORIALS.filter(t => t.stage === stageNum && t.status !== "done");
+      if (tasks.length === 0) return null;
+
+      const intro = STAGE_INTROS[stageNum] || { subtitle: "", focus: [] };
+      const stageLabel = STAGE_LABELS[stageNum] || `Stage ${stageNum}`;
+
+      // Opening overview step - shows everything Stage touches
+      const steps = [{
+        title: `${stageLabel} - overview (${tasks.length} tasks)`,
+        desc: `${intro.subtitle}\n\nTasks in this stage:\n${tasks.map(t => `  • ${t.taskId}: ${t.name}`).join("\n")}\n\nClick Next to walk through each task in order.`,
+        highlight: intro.focus,
+        highlightEdges: []
+      }];
+
+      // Concatenate all task steps with task-marker prefixes
+      tasks.forEach((task, taskIdx) => {
+        const totalSubSteps = task.steps.length;
+        task.steps.forEach((step, subIdx) => {
+          const prefix = totalSubSteps > 1
+            ? `[Task ${taskIdx + 1}/${tasks.length}] ${task.taskId} (${subIdx + 1}/${totalSubSteps})`
+            : `[Task ${taskIdx + 1}/${tasks.length}] ${task.taskId}`;
+          steps.push({
+            title: step.title,
+            desc: `${prefix}\n\n${step.desc}`,
+            highlight: step.highlight || [],
+            highlightEdges: step.highlightEdges || []
+          });
+        });
+      });
+
+      return {
+        name: `${stageLabel} (full walkthrough, ${tasks.length} tasks)`,
+        steps: steps
+      };
+    }
+
+    // Register a stage walkthrough for each stage (1-5)
+    [1, 2, 3, 4, 5].forEach(stageNum => {
+      const walkthrough = buildStageWalkthrough(stageNum);
+      if (walkthrough) {
+        TUTORIALS[`stage-${stageNum}`] = walkthrough;
+      }
+    });
+
+    function renderTutorialMenu(filter) {
+      const content = document.getElementById("tm-content");
+      const f = (filter || "").toLowerCase().trim();
+      let html = "";
+
+      // === FLOW WALKTHROUGHS ===
+      const flows = FLOW_TUTORIALS.filter(t => !f || t.name.toLowerCase().includes(f) || t.id.toLowerCase().includes(f));
+      if (flows.length > 0) {
+        html += '<div class="tm-section">';
+        html += '<div class="tm-section-header">Flow walkthroughs</div>';
+        flows.forEach(t => {
+          const activeClass = (activeTutorial && activeTutorial._id === t.id) ? " active" : "";
+          html += `<div class="tm-item${activeClass}" onclick="pickTutorial('${t.id}')"><span class="tm-name">${t.name}</span></div>`;
+        });
+        html += '</div>';
+      }
+
+      // === TASK WALKTHROUGHS ===
+      // Filter out done tasks per Yair's instruction
+      const activeTasks = TASK_TUTORIALS.filter(t => t.status !== "done");
+      const filteredTasks = activeTasks.filter(t => !f ||
+        t.name.toLowerCase().includes(f) ||
+        t.taskId.toLowerCase().includes(f));
+
+      html += '<div class="tm-section">';
+      html += '<div class="tm-section-header">Task walkthroughs</div>';
+
+      if (filteredTasks.length === 0) {
+        html += '<div class="tm-empty-tasks">Task walkthroughs coming next pass.<br>Stages 1-5 will appear here.</div>';
+      } else {
+        // Group by stage
+        const byStage = {};
+        filteredTasks.forEach(t => {
+          const s = t.stage || "Other";
+          if (!byStage[s]) byStage[s] = [];
+          byStage[s].push(t);
+        });
+        const sortedStages = Object.keys(byStage).sort();
+        sortedStages.forEach(stage => {
+          const tasks = byStage[stage];
+          const stageLabel = STAGE_LABELS[stage] || `Stage ${stage}`;
+          const stageWalkthroughId = `stage-${stage}`;
+          const stageWalkthroughExists = !!TUTORIALS[stageWalkthroughId];
+          // Auto-open if filter is active OR stage 1 by default
+          const autoOpen = !!f;
+          const openClass = autoOpen ? " open" : "";
+          const stageActiveClass = (activeTutorial && activeTutorial._id === stageWalkthroughId) ? " active" : "";
+          html += `<div class="tm-stage-group">`;
+          html += `<div class="tm-stage-header${openClass}${stageActiveClass}" onclick="toggleStageGroup(this)">`;
+          html += `<span class="tm-chevron">▶</span>`;
+          html += `<span style="flex:1;">${stageLabel}</span>`;
+          html += `<span class="tm-stage-count">${tasks.length}</span>`;
+          html += `</div>`;
+          html += `<div class="tm-stage-body${openClass}">`;
+          // Combined stage walkthrough as the first item
+          if (stageWalkthroughExists) {
+            html += `<div class="tm-stage-walkthrough${stageActiveClass}" onclick="event.stopPropagation(); pickTutorial('${stageWalkthroughId}')">`;
+            html += `<span class="tm-walk-icon">▶▶</span>`;
+            html += `<span class="tm-walk-label">Walk through all ${tasks.length} tasks</span>`;
+            html += `</div>`;
+          }
+          tasks.forEach(t => {
+            const statusClass = t.status || "notstarted";
+            const dot = statusClass === "inprogress" ? "◐" : "○";
+            const activeClass = (activeTutorial && activeTutorial._id === t.id) ? " active" : "";
+            html += `<div class="tm-task-item${activeClass}" onclick="pickTutorial('${t.id}')">`;
+            html += `<span class="tm-status ${statusClass}">${dot}</span>`;
+            html += `<span class="tm-task-id">${t.taskId}</span>`;
+            html += `<span class="tm-task-name">${t.name}</span>`;
+            html += `</div>`;
+          });
+          html += `</div></div>`;
+        });
+      }
+      html += '</div>';
+
+      content.innerHTML = html;
+    }
+
+    function toggleStageGroup(headerEl) {
+      headerEl.classList.toggle("open");
+      const body = headerEl.nextElementSibling;
+      if (body) body.classList.toggle("open");
+    }
+
+    function toggleTutorialMenu(ev) {
+      if (ev) ev.stopPropagation();
+      const panel = document.getElementById("tm-panel");
+      const isOpen = panel.classList.contains("open");
+      if (isOpen) {
+        panel.classList.remove("open");
+      } else {
+        renderTutorialMenu(document.getElementById("tm-search-input").value);
+        panel.classList.add("open");
+        // Focus search after a tick
+        setTimeout(() => document.getElementById("tm-search-input").focus(), 50);
+      }
+    }
+
+    function filterTutorialMenu(value) {
+      renderTutorialMenu(value);
+    }
+
+    function pickTutorial(tutorialId) {
+      // Close menu
+      document.getElementById("tm-panel").classList.remove("open");
+      // Update label
+      const flow = FLOW_TUTORIALS.find(t => t.id === tutorialId);
+      const task = TASK_TUTORIALS.find(t => t.id === tutorialId);
+      let label;
+      if (flow) {
+        label = flow.name;
+      } else if (task) {
+        label = `${task.taskId}: ${task.name}`;
+      } else if (tutorialId.startsWith("stage-")) {
+        const stageNum = parseInt(tutorialId.replace("stage-", ""));
+        label = STAGE_LABELS[stageNum] || `Stage ${stageNum}`;
+      } else {
+        label = "Pick one...";
+      }
+      document.getElementById("tm-selected").textContent = label;
+      // Start tutorial
+      startTutorial(tutorialId);
+    }
+
+    // Close menu on outside click
+    document.addEventListener("click", (ev) => {
+      const panel = document.getElementById("tm-panel");
+      const trigger = document.getElementById("tm-trigger");
+      if (!panel || !trigger) return;
+      if (panel.contains(ev.target) || trigger.contains(ev.target)) return;
+      panel.classList.remove("open");
+    });
+
+    const nodesLayer = document.getElementById("nodes-layer");
+    const edgesLayer = document.getElementById("edges-layer");
+    const edgeLabelsLayer = document.getElementById("edge-labels-layer");
+    const tooltip = document.getElementById("tooltip");
+    const canvas = document.getElementById("canvas");
+    const viewport = document.getElementById("viewport");
+
+    const nodeMap = {};
+    GRAPH_DATA.nodes.forEach(n => nodeMap[n.id] = n);
+
+    function clipToBox(from, to) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const halfW = from.width / 2;
+      const halfH = from.height / 2;
+      const tx = halfW / Math.abs(dx || 0.0001);
+      const ty = halfH / Math.abs(dy || 0.0001);
+      const t = Math.min(tx, ty);
+      return { x: from.x + dx * t, y: from.y + dy * t };
+    }
+
+    // Track edges between same node-pairs to apply parallel offsets
+    const pairCounts = {};
+    GRAPH_DATA.edges.forEach(e => {
+      const key = [e.from, e.to].sort().join('|');
+      pairCounts[key] = (pairCounts[key] || 0) + 1;
+    });
+    const pairProgress = {};
+
+    GRAPH_DATA.edges.forEach((e) => {
+      const from = nodeMap[e.from];
+      const to = nodeMap[e.to];
+      if (!from || !to) return;
+
+      const start = clipToBox(from, to);
+      const end = clipToBox(to, from);
+
+      // Parallel offset for duplicate edges between same pair
+      const pairKey = [e.from, e.to].sort().join('|');
+      let offsetX = 0, offsetY = 0;
+      if (pairCounts[pairKey] > 1) {
+        pairProgress[pairKey] = (pairProgress[pairKey] || 0) + 1;
+        const idx = pairProgress[pairKey] - 1;
+        const total = pairCounts[pairKey];
+        // Spread offsets symmetrically around the line
+        const offset = (idx - (total - 1) / 2) * 14;
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const len = Math.sqrt(dx*dx + dy*dy) || 1;
+        // Perpendicular vector (rotate 90deg)
+        offsetX = -dy / len * offset;
+        offsetY = dx / len * offset;
+      }
+
+      let stroke, dash, marker;
+      if (e.type === "sync") { stroke = "#f59e0b"; dash = "5,4"; marker = "url(#arrow-sync)"; }
+      else if (e.type === "human") { stroke = "#94a3b8"; dash = "2,3"; marker = "url(#arrow-human)"; }
+      else if (e.type === "future") { stroke = "#a78bfa"; dash = "5,4"; marker = "url(#arrow-future)"; }
+      else { stroke = "#5bc0de"; dash = ""; marker = "url(#arrow-data)"; }
+
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", start.x + offsetX);
+      line.setAttribute("y1", start.y + offsetY);
+      line.setAttribute("x2", end.x + offsetX);
+      line.setAttribute("y2", end.y + offsetY);
+      line.setAttribute("stroke", stroke);
+      line.setAttribute("stroke-width", "1.5");
+      line.setAttribute("stroke-opacity", "0.6");
+      if (dash) line.setAttribute("stroke-dasharray", dash);
+      line.setAttribute("marker-end", marker);
+      line.setAttribute("class", "edge");
+      line.dataset.from = e.from;
+      line.dataset.to = e.to;
+      line.dataset.phase = e.phase;
+      line.dataset.stage = (e.stage === undefined || e.stage === null) ? "" : e.stage;
+      line.dataset.edgeId = `${e.from}-${e.to}`;
+      edgesLayer.appendChild(line);
+
+      if (e.label) {
+        const mx = (start.x + end.x) / 2 + offsetX;
+        const my = (start.y + end.y) / 2 + offsetY;
+        const labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        labelGroup.setAttribute("class", "edge-label");
+        labelGroup.dataset.from = e.from;
+        labelGroup.dataset.to = e.to;
+        labelGroup.dataset.phase = e.phase;
+        labelGroup.dataset.stage = (e.stage === undefined || e.stage === null) ? "" : e.stage;
+        labelGroup.dataset.cx = mx;
+        labelGroup.dataset.cy = my;
+
+        const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        bgRect.setAttribute("rx", "3");
+        bgRect.setAttribute("fill", "#0a1420");
+        bgRect.setAttribute("opacity", "0.92");
+        labelGroup.appendChild(bgRect);
+
+        const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        labelText.setAttribute("x", mx);
+        labelText.setAttribute("y", my);
+        labelText.setAttribute("text-anchor", "middle");
+        labelText.setAttribute("dominant-baseline", "middle");
+        labelText.setAttribute("font-size", "13");
+        labelText.setAttribute("font-family", "-apple-system, sans-serif");
+        labelText.setAttribute("fill", e.type === "future" ? "#c4b5fd" : (e.type === "sync" ? "#fcd34d" : (e.type === "human" ? "#cbd5e1" : "#a8c7e0")));
+        labelText.textContent = e.label;
+        labelGroup.appendChild(labelText);
+
+        edgeLabelsLayer.appendChild(labelGroup);
+
+        requestAnimationFrame(() => {
+          const bbox = labelText.getBBox();
+          bgRect.setAttribute("x", bbox.x - 4);
+          bgRect.setAttribute("y", bbox.y - 2);
+          bgRect.setAttribute("width", bbox.width + 8);
+          bgRect.setAttribute("height", bbox.height + 4);
+        });
+      }
+    });
+
+    // ============================================================
+    // RENDER NODES (bigger text)
+    // ============================================================
+    GRAPH_DATA.nodes.forEach(n => {
+      const g = GROUPS[n.group] || { color: "#666", border: "#888" };
+      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      group.setAttribute("class", "node");
+      group.setAttribute("transform", `translate(${n.x - n.width / 2}, ${n.y - n.height / 2})`);
+      group.dataset.nodeId = n.id;
+
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("width", n.width);
+      rect.setAttribute("height", n.height);
+      rect.setAttribute("rx", n.isHub ? 14 : 8);
+      rect.setAttribute("fill", g.color);
+      rect.setAttribute("stroke", g.border);
+      rect.setAttribute("stroke-width", n.isHub ? 2.5 : 1.5);
+      group.appendChild(rect);
+
+      const textGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      textGroup.setAttribute("class", "node-text-group");
+      textGroup.dataset.cx = n.width / 2;
+      textGroup.dataset.cy = n.height / 2;
+
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", n.width / 2);
+      text.setAttribute("y", n.owners ? n.height / 2 - 11 : n.height / 2);
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("dominant-baseline", "central");
+      text.setAttribute("font-size", n.isHub ? "28" : "22");
+      text.setAttribute("font-weight", "700");
+      text.setAttribute("font-family", "-apple-system, sans-serif");
+      text.setAttribute("fill", "#ffffff");
+      // Black stroke around white text - readable on any fill, highlighted or not
+      text.setAttribute("stroke", "rgba(0,0,0,0.55)");
+      text.setAttribute("stroke-width", "0.6");
+      text.setAttribute("paint-order", "stroke fill");
+      text.setAttribute("pointer-events", "none");
+      text.textContent = n.label;
+      textGroup.appendChild(text);
+
+      if (n.owners) {
+        const sub = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        sub.setAttribute("x", n.width / 2);
+        sub.setAttribute("y", n.height / 2 + 20);
+        sub.setAttribute("text-anchor", "middle");
+        sub.setAttribute("dominant-baseline", "central");
+        sub.setAttribute("font-size", "14");
+        sub.setAttribute("font-weight", "500");
+        sub.setAttribute("font-family", "-apple-system, sans-serif");
+        sub.setAttribute("fill", "rgba(255,255,255,0.92)");
+        sub.setAttribute("stroke", "rgba(0,0,0,0.45)");
+        sub.setAttribute("stroke-width", "0.4");
+        sub.setAttribute("paint-order", "stroke fill");
+        sub.setAttribute("pointer-events", "none");
+        const maxLen = Math.floor((n.width - 16) / 7.5);
+        sub.textContent = n.owners.length > maxLen ? n.owners.slice(0, maxLen - 1) + "…" : n.owners;
+        textGroup.appendChild(sub);
+      }
+      group.appendChild(textGroup);
+
+      group.addEventListener("mouseenter", (ev) => {
+        if (activeTutorial) return;
+        highlightNode(n.id);
+        showTooltip(n, ev);
+      });
+      group.addEventListener("mousemove", (ev) => { if (!activeTutorial) positionTooltip(ev); });
+      group.addEventListener("mouseleave", () => {
+        if (activeTutorial) return;
+        clearHighlight();
+        hideTooltip();
+      });
+      // Click handler: only fires if user didn't drag (movement < threshold)
+      // The actual logic lives in the canvas mouseup handler which checks dragMoved
+      group.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        if (dragMoved) return;  // Was a drag, don't open panel
+        showPanel(n.id);
+      });
+
+      nodesLayer.appendChild(group);
+    });
+
+    // ============================================================
+    // INTERACTION
+    // ============================================================
+    function getConnectedNodeIds(nodeId) {
+      const connected = new Set([nodeId]);
+      GRAPH_DATA.edges.forEach(e => {
+        if (e.from === nodeId) connected.add(e.to);
+        if (e.to === nodeId) connected.add(e.from);
+      });
+      return connected;
+    }
+
+    function highlightNode(nodeId) {
+      const connected = getConnectedNodeIds(nodeId);
+      document.querySelectorAll(".node").forEach(el => {
+        if (connected.has(el.dataset.nodeId)) {
+          el.classList.remove("dimmed");
+          if (el.dataset.nodeId === nodeId) el.classList.add("highlighted");
+        } else { el.classList.add("dimmed"); }
+      });
+      document.querySelectorAll(".edge").forEach(el => {
+        if (el.dataset.from === nodeId || el.dataset.to === nodeId) {
+          el.classList.remove("dimmed");
+          el.classList.add("highlighted");
+        } else { el.classList.add("dimmed"); }
+      });
+      document.querySelectorAll(".edge-label").forEach(el => {
+        if (el.dataset.from === nodeId || el.dataset.to === nodeId) el.classList.remove("dimmed");
+        else el.classList.add("dimmed");
+      });
+    }
+
+    function clearHighlight() {
+      document.querySelectorAll(".node").forEach(el => { el.classList.remove("dimmed", "highlighted"); });
+      document.querySelectorAll(".edge").forEach(el => { el.classList.remove("dimmed", "highlighted"); });
+      document.querySelectorAll(".edge-label").forEach(el => el.classList.remove("dimmed"));
+    }
+
+    let tooltipTimer = null;
+    function showTooltip(node, ev) {
+      clearTimeout(tooltipTimer);
+      tooltipTimer = setTimeout(() => {
+        const ownerLine = node.owners ? `<div class="tt-owner">Owner: ${node.owners}</div>` : "";
+        const summaryLine = node.summary ? `<div class="tt-summary">${node.summary}</div>` : "";
+        tooltip.innerHTML = `<div class="tt-name">${node.label}</div>${ownerLine}${summaryLine}`;
+        tooltip.classList.add("visible");
+        positionTooltip(ev);
+      }, 250);
+    }
+
+    function positionTooltip(ev) {
+      const wrap = document.getElementById("canvas-wrap").getBoundingClientRect();
+      let x = ev.clientX - wrap.left + 14;
+      let y = ev.clientY - wrap.top + 14;
+      const ttRect = tooltip.getBoundingClientRect();
+      if (x + ttRect.width > wrap.width - 10) x = ev.clientX - wrap.left - ttRect.width - 14;
+      if (y + ttRect.height > wrap.height - 10) y = ev.clientY - wrap.top - ttRect.height - 14;
+      tooltip.style.left = x + "px";
+      tooltip.style.top = y + "px";
+    }
+
+    function hideTooltip() { clearTimeout(tooltipTimer); tooltip.classList.remove("visible"); }
+
+    function showPanel(nodeId) {
+      hideTooltip();
+      const node = nodeMap[nodeId];
+      if (!node) return;
+      const g = GROUPS[node.group] || { color: "#666", label: node.group };
+
+      const outgoing = GRAPH_DATA.edges.filter(e => e.from === nodeId).map(e => ({
+        target: nodeMap[e.to], label: e.label, type: e.type, phase: e.phase, dir: "out"
+      }));
+      const incoming = GRAPH_DATA.edges.filter(e => e.to === nodeId).map(e => ({
+        target: nodeMap[e.from], label: e.label, type: e.type, phase: e.phase, dir: "in"
+      }));
+
+      function phaseTagHTML(phase) { return `<span class="phase-tag p${phase}">P${phase}</span>`; }
+
+      let connectionsHtml = "";
+      if (outgoing.length) {
+        connectionsHtml += `<h3>Outgoing (${outgoing.length})</h3>`;
+        outgoing.forEach(c => {
+          connectionsHtml += `<div class="connection-item" onclick="showPanel('${c.target.id}')"><strong>${node.label}</strong><span class="arrow">${c.label || "→"} →</span><span class="target">${c.target.label}</span>${phaseTagHTML(c.phase)}</div>`;
+        });
+      }
+      if (incoming.length) {
+        connectionsHtml += `<h3>Incoming (${incoming.length})</h3>`;
+        incoming.forEach(c => {
+          connectionsHtml += `<div class="connection-item" onclick="showPanel('${c.target.id}')"><span class="target">${c.target.label}</span><span class="arrow">→ ${c.label || "→"}</span><strong>${node.label}</strong>${phaseTagHTML(c.phase)}</div>`;
+        });
+      }
+      if (!outgoing.length && !incoming.length) connectionsHtml = '<div style="font-size:12px;color:#8fa8c4;">No connections.</div>';
+
+      const ownersHtml = node.owners ? `<div class="owners"><strong>Owner:</strong> ${node.owners}</div>` : "";
+
+      let extraHtml = "";
+      if (node.isAppMaster) {
+        let tabsHtml = '<ul class="tabs-list">';
+        APP_MASTER_TABS.forEach(t => {
+          const cls = t.live ? "flow" : "";
+          tabsHtml += `<li class="${cls}"><div class="tab-name">${t.name}</div><div class="tab-flow">${t.flow}</div></li>`;
+        });
+        tabsHtml += "</ul>";
+        extraHtml = `<div class="connections"><h3>13 tabs - what flows where</h3>${tabsHtml}</div>`;
+      }
+
+      document.getElementById("panel-content").innerHTML = `
+        <h2>${node.label}</h2>
+        <span class="group-tag" style="background:${g.color};color:#ffffff;">${g.label}</span>
+        ${ownersHtml}
+        <div class="description">${node.description}</div>
+        <div class="connections">${connectionsHtml}</div>
+        ${extraHtml}
+      `;
+      document.getElementById("panel").classList.remove("hidden");
+    }
+
+    function closePanel() { document.getElementById("panel").classList.add("hidden"); }
+
+    canvas.addEventListener("click", (ev) => {
+      if (dragMoved) return;  // Was a drag, don't close panel
+      if (ev.target.tagName === "svg" || ev.target.id === "canvas" || ev.target.id === "viewport") closePanel();
+    });
+
+    // ============================================================
+    // PHASE + STAGE TOGGLE - sync header + tutorial-strip versions
+    // Phase = MVP / MVP-required-for-Phase-2 / post-MVP (deployment tier)
+    // Stage = which 3-week build chunk within MVP (execution sequence, 1-5 per v2 plan)
+    // An edge is visible if its phase is checked AND (its stage is checked OR stage is null)
+    // ============================================================
+    function applyPhaseFilter() {
+      const ph1 = document.getElementById("ph1").checked;
+      const ph2 = document.getElementById("ph2").checked;
+      const ph3 = document.getElementById("ph3").checked;
+      const visiblePhases = new Set();
+      if (ph1) visiblePhases.add(1);
+      if (ph2) visiblePhases.add(2);
+      if (ph3) visiblePhases.add(3);
+
+      const stg1 = document.getElementById("stg1").checked;
+      const stg2 = document.getElementById("stg2").checked;
+      const stg3 = document.getElementById("stg3").checked;
+      const stg4 = document.getElementById("stg4").checked;
+      const stg5 = document.getElementById("stg5").checked;
+      const visibleStages = new Set();
+      if (stg1) visibleStages.add(1);
+      if (stg2) visibleStages.add(2);
+      if (stg3) visibleStages.add(3);
+      if (stg4) visibleStages.add(4);
+      if (stg5) visibleStages.add(5);
+
+      function isEdgeVisible(el) {
+        const p = parseInt(el.dataset.phase);
+        if (!visiblePhases.has(p)) return false;
+        const stageRaw = el.dataset.stage;
+        if (stageRaw === "" || stageRaw === "null" || stageRaw === undefined) return true; // no stage = always show with phase
+        const s = parseInt(stageRaw);
+        if (isNaN(s)) return true;
+        return visibleStages.has(s);
+      }
+
+      document.querySelectorAll(".edge").forEach(el => {
+        if (isEdgeVisible(el)) el.classList.remove("hidden-by-phase");
+        else el.classList.add("hidden-by-phase");
+      });
+      document.querySelectorAll(".edge-label").forEach(el => {
+        if (isEdgeVisible(el)) el.classList.remove("hidden-by-phase");
+        else el.classList.add("hidden-by-phase");
+      });
+
+      // Note: anon-mapping is MVP per v2 plan (P1-46) - no longer hidden by phase
+
+      // Sync tutorial-strip checkboxes
+      document.getElementById("ph1-t").checked = ph1;
+      document.getElementById("ph2-t").checked = ph2;
+      document.getElementById("ph3-t").checked = ph3;
+    }
+    function applyPhaseFilterFromTutorial() {
+      // Sync main checkboxes from tutorial-strip then apply
+      document.getElementById("ph1").checked = document.getElementById("ph1-t").checked;
+      document.getElementById("ph2").checked = document.getElementById("ph2-t").checked;
+      document.getElementById("ph3").checked = document.getElementById("ph3-t").checked;
+      applyPhaseFilter();
+    }
+    function toggleAllStages(checked) {
+      ["stg1", "stg2", "stg3", "stg4", "stg5"].forEach(id => {
+        document.getElementById(id).checked = checked;
+      });
+      applyPhaseFilter();
+    }
+    document.getElementById("ph1").addEventListener("change", applyPhaseFilter);
+    document.getElementById("ph2").addEventListener("change", applyPhaseFilter);
+    document.getElementById("ph3").addEventListener("change", applyPhaseFilter);
+    document.getElementById("ph1-t").addEventListener("change", applyPhaseFilterFromTutorial);
+    document.getElementById("ph2-t").addEventListener("change", applyPhaseFilterFromTutorial);
+    document.getElementById("ph3-t").addEventListener("change", applyPhaseFilterFromTutorial);
+    document.getElementById("stg1").addEventListener("change", applyPhaseFilter);
+    document.getElementById("stg2").addEventListener("change", applyPhaseFilter);
+    document.getElementById("stg3").addEventListener("change", applyPhaseFilter);
+    document.getElementById("stg4").addEventListener("change", applyPhaseFilter);
+    document.getElementById("stg5").addEventListener("change", applyPhaseFilter);
+    applyPhaseFilter();
+
+    // ============================================================
+    // ZOOM with TRUE counter-scaling labels (no cap on visible side)
+    // Floor still applies on extreme zoom-in to prevent text from disappearing
+    // ============================================================
+    let zoom = 1;
+    let panX = 0;
+    let panY = 0;
+
+    function applyTransform(animated = false) {
+      if (animated) {
+        viewport.classList.add("animating");
+        setTimeout(() => viewport.classList.remove("animating"), 450);
+      }
+      viewport.setAttribute("transform", `translate(${panX}, ${panY}) scale(${zoom})`);
+      applyCounterScale();
+    }
+
+    function applyCounterScale() {
+      // Counter-scale: text stays at constant on-screen size at zoom <= 1
+      // At zoom > 1, allow text to shrink down to 0.6x natural so detail stays readable
+      // Result: at any zoom, text is roughly readable
+      const inverseZoom = zoom < 1 ? (1 / zoom) : Math.max(0.6, 1 / zoom);
+
+      document.querySelectorAll(".edge-label").forEach(el => {
+        const cx = parseFloat(el.dataset.cx);
+        const cy = parseFloat(el.dataset.cy);
+        if (!isNaN(cx) && !isNaN(cy)) {
+          el.setAttribute("transform", `translate(${cx} ${cy}) scale(${inverseZoom}) translate(${-cx} ${-cy})`);
+        }
+      });
+      document.querySelectorAll(".node-text-group").forEach(el => {
+        const cx = parseFloat(el.dataset.cx);
+        const cy = parseFloat(el.dataset.cy);
+        if (!isNaN(cx) && !isNaN(cy)) {
+          el.setAttribute("transform", `translate(${cx} ${cy}) scale(${inverseZoom}) translate(${-cx} ${-cy})`);
+        }
+      });
+    }
+
+    function zoomIn() {
+      const newZoom = Math.min(zoom * 1.2, 3);
+      const rect = canvas.getBoundingClientRect();
+      const mx = rect.width / 2; const my = rect.height / 2;
+      const k = newZoom / zoom;
+      panX = mx - (mx - panX) * k; panY = my - (my - panY) * k;
+      zoom = newZoom; applyTransform();
+    }
+    function zoomOut() {
+      const newZoom = Math.max(zoom / 1.2, 0.4);
+      const rect = canvas.getBoundingClientRect();
+      const mx = rect.width / 2; const my = rect.height / 2;
+      const k = newZoom / zoom;
+      panX = mx - (mx - panX) * k; panY = my - (my - panY) * k;
+      zoom = newZoom; applyTransform();
+    }
+    function resetView() { zoom = 1; panX = 0; panY = 0; applyTransform(true); }
+
+    canvas.addEventListener("wheel", (ev) => {
+      ev.preventDefault();
+      let dy = ev.deltaY;
+      if (ev.deltaMode === 1) dy *= 33;
+      else if (ev.deltaMode === 2) dy *= 600;
+      const scaleFactor = Math.exp(-dy * 0.0035);
+      const newZoom = Math.max(0.4, Math.min(3, zoom * scaleFactor));
+      const rect = canvas.getBoundingClientRect();
+      const mx = ev.clientX - rect.left; const my = ev.clientY - rect.top;
+      const k = newZoom / zoom;
+      panX = mx - (mx - panX) * k; panY = my - (my - panY) * k;
+      zoom = newZoom; applyTransform();
+    }, { passive: false });
+
+    // ============================================================
+    // PAN: drag anywhere (including on nodes) to pan the canvas.
+    // Click vs drag: if mouse moves more than DRAG_THRESHOLD pixels
+    // between mousedown and mouseup, it's a drag (no click event fires
+    // for nodes). Otherwise the node's click handler runs as normal.
+    // ============================================================
+    const DRAG_THRESHOLD = 5; // pixels of movement before considered a drag
+    let isPanning = false;
+    let dragMoved = false;
+    let panStart = { x: 0, y: 0, panX: 0, panY: 0 };
+
+    canvas.addEventListener("mousedown", (ev) => {
+      // Allow drag-pan from anywhere inside the canvas (nodes, edges, background)
+      // EXCEPT on right-click or middle-click
+      if (ev.button !== 0) return;
+      isPanning = true;
+      dragMoved = false;
+      panStart = { x: ev.clientX, y: ev.clientY, panX, panY };
+    });
+
+    window.addEventListener("mousemove", (ev) => {
+      if (!isPanning) return;
+      const dx = ev.clientX - panStart.x;
+      const dy = ev.clientY - panStart.y;
+      // Only consider it a drag (and start panning visually) once threshold exceeded
+      if (!dragMoved && Math.sqrt(dx*dx + dy*dy) > DRAG_THRESHOLD) {
+        dragMoved = true;
+        // User started dragging - hide any tooltip that was showing
+        hideTooltip();
+      }
+      if (dragMoved) {
+        panX = panStart.panX + dx;
+        panY = panStart.panY + dy;
+        applyTransform();
+      }
+    });
+
+    window.addEventListener("mouseup", () => {
+      isPanning = false;
+      // dragMoved stays set briefly so the click handler can read it
+      // Reset on next tick
+      setTimeout(() => { dragMoved = false; }, 0);
+    });
+
+    requestAnimationFrame(() => applyCounterScale());
+
+    // ============================================================
+    // AUTO-FIT TO HIGHLIGHTED (per-step zoom for tutorials)
+    // Uses the ACTUAL visible canvas pixel area (which shrinks during
+    // tutorial mode because the banner takes vertical space). Computes
+    // zoom such that the highlighted bbox fills as much of the visible
+    // canvas as possible, capped by maxZoom for sanity.
+    // ============================================================
+    function fitViewToNodes(nodeIds, options = {}) {
+      const padding = options.padding || 60;
+      const minZoomFloor = options.minZoom || 0.7;
+      const maxZoomCeil = options.maxZoom || 2.2;  // raised from 1.4
+
+      const viewportW = 1500;
+      const viewportH = 920;
+
+      if (!nodeIds || nodeIds.length === 0) {
+        zoom = 1; panX = 0; panY = 0;
+        applyTransform(true);
+        return;
+      }
+
+      const nodes = nodeIds.map(id => nodeMap[id]).filter(Boolean);
+      if (nodes.length === 0) {
+        zoom = 1; panX = 0; panY = 0;
+        applyTransform(true);
+        return;
+      }
+
+      // Compute bbox of highlighted nodes (in viewBox units)
+      let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+      nodes.forEach(n => {
+        x1 = Math.min(x1, n.x - n.width / 2);
+        y1 = Math.min(y1, n.y - n.height / 2);
+        x2 = Math.max(x2, n.x + n.width / 2);
+        y2 = Math.max(y2, n.y + n.height / 2);
+      });
+
+      const bboxW = x2 - x1 + padding * 2;
+      const bboxH = y2 - y1 + padding * 2;
+      const bboxCx = (x1 + x2) / 2;
+      const bboxCy = (y1 + y2) / 2;
+
+      // Get actual canvas pixel dimensions (this shrinks during tutorial)
+      const rect = canvas.getBoundingClientRect();
+      const canvasW = rect.width;
+      const canvasH = rect.height;
+
+      // SVG fits viewBox into canvas with xMidYMid meet (preserve aspect, contain)
+      // pixels-per-viewBoxUnit at zoom=1:
+      const fitScale = Math.min(canvasW / viewportW, canvasH / viewportH);
+
+      // Target: bbox should fill the canvas (using letterbox space too)
+      // bbox_pixels_at_zoom_1 = bboxW * fitScale
+      // We want: bboxW * fitScale * targetZoom = canvasW (or canvasH for vertical)
+      // So: targetZoom_W = canvasW / (bboxW * fitScale)
+      //     targetZoom_H = canvasH / (bboxH * fitScale)
+      // Take min so bbox fits both ways.
+      const targetZoomW = canvasW / (bboxW * fitScale);
+      const targetZoomH = canvasH / (bboxH * fitScale);
+      let targetZoom = Math.min(targetZoomW, targetZoomH);
+
+      // Apply floor/ceiling
+      targetZoom = Math.max(minZoomFloor, Math.min(maxZoomCeil, targetZoom));
+
+      // Pan: center the bbox in the visible canvas
+      // The center of the visible canvas in viewBox coords (at zoom=1, pan=0) is (viewportW/2, viewportH/2)
+      // because the SVG is centered and viewBox is centered within it.
+      // After transform `translate(panX, panY) scale(zoom)`, viewBox point (bboxCx, bboxCy) maps to:
+      //   (bboxCx*zoom + panX, bboxCy*zoom + panY) in viewBox units pre-render
+      // We want that to land at (viewportW/2, viewportH/2):
+      const targetPanX = (viewportW / 2) - bboxCx * targetZoom;
+      const targetPanY = (viewportH / 2) - bboxCy * targetZoom;
+
+      zoom = targetZoom;
+      panX = targetPanX;
+      panY = targetPanY;
+      applyTransform(true);
+    }
+
+    // ============================================================
+    // TUTORIAL ENGINE
+    // ============================================================
+    let activeTutorial = null;
+    let stepStack = [];
+    let currentStepIdx = 0;
+    let currentBranch = null;
+
+    function startTutorial(tutorialId) {
+      if (!tutorialId) return;
+      const t = TUTORIALS[tutorialId];
+      if (!t) return;
+
+      if (t.phaseRequired === 2) { document.getElementById("ph2").checked = true; applyPhaseFilter(); }
+      if (t.phaseRequired === 3) { document.getElementById("ph3").checked = true; applyPhaseFilter(); }
+
+      activeTutorial = t;
+      activeTutorial._id = tutorialId;  // tag for menu active state
+      currentBranch = null;
+      rebuildStepStack();
+      currentStepIdx = 0;
+      closePanel();
+      hideTooltip();
+      // Hide top header, show tutorial strip + banner
+      document.getElementById("header").classList.add("hidden");
+      document.getElementById("tutorial-strip").classList.add("visible");
+      document.getElementById("tutorial-banner").classList.add("visible");
+      document.getElementById("container").classList.add("tutorial-active");
+      renderStep();
+    }
+
+    function rebuildStepStack() {
+      stepStack = [];
+      activeTutorial.steps.forEach((step, idx) => {
+        stepStack.push({ ...step, originalIdx: idx, branchOrigin: null });
+        if (step.branch && currentBranch) {
+          const branchSteps = currentBranch === 'A' ? step.branch.branchA.steps : step.branch.branchB.steps;
+          branchSteps.forEach((bStep, bIdx) => {
+            stepStack.push({
+              ...bStep,
+              originalIdx: idx,
+              branchOrigin: idx,
+              branchSide: currentBranch,
+              branchIdx: bIdx,
+              isBranchStep: true
+            });
+          });
+        }
+      });
+    }
+
+    function renderStep() {
+      if (!activeTutorial || currentStepIdx >= stepStack.length) return;
+      const step = stepStack[currentStepIdx];
+
+      document.getElementById("strip-counter").textContent = `Step ${currentStepIdx + 1}/${stepStack.length}`;
+      document.getElementById("step-title").textContent = step.title || "";
+      document.getElementById("step-desc").textContent = step.desc || "";
+
+      const branchContainer = document.getElementById("branch-buttons");
+      branchContainer.innerHTML = "";
+      if (step.branch) {
+        branchContainer.style.display = "flex";
+        const btnA = document.createElement("button");
+        btnA.textContent = step.branch.branchA.label;
+        btnA.onclick = () => pickBranch('A');
+        if (currentBranch === 'A') btnA.classList.add('current');
+        branchContainer.appendChild(btnA);
+        const btnB = document.createElement("button");
+        btnB.textContent = step.branch.branchB.label;
+        btnB.onclick = () => pickBranch('B');
+        if (currentBranch === 'B') btnB.classList.add('current');
+        branchContainer.appendChild(btnB);
+      } else if (step.isBranchStep) {
+        branchContainer.style.display = "flex";
+        const otherSide = step.branchSide === 'A' ? 'B' : 'A';
+        const otherStep = activeTutorial.steps[step.branchOrigin];
+        const otherLabel = otherSide === 'A' ? otherStep.branch.branchA.label : otherStep.branch.branchB.label;
+        const switchBtn = document.createElement("button");
+        switchBtn.textContent = `Switch to: ${otherLabel}`;
+        switchBtn.className = "branch-switch-btn";
+        switchBtn.onclick = () => switchBranch(otherSide, step.branchIdx);
+        branchContainer.appendChild(switchBtn);
+      } else {
+        branchContainer.style.display = "none";
+      }
+
+      applyTutorialHighlight(step);
+
+      // Auto-fit view to highlighted nodes
+      fitViewToNodes(step.highlight || []);
+
+      document.getElementById("prev-btn").disabled = currentStepIdx === 0;
+      document.getElementById("next-btn").disabled = currentStepIdx === stepStack.length - 1;
+    }
+
+    function pickBranch(side) {
+      currentBranch = side;
+      const stepBefore = stepStack[currentStepIdx];
+      rebuildStepStack();
+      const newIdx = stepStack.findIndex(s => s.originalIdx === stepBefore.originalIdx && !s.isBranchStep);
+      if (newIdx >= 0) currentStepIdx = newIdx;
+      renderStep();
+    }
+
+    function switchBranch(otherSide, branchIdx) {
+      currentBranch = otherSide;
+      const stepBefore = stepStack[currentStepIdx];
+      rebuildStepStack();
+      // Try to land on equivalent index in new branch
+      let newIdx = stepStack.findIndex(s => s.isBranchStep && s.branchOrigin === stepBefore.branchOrigin && s.branchIdx === branchIdx);
+      // Fallback: if other branch is shorter, land on the LAST step of that branch
+      if (newIdx < 0) {
+        const otherBranchSteps = stepStack.filter(s => s.isBranchStep && s.branchOrigin === stepBefore.branchOrigin);
+        if (otherBranchSteps.length > 0) {
+          const lastBranchStep = otherBranchSteps[otherBranchSteps.length - 1];
+          newIdx = stepStack.indexOf(lastBranchStep);
+        }
+      }
+      // Final fallback: parent split step
+      if (newIdx < 0) {
+        newIdx = stepStack.findIndex(s => s.originalIdx === stepBefore.branchOrigin && !s.isBranchStep);
+      }
+      if (newIdx >= 0) currentStepIdx = newIdx;
+      renderStep();
+    }
+
+    function applyTutorialHighlight(step) {
+      const highlightSet = new Set(step.highlight || []);
+      const edgeSet = new Set(step.highlightEdges || []);
+
+      document.querySelectorAll(".node").forEach(el => {
+        el.classList.remove("highlighted");
+        if (highlightSet.size === 0) {
+          el.classList.remove("dimmed", "tutorial-highlighted");
+        } else if (highlightSet.has(el.dataset.nodeId)) {
+          el.classList.remove("dimmed");
+          el.classList.add("tutorial-highlighted");
+        } else {
+          el.classList.add("dimmed");
+          el.classList.remove("tutorial-highlighted");
+        }
+      });
+
+      document.querySelectorAll(".edge").forEach(el => {
+        el.classList.remove("highlighted");
+        const edgeId = el.dataset.edgeId;
+        if (edgeSet.size === 0 && highlightSet.size === 0) {
+          el.classList.remove("dimmed", "tutorial-highlighted");
+        } else if (edgeSet.has(edgeId)) {
+          el.classList.remove("dimmed");
+          el.classList.add("tutorial-highlighted");
+        } else {
+          el.classList.add("dimmed");
+          el.classList.remove("tutorial-highlighted");
+        }
+      });
+
+      document.querySelectorAll(".edge-label").forEach(el => {
+        const edgeId = `${el.dataset.from}-${el.dataset.to}`;
+        if (edgeSet.size === 0 && highlightSet.size === 0) el.classList.remove("dimmed");
+        else if (edgeSet.has(edgeId)) el.classList.remove("dimmed");
+        else el.classList.add("dimmed");
+      });
+    }
+
+    function tutorialNext() {
+      if (currentStepIdx < stepStack.length - 1) {
+        currentStepIdx++;
+        renderStep();
+      }
+    }
+    function tutorialPrev() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderStep();
+      }
+    }
+
+    function endTutorial() {
+      activeTutorial = null;
+      currentBranch = null;
+      stepStack = [];
+      currentStepIdx = 0;
+      document.getElementById("header").classList.remove("hidden");
+      document.getElementById("tutorial-strip").classList.remove("visible");
+      document.getElementById("tutorial-banner").classList.remove("visible");
+      document.getElementById("container").classList.remove("tutorial-active");
+      // Reset menu label
+      const sel = document.getElementById("tm-selected");
+      if (sel) sel.textContent = "Pick one...";
+      // Clear active highlight in menu
+      document.querySelectorAll(".tm-item.active, .tm-task-item.active").forEach(el => el.classList.remove("active"));
+      clearHighlight();
+      document.querySelectorAll(".node").forEach(el => el.classList.remove("tutorial-highlighted"));
+      document.querySelectorAll(".edge").forEach(el => el.classList.remove("tutorial-highlighted"));
+      // Reset view
+      resetView();
+    }
+  </script>
+</body>
+</html>
