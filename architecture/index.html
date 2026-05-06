@@ -784,7 +784,7 @@
         </text>
         <text x="600" y="644" text-anchor="middle" fill="#c2cee0" font-size="13"
               font-weight="500" font-family="-apple-system, sans-serif">
-          Master Sheet  &middot;  Figma  &middot;  GitLab  &middot;  Vercel  &middot;  Mattermost  &middot;  Asana  &middot;  Cartesia playground
+          Master Sheet  &middot;  Figma  &middot;  GitLab  &middot;  Vercel  &middot;  Mattermost  &middot;  Asana  &middot;  Vapi
         </text>
       </g>
     </svg>
@@ -1093,7 +1093,7 @@
         </g>
         <g>
           <rect x="970" y="815" width="155" height="44" rx="6" fill="#7c3aed" stroke="#a78bfa" stroke-width="1" />
-          <text x="1047" y="833" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="-apple-system, sans-serif">Cartesia playground</text>
+          <text x="1047" y="833" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="-apple-system, sans-serif">Vapi</text>
           <text x="1047" y="848" text-anchor="middle" fill="#c4b5fd" font-size="9" font-family="-apple-system, sans-serif">voice MP3 generation</text>
         </g>
         <g>
@@ -1731,7 +1731,7 @@
             desc: "User taps mic or check-in button on HOME-EVENING. Routes to ECHECK-01. v2 plan: check-ins use the Async Reflection pattern - NOT Vapi. Cost target: ~$0.006/check-in (vs ~$0.05+ if it were Vapi). Used by all 9 check-in screens: MCHECK-01, MCHECK-02, ECHECK-01 to ECHECK-06." },
           { highlight: ["frontend", "mp3-storage"], highlightEdges: ["frontend-mp3-storage"],
             title: "2. PROMPT state: pre-recorded MP3 plays",
-            desc: "Frontend enters PROMPT state. Loads the prompt MP3 from Supabase Storage in Yair's cloned voice. 'Hey [Name] - let's wrap up your day. Would you like to go through your habits yourself, or want me to read them off?' Pre-recorded once via Cartesia playground (per P2-30). The predictable parts of every check-in are MP3s - that's where the cost savings come from." },
+            desc: "Frontend enters PROMPT state. Loads the prompt MP3 from Supabase Storage in Yair's cloned voice. 'Hey [Name] - let's wrap up your day. Would you like to go through your habits yourself, or want me to read them off?' Pre-recorded once via Vapi (per P2-30). The predictable parts of every check-in are MP3s - that's where the cost savings come from." },
           { highlight: ["frontend", "cartesia-stt"], highlightEdges: ["frontend-cartesia-stt"],
             title: "3. LISTENING state: mic opens, user responds",
             desc: "MP3 finishes. Frontend enters LISTENING state. Opens Cartesia Ink STT for streaming transcription (parallel with tap UI - user can choose). User responds: 'I'll do it' / 'Read them off' / or just taps." },
@@ -1749,7 +1749,7 @@
             desc: "Frontend plays the Sonic API audio AND displays text alongside (UX-22 voice + text sync). User can read along or just listen. llm_call event written to session_log with anon_id." },
           { highlight: ["frontend", "mp3-storage"], highlightEdges: ["frontend-mp3-storage"],
             title: "8. FOLLOWUP_OPTIONAL → CLOSING → DONE",
-            desc: "If LLM determined a follow-up is needed (FOLLOWUP_OPTIONAL), state machine loops back to LISTENING. Otherwise CLOSING state plays a mood-matched MP3 closing from Supabase Storage (4 evening closings: all-done / most / few / none). State machine ends in DONE.\n\nv2 plan inventory: ~30 MP3s for MVP per P2-30 (reduced from 65) (prompts, thinking acks, mood-matched closings) - VA-generated via Cartesia playground. Filenames TBD per P2-36 (Yair tone bible)." }
+            desc: "If LLM determined a follow-up is needed (FOLLOWUP_OPTIONAL), state machine loops back to LISTENING. Otherwise CLOSING state plays a mood-matched MP3 closing from Supabase Storage (4 evening closings: all-done / most / few / none). State machine ends in DONE.\n\nv2 plan inventory: ~30 MP3s for MVP per P2-30 (reduced from 65) (prompts, thinking acks, mood-matched closings) - VA-generated via Vapi. Filenames TBD per P2-36 (Yair tone bible)." }
         ]
       },
 
@@ -1804,7 +1804,7 @@
             desc: "What's pre-recorded in MVP: ~30 Async Reflection MP3s for the 9 check-in screens (prompts, thinking acks, mood-matched closings) per P2-30 + the voice cap message. NO onboarding MP3s anymore (changed in v2 plan - onboarding is all-Vapi live TTS)." },
           { highlight: ["app-master", "mp3-storage"], highlightEdges: ["app-master-mp3-storage"],
             title: "2. Today (Stage 5): manual VA generation",
-            desc: "Yair (or VA per P2-30) reads voice text from the App Master Sheet's MP3 Files tab + Yair tone bible (P2-36). Goes to cartesia.ai playground. Pastes text. Generates MP3. Downloads. Uploads to Supabase MP3 storage manually. Updates URL in MP3 Files tab. Slow and not idempotent." },
+            desc: "Yair (or VA per P2-30) reads voice text from the App Master Sheet's MP3 Files tab + Yair tone bible (P2-36). Goes to Vapi. Pastes text. Generates MP3. Downloads. Uploads to Supabase MP3 storage manually. Updates URL in MP3 Files tab. Slow and not idempotent." },
           { highlight: ["app-master"], highlightEdges: [],
             title: "3. Phase 2: sheet schema gets a content hash column",
             desc: "Before automation works, the MP3 Files tab needs schema changes: text_hash (hash of source voice text), last_generated_at (timestamp), current_storage_url (where the MP3 lives), version (bump on regenerate). Without text_hash we can't detect what changed. Without version we can't roll back." },
@@ -2371,7 +2371,7 @@
     id: "p2-30", taskId: "P2-30", name: "Generate ~30 check-in MP3s (VA-driven, manual)", stage: 5, status: "notstarted", owner: ["Yair"],
     steps: [{
       title: "P2-30: Pre-record ~30 check-in MP3s for MVP",
-      desc: "VA generates ~30 MP3s in Yair's cloned voice via Cartesia playground (reduced from 65 for MVP scope). Inventory:\n• Morning prompts (~6-8): greeting, mood, sleep, energy, stress, transition to habits\n• Morning closings (~3 mood-matched): low / neutral / high\n• Evening prompts (~6-8): greeting, habit review intro, reflection prompts\n• Evening closings (~3-4 mood-matched): all-done / most / few / none variants\n• Async Reflection acknowledgment cues (~5-8): 'mm-hmm' / 'got it' / 'tell me more' shorts played while LLM thinks\n\nFilenames + scripts come from P2-36 (Yair tone bible). Upload to Supabase Storage. Manual for MVP - Phase 2 automates via the auto-pipeline (mp3pipeline tutorial).\n\nDeferred to Phase 2 (FF-18 in Asana): 29 subcategory MP3s, 8 category MP3s, 8 milestone MP3s. We ship MVP with the highest-volume daily check-in moments fully voiced; expand to category/subcategory/milestone later when usage justifies.\n\nOwner: Yair (with VA). Status: Not Started.",
+      desc: "VA generates ~30 MP3s in Yair's cloned voice via Vapi (reduced from 65 for MVP scope). Inventory:\n• Morning prompts (~6-8): greeting, mood, sleep, energy, stress, transition to habits\n• Morning closings (~3 mood-matched): low / neutral / high\n• Evening prompts (~6-8): greeting, habit review intro, reflection prompts\n• Evening closings (~3-4 mood-matched): all-done / most / few / none variants\n• Async Reflection acknowledgment cues (~5-8): 'mm-hmm' / 'got it' / 'tell me more' shorts played while LLM thinks\n\nFilenames + scripts come from P2-36 (Yair tone bible). Upload to Supabase Storage. Manual for MVP - Phase 2 automates via the auto-pipeline (mp3pipeline tutorial).\n\nDeferred to Phase 2 (FF-18 in Asana): 29 subcategory MP3s, 8 category MP3s, 8 milestone MP3s. We ship MVP with the highest-volume daily check-in moments fully voiced; expand to category/subcategory/milestone later when usage justifies.\n\nOwner: Yair (with VA). Status: Not Started.",
       highlight: ["app-master", "mp3-storage", "cartesia-tts"],
       highlightEdges: ["app-master-mp3-storage"]
     }]
