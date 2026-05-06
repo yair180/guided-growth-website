@@ -1,6 +1,6 @@
 # Guided Growth — Marketing Website
 
-Landing page with waitlist for [Guided Growth](https://guidedgrowth.app).
+Landing page with waitlist for [Guided Growth](https://guidedgrowthos.com).
 
 **Stack:** Pure HTML + CSS + vanilla JS. No build step. No dependencies. Deploys anywhere.
 
@@ -53,7 +53,7 @@ Your site goes live at `your-project.pages.dev` in ~30 seconds.
 ### Custom Domain
 
 1. In Cloudflare Pages → your project → **Custom domains** → **Set up a custom domain**
-2. Enter your domain (e.g. `guidedgrowth.app`)
+2. Enter your domain (e.g. `guidedgrowthos.com`)
 3. Follow the DNS instructions — if your domain is already on Cloudflare, it's automatic
 
 ---
