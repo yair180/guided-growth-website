@@ -3712,7 +3712,12 @@
           scrollY: window.scrollY,
           activeTutorialId: (typeof activeTutorial !== "undefined" && activeTutorial) ? activeTutorial._id : null,
           currentStepIdx: (typeof currentStepIdx !== "undefined") ? currentStepIdx : 0,
-          currentBranch: (typeof currentBranch !== "undefined") ? currentBranch : null
+          currentBranch: (typeof currentBranch !== "undefined") ? currentBranch : null,
+          // Canvas zoom/pan so we land at the exact same view, not the
+          // step's auto-fit position (which is what fitViewToNodes computes).
+          canvasZoom: (typeof zoom === "number") ? zoom : null,
+          canvasPanX: (typeof panX === "number") ? panX : null,
+          canvasPanY: (typeof panY === "number") ? panY : null
         };
         try { sessionStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {}
       }
@@ -3739,6 +3744,19 @@
               if (typeof renderStep === "function") renderStep();
             }
           } catch (e) { /* tutorial id may have been removed; ignore */ }
+        }
+        // Override canvas auto-fit with the user's actual last view.
+        // renderStep() calls fitViewToNodes(); we restore on the next tick
+        // so our values win.
+        if (typeof s.canvasZoom === "number" && typeof zoom !== "undefined") {
+          setTimeout(() => {
+            try {
+              zoom  = s.canvasZoom;
+              panX  = s.canvasPanX;
+              panY  = s.canvasPanY;
+              if (typeof applyTransform === "function") applyTransform();
+            } catch (e) {}
+          }, 0);
         }
         if (typeof s.scrollY === "number") {
           try { window.scrollTo({ top: s.scrollY, left: 0, behavior: "instant" }); }
