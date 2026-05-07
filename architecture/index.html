@@ -3606,6 +3606,95 @@
       // Reset view
       resetView();
     }
+
+    // ============================================================
+    // AUTO-REFRESH ON SHEET SYNC
+    // Polls version.txt every 20s; if it changes AND the user has
+    // been idle for 10s, capture view state to sessionStorage and
+    // reload. State is restored on the next load so the user lands
+    // back on the same tutorial step + scroll position.
+    // ============================================================
+    (function setupAutoRefresh() {
+      const VERSION_URL = "version.txt";
+      const POLL_MS = 20000;
+      const IDLE_MS = 10000;
+      const STATE_KEY = "gg_arch_reload_state_v1";
+      const STATE_TTL_MS = 5 * 60 * 1000;
+
+      let baselineVersion = null;
+      let lastActivityTs = Date.now();
+      let pendingReload = false;
+
+      ["mousemove","keydown","scroll","click","touchstart","wheel"].forEach(ev => {
+        window.addEventListener(ev, () => { lastActivityTs = Date.now(); }, { passive: true });
+      });
+
+      async function fetchVersion() {
+        try {
+          const r = await fetch(VERSION_URL + "?t=" + Date.now(), { cache: "no-store" });
+          if (!r.ok) return null;
+          return (await r.text()).trim();
+        } catch (e) { return null; }
+      }
+
+      function captureState() {
+        const state = {
+          ts: Date.now(),
+          scrollY: window.scrollY,
+          activeTutorialId: (typeof activeTutorial !== "undefined" && activeTutorial) ? activeTutorial._id : null,
+          currentStepIdx: (typeof currentStepIdx !== "undefined") ? currentStepIdx : 0,
+          currentBranch: (typeof currentBranch !== "undefined") ? currentBranch : null
+        };
+        try { sessionStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {}
+      }
+
+      function restoreState() {
+        let raw;
+        try { raw = sessionStorage.getItem(STATE_KEY); } catch (e) { return; }
+        if (!raw) return;
+        try { sessionStorage.removeItem(STATE_KEY); } catch (e) {}
+        let s;
+        try { s = JSON.parse(raw); } catch (e) { return; }
+        if (!s || (Date.now() - s.ts) > STATE_TTL_MS) return;
+
+        if (s.activeTutorialId && typeof startTutorial === "function") {
+          try {
+            startTutorial(s.activeTutorialId);
+            if (s.currentBranch && typeof currentBranch !== "undefined") {
+              currentBranch = s.currentBranch;
+              if (typeof rebuildStepStack === "function") rebuildStepStack();
+            }
+            if (typeof currentStepIdx !== "undefined" && typeof s.currentStepIdx === "number") {
+              const max = (typeof stepStack !== "undefined" ? stepStack.length : 1) - 1;
+              currentStepIdx = Math.max(0, Math.min(s.currentStepIdx, max));
+              if (typeof renderStep === "function") renderStep();
+            }
+          } catch (e) { /* tutorial id may have been removed; ignore */ }
+        }
+        if (typeof s.scrollY === "number") {
+          try { window.scrollTo({ top: s.scrollY, left: 0, behavior: "instant" }); }
+          catch (e) { window.scrollTo(0, s.scrollY); }
+        }
+      }
+
+      async function checkVersion() {
+        const v = await fetchVersion();
+        if (!v) return;
+        if (baselineVersion === null) { baselineVersion = v; return; }
+        if (v === baselineVersion) return;
+        pendingReload = true;
+        if (Date.now() - lastActivityTs >= IDLE_MS) {
+          captureState();
+          window.location.reload();
+        }
+      }
+
+      // Restore after current tick so the page's own init has finished
+      setTimeout(restoreState, 150);
+      // Start polling
+      setInterval(checkVersion, POLL_MS);
+      checkVersion();
+    })();
   </script>
 </body>
 </html>

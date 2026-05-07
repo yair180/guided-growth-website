@@ -39,8 +39,12 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
+          # Stamp a fresh version token so the live page can detect this update
+          # and trigger an idle-aware reload. Use the run timestamp so it's
+          # monotonic and easy to read.
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > architecture/version.txt
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add architecture/index.html
+          git add architecture/index.html architecture/version.txt
           git commit -m "auto-sync architecture map from Master Sheet"
           git push
