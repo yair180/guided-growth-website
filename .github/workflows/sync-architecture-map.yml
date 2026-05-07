@@ -1,10 +1,10 @@
 name: Sync architecture map from Master Sheet
 
 on:
-  schedule:
-    # Every 5 minutes. GitHub may delay during high load — actual cadence
-    # is best-effort but typically within ±5 min of the schedule.
-    - cron: "*/5 * * * *"
+  # Cron is driven by the gg-arch-cron Cloudflare Worker (every 2 min)
+  # which calls workflow_dispatch via the GitHub API. GitHub's own
+  # schedule: was unreliable (delays/skips up to 30+ min), so we don't
+  # rely on it anymore.
   workflow_dispatch: {}
 
 permissions:
