@@ -1889,7 +1889,7 @@
   // STAGE 1 - FOUNDATION (11 tasks)
   // ============================================================
   {
-    id: "p1-11", taskId: "P1-11", name: "Build VoiceContext Provider", stage: 1, status: "done", owner: ["Mint"],
+    id: "p1-11", taskId: "P1-11", name: "Build VoiceContext Provider", stage: 1, status: "blocked", owner: ["Mint"],
     steps: [{
       title: "P1-11: VoiceContext Provider (Stage 1)",
       desc: "Frontend React Context provider that holds voice state across the app: ai_output_mode (voice/screen), mic_permission (granted/denied), Cartesia session lifecycle, current voice path.\n\nEvery LLM-active screen wraps in this provider. P1-39 extends it to track Cartesia session lifecycle for callLLM path routing.\n\nOwner: Mint (frontend). Status: In Progress.",
