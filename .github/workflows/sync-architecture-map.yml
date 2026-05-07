@@ -1,0 +1,46 @@
+name: Sync architecture map from Master Sheet
+
+on:
+  schedule:
+    # Every 5 minutes. GitHub may delay during high load — actual cadence
+    # is best-effort but typically within ±5 min of the schedule.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-architecture-map
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: pip install --quiet google-api-python-client google-auth
+
+      - name: Run sync
+        env:
+          GG_CREDS_JSON: ${{ secrets.GG_SERVICE_ACCOUNT_JSON }}
+        run: python scripts/sync_sheet_to_html.py
+
+      - name: Commit & push if architecture/index.html changed
+        run: |
+          if [[ -z "$(git status --porcelain architecture/index.html)" ]]; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add architecture/index.html
+          git commit -m "auto-sync architecture map from Master Sheet"
+          git push
