@@ -468,11 +468,12 @@
     #zoom-1-view.active, #zoom-2-view.active { display: block; }
     #zoom-3-view.active { display: block; }
 
-    /* Push existing zoom-3 down to make room for toggle bar */
-    body.has-zoom-bar #zoom-3-view #header { top: 41px; }
-    body.has-zoom-bar #zoom-3-view #tutorial-strip { top: 41px; }
-    body.has-zoom-bar #zoom-3-view #tutorial-banner { top: 41px; }
-    body.has-zoom-bar #zoom-3-view #container { top: calc(41px + 60px); height: calc(100vh - 41px - 60px); }
+    /* Push zoom-3 content below the fixed 41px zoom-toggle-bar.
+       The header / tutorial-strip / tutorial-banner are static-flow elements,
+       so a top-level padding on the zoom view is what actually offsets them. */
+    body.has-zoom-bar #zoom-3-view { padding-top: 41px; box-sizing: border-box; }
+    body.has-zoom-bar #zoom-3-view #container { height: calc(100vh - 41px - 76px); }
+    body.has-zoom-bar #zoom-3-view #container.tutorial-active { height: calc(100vh - 41px - 38px - 220px); }
 
     /* === ZOOM 1 VIEW === */
     #zoom-1-view {
