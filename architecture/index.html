@@ -259,6 +259,45 @@
       font-size: 14px; color: #d4e0f0; line-height: 1.5;
       white-space: pre-wrap;
     }
+    #tutorial-banner .task-meta {
+      display: none;
+      gap: 8px;
+      align-items: center;
+      margin: 6px 0 10px;
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+    #tutorial-banner .task-meta.visible { display: flex; }
+    #tutorial-banner .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      border: 1px solid transparent;
+    }
+    #tutorial-banner .meta-chip.owner {
+      background: rgba(91, 192, 222, 0.12);
+      color: #a8d6e8;
+      border-color: rgba(91, 192, 222, 0.35);
+    }
+    #tutorial-banner .meta-chip.status-notstarted {
+      background: rgba(148, 163, 184, 0.18); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.4);
+    }
+    #tutorial-banner .meta-chip.status-inprogress {
+      background: rgba(234, 179, 8, 0.18); color: #fde68a; border-color: rgba(234, 179, 8, 0.5);
+    }
+    #tutorial-banner .meta-chip.status-blocked {
+      background: rgba(220, 38, 38, 0.22); color: #fecaca; border-color: rgba(220, 38, 38, 0.55);
+    }
+    #tutorial-banner .meta-chip.status-done {
+      background: rgba(22, 163, 74, 0.22); color: #bbf7d0; border-color: rgba(22, 163, 74, 0.55);
+    }
+    #tutorial-banner .meta-chip.status-obsolete {
+      background: rgba(107, 114, 128, 0.18); color: #d1d5db; border-color: rgba(107, 114, 128, 0.4);
+      text-decoration: line-through;
+    }
     .branch-buttons { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
     .branch-buttons button {
       background: #ca8a04; color: #fff; border: 1px solid #facc15;
@@ -1291,6 +1330,7 @@
   <div id="tutorial-banner">
     <div class="banner-content">
       <div class="step-title" id="step-title">Loading...</div>
+      <div class="task-meta" id="task-meta"></div>
       <div class="step-desc" id="step-desc">Loading...</div>
       <div class="branch-buttons" id="branch-buttons" style="display: none;"></div>
     </div>
@@ -3465,6 +3505,32 @@
       document.getElementById("strip-counter").textContent = `Step ${currentStepIdx + 1}/${stepStack.length}`;
       document.getElementById("step-title").textContent = step.title || "";
       document.getElementById("step-desc").textContent = step.desc || "";
+
+      // Synced status + owner chips (from sheet via sync_sheet_to_html.py)
+      const meta = document.getElementById("task-meta");
+      meta.innerHTML = "";
+      const STATUS_LABELS = {
+        notstarted: "Not Started",
+        inprogress: "In Progress",
+        blocked:    "Blocked",
+        done:       "Done",
+        obsolete:   "Obsolete"
+      };
+      const status = activeTutorial.status;
+      const owners = Array.isArray(activeTutorial.owner) ? activeTutorial.owner.filter(Boolean) : [];
+      if (status && STATUS_LABELS[status]) {
+        const chip = document.createElement("span");
+        chip.className = "meta-chip status-" + status;
+        chip.textContent = STATUS_LABELS[status];
+        meta.appendChild(chip);
+      }
+      if (owners.length) {
+        const chip = document.createElement("span");
+        chip.className = "meta-chip owner";
+        chip.textContent = (owners.length === 1 ? "Owner: " : "Owners: ") + owners.join(", ");
+        meta.appendChild(chip);
+      }
+      meta.classList.toggle("visible", meta.children.length > 0);
 
       const branchContainer = document.getElementById("branch-buttons");
       branchContainer.innerHTML = "";
