@@ -2508,7 +2508,9 @@
     // Done dynamically here so we don't have to repeat the steps in two places.
     TASK_TUTORIALS.forEach(t => {
       if (t.steps && t.steps.length > 0) {
-        TUTORIALS[t.id] = { name: `${t.taskId}: ${t.name}`, steps: t.steps };
+        // Preserve status/owner/taskId/stage so the tutorial banner can
+        // render synced chips (renderStep reads activeTutorial.status etc.)
+        TUTORIALS[t.id] = { ...t, name: `${t.taskId}: ${t.name}` };
       }
     });
 
