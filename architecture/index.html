@@ -1975,7 +1975,7 @@
     }]
   },
   {
-    id: "p1-31", taskId: "P1-31", name: "Seed AI Context into Supabase", stage: 1, status: "notstarted", owner: ["Yonas"],
+    id: "p1-31", taskId: "P1-31", name: "Seed AI Context into Supabase", stage: 1, status: "notstarted", owner: ["Mint"],
     steps: [{
       title: "P1-31: Seed screen_contexts + global_context",
       desc: "Run seed_contexts.py and seed_global_context.py. These read the App Master Sheet (Screens tab → screen_contexts table; Global Context tab → global_context table).\n\nFirst-time seed populates Supabase. Subsequent runs update changed rows by hash. This is what lets the LLM read screen rules and the knowledge base on every callLLM().",
