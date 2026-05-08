@@ -78,14 +78,47 @@ def load_credentials():
 
 # ─── Sheet I/O ────────────────────────────────────────────────────────────
 
+def _with_retry(callable_, *, attempts: int = 5, base_delay: float = 1.0):
+    """Run a Sheets API .execute() callable with exponential backoff on
+    transient errors (5xx, 429, network blips). Re-raise the last error
+    only if every attempt fails. Designed so cron-driven runs don't email
+    failures on Google-side hiccups."""
+    import time
+    from googleapiclient.errors import HttpError
+
+    last_exc = None
+    for i in range(attempts):
+        try:
+            return callable_()
+        except HttpError as e:
+            last_exc = e
+            status = getattr(e.resp, "status", None)
+            transient = status in (429, 500, 502, 503, 504)
+            if not transient or i == attempts - 1:
+                raise
+            sleep_s = base_delay * (2 ** i)
+            print(f"  retry {i+1}/{attempts-1} after HTTP {status} — sleeping {sleep_s}s",
+                  file=sys.stderr, flush=True)
+            time.sleep(sleep_s)
+        except Exception as e:
+            last_exc = e
+            if i == attempts - 1:
+                raise
+            sleep_s = base_delay * (2 ** i)
+            print(f"  retry {i+1}/{attempts-1} after {type(e).__name__}: {e} — sleeping {sleep_s}s",
+                  file=sys.stderr, flush=True)
+            time.sleep(sleep_s)
+    if last_exc:
+        raise last_exc
+
+
 def fetch_sheet_rows() -> list[list[str]]:
     from googleapiclient.discovery import build
 
     creds = load_credentials()
     svc = build("sheets", "v4", credentials=creds)
-    result = svc.spreadsheets().values().get(
-        spreadsheetId=SHEET_ID, range=TASKS_RANGE
-    ).execute()
+    req = svc.spreadsheets().values().get(spreadsheetId=SHEET_ID, range=TASKS_RANGE)
+    result = _with_retry(req.execute)
     return result.get("values", [])
 
 
