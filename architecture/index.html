@@ -2025,10 +2025,10 @@
         const priorityCls = (t.pr && PRIORITY_ROW_CLASS[t.pr]) ? " " + PRIORITY_ROW_CLASS[t.pr] : "";
         const titleEsc  = (t.t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
         const wtBadge = t.wt
-          ? `<span class="z4-task-weight weight-w-${t.wt}" title="Weight (story points) — relative effort">W·${t.wt}</span>`
+          ? `<span class="z4-task-weight weight-w-${t.wt}" title="Weight (story points) — relative effort">Weight: ${t.wt}</span>`
           : "";
         const estBadge = t.est
-          ? `<span class="z4-task-est" title="Estimated hours">≈ ${t.est}h</span>`
+          ? `<span class="z4-task-est" title="Estimated hours">Estimated: ${t.est}h</span>`
           : "";
         html += `<div class="z4-task-row${activeCls}${priorityCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row${t.pr ? ` · Priority: ${t.pr}` : ""}">
           <span class="z4-task-status z4-${statusCls}">${dot}</span>
@@ -4634,7 +4634,7 @@
         if (pr && PRIORITY_CLASS[pr]) {
           const prChip = document.createElement("span");
           prChip.className = "meta-chip " + PRIORITY_CLASS[pr];
-          prChip.textContent = pr;
+          prChip.textContent = "Priority: " + pr;
           meta.appendChild(prChip);
         }
 
@@ -4642,8 +4642,8 @@
         if (wt) {
           const wtChip = document.createElement("span");
           wtChip.className = "meta-chip weight weight-w-" + wt;
-          wtChip.textContent = "W·" + wt;
-          wtChip.title = "Weight (Fibonacci story points) — relative effort, not time";
+          wtChip.textContent = "Weight: " + wt;
+          wtChip.title = "Fibonacci story points — relative effort, not time";
           meta.appendChild(wtChip);
         }
 
@@ -4651,7 +4651,7 @@
         if (est) {
           const estChip = document.createElement("span");
           estChip.className = "meta-chip estimate";
-          estChip.textContent = "≈ " + est + "h";
+          estChip.textContent = "Estimated: " + est + "h";
           estChip.title = "Estimated hours";
           meta.appendChild(estChip);
         }
