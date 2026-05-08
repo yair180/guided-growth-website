@@ -335,7 +335,12 @@ def upsert_task_field(text: str, field_name: str, value, anchor_pat=_OWNER_RE) -
         pat = re.compile(rf'({field_name}\s*:\s*)(true|false)')
     elif isinstance(value, str):
         rendered = js_string(value)
-        pat = re.compile(rf'({field_name}\s*:\s*)"((?:[^"\\\\]|\\\\.)*)"')
+        # NOTE: in raw f-string `\\` is two chars (one literal backslash).
+        # Regex needs `[^"\\]` (not-quote-not-backslash) and `\\.` (escaped char).
+        # Earlier version used `\\\\` (two literal backslashes) which never
+        # matched single-backslash escape sequences — caused INSERT to re-fire
+        # every sync, producing duplicates of acceptance/description fields.
+        pat = re.compile(rf'({field_name}\s*:\s*)"((?:[^"\\]|\\.)*)"')
     else:
         raise TypeError(f"unsupported value type {type(value)}")
 
