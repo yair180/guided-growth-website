@@ -3219,7 +3219,7 @@
     acceptance: "SETUP\n□ /docs/anon-id-contract.md exists and is linked from /docs/README.md\n\nBUILD\n□ Vapi assistant config tool calls pass anon_id, not user_id\n□ PostHog identify() uses anon_id\n\nVERIFY\n□ Code review checklist updated to flag user_id usage in behavioral context\n□ PostHog dashboard sample event: distinct_id = anon_id",
     approved: false,
     tested: false,
-    description: "Document the source-of-truth contract: anon_id is the behavioral key across Vapi (Path 1), Async Reflection (Path 2), Direct LLM (Path 3), and PostHog.",
+    description: "FALSE",
     steps: [{
       title: "P1-47: Crisis safety rule (1 hour, single global rule)",
       desc: "Once P1-46 lands, all 3 LLM paths and PostHog must use anon_id consistently. This task documents the contract so new code doesn't drift back to using user_id for behavior.\n\nSETUP\n- Confirm P1-46 migration applied\n\nBUILD\n- Write /docs/anon-id-contract.md covering: scope, do's, don'ts, how to add a new behavioral table\n- Update Vapi assistant config (P1-13) to pass anon_id (not user_id) in tool calls\n- Update PostHog identify() calls to use anon_id\n\nVERIFY\n- Any new code touching behavioral data references anon_id\n- PostHog dashboard shows users keyed on anon_id",
