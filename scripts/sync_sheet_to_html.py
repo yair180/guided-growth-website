@@ -153,6 +153,48 @@ def build_sheet_index(rows: list[list[str]]) -> dict[str, dict[str, str]]:
     return by_id
 
 
+def build_task_to_row(rows: list[list[str]]) -> dict[str, int]:
+    """Map Task ID → 1-indexed sheet row, used by zoom-4 jump-to-row."""
+    if not rows:
+        return {}
+    headers = [(h or "").strip() for h in rows[0]]
+    try:
+        tcol = headers.index("Task ID")
+    except ValueError:
+        return {}
+    out: dict[str, int] = {}
+    for i, row in enumerate(rows[1:], start=2):
+        if not row:
+            continue
+        padded = list(row) + [""] * (len(headers) - len(row))
+        tid = (padded[tcol] or "").strip()
+        if tid:
+            out[tid] = i
+    return out
+
+
+_TASK_TO_ROW_RE = re.compile(
+    r"const\s+TASK_TO_ROW\s*=\s*\{[^}]*\}\s*;",
+    re.MULTILINE,
+)
+
+
+def upsert_task_to_row(html: str, mapping: dict[str, int]) -> tuple[str, bool]:
+    """Replace the inline TASK_TO_ROW JS object with the fresh mapping.
+
+    Returns (new_html, changed). Compact JSON output (no whitespace) keeps
+    the diff small and avoids spurious linewise changes.
+    """
+    if not mapping:
+        return html, False
+    payload = json.dumps(mapping, separators=(",", ":"))
+    replacement = f"const TASK_TO_ROW = {payload};"
+    new_html, n = _TASK_TO_ROW_RE.subn(replacement, html, count=1)
+    if n == 0:
+        return html, False
+    return new_html, new_html != html
+
+
 # ─── HTML I/O ─────────────────────────────────────────────────────────────
 
 _TASK_TUTORIALS_OPEN = re.compile(
@@ -532,6 +574,13 @@ def main() -> int:
     new_inner_parts.append(inner[cursor:])
     new_inner = "".join(new_inner_parts)
     new_html = html[:body_start] + "[" + new_inner + "]" + html[body_end:]
+
+    # Refresh TASK_TO_ROW (zoom-4 jump-to-row) so the embedded map stays
+    # in sync with the sheet's current row order whenever a task is
+    # added/removed/reordered.
+    new_html, task_to_row_changed = upsert_task_to_row(new_html, build_task_to_row(sheet_rows))
+    if task_to_row_changed:
+        changes.append("  TASK_TO_ROW (zoom-4 jump map) refreshed")
 
     sheet_only = sorted(set(by_id) - {
         _TASKID_RE.search(inner[s:e]).group(1)

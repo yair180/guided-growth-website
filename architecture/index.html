@@ -313,6 +313,19 @@
       color: #a8d6e8;
       border-color: rgba(91, 192, 222, 0.35);
     }
+    #tutorial-banner .meta-chip.jump-sheet {
+      background: rgba(167, 139, 250, 0.14);
+      color: #c4b5fd;
+      border-color: rgba(167, 139, 250, 0.45);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    #tutorial-banner .meta-chip.jump-sheet:hover {
+      background: rgba(167, 139, 250, 0.25);
+      border-color: rgba(167, 139, 250, 0.7);
+    }
     #tutorial-banner .meta-chip.status-notstarted {
       background: rgba(148, 163, 184, 0.18); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.4);
     }
@@ -525,9 +538,31 @@
     #zoom-toggle-bar .zoom-btn.active .zoom-num { color: #5bc0de; }
 
     /* Zoom view containers */
-    #zoom-1-view, #zoom-2-view, #zoom-3-view { display: none; }
+    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view { display: none; }
     #zoom-1-view.active, #zoom-2-view.active { display: block; }
     #zoom-3-view.active { display: block; }
+    #zoom-4-view.active { display: flex; flex-direction: column; }
+    #zoom-4-view {
+      position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
+      background: #0a1929;
+    }
+    #zoom-4-toolbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; background: #0d2238;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-family: -apple-system, sans-serif; font-size: 13px; color: #c2cee0;
+    }
+    #zoom-4-toolbar .z4-label { font-weight: 600; color: #fff; }
+    #zoom-4-toolbar select, #zoom-4-toolbar input {
+      background: #0a1929; color: #fff; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: inherit;
+    }
+    #zoom-4-toolbar select:focus, #zoom-4-toolbar input:focus {
+      outline: none; border-color: #5bc0de;
+    }
+    #zoom-4-toolbar .z4-hint { color: #6b8aaf; font-size: 11px; margin-left: auto; }
+    #zoom-4-iframe-wrap { flex: 1; min-height: 0; }
+    #zoom-4-iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
 
     /* Push zoom-3 content below the fixed 41px zoom-toggle-bar.
        The header / tutorial-strip / tutorial-banner are static-flow elements,
@@ -731,6 +766,9 @@
     </button>
     <button type="button" class="zoom-btn" data-zoom="3" onclick="setZoomLevel(3)">
       <span class="zoom-num">3</span>Engineering
+    </button>
+    <button type="button" class="zoom-btn" data-zoom="4" onclick="setZoomLevel(4)">
+      <span class="zoom-num">4</span>Tasks
     </button>
     <span style="flex: 1"></span>
     <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.3</span>
@@ -1500,6 +1538,21 @@
   </div>
   </div>  <!-- end zoom-3-view -->
 
+  <!-- ZOOM 4: TASKS SHEET (iframe of Master Sheet's Tasks tab) -->
+  <div id="zoom-4-view">
+    <div id="zoom-4-toolbar">
+      <span class="z4-label">Master Sheet — Tasks tab</span>
+      <select id="z4-task-jump" onchange="jumpToSheetRow(this.value)">
+        <option value="">Jump to task…</option>
+      </select>
+      <a id="z4-open-new-tab" href="https://docs.google.com/spreadsheets/d/1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw/edit?gid=1687604173" target="_blank" rel="noopener" style="color:#5bc0de; text-decoration:none;">Open in new tab ↗</a>
+      <span class="z4-hint">Tip: Cmd+F inside the sheet to search rows.</span>
+    </div>
+    <div id="zoom-4-iframe-wrap">
+      <iframe id="zoom-4-iframe" loading="lazy" src="about:blank" title="Master Sheet — Tasks tab"></iframe>
+    </div>
+  </div>
+
   <script>
 
     // ============================================================
@@ -1510,6 +1563,69 @@
       catch (e) { return 1; }
     })();
 
+    // ============================================================
+    // SHEET INTEGRATION (zoom-4 view)
+    // ============================================================
+    const SHEET_ID = "1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw";
+    const TASKS_GID = "1687604173";
+    // Snapshot of Task ID → sheet row (1-indexed; row 1 is header).
+    // Maintained by scripts/sync_sheet_to_html.py.
+    const TASK_TO_ROW = {"P1-01":2,"P1-02":3,"P1-03":4,"P1-04":5,"P1-05":6,"P1-06":7,"P1-07":8,"P1-08":9,"P1-09":10,"P1-10":11,"P1-11":12,"P1-12":13,"P1-13":14,"P1-14":15,"P1-15":16,"P1-16":17,"P1-17":18,"P1-18":19,"P1-19":20,"P1-20":21,"P1-21":22,"P1-22":23,"P1-23":24,"P1-24":25,"P1-25":26,"P1-26":27,"P1-27":28,"P1-28":29,"P1-29":30,"P1-30":31,"P1-31":32,"P1-32":33,"P1-33":34,"P1-34":35,"P2-01":36,"P2-02":37,"P2-03":38,"P2-04":39,"P2-05":40,"P2-06":41,"P2-07":42,"P2-08":43,"P2-09":44,"P2-10":45,"P2-11":46,"P2-12":47,"P2-13":48,"P3-01":49,"OLD-P1-01":50,"OLD-P1-02":51,"OLD-P1-03":52,"OLD-P1-04":53,"OLD-P1-06":54,"OLD-P1-07":55,"OLD-P1-08":56,"OLD-P1-10":57,"OLD-P1-13":58,"OLD-P1-15":59,"OLD-P1-09":60,"OLD-P1-19":61,"OLD-P1-20":62,"OLD-P1-21":63,"OLD-P1-22":64,"OLD-P1-23":65,"OLD-P1-24":66,"OLD-P1-25":67,"OLD-P2-19-20":68,"P3-02":69};
+
+    function buildSheetUrl(row) {
+      const range = row ? `&range=A${row}` : "";
+      // widget=true hides the Google chrome; rm=minimal compresses the toolbar
+      return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?widget=true&gid=${TASKS_GID}${range}`;
+    }
+
+    let _zoom4IframeLoaded = false;
+    let _pendingSheetRow = null;
+    function ensureSheetIframeLoaded(row) {
+      const iframe = document.getElementById("zoom-4-iframe");
+      if (!iframe) return;
+      // Force reload when row changes (Sheets reads &range= on initial load only).
+      const targetSrc = buildSheetUrl(row);
+      if (iframe.src !== targetSrc) {
+        iframe.src = targetSrc;
+        _zoom4IframeLoaded = true;
+      }
+      // Update the new-tab link too
+      const link = document.getElementById("z4-open-new-tab");
+      if (link) link.href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?gid=${TASKS_GID}${row ? `&range=A${row}` : ""}`;
+    }
+
+    function jumpToSheetRow(taskId) {
+      if (!taskId) return;
+      const row = TASK_TO_ROW[taskId];
+      if (!row) {
+        console.warn("No row mapping for task", taskId);
+        return;
+      }
+      _pendingSheetRow = row;
+      setZoomLevel(4);
+      // Reset the dropdown so the same task can be picked twice in a row
+      const sel = document.getElementById("z4-task-jump");
+      if (sel) sel.value = "";
+    }
+
+    function populateTaskJumpDropdown() {
+      const sel = document.getElementById("z4-task-jump");
+      if (!sel || sel.dataset.populated) return;
+      sel.dataset.populated = "1";
+      // Sort: P1 first, P2, P3, then OLD-
+      const ids = Object.keys(TASK_TO_ROW).sort((a, b) => {
+        const oldA = a.startsWith("OLD-"), oldB = b.startsWith("OLD-");
+        if (oldA !== oldB) return oldA ? 1 : -1;
+        return a.localeCompare(b, undefined, { numeric: true });
+      });
+      ids.forEach(id => {
+        const opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = id;
+        sel.appendChild(opt);
+      });
+    }
+
     function setZoomLevel(level) {
       currentZoomLevel = level;
       try { localStorage.setItem('gg_arch_zoom_level_v1', String(level)); } catch (e) {}
@@ -1518,6 +1634,7 @@
       document.getElementById('zoom-1-view').classList.toggle('active', level === 1);
       document.getElementById('zoom-2-view').classList.toggle('active', level === 2);
       document.getElementById('zoom-3-view').classList.toggle('active', level === 3);
+      document.getElementById('zoom-4-view').classList.toggle('active', level === 4);
 
       // Update active state on buttons
       document.querySelectorAll('#zoom-toggle-bar .zoom-btn').forEach(btn => {
@@ -1530,6 +1647,16 @@
         setTimeout(() => {
           try { render(); } catch (e) { /* render may not be defined yet */ }
         }, 50);
+      }
+
+      // Lazy-load the sheet iframe the first time view 4 is opened, and honour any pending row jump
+      if (level === 4) {
+        populateTaskJumpDropdown();
+        const row = _pendingSheetRow;
+        _pendingSheetRow = null;
+        if (!_zoom4IframeLoaded || row) {
+          ensureSheetIframeLoaded(row);
+        }
       }
     }
 
@@ -3918,6 +4045,17 @@
       };
       flagChip("Tested by Owner", !!activeTutorial.tested);
       flagChip("Approved by Supervisor", !!activeTutorial.approved);
+
+      // "Show in Sheet" jump — only for tasks that exist in the Master Sheet
+      const taskId = activeTutorial.taskId;
+      if (taskId && TASK_TO_ROW[taskId]) {
+        const jump = document.createElement("button");
+        jump.type = "button";
+        jump.className = "meta-chip jump-sheet";
+        jump.textContent = "Show in Sheet ↗";
+        jump.onclick = () => jumpToSheetRow(taskId);
+        meta.appendChild(jump);
+      }
       meta.classList.toggle("visible", meta.children.length > 0);
 
       // Acceptance Criteria — parse SETUP/BUILD/VERIFY headers + □ bullets
