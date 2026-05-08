@@ -538,10 +538,10 @@
     #zoom-toggle-bar .zoom-btn.active .zoom-num { color: #5bc0de; }
 
     /* Zoom view containers */
-    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view { display: none; }
+    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view { display: none; }
     #zoom-1-view.active, #zoom-2-view.active { display: block; }
     #zoom-3-view.active { display: block; }
-    #zoom-4-view.active { display: flex; flex-direction: column; }
+    #zoom-4-view.active, #zoom-5-view.active { display: flex; flex-direction: column; }
     #zoom-4-view {
       position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
       background: #0a1929; font-family: -apple-system, sans-serif;
@@ -654,6 +654,96 @@
       #z4-sidebar { width: 280px; }
       .z4-task-row .z4-walk-btn { opacity: 1; }
     }
+
+    /* === ZOOM 5: Screens (Figma embed) — mirrors zoom-4 styling === */
+    #zoom-5-view {
+      position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
+      background: #0a1929; font-family: -apple-system, sans-serif;
+    }
+    #zoom-5-body { flex: 1; min-height: 0; display: flex; flex-direction: row; }
+    #z5-sidebar {
+      width: 320px; flex-shrink: 0; display: flex; flex-direction: column;
+      background: #0d2238; border-right: 1px solid rgba(255,255,255,0.08);
+      color: #c2cee0; font-size: 13px;
+      transition: width 140ms ease;
+    }
+    #z5-sidebar.collapsed { width: 44px; }
+    #z5-sidebar-header {
+      padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    #z5-sidebar.collapsed #z5-sidebar-header { padding: 10px 6px; }
+    #z5-sidebar-header .z5-title-row { display: flex; align-items: center; gap: 8px; }
+    #z5-sidebar-header .z5-sidebar-title {
+      font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.3px;
+      flex: 1; min-width: 0;
+    }
+    #z5-collapse-btn {
+      flex-shrink: 0; width: 28px; height: 28px; padding: 0;
+      background: transparent; color: #5bc0de;
+      border: 1px solid rgba(91, 192, 222, 0.35); border-radius: 6px;
+      font: inherit; font-size: 14px; line-height: 1; cursor: pointer;
+    }
+    #z5-collapse-btn:hover { background: rgba(91, 192, 222, 0.12); border-color: #5bc0de; }
+    #z5-sidebar.collapsed .z5-sidebar-title,
+    #z5-sidebar.collapsed #z5-search,
+    #z5-sidebar.collapsed #z5-open-figma,
+    #z5-sidebar.collapsed .z5-screen-name,
+    #z5-sidebar.collapsed .z5-screen-phase { display: none; }
+    #z5-sidebar.collapsed .z5-screen-row {
+      padding: 7px 6px; gap: 4px; justify-content: center;
+    }
+    #z5-sidebar.collapsed .z5-screen-id { min-width: 0; font-size: 10px; }
+
+    #z5-sidebar-header input {
+      background: #0a1929; color: #fff; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px; padding: 7px 10px; font: inherit;
+    }
+    #z5-sidebar-header input:focus { outline: none; border-color: #5bc0de; }
+    #z5-sidebar-header #z5-open-figma { color: #5bc0de; text-decoration: none; font-size: 11px; }
+    #z5-sidebar-header #z5-open-figma:hover { text-decoration: underline; }
+
+    #z5-screen-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
+    #z5-screen-list .z5-empty { padding: 20px 14px; color: #6b8aaf; font-size: 12px; }
+    #z5-screen-list .z5-section-header {
+      padding: 10px 14px 4px; font-size: 10px; font-weight: 700;
+      color: #6b8aaf; text-transform: uppercase; letter-spacing: 0.6px;
+    }
+
+    .z5-screen-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 14px; cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: background 80ms;
+    }
+    .z5-screen-row:hover { background: rgba(91, 192, 222, 0.08); }
+    .z5-screen-row.active {
+      background: rgba(91, 192, 222, 0.14); border-left-color: #5bc0de;
+    }
+    .z5-screen-row.no-figma { opacity: 0.55; cursor: default; }
+    .z5-screen-row.no-figma:hover { background: transparent; }
+    .z5-screen-row .z5-screen-id {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 11px; font-weight: 700; color: #fff; letter-spacing: 0.3px;
+      flex-shrink: 0; min-width: 110px;
+    }
+    .z5-screen-row .z5-screen-name {
+      flex: 1; min-width: 0; color: #c2cee0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 12px;
+    }
+    .z5-screen-row .z5-screen-phase {
+      flex-shrink: 0; padding: 1px 6px; border-radius: 4px;
+      font-size: 9.5px; font-weight: 700; letter-spacing: 0.4px;
+    }
+    .z5-screen-row .z5-screen-phase.p1 { background: rgba(91, 192, 222, 0.18); color: #a8d6e8; }
+    .z5-screen-row .z5-screen-phase.p2 { background: rgba(167, 139, 250, 0.18); color: #c4b5fd; }
+    .z5-screen-row .z5-screen-phase.p3 { background: rgba(251, 191, 36, 0.16); color: #fbbf24; }
+
+    #zoom-5-iframe-wrap { flex: 1; min-width: 0; }
+    #zoom-5-iframe { width: 100%; height: 100%; border: 0; display: block; background: #1e1e1e; }
+
+    @media (max-width: 900px) { #z5-sidebar { width: 260px; } }
 
     /* Push zoom-3 content below the fixed 41px zoom-toggle-bar.
        The header / tutorial-strip / tutorial-banner are static-flow elements,
@@ -860,6 +950,9 @@
     </button>
     <button type="button" class="zoom-btn" data-zoom="4" onclick="setZoomLevel(4)">
       <span class="zoom-num">4</span>Tasks
+    </button>
+    <button type="button" class="zoom-btn" data-zoom="5" onclick="setZoomLevel(5)">
+      <span class="zoom-num">5</span>Screens
     </button>
     <span style="flex: 1"></span>
     <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.3</span>
@@ -1649,6 +1742,26 @@
     </div>
   </div>
 
+  <!-- ZOOM 5: SCREENS (Figma embed of the Habit & Journal Apps file) -->
+  <div id="zoom-5-view">
+    <div id="zoom-5-body">
+      <aside id="z5-sidebar">
+        <div id="z5-sidebar-header">
+          <div class="z5-title-row">
+            <div class="z5-sidebar-title">Screens</div>
+            <button type="button" id="z5-collapse-btn" onclick="toggleZoom5Sidebar()" title="Collapse / expand sidebar">‹</button>
+          </div>
+          <input id="z5-search" type="search" placeholder="Search by ID or name…" oninput="filterScreenSidebar(this.value)" autocomplete="off" />
+          <a id="z5-open-figma" href="https://www.figma.com/design/XwaXflQLtEzD4jpZX4dBWr/Habit---Journal-Apps" target="_blank" rel="noopener">Open in Figma ↗</a>
+        </div>
+        <div id="z5-screen-list" role="list"></div>
+      </aside>
+      <div id="zoom-5-iframe-wrap">
+        <iframe id="zoom-5-iframe" loading="lazy" src="about:blank" title="Figma — Habit &amp; Journal Apps" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
   <script>
 
     // ============================================================
@@ -1783,6 +1896,115 @@
       } catch (e) {}
     }
 
+    // ============================================================
+    // FIGMA INTEGRATION (zoom-5 view)
+    // ============================================================
+    const FIGMA_FILE_KEY = "XwaXflQLtEzD4jpZX4dBWr";
+    const FIGMA_FILE_NAME = "Habit---Journal-Apps";
+    // Snapshot of every screen in the Sheet's Screens tab.
+    // Each entry: { i: screen_id, n: screen_name, p: phase, f: figma_node_id (or "") }.
+    // Maintained by scripts/sync_sheet_to_html.py — populated once Figma rate
+    // limit clears and the matching pass runs.
+    const SCREEN_INDEX = [{"i":"SPLASH","n":"Splash / Loading screen","p":"Phase 1","f":"1220:6287"},{"i":"WELCOME","n":"Welcome (voice hook)","p":"Phase 1","f":"1211:3435"},{"i":"AUTH-SIGNUP","n":"Create Account (Email signup)","p":"Phase 1","f":"1211:3557"},{"i":"AUTH-LOGIN","n":"Welcome Back (Login)","p":"Phase 1","f":"1211:3612"},{"i":"VOICE-PREFERENCE","n":"Voice/Screen Preference","p":"Phase 1","f":"1211:3468"},{"i":"MIC-PERMISSION","n":"Mic Permission","p":"Phase 1","f":"1223:6368"},{"i":"ONBOARD-01","n":"Profile Setup","p":"Phase 1","f":"1248:3599"},{"i":"ONBOARD-FORK","n":"Experience Fork","p":"Phase 1","f":"1219:4458"},{"i":"ONBOARD-BEGINNER-01","n":"Category Selection","p":"Phase 1","f":"1219:4516"},{"i":"ONBOARD-BEGINNER-02","n":"Subcategory Selection","p":"Phase 1","f":"1219:4713"},{"i":"ONBOARD-BEGINNER-03","n":"Habit Selection","p":"Phase 1","f":"1219:4762"},{"i":"ONBOARD-BEGINNER-04","n":"Habit Configuration","p":"Phase 1","f":"1219:5237"},{"i":"ONBOARD-BEGINNER-06","n":"Review Habits","p":"Phase 1","f":"1219:5537"},{"i":"ONBOARD-BEGINNER-07","n":"Journal Setup","p":"Phase 1","f":"1219:5846"},{"i":"ONBOARD-BEGINNER-10","n":"Plan Summary + Start","p":"Phase 1","f":"1219:6053"},{"i":"HOME-FIRST","n":"Home First Visit","p":"Phase 2","f":""},{"i":"HOME-MORNING","n":"Home Morning","p":"Phase 2","f":""},{"i":"HOME-EVENING","n":"Home Evening","p":"Phase 2","f":""},{"i":"HOME-RETURN","n":"Home Return After 3+ Days","p":"Phase 2","f":""},{"i":"MCHECK-01","n":"Morning Check-in","p":"Phase 2","f":""},{"i":"MCHECK-02","n":"Morning Goal (Voice Only)","p":"Phase 2","f":""},{"i":"ECHECK-01","n":"Evening Check-in Open","p":"Phase 2","f":""},{"i":"ECHECK-02","n":"Evening Self-Report","p":"Phase 2","f":""},{"i":"ECHECK-03","n":"Evening AI-Read","p":"Phase 2","f":""},{"i":"ECHECK-04","n":"Goal Check (if morning goal set)","p":"Phase 2","f":""},{"i":"ECHECK-05","n":"Daily Reflection","p":"Phase 2","f":""},{"i":"ECHECK-06","n":"Evening Wrap-up","p":"Phase 2","f":""},{"i":"CHAT","n":"Free-Form Voice Conversation","p":"Phase 2","f":"1408:13501"},{"i":"VOICE-CAP","n":"Voice Cap Reached","p":"Phase 2","f":""},{"i":"HABIT-CREATE-FORK","n":"Add Habit","p":"Phase 2","f":""},{"i":"HABIT-EDIT","n":"Edit Habit","p":"Phase 2","f":"1355:8983"},{"i":"HABIT-DETAIL","n":"Habit Detail / Streak","p":"Phase 2","f":"769:2503"},{"i":"FOCUS-TIMER","n":"Focus Session","p":"Phase 2","f":"769:5361"},{"i":"INSIGHTS-ANALYTICS","n":"Insights / Patterns","p":"Phase 2","f":"769:4939"},{"i":"SETTINGS","n":"Settings","p":"Phase 2","f":"769:5663"},{"i":"ONBOARD-ADVANCED-01","n":"Advanced Onboarding - Voice Goals (post-MVP)","p":"Phase 2+","f":"1355:6295"},{"i":"ONBOARD-ADVANCED-02","n":"Advanced Onboarding - AI Plan Review (post-MVP)","p":"Phase 2+","f":"1355:6097"},{"i":"ONBOARD-ADVANCED-03","n":"Advanced - Voice Journal Intro","p":"Phase 1","f":"1355:6205"},{"i":"ONBOARD-ADVANCED-04","n":"Advanced - Journal Mode Choice","p":"Phase 1","f":"1355:6603"},{"i":"ONBOARD-ADVANCED-05","n":"Advanced - Your Starting Plan","p":"Phase 1","f":"1355:6026"},{"i":"SUB-SLEEP-01","n":"Sleep Better > Fall asleep earlier","p":"Phase 2","f":""},{"i":"SUB-SLEEP-02","n":"Sleep Better > Wake up earlier","p":"Phase 2","f":""},{"i":"SUB-SLEEP-03","n":"Sleep Better > Sleep more consistently","p":"Phase 2","f":""},{"i":"SUB-SLEEP-04","n":"Sleep Better > Sleep more deeply","p":"Phase 2","f":""},{"i":"SUB-MOVE-01","n":"Move More > Walk more","p":"Phase 2","f":""},{"i":"SUB-MOVE-02","n":"Move More > Exercise consistently","p":"Phase 2","f":""},{"i":"SUB-MOVE-03","n":"Move More > Improve mobility","p":"Phase 2","f":""},{"i":"SUB-EAT-01","n":"Eat Better > Eat more intentionally","p":"Phase 2","f":""},{"i":"SUB-EAT-02","n":"Eat Better > Reduce overeating","p":"Phase 2","f":""},{"i":"SUB-EAT-03","n":"Eat Better > Plan food better","p":"Phase 2","f":""},{"i":"SUB-ENERGY-01","n":"Feel Energized > Have more morning energy","p":"Phase 2","f":""},{"i":"SUB-ENERGY-02","n":"Feel Energized > Avoid afternoon crashes","p":"Phase 2","f":""},{"i":"SUB-ENERGY-03","n":"Feel Energized > Keep energy more stable","p":"Phase 2","f":""},{"i":"SUB-STRESS-01","n":"Reduce Stress > Feel calmer during the day","p":"Phase 2","f":""},{"i":"SUB-STRESS-02","n":"Reduce Stress > Reduce evening stress","p":"Phase 2","f":""},{"i":"SUB-STRESS-03","n":"Reduce Stress > Feel less overwhelmed","p":"Phase 2","f":""},{"i":"SUB-FOCUS-01","n":"Improve Focus > Start work with less friction","p":"Phase 2","f":""},{"i":"SUB-FOCUS-02","n":"Improve Focus > Do deeper work","p":"Phase 2","f":""},{"i":"SUB-FOCUS-03","n":"Improve Focus > Procrastinate less","p":"Phase 2","f":""},{"i":"SUB-BREAK-01","n":"Break Bad Habits > Smoking","p":"Phase 2","f":""},{"i":"SUB-BREAK-02","n":"Break Bad Habits > Weed","p":"Phase 2","f":""},{"i":"SUB-BREAK-03","n":"Break Bad Habits > Alcohol","p":"Phase 2","f":""},{"i":"SUB-BREAK-04","n":"Break Bad Habits > Porn","p":"Phase 2","f":""},{"i":"SUB-BREAK-05","n":"Break Bad Habits > Phone use","p":"Phase 2","f":""},{"i":"SUB-BREAK-06","n":"Break Bad Habits > Late-night snacking","p":"Phase 2","f":""},{"i":"SUB-BREAK-07","n":"Break Bad Habits > Caffeine","p":"Phase 2","f":""},{"i":"SUB-ORG-01","n":"Get Organized > Stay on top of tasks","p":"Phase 2","f":""},{"i":"SUB-ORG-02","n":"Get Organized > Keep spaces tidy","p":"Phase 2","f":""},{"i":"ONBOARD-BEGINNER-05","n":"Beginner - Configure Habit #2","p":"Phase 1","f":"1219:5387"},{"i":"ONBOARD-BEGINNER-08","n":"Beginner - Journal Mode Choice","p":"Phase 1","f":"1219:5936"},{"i":"ONBOARD-BEGINNER-09","n":"Beginner - Check-in Schedule","p":"Phase 1","f":"1219:6122"},{"i":"HABIT-LIST","n":"Habit List - Your Habits","p":"Phase 2","f":"1552:5651"},{"i":"REFLECTION-LOG","n":"Habit Reflection Log","p":"Phase 2","f":"1620:7657"},{"i":"HOME-MORNING-CHECKIN-EXPANDED","n":"Home - Morning Check-in Expanded","p":"Phase 2","f":"769:672"},{"i":"HOME-DAILY-REFLECTION","n":"Home - Daily Reflection","p":"Phase 2","f":"1035:5391"},{"i":"JOURNAL-GUIDED","n":"Journal - Guided Reflection","p":"Phase 2","f":"1035:5097"},{"i":"JOURNAL-FREEFORM","n":"Journal - Freeform","p":"Phase 2","f":"1035:5158"},{"i":"JOURNAL-ENTRY","n":"Journal - Entry Detail","p":"Phase 2","f":"1569:23431"},{"i":"RECENT-REFLECTIONS","n":"Recent Reflections (List)","p":"Phase 2","f":"1569:23311"},{"i":"HABIT-CREATE-TEMPLATE-01","n":"Create Habit (Template) - Categories","p":"Phase 2","f":"769:8075"},{"i":"HABIT-CREATE-TEMPLATE-02","n":"Create Habit (Template) - Sub-categories","p":"Phase 2","f":"769:8168"},{"i":"HABIT-CREATE-TEMPLATE-03","n":"Create Habit (Template) - Habit Selection","p":"Phase 2","f":"769:8218"},{"i":"HABIT-CREATE-TEMPLATE-04","n":"Create Habit (Template) - Configure Time / Frequency","p":"Phase 2","f":"769:8273"},{"i":"HABIT-CREATE-TEMPLATE-05","n":"Create Habit (Template) - Review","p":"Phase 2","f":"769:8701"},{"i":"HABIT-CREATE-TEMPLATE-06","n":"Create Habit (Template) - Reflection Setup","p":"Phase 2","f":"769:8547"},{"i":"HABIT-CREATE-TEMPLATE-07","n":"Create Habit (Template) - Plan Summary","p":"Phase 2","f":"769:8648"}];
+
+    function buildFigmaEmbedUrl(nodeId) {
+      // node-id in URLs uses dash separator (e.g. "1211-3557") not colon ("1211:3557")
+      const dashed = nodeId ? nodeId.replace(":", "-") : "";
+      const inner  = `https://www.figma.com/design/${FIGMA_FILE_KEY}/${FIGMA_FILE_NAME}${dashed ? `?node-id=${dashed}&t=ggos` : ""}`;
+      return `https://embed.figma.com/file/${FIGMA_FILE_KEY}/${FIGMA_FILE_NAME}?embed_host=guidedgrowthos${dashed ? `&node-id=${dashed}` : ""}`;
+    }
+
+    let _zoom5IframeLoaded = false;
+    let _pendingFigmaNodeId = null;
+    let _activeFigmaScreenId = null;
+
+    function ensureFigmaIframeLoaded(nodeId) {
+      const iframe = document.getElementById("zoom-5-iframe");
+      if (!iframe) return;
+      const targetSrc = buildFigmaEmbedUrl(nodeId);
+      if (iframe.src !== targetSrc) {
+        iframe.src = targetSrc;
+        _zoom5IframeLoaded = true;
+      }
+      const link = document.getElementById("z5-open-figma");
+      if (link) {
+        const dashed = nodeId ? nodeId.replace(":", "-") : "";
+        link.href = `https://www.figma.com/design/${FIGMA_FILE_KEY}/${FIGMA_FILE_NAME}${dashed ? `?node-id=${dashed}` : ""}`;
+      }
+    }
+
+    function jumpToFigma(screenId) {
+      if (!screenId) return;
+      const entry = SCREEN_INDEX.find(s => s.i === screenId);
+      if (!entry || !entry.f) {
+        console.warn("No Figma node mapped for screen", screenId);
+        return;
+      }
+      _pendingFigmaNodeId = entry.f;
+      _activeFigmaScreenId = screenId;
+      setZoomLevel(5);
+    }
+
+    function renderScreenSidebar(filter) {
+      const list = document.getElementById("z5-screen-list");
+      if (!list) return;
+      const f = (filter || "").toLowerCase().trim();
+      // Group by phase for readability
+      const byPhase = {};
+      SCREEN_INDEX.forEach(s => {
+        const matches = !f || s.i.toLowerCase().includes(f) || (s.n || "").toLowerCase().includes(f);
+        if (!matches) return;
+        const ph = (s.p || "Other").trim() || "Other";
+        (byPhase[ph] = byPhase[ph] || []).push(s);
+      });
+      const phaseOrder = Object.keys(byPhase).sort();
+      let html = "";
+      let total = 0;
+      phaseOrder.forEach(ph => {
+        const arr = byPhase[ph];
+        total += arr.length;
+        html += `<div class="z5-section-header">${ph} <span style="opacity:0.5;font-weight:400;">(${arr.length})</span></div>`;
+        arr.forEach(s => {
+          const phaseCls = ph.toLowerCase().includes("phase 1") ? "p1"
+                        : ph.toLowerCase().includes("phase 2") ? "p2"
+                        : ph.toLowerCase().includes("phase 3") ? "p3" : "p1";
+          const activeCls = (s.i === _activeFigmaScreenId) ? " active" : "";
+          const noFigma   = !s.f ? " no-figma" : "";
+          const idEsc     = (s.i || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+          const nameEsc   = (s.n || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+          const click     = s.f ? `onclick="jumpToFigma('${s.i.replace(/'/g, "\\'")}')"` : "";
+          const titleAttr = s.f ? `title="Open in Figma viewer"` : `title="No Figma frame mapped — set the Figma Link column in the Screens tab"`;
+          html += `<div class="z5-screen-row${activeCls}${noFigma}" ${click} ${titleAttr}>
+            <span class="z5-screen-id">${idEsc}</span>
+            <span class="z5-screen-name">${nameEsc}</span>
+            <span class="z5-screen-phase ${phaseCls}">${ph.replace(/^Phase /, "P")}</span>
+          </div>`;
+        });
+      });
+      if (total === 0) {
+        html = `<div class="z5-empty">${SCREEN_INDEX.length === 0 ? "No screens loaded yet — sync from Master Sheet pending." : `No screens match "${(filter || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")}"`}</div>`;
+      }
+      list.innerHTML = html;
+    }
+
+    function filterScreenSidebar(value) { renderScreenSidebar(value); }
+
+    function toggleZoom5Sidebar(force) {
+      const bar = document.getElementById("z5-sidebar");
+      const btn = document.getElementById("z5-collapse-btn");
+      if (!bar) return;
+      const collapsed = (typeof force === "boolean") ? force : !bar.classList.contains("collapsed");
+      bar.classList.toggle("collapsed", collapsed);
+      if (btn) btn.textContent = collapsed ? "›" : "‹";
+      try { localStorage.setItem("gg_arch_z5_sidebar_collapsed", collapsed ? "1" : "0"); } catch (e) {}
+    }
+    function restoreZoom5SidebarState() {
+      try {
+        const saved = localStorage.getItem("gg_arch_z5_sidebar_collapsed");
+        if (saved === "1") toggleZoom5Sidebar(true);
+      } catch (e) {}
+    }
+
     function setZoomLevel(level) {
       currentZoomLevel = level;
       try { localStorage.setItem('gg_arch_zoom_level_v1', String(level)); } catch (e) {}
@@ -1792,6 +2014,7 @@
       document.getElementById('zoom-2-view').classList.toggle('active', level === 2);
       document.getElementById('zoom-3-view').classList.toggle('active', level === 3);
       document.getElementById('zoom-4-view').classList.toggle('active', level === 4);
+      document.getElementById('zoom-5-view').classList.toggle('active', level === 5);
 
       // Update active state on buttons
       document.querySelectorAll('#zoom-toggle-bar .zoom-btn').forEach(btn => {
@@ -1817,6 +2040,20 @@
         _pendingSheetRow = null;
         if (!_zoom4IframeLoaded || row) {
           ensureSheetIframeLoaded(row);
+        }
+      }
+
+      // Lazy-load Figma iframe + sidebar the first time view 5 is opened
+      if (level === 5) {
+        if (!document.getElementById("z5-sidebar").dataset.stateRestored) {
+          document.getElementById("z5-sidebar").dataset.stateRestored = "1";
+          restoreZoom5SidebarState();
+        }
+        renderScreenSidebar(document.getElementById("z5-search")?.value || "");
+        const node = _pendingFigmaNodeId;
+        _pendingFigmaNodeId = null;
+        if (!_zoom5IframeLoaded || node) {
+          ensureFigmaIframeLoaded(node);
         }
       }
     }

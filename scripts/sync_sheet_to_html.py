@@ -44,9 +44,10 @@ HTML_PATH = Path(
     or REPO_ROOT / "architecture" / "index.html"
 )
 
-SHEET_ID    = "1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw"
-TASKS_RANGE = "Tasks!A:Z"           # tolerant of column reorder + extra cols
-SCOPES      = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+SHEET_ID      = "1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw"
+TASKS_RANGE   = "Tasks!A:Z"           # tolerant of column reorder + extra cols
+SCREENS_RANGE = "Screens!A:Z"         # zoom-5 view sources from this
+SCOPES        = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 REQUIRED_COLUMNS = (
     "Task ID", "Title", "Assignee", "Status",
@@ -200,6 +201,78 @@ def upsert_task_index(html: str, entries: list[dict]) -> tuple[str, bool]:
     payload = json.dumps(entries, separators=(",", ":"), ensure_ascii=False)
     replacement = f"const TASK_INDEX = {payload};"
     new_html, n = _TASK_INDEX_RE.subn(replacement, html, count=1)
+    if n == 0:
+        return html, False
+    return new_html, new_html != html
+
+
+def fetch_screens_rows() -> list[list[str]]:
+    """Fetch the Screens tab. Returns [] on any failure (this is non-fatal —
+    if the Screens tab vanishes we'd rather skip the SCREEN_INDEX update than
+    abort the whole sync).
+    """
+    try:
+        from googleapiclient.discovery import build
+        creds = load_credentials()
+        svc = build("sheets", "v4", credentials=creds)
+        req = svc.spreadsheets().values().get(spreadsheetId=SHEET_ID, range=SCREENS_RANGE)
+        return _with_retry(req.execute).get("values", [])
+    except Exception as exc:
+        print(f"WARN: could not fetch Screens tab — skipping SCREEN_INDEX sync: {exc}")
+        return []
+
+
+_NODE_FROM_URL_RE = re.compile(r"node-id=([0-9-]+)")
+
+
+def build_screen_index(rows: list[list[str]]) -> list[dict]:
+    """List of {i: screen_id, n: name, p: phase, f: figma_node_id} powering
+    zoom-5's screen sidebar. Skips header, empty, and placeholder rows.
+    """
+    if not rows:
+        return []
+    headers = [(h or "").strip() for h in rows[0]]
+    try:
+        sid_col = headers.index("Screen ID")
+    except ValueError:
+        return []
+    name_col  = headers.index("Screen Name") if "Screen Name" in headers else -1
+    phase_col = headers.index("Phase")       if "Phase"       in headers else -1
+    fl_col    = headers.index("Figma Link")  if "Figma Link"  in headers else -1
+
+    out: list[dict] = []
+    for row in rows[1:]:
+        if not row:
+            continue
+        padded = list(row) + [""] * (len(headers) - len(row))
+        sid = (padded[sid_col] or "").strip()
+        if not sid or sid.startswith("(") or "[DEPRECATED]" in sid:
+            continue
+        url = (padded[fl_col] or "").strip() if fl_col >= 0 else ""
+        m = _NODE_FROM_URL_RE.search(url)
+        node_id = m.group(1).replace("-", ":") if m else ""
+        out.append({
+            "i": sid,
+            "n": (padded[name_col] or "").strip() if name_col  >= 0 else "",
+            "p": (padded[phase_col] or "").strip() if phase_col >= 0 else "",
+            "f": node_id,
+        })
+    return out
+
+
+_SCREEN_INDEX_RE = re.compile(
+    r"const\s+SCREEN_INDEX\s*=\s*\[.*?\]\s*;",
+    re.MULTILINE | re.DOTALL,
+)
+
+
+def upsert_screen_index(html: str, entries: list[dict]) -> tuple[str, bool]:
+    """Replace the inline SCREEN_INDEX JS array with the fresh snapshot."""
+    if not entries:
+        return html, False
+    payload = json.dumps(entries, separators=(",", ":"), ensure_ascii=False)
+    replacement = f"const SCREEN_INDEX = {payload};"
+    new_html, n = _SCREEN_INDEX_RE.subn(replacement, html, count=1)
     if n == 0:
         return html, False
     return new_html, new_html != html
@@ -591,6 +664,14 @@ def main() -> int:
     new_html, task_index_changed = upsert_task_index(new_html, build_task_index(sheet_rows))
     if task_index_changed:
         changes.append("  TASK_INDEX (zoom-4 sidebar) refreshed")
+
+    # Refresh SCREEN_INDEX (powers the zoom-5 Figma sidebar) from the
+    # Screens tab. Non-fatal if the tab is missing or empty.
+    screen_rows = fetch_screens_rows()
+    if screen_rows:
+        new_html, screen_index_changed = upsert_screen_index(new_html, build_screen_index(screen_rows))
+        if screen_index_changed:
+            changes.append("  SCREEN_INDEX (zoom-5 sidebar) refreshed")
 
     sheet_only = sorted(set(by_id) - {
         _TASKID_RE.search(inner[s:e]).group(1)
