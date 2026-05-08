@@ -153,43 +153,53 @@ def build_sheet_index(rows: list[list[str]]) -> dict[str, dict[str, str]]:
     return by_id
 
 
-def build_task_to_row(rows: list[list[str]]) -> dict[str, int]:
-    """Map Task ID → 1-indexed sheet row, used by zoom-4 jump-to-row."""
+def build_task_index(rows: list[list[str]]) -> list[dict]:
+    """List of {i: taskId, r: 1-indexed sheet row, t: title, s: status}
+    in sheet-row order. Powers zoom-4's task sidebar.
+    """
     if not rows:
-        return {}
+        return []
     headers = [(h or "").strip() for h in rows[0]]
     try:
         tcol = headers.index("Task ID")
     except ValueError:
-        return {}
-    out: dict[str, int] = {}
+        return []
+    title_col = headers.index("Title") if "Title" in headers else -1
+    status_col = headers.index("Status") if "Status" in headers else -1
+
+    out: list[dict] = []
     for i, row in enumerate(rows[1:], start=2):
         if not row:
             continue
         padded = list(row) + [""] * (len(headers) - len(row))
         tid = (padded[tcol] or "").strip()
-        if tid:
-            out[tid] = i
+        if not tid:
+            continue
+        out.append({
+            "i": tid,
+            "r": i,
+            "t": (padded[title_col] or "").strip() if title_col >= 0 else "",
+            "s": (padded[status_col] or "").strip() if status_col >= 0 else "",
+        })
     return out
 
 
-_TASK_TO_ROW_RE = re.compile(
-    r"const\s+TASK_TO_ROW\s*=\s*\{[^}]*\}\s*;",
-    re.MULTILINE,
+_TASK_INDEX_RE = re.compile(
+    r"const\s+TASK_INDEX\s*=\s*\[.*?\]\s*;",
+    re.MULTILINE | re.DOTALL,
 )
 
 
-def upsert_task_to_row(html: str, mapping: dict[str, int]) -> tuple[str, bool]:
-    """Replace the inline TASK_TO_ROW JS object with the fresh mapping.
+def upsert_task_index(html: str, entries: list[dict]) -> tuple[str, bool]:
+    """Replace the inline TASK_INDEX JS array with the fresh snapshot.
 
-    Returns (new_html, changed). Compact JSON output (no whitespace) keeps
-    the diff small and avoids spurious linewise changes.
+    Compact JSON keeps diffs small. Returns (new_html, changed).
     """
-    if not mapping:
+    if not entries:
         return html, False
-    payload = json.dumps(mapping, separators=(",", ":"))
-    replacement = f"const TASK_TO_ROW = {payload};"
-    new_html, n = _TASK_TO_ROW_RE.subn(replacement, html, count=1)
+    payload = json.dumps(entries, separators=(",", ":"), ensure_ascii=False)
+    replacement = f"const TASK_INDEX = {payload};"
+    new_html, n = _TASK_INDEX_RE.subn(replacement, html, count=1)
     if n == 0:
         return html, False
     return new_html, new_html != html
@@ -575,12 +585,12 @@ def main() -> int:
     new_inner = "".join(new_inner_parts)
     new_html = html[:body_start] + "[" + new_inner + "]" + html[body_end:]
 
-    # Refresh TASK_TO_ROW (zoom-4 jump-to-row) so the embedded map stays
-    # in sync with the sheet's current row order whenever a task is
-    # added/removed/reordered.
-    new_html, task_to_row_changed = upsert_task_to_row(new_html, build_task_to_row(sheet_rows))
-    if task_to_row_changed:
-        changes.append("  TASK_TO_ROW (zoom-4 jump map) refreshed")
+    # Refresh TASK_INDEX (powers the zoom-4 sidebar + jump-to-row) so the
+    # embedded snapshot stays current whenever tasks are added, removed,
+    # reordered, retitled, or restated in the sheet.
+    new_html, task_index_changed = upsert_task_index(new_html, build_task_index(sheet_rows))
+    if task_index_changed:
+        changes.append("  TASK_INDEX (zoom-4 sidebar) refreshed")
 
     sheet_only = sorted(set(by_id) - {
         _TASKID_RE.search(inner[s:e]).group(1)

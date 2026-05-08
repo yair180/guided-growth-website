@@ -544,25 +544,89 @@
     #zoom-4-view.active { display: flex; flex-direction: column; }
     #zoom-4-view {
       position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
-      background: #0a1929;
+      background: #0a1929; font-family: -apple-system, sans-serif;
     }
-    #zoom-4-toolbar {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 16px; background: #0d2238;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      font-family: -apple-system, sans-serif; font-size: 13px; color: #c2cee0;
+    #zoom-4-body {
+      flex: 1; min-height: 0; display: flex; flex-direction: row;
     }
-    #zoom-4-toolbar .z4-label { font-weight: 600; color: #fff; }
-    #zoom-4-toolbar select, #zoom-4-toolbar input {
+    #z4-sidebar {
+      width: 360px; flex-shrink: 0; display: flex; flex-direction: column;
+      background: #0d2238; border-right: 1px solid rgba(255,255,255,0.08);
+      color: #c2cee0; font-size: 13px;
+    }
+    #z4-sidebar-header {
+      padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    #z4-sidebar-header .z4-sidebar-title {
+      font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.3px;
+    }
+    #z4-sidebar-header input {
       background: #0a1929; color: #fff; border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: inherit;
+      border-radius: 6px; padding: 7px 10px; font: inherit;
     }
-    #zoom-4-toolbar select:focus, #zoom-4-toolbar input:focus {
-      outline: none; border-color: #5bc0de;
+    #z4-sidebar-header input:focus { outline: none; border-color: #5bc0de; }
+    #z4-sidebar-header #z4-open-new-tab {
+      color: #5bc0de; text-decoration: none; font-size: 11px;
     }
-    #zoom-4-toolbar .z4-hint { color: #6b8aaf; font-size: 11px; margin-left: auto; }
-    #zoom-4-iframe-wrap { flex: 1; min-height: 0; }
+    #z4-sidebar-header #z4-open-new-tab:hover { text-decoration: underline; }
+
+    #z4-task-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
+    #z4-task-list .z4-empty { padding: 20px 14px; color: #6b8aaf; font-size: 12px; }
+
+    .z4-task-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 14px; cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: background 80ms;
+    }
+    .z4-task-row:hover { background: rgba(91, 192, 222, 0.08); }
+    .z4-task-row.active {
+      background: rgba(91, 192, 222, 0.14);
+      border-left-color: #5bc0de;
+    }
+    .z4-task-row .z4-task-status {
+      width: 14px; flex-shrink: 0; text-align: center; font-size: 13px;
+    }
+    .z4-task-row .z4-notstarted { color: #94a3b8; }
+    .z4-task-row .z4-inprogress { color: #fbbf24; }
+    .z4-task-row .z4-blocked    { color: #f87171; }
+    .z4-task-row .z4-done       { color: #34d399; }
+    .z4-task-row .z4-obsolete   { color: #6b7280; }
+    .z4-task-row .z4-task-id {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 11.5px; font-weight: 700; color: #fff; letter-spacing: 0.3px;
+      flex-shrink: 0; min-width: 70px;
+    }
+    .z4-task-row .z4-task-title {
+      flex: 1; min-width: 0; color: #c2cee0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 12.5px;
+    }
+    .z4-task-row .z4-walk-btn {
+      flex-shrink: 0; padding: 3px 8px; border-radius: 6px;
+      background: rgba(167, 139, 250, 0.14); color: #c4b5fd;
+      border: 1px solid rgba(167, 139, 250, 0.4);
+      font: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer;
+      opacity: 0; transition: opacity 80ms;
+    }
+    .z4-task-row:hover .z4-walk-btn,
+    .z4-task-row.active .z4-walk-btn { opacity: 1; }
+    .z4-task-row .z4-walk-btn:hover {
+      background: rgba(167, 139, 250, 0.28); border-color: rgba(167, 139, 250, 0.7);
+    }
+    .z4-task-row .z4-walk-placeholder {
+      flex-shrink: 0; width: 60px; text-align: center;
+      color: rgba(255,255,255,0.18); font-size: 11px;
+    }
+
+    #zoom-4-iframe-wrap { flex: 1; min-width: 0; }
     #zoom-4-iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+
+    @media (max-width: 900px) {
+      #z4-sidebar { width: 280px; }
+      .z4-task-row .z4-walk-btn { opacity: 1; }
+    }
 
     /* Push zoom-3 content below the fixed 41px zoom-toggle-bar.
        The header / tutorial-strip / tutorial-banner are static-flow elements,
@@ -1538,18 +1602,20 @@
   </div>
   </div>  <!-- end zoom-3-view -->
 
-  <!-- ZOOM 4: TASKS SHEET (iframe of Master Sheet's Tasks tab) -->
+  <!-- ZOOM 4: TASKS SHEET (left sidebar with task list + Master Sheet iframe) -->
   <div id="zoom-4-view">
-    <div id="zoom-4-toolbar">
-      <span class="z4-label">Master Sheet — Tasks tab</span>
-      <select id="z4-task-jump" onchange="jumpToSheetRow(this.value)">
-        <option value="">Jump to task…</option>
-      </select>
-      <a id="z4-open-new-tab" href="https://docs.google.com/spreadsheets/d/1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw/edit?gid=1687604173" target="_blank" rel="noopener" style="color:#5bc0de; text-decoration:none;">Open in new tab ↗</a>
-      <span class="z4-hint">Tip: Cmd+F inside the sheet to search rows.</span>
-    </div>
-    <div id="zoom-4-iframe-wrap">
-      <iframe id="zoom-4-iframe" loading="lazy" src="about:blank" title="Master Sheet — Tasks tab"></iframe>
+    <div id="zoom-4-body">
+      <aside id="z4-sidebar">
+        <div id="z4-sidebar-header">
+          <div class="z4-sidebar-title">Tasks</div>
+          <input id="z4-search" type="search" placeholder="Search by ID or title…" oninput="filterTaskSidebar(this.value)" autocomplete="off" />
+          <a id="z4-open-new-tab" href="https://docs.google.com/spreadsheets/d/1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw/edit?gid=1687604173" target="_blank" rel="noopener">Open Sheet in new tab ↗</a>
+        </div>
+        <div id="z4-task-list" role="list"></div>
+      </aside>
+      <div id="zoom-4-iframe-wrap">
+        <iframe id="zoom-4-iframe" loading="lazy" src="about:blank" title="Master Sheet — Tasks tab"></iframe>
+      </div>
     </div>
   </div>
 
@@ -1568,63 +1634,107 @@
     // ============================================================
     const SHEET_ID = "1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw";
     const TASKS_GID = "1687604173";
-    // Snapshot of Task ID → sheet row (1-indexed; row 1 is header).
-    // Maintained by scripts/sync_sheet_to_html.py.
-    const TASK_TO_ROW = {"P1-01":2,"P1-02":3,"P1-03":4,"P1-04":5,"P1-05":6,"P1-06":7,"P1-07":8,"P1-08":9,"P1-09":10,"P1-10":11,"P1-11":12,"P1-12":13,"P1-13":14,"P1-14":15,"P1-15":16,"P1-16":17,"P1-17":18,"P1-18":19,"P1-19":20,"P1-20":21,"P1-21":22,"P1-22":23,"P1-23":24,"P1-24":25,"P1-25":26,"P1-26":27,"P1-27":28,"P1-28":29,"P1-29":30,"P1-30":31,"P1-31":32,"P1-32":33,"P1-33":34,"P1-34":35,"P2-01":36,"P2-02":37,"P2-03":38,"P2-04":39,"P2-05":40,"P2-06":41,"P2-07":42,"P2-08":43,"P2-09":44,"P2-10":45,"P2-11":46,"P2-12":47,"P2-13":48,"P3-01":49,"OLD-P1-01":50,"OLD-P1-02":51,"OLD-P1-03":52,"OLD-P1-04":53,"OLD-P1-06":54,"OLD-P1-07":55,"OLD-P1-08":56,"OLD-P1-10":57,"OLD-P1-13":58,"OLD-P1-15":59,"OLD-P1-09":60,"OLD-P1-19":61,"OLD-P1-20":62,"OLD-P1-21":63,"OLD-P1-22":64,"OLD-P1-23":65,"OLD-P1-24":66,"OLD-P1-25":67,"OLD-P2-19-20":68,"P3-02":69};
+    // Snapshot of every task in the Sheet's Tasks tab, in sheet-row order.
+    // Each entry: { i: taskId, r: 1-indexed row, t: title, s: status }.
+    // Maintained by scripts/sync_sheet_to_html.py — keep the keys short to
+    // keep the page payload small.
+    const TASK_INDEX = [{"i":"P1-01","r":2,"t":"Move CI to GitHub Actions","s":"Not Started"},{"i":"P1-02","r":3,"t":"Install Vapi SDK + dependencies","s":"Not Started"},{"i":"P1-03","r":4,"t":"Seed Screens + session_log Events into Supabase (Mint priority)","s":"In Progress"},{"i":"P1-04","r":5,"t":"Build session_log Table + Write API","s":"Not Started"},{"i":"P1-05","r":6,"t":"Build Context API Endpoint","s":"Not Started"},{"i":"P1-06","r":7,"t":"Add crisis safety rule to base system prompt","s":"Not Started"},{"i":"P1-07","r":8,"t":"Add Agent Tool Definitions","s":"Not Started"},{"i":"P1-08","r":9,"t":"Extract tool definitions to shared module","s":"Not Started"},{"i":"P1-09","r":10,"t":"Refactor agent system prompt to support context + delta injection","s":"Not Started"},{"i":"P1-10","r":11,"t":"Build callLLM() Wrapper - THE ENTRY POINT","s":"Not Started"},{"i":"P1-11","r":12,"t":"Wire Vapi to use shared context builder","s":"Not Started"},{"i":"P1-12","r":13,"t":"Build VoiceContext Provider","s":"In Progress"},{"i":"P1-13","r":14,"t":"Extend VoiceContext to track Cartesia session lifecycle","s":"Not Started"},{"i":"P1-14","r":15,"t":"Build useRealtimeVoice Hook","s":"Not Started"},{"i":"P1-15","r":16,"t":"Build useLLM hook for direct LLM calls (non-voice path)","s":"Not Started"},{"i":"P1-16","r":17,"t":"Frontend: useScreenContext + useLLM hooks","s":"Not Started"},{"i":"P1-17","r":18,"t":"Frontend: Instrument session_log writes","s":"Not Started"},{"i":"P1-18","r":19,"t":"Build onboarding screen shell","s":"Not Started"},{"i":"P1-19","r":20,"t":"Wire all 9 onboarding screens to the shell","s":"In Progress"},{"i":"P1-20","r":21,"t":"Bundle anon_id generation into the auth fix","s":"Not Started"},{"i":"P1-21","r":22,"t":"Anonymization MVP - anon_id everywhere downstream","s":"Not Started"},{"i":"P1-22","r":23,"t":"RLS policy audit (HARD GATE for direct-Supabase access)","s":"Not Started"},{"i":"P1-23","r":24,"t":"Vapi tuning + latency optimization pass","s":"Not Started"},{"i":"P1-24","r":25,"t":"Test session_log integrity","s":"Not Started"},{"i":"P1-25","r":26,"t":"Test AI Context across all channels (HARD GATE)","s":"Not Started"},{"i":"P1-26","r":27,"t":"Test cost and latency budget","s":"Not Started"},{"i":"P1-27","r":28,"t":"Test Full Happy Path (Voice)","s":"Not Started"},{"i":"P1-28","r":29,"t":"Test Full Happy Path (Manual)","s":"Not Started"},{"i":"P1-29","r":30,"t":"Test Voice-Driven Navigation Edge Cases","s":"Not Started"},{"i":"P1-30","r":31,"t":"Test Partial/Edge Cases","s":"Not Started"},{"i":"P1-31","r":32,"t":"Test crisis safety detection","s":"Not Started"},{"i":"P1-32","r":33,"t":"Test on Android APK + Web","s":"Not Started"},{"i":"P1-33","r":34,"t":"Document sync architecture decision in callLLM node","s":"Not Started"},{"i":"P1-34","r":35,"t":"Team process improvements (Mattermost templates + acceptance criteria)","s":"Not Started"},{"i":"P2-01","r":36,"t":"Add new tools to shared module","s":"Not Started"},{"i":"P2-02","r":37,"t":"Stage 5 prep: scaffold async reflection state machine","s":"Not Started"},{"i":"P2-03","r":38,"t":"Async reflection check-in flow / state machine","s":"Not Started"},{"i":"P2-04","r":39,"t":"Feedback sessions via Vapi (scheduled triggers)","s":"Not Started"},{"i":"P2-05","r":40,"t":"Generate ~30 check-in MP3s (VA-driven, manual)","s":"Not Started"},{"i":"P2-06","r":41,"t":"Wire HOME-FIRST, HOME-MORNING, HOME-EVENING, HOME-RETURN","s":"Not Started"},{"i":"P2-07","r":42,"t":"Wire MCHECK-01, MCHECK-02, ECHECK-01 to ECHECK-06","s":"Not Started"},{"i":"P2-08","r":43,"t":"Yair tone bible (voice content reference)","s":"Not Started"},{"i":"P2-09","r":44,"t":"Text chat integration (GPT-4o mini direct)","s":"Not Started"},{"i":"P2-10","r":45,"t":"Streaming text input UX + always-open input box","s":"Not Started"},{"i":"P2-11","r":46,"t":"Wire user research prompt library (BR-01 to BR-18) into LLM","s":"Not Started"},{"i":"P2-12","r":47,"t":"Cross-channel QA (HARD GATE)","s":"Not Started"},{"i":"P2-13","r":48,"t":"GitLab sync improvements (assignee + status labels)","s":"Not Started"},{"i":"P3-01","r":49,"t":"Migrate Vapi orchestration to self-hosted Pipecat","s":"Not Started"},{"i":"OLD-P1-01","r":50,"t":"Create Supabase Storage Bucket","s":"Done"},{"i":"OLD-P1-02","r":51,"t":"Add DB Columns to user_profiles","s":"Done"},{"i":"OLD-P1-03","r":52,"t":"Strip ElevenLabs + DeepGram","s":"Done"},{"i":"OLD-P1-04","r":53,"t":"Configure All Env Variables","s":"Done"},{"i":"OLD-P1-06","r":54,"t":"Clone Voice on Cartesia","s":"Done"},{"i":"OLD-P1-07","r":55,"t":"Generate 7 MP3 Files","s":"Done"},{"i":"OLD-P1-08","r":56,"t":"Upload MP3s to Supabase Storage","s":"Done"},{"i":"OLD-P1-10","r":57,"t":"Build useVoicePlayer Hook","s":"Done"},{"i":"OLD-P1-13","r":58,"t":"Configure Vapi assistant","s":"Done"},{"i":"OLD-P1-15","r":59,"t":"Deploy Vapi assistant config","s":"Done"},{"i":"OLD-P1-09","r":60,"t":"Create voice-manifest.json","s":"Obsolete"},{"i":"OLD-P1-19","r":61,"t":"Wire MIC-PERMISSION","s":"Obsolete"},{"i":"OLD-P1-20","r":62,"t":"Wire POST-AUTH-SIGNUP [DEPRECATED] (Welcome)","s":"Obsolete"},{"i":"OLD-P1-21","r":63,"t":"Wire ONBOARD-01 (Profile Setup)","s":"Obsolete"},{"i":"OLD-P1-22","r":64,"t":"Wire ONBOARD-FORK (Experience Fork)","s":"Obsolete"},{"i":"OLD-P1-23","r":65,"t":"Wire ONBOARD-BEGINNER-01 to ONBOARD-BEGINNER-03","s":"Obsolete"},{"i":"OLD-P1-24","r":66,"t":"Wire ONBOARD-BEGINNER-04 to ONBOARD-BEGINNER-07","s":"Obsolete"},{"i":"OLD-P1-25","r":67,"t":"Wire ONBOARD-BEGINNER-10 (Plan Summary + Start)","s":"Obsolete"},{"i":"OLD-P2-19-20","r":68,"t":"Wire all home + check-in screens","s":"Obsolete"},{"i":"P3-02","r":69,"t":"Migrate non-onboarding voice to Cartesia Sonic API direct (cost optimization)","s":"Obsolete"}];
+
+    // Lookups derived from TASK_INDEX
+    const TASK_BY_ID = Object.fromEntries(TASK_INDEX.map(t => [t.i, t]));
+    function rowForTask(taskId)  { return (TASK_BY_ID[taskId] || {}).r || null; }
+    function titleForTask(taskId){ return (TASK_BY_ID[taskId] || {}).t || ""; }
 
     function buildSheetUrl(row) {
       const range = row ? `&range=A${row}` : "";
-      // widget=true hides the Google chrome; rm=minimal compresses the toolbar
       return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?widget=true&gid=${TASKS_GID}${range}`;
     }
 
     let _zoom4IframeLoaded = false;
     let _pendingSheetRow = null;
+    let _activeSheetTaskId = null;  // last task scrolled to (for sidebar highlight)
+
     function ensureSheetIframeLoaded(row) {
       const iframe = document.getElementById("zoom-4-iframe");
       if (!iframe) return;
-      // Force reload when row changes (Sheets reads &range= on initial load only).
       const targetSrc = buildSheetUrl(row);
       if (iframe.src !== targetSrc) {
         iframe.src = targetSrc;
         _zoom4IframeLoaded = true;
       }
-      // Update the new-tab link too
-      const link = document.getElementById("z4-open-new-tab");
-      if (link) link.href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?gid=${TASKS_GID}${row ? `&range=A${row}` : ""}`;
     }
 
     function jumpToSheetRow(taskId) {
       if (!taskId) return;
-      const row = TASK_TO_ROW[taskId];
-      if (!row) {
-        console.warn("No row mapping for task", taskId);
-        return;
-      }
+      const row = rowForTask(taskId);
+      if (!row) { console.warn("No row mapping for task", taskId); return; }
       _pendingSheetRow = row;
+      _activeSheetTaskId = taskId;
       setZoomLevel(4);
-      // Reset the dropdown so the same task can be picked twice in a row
-      const sel = document.getElementById("z4-task-jump");
-      if (sel) sel.value = "";
     }
 
-    function populateTaskJumpDropdown() {
-      const sel = document.getElementById("z4-task-jump");
-      if (!sel || sel.dataset.populated) return;
-      sel.dataset.populated = "1";
-      // Sort: P1 first, P2, P3, then OLD-
-      const ids = Object.keys(TASK_TO_ROW).sort((a, b) => {
-        const oldA = a.startsWith("OLD-"), oldB = b.startsWith("OLD-");
-        if (oldA !== oldB) return oldA ? 1 : -1;
-        return a.localeCompare(b, undefined, { numeric: true });
-      });
-      ids.forEach(id => {
-        const opt = document.createElement("option");
-        opt.value = id;
-        opt.textContent = id;
-        sel.appendChild(opt);
-      });
+    // Switch to view 3 (Engineering) and open the matching task walkthrough.
+    function jumpToWalkthrough(taskId) {
+      if (!taskId) return;
+      const tut = (typeof TASK_TUTORIALS !== "undefined")
+        ? TASK_TUTORIALS.find(t => t.taskId === taskId)
+        : null;
+      if (!tut) {
+        console.warn("No walkthrough for task", taskId);
+        return;
+      }
+      setZoomLevel(3);
+      // Defer so the view becomes visible before the tutorial UI tries to render
+      setTimeout(() => {
+        try { pickTutorial(tut.id); } catch (e) { console.warn(e); }
+      }, 60);
     }
+
+    // Sidebar rendering (lazy)
+    function renderTaskSidebar(filter) {
+      const list = document.getElementById("z4-task-list");
+      if (!list) return;
+      const f = (filter || "").toLowerCase().trim();
+      const tutorialIds = new Set(
+        (typeof TASK_TUTORIALS !== "undefined" ? TASK_TUTORIALS : []).map(t => t.taskId)
+      );
+      const STATUS_CLASS = {
+        "Not Started": "notstarted",
+        "In Progress": "inprogress",
+        "Blocked":     "blocked",
+        "Done":        "done",
+        "Obsolete":    "obsolete"
+      };
+      const STATUS_DOT = {
+        "Not Started": "○", "In Progress": "◐", "Blocked": "◔",
+        "Done": "●", "Obsolete": "✕"
+      };
+
+      let html = "";
+      let visibleCount = 0;
+      TASK_INDEX.forEach(t => {
+        const matches = !f || t.i.toLowerCase().includes(f) || (t.t || "").toLowerCase().includes(f);
+        if (!matches) return;
+        visibleCount++;
+        const statusCls = STATUS_CLASS[t.s] || "notstarted";
+        const dot       = STATUS_DOT[t.s] || "○";
+        const hasWalk   = tutorialIds.has(t.i);
+        const activeCls = (t.i === _activeSheetTaskId) ? " active" : "";
+        const titleEsc  = (t.t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+        html += `<div class="z4-task-row${activeCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row">
+          <span class="z4-task-status z4-${statusCls}">${dot}</span>
+          <span class="z4-task-id">${t.i}</span>
+          <span class="z4-task-title">${titleEsc}</span>
+          ${hasWalk ? `<button type="button" class="z4-walk-btn" onclick="event.stopPropagation(); jumpToWalkthrough('${t.i}')" title="Open walkthrough in Engineering view">Walkthrough →</button>` : `<span class="z4-walk-placeholder" title="No walkthrough — sheet only">—</span>`}
+        </div>`;
+      });
+      if (visibleCount === 0) {
+        html = `<div class="z4-empty">No tasks match "${(filter || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")}"</div>`;
+      }
+      list.innerHTML = html;
+    }
+
+    function filterTaskSidebar(value) { renderTaskSidebar(value); }
 
     function setZoomLevel(level) {
       currentZoomLevel = level;
@@ -1651,7 +1761,7 @@
 
       // Lazy-load the sheet iframe the first time view 4 is opened, and honour any pending row jump
       if (level === 4) {
-        populateTaskJumpDropdown();
+        renderTaskSidebar(document.getElementById("z4-search")?.value || "");
         const row = _pendingSheetRow;
         _pendingSheetRow = null;
         if (!_zoom4IframeLoaded || row) {
@@ -4048,7 +4158,7 @@
 
       // "Show in Sheet" jump — only for tasks that exist in the Master Sheet
       const taskId = activeTutorial.taskId;
-      if (taskId && TASK_TO_ROW[taskId]) {
+      if (taskId && rowForTask(taskId)) {
         const jump = document.createElement("button");
         jump.type = "button";
         jump.className = "meta-chip jump-sheet";
