@@ -350,6 +350,40 @@
       background: rgba(22, 163, 74, 0.22); color: #bbf7d0;
       border-color: rgba(22, 163, 74, 0.55);
     }
+    /* Priority chips (match the Master Sheet's CF colors) */
+    #tutorial-banner .meta-chip.priority-critical {
+      background: rgba(243, 89, 111, 0.22); color: #fecdd3; border-color: rgba(243, 89, 111, 0.55);
+    }
+    #tutorial-banner .meta-chip.priority-high {
+      background: rgba(252, 175, 55, 0.22); color: #fde2b3; border-color: rgba(252, 175, 55, 0.5);
+    }
+    #tutorial-banner .meta-chip.priority-medium {
+      background: rgba(252, 220, 80, 0.18); color: #fef3c7; border-color: rgba(252, 220, 80, 0.4);
+    }
+    #tutorial-banner .meta-chip.priority-low {
+      background: rgba(148, 163, 184, 0.14); color: #e2e8f0; border-color: rgba(148, 163, 184, 0.3);
+    }
+    /* Weight = relative effort (Fibonacci story points) — monospace, calm teal */
+    #tutorial-banner .meta-chip.weight {
+      background: rgba(45, 212, 191, 0.12); color: #a7f3d0;
+      border-color: rgba(45, 212, 191, 0.35);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    /* Estimated Hours — italic, muted, supporting context */
+    #tutorial-banner .meta-chip.estimate {
+      background: rgba(91, 192, 222, 0.06); color: #94afc6;
+      border-color: rgba(91, 192, 222, 0.18);
+      font-style: italic;
+      font-weight: 500;
+    }
+    /* Faint placeholder when Priority/Weight not set yet — discoverable, not noisy */
+    #tutorial-banner .meta-chip.empty {
+      color: rgba(255, 255, 255, 0.32);
+      border-style: dashed;
+      border-color: rgba(255, 255, 255, 0.18);
+      background: transparent;
+      font-weight: 500;
+    }
     /* Sync deploy toast — appears bottom-right when a sheet edit deploys */
     #deploy-toast {
       position: fixed;
@@ -622,6 +656,19 @@
       background: rgba(91, 192, 222, 0.14);
       border-left-color: #5bc0de;
     }
+    .z4-task-row {
+      border-left: 3px solid transparent;  /* priority indicator (overridden below) */
+    }
+    .z4-task-row.priority-critical { border-left-color: #f3596f; }
+    .z4-task-row.priority-high     { border-left-color: #f59e0b; }
+    .z4-task-row.priority-medium   { border-left-color: #fbbf24; }
+    .z4-task-row.priority-low      { border-left-color: rgba(148, 163, 184, 0.4); }
+    .z4-task-row .z4-task-weight {
+      flex-shrink: 0; margin: 0 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px; color: #a7f3d0;
+    }
+    .z4-task-row .z4-task-weight.empty { color: rgba(167, 243, 208, 0.25); }
     .z4-task-row .z4-task-status {
       width: 14px; flex-shrink: 0; text-align: center; font-size: 13px;
     }
@@ -1942,6 +1989,12 @@
 
       let html = "";
       let visibleCount = 0;
+      const PRIORITY_ROW_CLASS = {
+        "Critical": "priority-critical",
+        "High":     "priority-high",
+        "Medium":   "priority-medium",
+        "Low":      "priority-low"
+      };
       TASK_INDEX.forEach(t => {
         const matches = !f || t.i.toLowerCase().includes(f) || (t.t || "").toLowerCase().includes(f);
         if (!matches) return;
@@ -1950,11 +2003,16 @@
         const dot       = STATUS_DOT[t.s] || "○";
         const hasWalk   = tutorialIds.has(t.i);
         const activeCls = (t.i === _activeSheetTaskId) ? " active" : "";
+        const priorityCls = (t.pr && PRIORITY_ROW_CLASS[t.pr]) ? " " + PRIORITY_ROW_CLASS[t.pr] : "";
         const titleEsc  = (t.t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
-        html += `<div class="z4-task-row${activeCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row">
+        const wtBadge = t.wt
+          ? `<span class="z4-task-weight" title="Weight (story points) — relative effort">W·${t.wt}</span>`
+          : `<span class="z4-task-weight empty" title="No weight assigned yet">W·—</span>`;
+        html += `<div class="z4-task-row${activeCls}${priorityCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row${t.pr ? ` · Priority: ${t.pr}` : ""}">
           <span class="z4-task-status z4-${statusCls}">${dot}</span>
           <span class="z4-task-id">${t.i}</span>
           <span class="z4-task-title">${titleEsc}</span>
+          ${wtBadge}
           ${hasWalk ? `<button type="button" class="z4-walk-btn" onclick="event.stopPropagation(); jumpToWalkthrough('${t.i}')" title="Open walkthrough in Engineering view">Walkthrough →</button>` : `<span class="z4-walk-placeholder" title="No walkthrough — sheet only">—</span>`}
         </div>`;
       });
@@ -4530,6 +4588,53 @@
       };
       flagChip("Tested by Owner", !!activeTutorial.tested);
       flagChip("Approved by Supervisor", !!activeTutorial.approved);
+
+      // Priority + Weight + Estimated Hours, sourced from TASK_INDEX (which
+      // syncs from the Master Sheet). Priority is user-assigned; Weight is
+      // Fibonacci story points; Estimate is hours.
+      const PRIORITY_CLASS = {
+        "Critical": "priority-critical",
+        "High":     "priority-high",
+        "Medium":   "priority-medium",
+        "Low":      "priority-low"
+      };
+      const taskMeta = (typeof TASK_BY_ID !== "undefined")
+        ? TASK_BY_ID[activeTutorial.taskId] : null;
+      if (taskMeta) {
+        const pr = (taskMeta.pr || "").trim();
+        const prChip = document.createElement("span");
+        if (pr && PRIORITY_CLASS[pr]) {
+          prChip.className = "meta-chip " + PRIORITY_CLASS[pr];
+          prChip.textContent = pr;
+        } else {
+          prChip.className = "meta-chip empty";
+          prChip.textContent = "Priority —";
+          prChip.title = "No priority assigned in the Master Sheet yet";
+        }
+        meta.appendChild(prChip);
+
+        const wt = (taskMeta.wt || "").trim();
+        const wtChip = document.createElement("span");
+        if (wt) {
+          wtChip.className = "meta-chip weight";
+          wtChip.textContent = "W·" + wt;
+          wtChip.title = "Weight (Fibonacci story points) — relative effort, not time";
+        } else {
+          wtChip.className = "meta-chip empty";
+          wtChip.textContent = "W·—";
+          wtChip.title = "No weight assigned yet";
+        }
+        meta.appendChild(wtChip);
+
+        const est = (taskMeta.est || "").trim();
+        if (est) {
+          const estChip = document.createElement("span");
+          estChip.className = "meta-chip estimate";
+          estChip.textContent = "≈ " + est + "h";
+          estChip.title = "Estimated hours";
+          meta.appendChild(estChip);
+        }
+      }
 
       // "Show in Sheet" jump — only for tasks that exist in the Master Sheet
       const taskId = activeTutorial.taskId;

@@ -155,8 +155,10 @@ def build_sheet_index(rows: list[list[str]]) -> dict[str, dict[str, str]]:
 
 
 def build_task_index(rows: list[list[str]]) -> list[dict]:
-    """List of {i: taskId, r: 1-indexed sheet row, t: title, s: status}
-    in sheet-row order. Powers zoom-4's task sidebar.
+    """List of {i: taskId, r: 1-indexed sheet row, t: title, s: status,
+    pr?: priority, wt?: weight, est?: estimated hours} in sheet-row order.
+    Powers zoom-4's task sidebar + zoom-3's tutorial banner chips.
+    Optional fields are omitted when blank to keep the inline payload small.
     """
     if not rows:
         return []
@@ -165,8 +167,11 @@ def build_task_index(rows: list[list[str]]) -> list[dict]:
         tcol = headers.index("Task ID")
     except ValueError:
         return []
-    title_col = headers.index("Title") if "Title" in headers else -1
-    status_col = headers.index("Status") if "Status" in headers else -1
+    title_col    = headers.index("Title") if "Title" in headers else -1
+    status_col   = headers.index("Status") if "Status" in headers else -1
+    priority_col = headers.index("Priority") if "Priority" in headers else -1
+    weight_col   = headers.index("Weight") if "Weight" in headers else -1
+    est_col      = headers.index("Estimated Hours") if "Estimated Hours" in headers else -1
 
     out: list[dict] = []
     for i, row in enumerate(rows[1:], start=2):
@@ -176,12 +181,25 @@ def build_task_index(rows: list[list[str]]) -> list[dict]:
         tid = (padded[tcol] or "").strip()
         if not tid:
             continue
-        out.append({
+        entry: dict = {
             "i": tid,
             "r": i,
             "t": (padded[title_col] or "").strip() if title_col >= 0 else "",
             "s": (padded[status_col] or "").strip() if status_col >= 0 else "",
-        })
+        }
+        if priority_col >= 0:
+            pr = (padded[priority_col] or "").strip()
+            if pr:
+                entry["pr"] = pr
+        if weight_col >= 0:
+            wt = (padded[weight_col] or "").strip()
+            if wt:
+                entry["wt"] = wt
+        if est_col >= 0:
+            est = (padded[est_col] or "").strip()
+            if est:
+                entry["est"] = est
+        out.append(entry)
     return out
 
 
