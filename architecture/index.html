@@ -2523,7 +2523,7 @@
     }]
   },
   {
-    id: "p2-02", taskId: "P2-02", name: "Stage 5 prep: scaffold async reflection state machine", stage: 7, status: "notstarted", owner: ["Mint"],
+    id: "p2-02", taskId: "P2-02", name: "Stage 5 prep: scaffold async reflection state machine", stage: 7, status: "obsolete", owner: ["Mint"],
     acceptance: "SETUP\n□ Hook contract pinned in /docs/hooks.md\n\nBUILD\n□ useAsyncReflection() exists with mock backend returning canned responses\n□ Mock can be swapped via env var or import path (one-line change)\n\nVERIFY\n□ A smoke check-in screen using the mock completes the flow\n□ Once P2-29 backend lands, no screen-side code changes needed",
     approved: false,
     tested: false,
@@ -2619,15 +2619,15 @@
     }]
   },
   {
-    id: "p2-03", taskId: "P2-03", name: "Async reflection check-in flow / state machine", stage: 7, status: "notstarted", owner: ["Mint"],
-    acceptance: "SETUP\n□ State machine documented in /docs/state-machines/async-reflection.md\n□ Check-in Figma frames pinned for reference\n\nBUILD\n□ useAsyncReflection() returns {start, stop, status, result}\n□ POST /api/reflection accepts both audio (multipart) + text (json)\n□ Async job uses shared context builder\n\nVERIFY\n□ Voice check-in: 60s of speech → coaching insight in <30s\n□ Text check-in: paragraph → coaching insight in <10s\n□ Insight references user's actual habits (not generic)",
+    id: "p2-03", taskId: "P2-03", name: "Configure Vapi check-in assistant variant", stage: 7, status: "notstarted", owner: ["Mint"],
+    acceptance: "SETUP\n□ Check-in system prompt drafted, reviewed, in /docs/vapi-checkin-prompt.md\n□ Check-in first message defined\n\nBUILD\n□ Second Vapi assistant published in dashboard with check-in config\n□ useRealtimeVoice accepts a variant parameter ('onboarding' | 'checkin')\n□ MCHECK / ECHECK screens connect to check-in variant; ONBOARD screens to onboarding variant\n\nVERIFY\n□ End-to-end: open MCHECK-01, complete check-in via voice, no errors\n□ p95 latency under 1.5s per turn\n□ AI tone matches the check-in framing (qualitative, Yair-reviewed)",
     approved: false,
     tested: false,
-    description: "Async reflection check-in flow + state machine: user opens check-in, talks about their day, AI processes asynchronously, returns coaching insights.",
+    description: "Configure a second Vapi assistant variant (different system prompt + first message + shorter session config) for check-ins. Reuses Vapi infrastructure; no separate state machine needed.",
     steps: [
       {
         title: "P2-29 (1/2): Implement Async Reflection state machine",
-        desc: "Path 2. Unlike Vapi (real-time conversational), Async Reflection accepts a user's free-form input (voice or text), runs LLM analysis in the background, and returns coaching insights when ready. Supports voice via Cartesia Sonic API; text via Direct LLM.\n\nSETUP\n- Define the state machine: idle → recording → processing → result → idle\n- Confirm check-in screen designs in Figma\n\nBUILD\n- Implement useAsyncReflection() hook\n- Backend: POST /api/reflection accepts audio/text, kicks off async LLM job\n- Polling or SSE returns result when ready\n- LLM uses same context shape as Path 1/3 (P1-42 dep)\n\nVERIFY\n- Check-in completes for both voice + text input\n- Response includes specific insight referencing user's habits + recent session_log",
+        desc: "Per the 2-path consolidation (2026-05-08): Vapi handles all live voice. Check-ins use the SAME Vapi infrastructure as onboarding, just with a check-in-specific system prompt + first message + session config.\n\nSETUP\n- Confirm Vapi account supports multiple assistant variants\n- Define check-in system prompt (extends global context with check-in framing — e.g. 'this is a daily reflection, ask one question at a time, listen more than you speak')\n- Define check-in first message (e.g. 'Hey Yair, how are you feeling today?')\n\nBUILD\n- Create second Vapi assistant in dashboard\n- Wire its system prompt + first message + voice (same Yair clone) + tools\n- Update useRealtimeVoice hook to accept an assistant variant parameter\n- Backend logic: when user opens a check-in screen, frontend connects to check-in Vapi variant; when onboarding screen, connects to onboarding variant\n\nVERIFY\n- Onboarding flow still uses onboarding assistant\n- Check-in flow uses check-in assistant\n- Voice quality + latency comparable to onboarding (Vapi tuning applies to both)",
         highlight: ["frontend", "mp3-storage", "call-llm"],
         highlightEdges: ["frontend-mp3-storage", "frontend-vapi"]
       },
