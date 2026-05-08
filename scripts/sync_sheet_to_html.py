@@ -299,6 +299,22 @@ _STATUS_RE = re.compile(r'(status\s*:\s*)"([^"]+)"')
 _STAGE_RE  = re.compile(r'(stage\s*:\s*)(\d+)')
 _OWNER_RE  = re.compile(r'(owner\s*:\s*)\[([^\]]*)\]')
 
+# Patterns for the new fields (added 2026-05-08): description / acceptance
+# (string), tested / approved (boolean). They live at the task-object level
+# (sibling of status/owner). The first `desc` lives inside steps[0].
+_DESCRIPTION_RE = re.compile(r'(description\s*:\s*)"((?:[^"\\]|\\.)*)"')
+_ACCEPTANCE_RE  = re.compile(r'(acceptance\s*:\s*)"((?:[^"\\]|\\.)*)"')
+_TESTED_RE      = re.compile(r'(tested\s*:\s*)(true|false)')
+_APPROVED_RE    = re.compile(r'(approved\s*:\s*)(true|false)')
+# desc inside steps array — match the FIRST desc field after the task's
+# `steps:` keyword. Non-greedy so we don't span across tasks.
+_STEP_DESC_RE   = re.compile(r'(steps\s*:\s*\[\s*\{[^}]*?desc\s*:\s*)"((?:[^"\\]|\\.)*)"', re.DOTALL)
+
+
+def js_string(s: str) -> str:
+    """JSON-encode a Python str so it round-trips safely as a JS string literal."""
+    return json.dumps(s, ensure_ascii=False)
+
 
 def parse_owner_literal(raw: str) -> list[str]:
     return [m.group(1) for m in re.finditer(r'"([^"]*)"', raw)]
@@ -306,6 +322,53 @@ def parse_owner_literal(raw: str) -> list[str]:
 
 def render_owner_literal(names: list[str]) -> str:
     return ", ".join(f'"{n}"' for n in names)
+
+
+def upsert_task_field(text: str, field_name: str, value, anchor_pat=_OWNER_RE) -> tuple[str, bool]:
+    """Update or insert `field_name: value` on a task object's first line(s).
+
+    If the field already exists, its value is replaced. Otherwise a new
+    field is inserted immediately after the anchor field (default: owner).
+    Returns (new_text, changed)."""
+    if isinstance(value, bool):
+        rendered = "true" if value else "false"
+        pat = re.compile(rf'({field_name}\s*:\s*)(true|false)')
+    elif isinstance(value, str):
+        rendered = js_string(value)
+        pat = re.compile(rf'({field_name}\s*:\s*)"((?:[^"\\\\]|\\\\.)*)"')
+    else:
+        raise TypeError(f"unsupported value type {type(value)}")
+
+    m = pat.search(text)
+    if m:
+        # Update in place
+        old_full = m.group(0)
+        new_full = m.group(1) + rendered
+        if old_full == new_full:
+            return text, False
+        return text[:m.start()] + new_full + text[m.end():], True
+
+    # Insert after the anchor (owner: [...])
+    anchor = anchor_pat.search(text)
+    if not anchor:
+        # Can't anchor; skip silently (task object has unexpected shape)
+        return text, False
+    insert_at = anchor.end()
+    snippet = f",\n    {field_name}: {rendered}"
+    return text[:insert_at] + snippet + text[insert_at:], True
+
+
+def upsert_step_desc(text: str, value: str) -> tuple[str, bool]:
+    """Replace the first `desc` field inside the steps array with `value`."""
+    rendered = js_string(value)
+    m = _STEP_DESC_RE.search(text)
+    if not m:
+        return text, False
+    old_full = m.group(0)
+    new_full = m.group(1) + rendered
+    if old_full == new_full:
+        return text, False
+    return text[:m.start()] + new_full + text[m.end():], True
 
 
 # ─── Main sync ────────────────────────────────────────────────────────────
@@ -411,6 +474,44 @@ def main() -> int:
                     changes.append(
                         f"  {task_id}: owner {old_owners} → {new_owners}"
                     )
+
+        # ─── New fields (added 2026-05-08) ───────────────────────────────
+        # description (1-line elevator), acceptance (bulleted criteria),
+        # tested + approved (booleans), and refresh `desc` inside steps[0]
+        # from the sheet's Detailed Explanation column.
+
+        sheet_description = (sheet_row.get("Description") or "").strip()
+        if sheet_description:
+            updated, changed = upsert_task_field(updated, "description", sheet_description)
+            if changed:
+                changes.append(f"  {task_id}: description updated")
+
+        sheet_acceptance = (sheet_row.get("Acceptance Criteria") or "").strip()
+        if sheet_acceptance:
+            updated, changed = upsert_task_field(updated, "acceptance", sheet_acceptance)
+            if changed:
+                changes.append(f"  {task_id}: acceptance updated")
+
+        # Sheets stores booleans as 'TRUE'/'FALSE' strings; map them.
+        def to_bool(v):
+            return str(v).strip().upper() == "TRUE"
+
+        sheet_tested = to_bool(sheet_row.get("Tested by Owner") or "")
+        updated, changed = upsert_task_field(updated, "tested", sheet_tested)
+        if changed:
+            changes.append(f"  {task_id}: tested → {sheet_tested}")
+
+        sheet_approved = to_bool(sheet_row.get("Approved by Supervisor") or "")
+        updated, changed = upsert_task_field(updated, "approved", sheet_approved)
+        if changed:
+            changes.append(f"  {task_id}: approved → {sheet_approved}")
+
+        # Refresh step.desc from sheet's Detailed Explanation
+        sheet_detailed = (sheet_row.get("Detailed Explanation") or "").strip()
+        if sheet_detailed:
+            updated, changed = upsert_step_desc(updated, sheet_detailed)
+            if changed:
+                changes.append(f"  {task_id}: step.desc refreshed")
 
         new_inner_parts.append(updated)
         cursor = end
