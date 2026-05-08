@@ -1603,7 +1603,7 @@
           owners: "Backend team",
           summary: "Path 1: real-time voice for onboarding. Plugs in Cartesia STT/TTS. Replaces Cartesia Line.",
           description: "Vapi is the real-time voice agent orchestrator. The CONDUCTOR of voice conversations.\n\nUsed for Path 1 - ONBOARDING ONLY in v2 plan. Screens: WELCOME-01, PREF-01, MIC-01, POST-AUTH-01, ONBOARD-01 to ONBOARD-09, HOME-RETURN, ADV-01, ADV-02. Also used by P2-31 feedback sessions (1-week, 1-month, manual triggers).\n\nManages turn-taking, interruption handling, latency optimization, the buffering loop between STT, the LLM, and TTS. When the user stops speaking, Vapi knows to send the transcript through. When the LLM responds, Vapi streams it to TTS without waiting for the whole response.\n\nVapi doesn't decide WHAT to say - that's the LLM. Vapi manages WHEN and HOW SMOOTHLY.\n\nPluggable STT/TTS providers - we use Cartesia Ink (STT) and Cartesia Sonic-3 (TTS) through Vapi to keep the cloned voice quality. Pluggable LLM - we bring our own GPT-4o mini key.\n\nMost expensive voice path per minute - reserved for high-trust onboarding moment.\n\n=== MAY 5 2026 PIVOT ===\nVapi replaced Vapi as the orchestrator. Reason: Vapi's per-account concurrency limits don't scale beyond ~50-100 concurrent users. Vapi has built-in concurrency at scale.\n\nWhat survived the pivot: Cartesia STT (Ink), Cartesia TTS (Sonic-3), Cartesia Sonic API for Path 2 - all still used through Vapi or directly. Frontend hooks (useRealtimeVoice) - same name, different SDK underneath. callLLM() wrapper - unchanged. All Supabase data architecture - unchanged." },
-{ id: "cartesia-sonic-api", label: "Streaming TTS API (Cartesia Sonic)", group: "cartesia-sub", x: 725, y: 440, width: 220, height: 60,
+{ id: "cartesia-sonic-api", label: "Streaming TTS API (Phase 2)", group: "cartesia-sub", x: 1080, y: 540, width: 200, height: 50,
           owners: "Backend team",
           summary: "Path 2 + 3: TTS-only HTTP endpoint. Cheaper than orchestrated voice (Vapi).",
           description: "Cartesia's TTS-only HTTP API endpoint. New in v2 plan.\n\nUsed by:\n- Path 2 (Async Reflection) for check-in personalized responses - LLM text streamed here for live TTS in cloned voice.\n- Path 3 (Direct LLM) for free-form voice conversations - no Vapi orchestration, just Sonic API for the spoken response.\n\nCheaper per minute than orchestrated voice (Vapi) because there's no orchestration overhead - we just send text and get audio back. Underlying TTS engine is Sonic-3.\n\nBypasses turn-taking and interruption handling. Frontend manages those concerns directly via the Async Reflection state machine (PROMPT → LISTENING → THINKING → RESPONDING → FOLLOWUP_OPTIONAL → CLOSING → DONE)." },
@@ -1679,6 +1679,9 @@
 
         { from: "frontend", to: "vapi", label: "live mic + voice (Vapi)", type: "data", phase: 1, stage: 3 },
         { from: "cartesia-sonic-api", to: "mp3-storage", label: "auto-generated MP3s", type: "sync", phase: 2, stage: null },
+
+        { from: "app-master", to: "session-log", label: "session_log Events → session_log table", type: "sync", phase: 1, stage: 1 },
+        { from: "app-master", to: "vapi", label: "Global Context → system prompt", type: "sync", phase: 1, stage: 1 },
 
         // === APP MASTER SHEET PIPELINES ===
         { from: "app-master", to: "screen-contexts", label: "Screens → screen_contexts (auto-sync 1m, P1-03 — Mint)", type: "sync", phase: 1, stage: 1 },
@@ -3298,31 +3301,50 @@
 
       textGroup.appendChild(text);
 
-      // Compound node sub-items (Vapi shows STT/LLM/TTS rows inside)
+      // Compound node sub-items: rounded sub-boxes inside parent (Vapi-style)
       if (n.subItems && n.subItems.length) {
-        const startY = n.height / 2 + 28;
+        const padX = 14, padTop = 56, rowH = 30, rowGap = 6;
         n.subItems.forEach((item, idx) => {
-          const yOff = startY + idx * 22;
+          const y = padTop + idx * (rowH + rowGap);
+
+          // Sub-box (rounded rect, subtle fill)
+          const box = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          box.setAttribute("x", padX);
+          box.setAttribute("y", y);
+          box.setAttribute("width", n.width - padX * 2);
+          box.setAttribute("height", rowH);
+          box.setAttribute("rx", 5);
+          box.setAttribute("fill", "rgba(0,0,0,0.28)");
+          box.setAttribute("stroke", "rgba(255,255,255,0.18)");
+          box.setAttribute("stroke-width", "1");
+          textGroup.appendChild(box);
+
+          // Sub-label (left)
           const lbl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-          lbl.setAttribute("x", 16);
-          lbl.setAttribute("y", yOff);
+          lbl.setAttribute("x", padX + 10);
+          lbl.setAttribute("y", y + rowH / 2 + 1);
+          lbl.setAttribute("dominant-baseline", "central");
           lbl.setAttribute("font-size", "12");
           lbl.setAttribute("font-weight", "500");
-          lbl.setAttribute("fill", "rgba(255,255,255,0.92)");
+          lbl.setAttribute("fill", "rgba(255,255,255,0.96)");
           lbl.setAttribute("pointer-events", "none");
           lbl.textContent = item.label;
           textGroup.appendChild(lbl);
+
+          // Meta badge (right)
           if (item.meta) {
-            const meta = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            meta.setAttribute("x", n.width - 16);
-            meta.setAttribute("y", yOff);
-            meta.setAttribute("text-anchor", "end");
-            meta.setAttribute("font-size", "11");
-            meta.setAttribute("font-weight", "600");
-            meta.setAttribute("fill", "rgba(255,255,255,0.7)");
-            meta.setAttribute("pointer-events", "none");
-            meta.textContent = item.meta;
-            textGroup.appendChild(meta);
+            const metaText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            const metaX = n.width - padX - 10;
+            metaText.setAttribute("x", metaX);
+            metaText.setAttribute("y", y + rowH / 2 + 1);
+            metaText.setAttribute("text-anchor", "end");
+            metaText.setAttribute("dominant-baseline", "central");
+            metaText.setAttribute("font-size", "11");
+            metaText.setAttribute("font-weight", "700");
+            metaText.setAttribute("fill", "rgba(255,255,255,0.85)");
+            metaText.setAttribute("pointer-events", "none");
+            metaText.textContent = item.meta;
+            textGroup.appendChild(metaText);
           }
         });
       }
@@ -3330,9 +3352,9 @@
       if (n.owners) {
         const sub = document.createElementNS("http://www.w3.org/2000/svg", "text");
         sub.setAttribute("x", n.width / 2);
-        sub.setAttribute("y", n.height / 2 + 20);
+        sub.setAttribute("y", n.subItems ? 34 : n.height / 2 + 20);
         sub.setAttribute("text-anchor", "middle");
-        sub.setAttribute("dominant-baseline", "central");
+        sub.setAttribute("dominant-baseline", n.subItems ? "hanging" : "central");
         sub.setAttribute("font-size", "14");
         sub.setAttribute("font-weight", "500");
         sub.setAttribute("font-family", "-apple-system, sans-serif");
