@@ -49,7 +49,7 @@ TASKS_RANGE = "Tasks!A:Z"           # tolerant of column reorder + extra cols
 SCOPES      = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 REQUIRED_COLUMNS = (
-    "Task ID", "Title", "Assignee", "Internal Status", "Stage",
+    "Task ID", "Title", "Assignee", "Status",
 )
 
 
@@ -358,9 +358,10 @@ def main() -> int:
 
         updated = original
 
-        new_status = parse_status(
-            sheet_row["Internal Status"], sheet_row["Stage"]
-        )
+        # Stage column was dropped 2026-05-08 (consolidation per call with
+        # Mint + Yonas). parse_status's stage arg now always empty; Done /
+        # Obsolete must be set directly in Status.
+        new_status = parse_status(sheet_row.get("Status", ""), "")
         m_status = _STATUS_RE.search(updated)
         if m_status:
             old_status = m_status.group(2)
@@ -372,7 +373,10 @@ def main() -> int:
                 )
                 changes.append(f"  {task_id}: status {old_status} → {new_status}")
 
-        new_stage = parse_stage(sheet_row["Stage"])
+        # Stage column dropped 2026-05-08; HTML's `stage:` field stays at its
+        # current value (sync no longer updates it). parse_stage("") returns
+        # None which is the no-op signal.
+        new_stage = parse_stage(sheet_row.get("Stage", ""))
         if new_stage is not None:
             m_stage = _STAGE_RE.search(updated)
             if m_stage:
