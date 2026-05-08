@@ -1245,7 +1245,6 @@
             <!-- LLM sub-box -->
             <rect x="488" y="92" width="195" height="38" rx="5" fill="rgba(0,0,0,0.30)" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
             <text x="498" y="108" fill="#fff" font-size="11" font-weight="700">LLM</text>
-            <text x="673" y="108" text-anchor="end" fill="rgba(255,255,255,0.85)" font-size="10" font-weight="600">GPT-4o mini</text>
             <text x="498" y="122" fill="rgba(255,255,255,0.7)" font-size="9">BYO key, callLLM context</text>
             <!-- TTS sub-box -->
             <rect x="696" y="92" width="195" height="38" rx="5" fill="rgba(0,0,0,0.30)" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
@@ -1284,7 +1283,7 @@
              <text x="652" y="223" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">callLLM()</text></g>
           <line x1="712" y1="219" x2="740" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
           <g><rect x="740" y="200" width="120" height="38" rx="6" fill="#b91c1c" stroke="#ef4444" stroke-width="1.5" />
-             <text x="800" y="223" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">GPT-4o mini</text></g>
+             <text x="800" y="223" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">LLM</text></g>
           <line x1="860" y1="219" x2="888" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
           <g><rect x="888" y="200" width="140" height="38" rx="6" fill="#dc2626" stroke="#f87171" stroke-width="1.5" />
              <text x="958" y="223" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Sonic API (TTS)</text></g>
@@ -1308,7 +1307,7 @@
              <text x="356" y="343" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">callLLM()</text></g>
           <line x1="416" y1="339" x2="444" y2="339" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
           <g><rect x="444" y="320" width="120" height="38" rx="6" fill="#b91c1c" stroke="#ef4444" stroke-width="1.5" />
-             <text x="504" y="343" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">GPT-4o mini</text></g>
+             <text x="504" y="343" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">LLM</text></g>
           <line x1="564" y1="339" x2="592" y2="339" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
           <g><rect x="592" y="320" width="200" height="38" rx="6" fill="#2563eb" stroke="#60a5fa" stroke-width="1.5" />
              <text x="692" y="338" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Frontend renders text</text>
@@ -1608,7 +1607,7 @@
           owners: "Backend team",
           subItems: [
             { label: "STT", meta: "Deepgram Flux" },
-            { label: "LLM", meta: "GPT-4o mini" },
+            { label: "LLM" },
             { label: "TTS", meta: "Cartesia Sonic-3" }
           ],
           summary: "Path 1 voice orchestrator. STT + LLM + TTS pipeline managed inside Vapi for onboarding.",
