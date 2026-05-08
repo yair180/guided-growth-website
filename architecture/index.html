@@ -1998,7 +1998,7 @@
       // node-id in URLs uses dash separator (e.g. "1211-3557") not colon ("1211:3557")
       const dashed = nodeId ? nodeId.replace(":", "-") : "";
       const inner  = `https://www.figma.com/design/${FIGMA_FILE_KEY}/${FIGMA_FILE_NAME}${dashed ? `?node-id=${dashed}&t=ggos` : ""}`;
-      return `https://embed.figma.com/file/${FIGMA_FILE_KEY}/${FIGMA_FILE_NAME}?embed_host=guidedgrowthos${dashed ? `&node-id=${dashed}` : ""}`;
+      return `https://embed.figma.com/file/${FIGMA_FILE_KEY}/${FIGMA_FILE_NAME}?embed-host=guidedgrowthos${dashed ? `&node-id=${dashed}` : ""}`;
     }
 
     let _zoom5IframeLoaded = false;
