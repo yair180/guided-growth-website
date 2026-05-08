@@ -337,6 +337,28 @@
       background: rgba(22, 163, 74, 0.22); color: #bbf7d0;
       border-color: rgba(22, 163, 74, 0.55);
     }
+    /* Sync deploy toast — appears bottom-right when a sheet edit deploys */
+    #deploy-toast {
+      position: fixed;
+      bottom: 16px; right: 16px;
+      max-width: 360px;
+      padding: 10px 14px;
+      background: rgba(13, 40, 69, 0.95);
+      border: 1px solid #5bc0de;
+      border-left-width: 3px;
+      border-radius: 4px;
+      color: #d4e0f0;
+      font-size: 13px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+    }
+    #deploy-toast.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    #deploy-toast[data-kind="success"] { border-color: #22c55e; color: #bbf7d0; }
     .branch-buttons { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
     .branch-buttons button {
       background: #ca8a04; color: #fff; border: 1px solid #facc15;
@@ -2854,13 +2876,17 @@
       };
     }
 
-    // Register a stage walkthrough for each stage (1-5)
-    [1, 2, 3, 4, 5].forEach(stageNum => {
-      const walkthrough = buildStageWalkthrough(stageNum);
-      if (walkthrough) {
-        TUTORIALS[`stage-${stageNum}`] = walkthrough;
-      }
-    });
+    // Register a stage walkthrough for each stage defined in STAGE_LABELS,
+    // iterated in numeric order (so stage 10 doesn't sort before stage 2).
+    Object.keys(STAGE_LABELS)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .forEach(stageNum => {
+        const walkthrough = buildStageWalkthrough(stageNum);
+        if (walkthrough) {
+          TUTORIALS[`stage-${stageNum}`] = walkthrough;
+        }
+      });
 
     // Owner filter state - persists in localStorage
     // Multi-select: stores an array of selected owners. ["All"] means no filter.
@@ -2980,7 +3006,8 @@
           if (!byStage[s]) byStage[s] = [];
           byStage[s].push(t);
         });
-        const sortedStages = Object.keys(byStage).sort();
+        // Numeric sort — string sort puts stage 10 before 2.
+        const sortedStages = Object.keys(byStage).sort((a, b) => Number(a) - Number(b));
         sortedStages.forEach(stage => {
           const tasks = byStage[stage];
           const stageLabel = STAGE_LABELS[stage] || `Stage ${stage}`;
@@ -4085,17 +4112,46 @@
         }
       }
 
+      function showSyncToast(msg, kind) {
+        let el = document.getElementById("deploy-toast");
+        if (!el) {
+          el = document.createElement("div");
+          el.id = "deploy-toast";
+          document.body.appendChild(el);
+        }
+        el.textContent = msg;
+        el.dataset.kind = kind || "info";
+        el.classList.add("visible");
+        clearTimeout(el._hideTimer);
+        el._hideTimer = setTimeout(() => el.classList.remove("visible"), 8000);
+      }
+
       async function checkVersion() {
         const v = await fetchVersion();
         if (!v) return;
         if (baselineVersion === null) { baselineVersion = v; return; }
         if (v === baselineVersion) return;
+        if (!pendingReload) {
+          // First time we see the new version — show the user a toast
+          const ts = new Date().toLocaleTimeString();
+          showSyncToast(`Synced from sheet at ${ts} — refreshing when you go idle`, "info");
+        }
         pendingReload = true;
         if (Date.now() - lastActivityTs >= IDLE_MS) {
           captureState();
+          // Flag that a "Just synced" toast should appear on next load
+          try { sessionStorage.setItem("gg_arch_just_synced", "1"); } catch (e) {}
           window.location.reload();
         }
       }
+
+      // After reload, briefly show "Synced ✓" so the user knows the page is fresh
+      try {
+        if (sessionStorage.getItem("gg_arch_just_synced") === "1") {
+          sessionStorage.removeItem("gg_arch_just_synced");
+          setTimeout(() => showSyncToast("Synced ✓ page refreshed", "success"), 200);
+        }
+      } catch (e) {}
 
       // Restore after current tick so the page's own init has finished
       setTimeout(restoreState, 150);
