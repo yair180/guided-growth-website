@@ -46,7 +46,7 @@ HTML_PATH = Path(
 
 SHEET_ID      = "1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw"
 TASKS_RANGE   = "Tasks!A:Z"           # tolerant of column reorder + extra cols
-SCREENS_RANGE = "Screens!A:Z"         # zoom-5 view sources from this
+SCREENS_RANGE = "Screens!A:AE"        # zoom-5 view sources from this — needs through AE for "Row Type" filter
 SCOPES        = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 REQUIRED_COLUMNS = (
@@ -239,6 +239,7 @@ def build_screen_index(rows: list[list[str]]) -> list[dict]:
     name_col  = headers.index("Screen Name") if "Screen Name" in headers else -1
     phase_col = headers.index("Phase")       if "Phase"       in headers else -1
     fl_col    = headers.index("Figma Link")  if "Figma Link"  in headers else -1
+    rt_col    = headers.index("Row Type")    if "Row Type"    in headers else -1
 
     out: list[dict] = []
     for row in rows[1:]:
@@ -248,6 +249,14 @@ def build_screen_index(rows: list[list[str]]) -> list[dict]:
         sid = (padded[sid_col] or "").strip()
         if not sid or sid.startswith("(") or "[DEPRECATED]" in sid:
             continue
+        # Only render real screens. The Screens tab also stores subcategory
+        # definitions, legacy plan rows, and deprecated entries — those have
+        # Row Type values like "Subcategory Data", "Legacy / Older Plan",
+        # "Deprecated". Real screens have Row Type starting with "Screen".
+        if rt_col >= 0:
+            row_type = (padded[rt_col] or "").strip()
+            if not row_type.startswith("Screen"):
+                continue
         url = (padded[fl_col] or "").strip() if fl_col >= 0 else ""
         m = _NODE_FROM_URL_RE.search(url)
         node_id = m.group(1).replace("-", ":") if m else ""
