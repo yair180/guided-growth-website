@@ -550,17 +550,44 @@
       flex: 1; min-height: 0; display: flex; flex-direction: row;
     }
     #z4-sidebar {
-      width: 360px; flex-shrink: 0; display: flex; flex-direction: column;
+      width: 320px; flex-shrink: 0; display: flex; flex-direction: column;
       background: #0d2238; border-right: 1px solid rgba(255,255,255,0.08);
       color: #c2cee0; font-size: 13px;
+      transition: width 140ms ease;
     }
+    #z4-sidebar.collapsed { width: 44px; }
     #z4-sidebar-header {
-      padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
+      padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
       border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    #z4-sidebar.collapsed #z4-sidebar-header { padding: 10px 6px; }
+    #z4-sidebar-header .z4-title-row {
+      display: flex; align-items: center; gap: 8px;
     }
     #z4-sidebar-header .z4-sidebar-title {
       font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.3px;
+      flex: 1; min-width: 0;
     }
+    #z4-collapse-btn {
+      flex-shrink: 0; width: 28px; height: 28px; padding: 0;
+      background: transparent; color: #5bc0de;
+      border: 1px solid rgba(91, 192, 222, 0.35); border-radius: 6px;
+      font: inherit; font-size: 14px; line-height: 1; cursor: pointer;
+    }
+    #z4-collapse-btn:hover {
+      background: rgba(91, 192, 222, 0.12); border-color: #5bc0de;
+    }
+    #z4-sidebar.collapsed .z4-sidebar-title,
+    #z4-sidebar.collapsed #z4-search,
+    #z4-sidebar.collapsed #z4-open-new-tab,
+    #z4-sidebar.collapsed .z4-task-title,
+    #z4-sidebar.collapsed .z4-walk-btn,
+    #z4-sidebar.collapsed .z4-walk-placeholder { display: none; }
+    #z4-sidebar.collapsed .z4-task-row {
+      padding: 7px 6px; gap: 4px; justify-content: center;
+    }
+    #z4-sidebar.collapsed .z4-task-id { min-width: 0; font-size: 10px; }
+
     #z4-sidebar-header input {
       background: #0a1929; color: #fff; border: 1px solid rgba(255,255,255,0.15);
       border-radius: 6px; padding: 7px 10px; font: inherit;
@@ -1607,7 +1634,10 @@
     <div id="zoom-4-body">
       <aside id="z4-sidebar">
         <div id="z4-sidebar-header">
-          <div class="z4-sidebar-title">Tasks</div>
+          <div class="z4-title-row">
+            <div class="z4-sidebar-title">Tasks</div>
+            <button type="button" id="z4-collapse-btn" onclick="toggleZoom4Sidebar()" title="Collapse / expand sidebar">‹</button>
+          </div>
           <input id="z4-search" type="search" placeholder="Search by ID or title…" oninput="filterTaskSidebar(this.value)" autocomplete="off" />
           <a id="z4-open-new-tab" href="https://docs.google.com/spreadsheets/d/1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw/edit?gid=1687604173" target="_blank" rel="noopener">Open Sheet in new tab ↗</a>
         </div>
@@ -1736,6 +1766,23 @@
 
     function filterTaskSidebar(value) { renderTaskSidebar(value); }
 
+    function toggleZoom4Sidebar(force) {
+      const bar = document.getElementById("z4-sidebar");
+      const btn = document.getElementById("z4-collapse-btn");
+      if (!bar) return;
+      const collapsed = (typeof force === "boolean") ? force : !bar.classList.contains("collapsed");
+      bar.classList.toggle("collapsed", collapsed);
+      if (btn) btn.textContent = collapsed ? "›" : "‹";
+      try { localStorage.setItem("gg_arch_z4_sidebar_collapsed", collapsed ? "1" : "0"); } catch (e) {}
+    }
+    // Restore collapsed state on first paint of view 4
+    function restoreZoom4SidebarState() {
+      try {
+        const saved = localStorage.getItem("gg_arch_z4_sidebar_collapsed");
+        if (saved === "1") toggleZoom4Sidebar(true);
+      } catch (e) {}
+    }
+
     function setZoomLevel(level) {
       currentZoomLevel = level;
       try { localStorage.setItem('gg_arch_zoom_level_v1', String(level)); } catch (e) {}
@@ -1761,6 +1808,10 @@
 
       // Lazy-load the sheet iframe the first time view 4 is opened, and honour any pending row jump
       if (level === 4) {
+        if (!document.getElementById("z4-sidebar").dataset.stateRestored) {
+          document.getElementById("z4-sidebar").dataset.stateRestored = "1";
+          restoreZoom4SidebarState();
+        }
         renderTaskSidebar(document.getElementById("z4-search")?.value || "");
         const row = _pendingSheetRow;
         _pendingSheetRow = null;
