@@ -485,6 +485,14 @@ def main() -> int:
         # tested + approved (booleans), and refresh `desc` inside steps[0]
         # from the sheet's Detailed Explanation column.
 
+        # Sync the task name from sheet's Title column too — without this,
+        # rename in the sheet doesn't propagate to the walkthrough menu.
+        sheet_title = (sheet_row.get("Title") or "").strip()
+        if sheet_title:
+            updated, changed = upsert_task_field(updated, "name", sheet_title)
+            if changed:
+                changes.append(f"  {task_id}: name → {sheet_title!r}")
+
         sheet_description = (sheet_row.get("Description") or "").strip()
         if sheet_description:
             updated, changed = upsert_task_field(updated, "description", sheet_description)
