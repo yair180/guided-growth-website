@@ -1972,26 +1972,26 @@
   // ============================================================
   {
     id: "p1-12", taskId: "P1-12", name: "Build VoiceContext Provider", stage: 3, status: "inprogress", owner: ["Mint"],
-    acceptance: "SETUP\n□ src/contexts/VoiceContext.tsx exports VoiceProvider + useVoiceContext\n□ Compiles under tsconfig strict mode with no any\n\nBUILD\n□ Reducer covers all 4 action types and rejects invalid transitions\n□ <VoiceProvider> wraps app/layout.tsx at root\n□ Default state on first mount matches what VOICE-PREFERENCE reads\n\nVERIFY\n□ console.log(useVoiceContext()) on WELCOME prints all 4 fields\n□ Dev mic-toggle → MIC-PERMISSION re-renders with new permission in <100ms\n□ Removing provider in dev breaks WELCOME (proves wrap is real)",
+    acceptance: "SETUP\n□ src/contexts/VoiceContext.tsx exports VoiceProvider + useVoiceContext\n□ Compiles under tsconfig strict mode with no any\n\nBUILD\n□ Reducer covers all 4 action types and rejects invalid transitions\n□ <VoiceProvider> wraps app/layout.tsx at root\n□ Default state on first mount matches what PREF-01 reads\n\nVERIFY\n□ console.log(useVoiceContext()) on WELCOME-01 prints all 4 fields\n□ Dev mic-toggle → MIC-01 re-renders with new permission in <100ms\n□ Removing provider in dev breaks WELCOME-01 (proves wrap is real)",
     approved: false,
     tested: false,
     description: "React Context provider holding voice state (ai_output_mode, mic_permission, Vapi session) that wraps every LLM-active screen.",
     steps: [{
       title: "P1-11: VoiceContext Provider (Stage 1)",
-      desc: "Single source of truth for voice state across the app. Eliminates prop-drilling between WELCOME, VOICE-PREFERENCE, MIC-PERMISSION, and all subsequent LLM-active screens.\n\nState shape:\n- ai_output_mode: 'voice' | 'screen'\n- mic_permission: 'granted' | 'denied' | 'pending'\n- vapiSessionActive: boolean\n- currentVoicePath: string (which screen owns the active voice path)\n\nSETUP\n- Create src/contexts/VoiceContext.tsx with strict TypeScript types\n- Define initial state defaults that match VOICE-PREFERENCE's first-mount expectations\n\nBUILD\n- Implement <VoiceProvider> with useReducer + named action creators\n- Export useVoiceContext() hook with discriminated unions\n- Wrap RootLayout in <VoiceProvider> at app/layout.tsx\n\nVERIFY\n- All LLM-active screens consume context — no prop-drilling remains\n- mic_permission toggle propagates within 100ms across mounted screens",
+      desc: "Single source of truth for voice state across the app. Eliminates prop-drilling between WELCOME-01, PREF-01, MIC-01, and all subsequent LLM-active screens.\n\nState shape:\n- ai_output_mode: 'voice' | 'screen'\n- mic_permission: 'granted' | 'denied' | 'pending'\n- vapiSessionActive: boolean\n- currentVoicePath: string (which screen owns the active voice path)\n\nSETUP\n- Create src/contexts/VoiceContext.tsx with strict TypeScript types\n- Define initial state defaults that match PREF-01's first-mount expectations\n\nBUILD\n- Implement <VoiceProvider> with useReducer + named action creators\n- Export useVoiceContext() hook with discriminated unions\n- Wrap RootLayout in <VoiceProvider> at app/layout.tsx\n\nVERIFY\n- All LLM-active screens consume context — no prop-drilling remains\n- mic_permission toggle propagates within 100ms across mounted screens",
       highlight: ["frontend"],
       highlightEdges: []
     }]
   },
   {
-    id: "p1-19", taskId: "P1-19", name: "Wire all 9 onboarding screens to the shell", stage: 4, status: "inprogress", owner: ["Mint"],
-    acceptance: "PER-SCREEN (apply to each of the 9)\n□ Component file at src/screens/{SCREEN_ID}.tsx exists and uses the shell\n□ UI matches Figma frame\n□ AI context block for the screen present in screen_contexts table\n□ Voice path: speak the trigger → AI responds → screen advances\n□ Text/tap path: works at parity with voice\n\nOVERALL\n□ All 9 screens listed above are implemented and reachable in flow order\n□ Removing the shell breaks all 9 (sanity: confirms shared infrastructure)\n□ Total lines per screen <100 (each screen is a thin shell consumer)",
+    id: "p1-18", taskId: "P1-18", name: "Build onboarding screen shell", stage: 4, status: "notstarted", owner: ["Mint"],
+    acceptance: "SETUP\n□ Dependencies confirmed (P1-11 + P1-16 + P1-41 all merged)\n□ Shared layout extracted from Figma into a single source of truth\n\nBUILD\n□ <OnboardingScreenShell> exists and wraps a stub child correctly\n□ useOnboardingScreen() hook returns {voice, context, navigate, isLoading, error}\n□ <TextInputFallback> appears + works when mic_permission='denied'\n□ Shell auto-emits screen_enter/screen_exit session_log events on mount/unmount\n\nVERIFY\n□ Stub screen using the shell completes 'hello world' via voice path\n□ Stub screen completes 'hello world' via text path (mic denied)\n□ Removing the shell from the stub breaks both paths (sanity)",
     approved: false,
     tested: false,
-    description: "Implement each onboarding screen (SPLASH, VOICE-PREFERENCE, MIC-PERMISSION, POST-AUTH-SIGNUP [DEPRECATED], ONBOARD-01..05) using the shell from P1-17. Each screen ships UI + screen-specific behavior, no shared boilerplate.",
+    description: "Build the shared shell + components that all 9 onboarding screens (SPLASH-01 through ONBOARD-05) use, so each screen-wire task is just UI + a few lines of glue.",
     steps: [{
       title: "P1-17: Wire SPLASH-01 (loading screen)",
-      desc: "Per-screen execution layer. Each screen is now ~50 lines: render its specific UI, declare its AI context lookup, handle its specific tool calls. Everything else (Vapi, fallback, navigation, telemetry) comes from the shell.\n\nPER-SCREEN CHECKLIST (apply to each of 9 screens)\n- Create src/screens/{SCREEN_ID}.tsx using <OnboardingScreenShell screen_id=\"{SCREEN_ID}\">\n- Render UI per Figma frame\n- Confirm screen's AI context block exists in screen_contexts table (P1-31 dep)\n- Wire any screen-specific tool calls (e.g. update_profile on ONBOARD-01)\n- Tap/text fallback at parity with voice\n\nSCREENS (in flow order)\n- SPLASH: silent loading, auto-navigate when init complete (no LLM)\n- VOICE-PREFERENCE: voice vs screen output choice (Vapi 'Can I talk?' broadcast, ~6s)\n- MIC-PERMISSION: mic permission ask (Vapi pre-prompt + browser getUserMedia)\n- POST-AUTH-SIGNUP [DEPRECATED]: welcome + trust-building (~85s, two Vapi sessions)\n- ONBOARD-01: profile setup (name, age, focus) — assistant calls update_profile per field\n- ONBOARD-FORK: habit selection from suggested list\n- ONBOARD-BEGINNER-01: habit difficulty calibration\n- ONBOARD-BEGINNER-02: first commitment + accountability framing\n- ONBOARD-BEGINNER-03: wrap + first check-in scheduling\n\nVERIFY\n- End-to-end voice happy path covered by P1-26\n- End-to-end manual happy path covered by P1-27",
+      desc: "The 9 onboarding screens repeat the same patterns: <VoiceProvider> wrapping, fetch screen context, open a Vapi session, render UI, handle text/tap fallback, listen for navigate_next, write session_log events. Build that pattern once as a shell, then each screen consumes it.\n\nSETUP\n- Confirm dependencies in place: P1-11 (VoiceContext), P1-16 (useRealtimeVoice), P1-41 (useScreenContext + useLLM)\n- Pull canonical onboarding screen layout from Figma to identify shared chrome (header / banner / footer)\n\nBUILD\n- Component: <OnboardingScreenShell screen_id={...}> wraps children, hosts shared chrome\n- Hook: useOnboardingScreen(screen_id) bundles useVoiceContext + useScreenContext + Vapi session lifecycle\n- Component: <TextInputFallback> for users who declined mic — same submit interface as voice\n- Component: <NextScreenHandler> listens for navigate_next tool call and routes\n- Telemetry: shell auto-logs screen_enter/screen_exit to session_log\n\nVERIFY\n- Build a stub test screen using the shell — should reach 'Hello world via voice + via text' end-to-end\n- All consumers of the shell get the same retry + error UX without writing it themselves",
       highlight: ["frontend", "vercel"],
       highlightEdges: ["vercel-frontend"]
     }]
@@ -2001,36 +2001,36 @@
     acceptance: "PER-SCREEN (apply to each of the 9)\n□ Component file at src/screens/{SCREEN_ID}.tsx exists and uses the shell\n□ UI matches Figma frame\n□ AI context block for the screen present in screen_contexts table\n□ Voice path: speak the trigger → AI responds → screen advances\n□ Text/tap path: works at parity with voice\n\nOVERALL\n□ All 9 screens listed above are implemented and reachable in flow order\n□ Removing the shell breaks all 9 (sanity: confirms shared infrastructure)\n□ Total lines per screen <100 (each screen is a thin shell consumer)",
     approved: false,
     tested: false,
-    description: "Implement each onboarding screen (SPLASH, VOICE-PREFERENCE, MIC-PERMISSION, POST-AUTH-SIGNUP [DEPRECATED], ONBOARD-01..05) using the shell from P1-17. Each screen ships UI + screen-specific behavior, no shared boilerplate.",
+    description: "Implement each onboarding screen (SPLASH-01, PREF-01, MIC-01, POST-AUTH-01, ONBOARD-01..05) using the shell from P1-17. Each screen ships UI + screen-specific behavior, no shared boilerplate.",
     steps: [{
       title: "P1-18: Wire PREF-01 (Voice/Screen Preference)",
-      desc: "Per-screen execution layer. Each screen is now ~50 lines: render its specific UI, declare its AI context lookup, handle its specific tool calls. Everything else (Vapi, fallback, navigation, telemetry) comes from the shell.\n\nPER-SCREEN CHECKLIST (apply to each of 9 screens)\n- Create src/screens/{SCREEN_ID}.tsx using <OnboardingScreenShell screen_id=\"{SCREEN_ID}\">\n- Render UI per Figma frame\n- Confirm screen's AI context block exists in screen_contexts table (P1-31 dep)\n- Wire any screen-specific tool calls (e.g. update_profile on ONBOARD-01)\n- Tap/text fallback at parity with voice\n\nSCREENS (in flow order)\n- SPLASH: silent loading, auto-navigate when init complete (no LLM)\n- VOICE-PREFERENCE: voice vs screen output choice (Vapi 'Can I talk?' broadcast, ~6s)\n- MIC-PERMISSION: mic permission ask (Vapi pre-prompt + browser getUserMedia)\n- POST-AUTH-SIGNUP [DEPRECATED]: welcome + trust-building (~85s, two Vapi sessions)\n- ONBOARD-01: profile setup (name, age, focus) — assistant calls update_profile per field\n- ONBOARD-FORK: habit selection from suggested list\n- ONBOARD-BEGINNER-01: habit difficulty calibration\n- ONBOARD-BEGINNER-02: first commitment + accountability framing\n- ONBOARD-BEGINNER-03: wrap + first check-in scheduling\n\nVERIFY\n- End-to-end voice happy path covered by P1-26\n- End-to-end manual happy path covered by P1-27",
+      desc: "Per-screen execution layer. Each screen is now ~50 lines: render its specific UI, declare its AI context lookup, handle its specific tool calls. Everything else (Vapi, fallback, navigation, telemetry) comes from the shell.\n\nPER-SCREEN CHECKLIST (apply to each of 9 screens)\n- Create src/screens/{SCREEN_ID}.tsx using <OnboardingScreenShell screen_id=\"{SCREEN_ID}\">\n- Render UI per Figma frame\n- Confirm screen's AI context block exists in screen_contexts table (P1-31 dep)\n- Wire any screen-specific tool calls (e.g. update_profile on ONBOARD-01)\n- Tap/text fallback at parity with voice\n\nSCREENS (in flow order)\n- SPLASH-01: silent loading, auto-navigate when init complete (no LLM)\n- PREF-01: voice vs screen output choice (Vapi 'Can I talk?' broadcast, ~6s)\n- MIC-01: mic permission ask (Vapi pre-prompt + browser getUserMedia)\n- POST-AUTH-01: welcome + trust-building (~85s, two Vapi sessions)\n- ONBOARD-01: profile setup (name, age, focus) — assistant calls update_profile per field\n- ONBOARD-02: habit selection from suggested list\n- ONBOARD-03: habit difficulty calibration\n- ONBOARD-04: first commitment + accountability framing\n- ONBOARD-05: wrap + first check-in scheduling\n\nVERIFY\n- End-to-end voice happy path covered by P1-26\n- End-to-end manual happy path covered by P1-27",
       highlight: ["frontend", "vapi", "cartesia-tts", "user-data"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend", "vapi-cartesia-tts", "frontend-user-data"]
     }]
   },
   {
-    id: "p1-19", taskId: "P1-19", name: "Wire all 9 onboarding screens to the shell", stage: 4, status: "inprogress", owner: ["Mint"],
-    acceptance: "PER-SCREEN (apply to each of the 9)\n□ Component file at src/screens/{SCREEN_ID}.tsx exists and uses the shell\n□ UI matches Figma frame\n□ AI context block for the screen present in screen_contexts table\n□ Voice path: speak the trigger → AI responds → screen advances\n□ Text/tap path: works at parity with voice\n\nOVERALL\n□ All 9 screens listed above are implemented and reachable in flow order\n□ Removing the shell breaks all 9 (sanity: confirms shared infrastructure)\n□ Total lines per screen <100 (each screen is a thin shell consumer)",
+    id: "old-p1-19", taskId: "OLD-P1-19", name: "Wire MIC-01", stage: 1, status: "obsolete", owner: ["Mint"],
+    acceptance: "SETUP\n□ src/screens/MIC-01.tsx exists, mounted at the right route\n□ AI context block for MIC-01 present in screen_contexts table\n\nBUILD\n□ UI matches Figma frame for MIC-01\n□ useScreenContext(\"MIC-01\") returns expected context\n\nVERIFY\n□ Voice-only end-to-end: speak the trigger → AI responds → screen advances\n□ Tap-only fallback works identically\n□ No console errors during full flow",
     approved: false,
     tested: false,
-    description: "Implement each onboarding screen (SPLASH, VOICE-PREFERENCE, MIC-PERMISSION, POST-AUTH-SIGNUP [DEPRECATED], ONBOARD-01..05) using the shell from P1-17. Each screen ships UI + screen-specific behavior, no shared boilerplate.",
+    description: "Wire MIC-01 (mic permission ask) into the app: voice + text inputs, screen context, navigation.",
     steps: [{
       title: "P1-19: Wire MIC-01 (Mic Permission)",
-      desc: "Per-screen execution layer. Each screen is now ~50 lines: render its specific UI, declare its AI context lookup, handle its specific tool calls. Everything else (Vapi, fallback, navigation, telemetry) comes from the shell.\n\nPER-SCREEN CHECKLIST (apply to each of 9 screens)\n- Create src/screens/{SCREEN_ID}.tsx using <OnboardingScreenShell screen_id=\"{SCREEN_ID}\">\n- Render UI per Figma frame\n- Confirm screen's AI context block exists in screen_contexts table (P1-31 dep)\n- Wire any screen-specific tool calls (e.g. update_profile on ONBOARD-01)\n- Tap/text fallback at parity with voice\n\nSCREENS (in flow order)\n- SPLASH: silent loading, auto-navigate when init complete (no LLM)\n- VOICE-PREFERENCE: voice vs screen output choice (Vapi 'Can I talk?' broadcast, ~6s)\n- MIC-PERMISSION: mic permission ask (Vapi pre-prompt + browser getUserMedia)\n- POST-AUTH-SIGNUP [DEPRECATED]: welcome + trust-building (~85s, two Vapi sessions)\n- ONBOARD-01: profile setup (name, age, focus) — assistant calls update_profile per field\n- ONBOARD-FORK: habit selection from suggested list\n- ONBOARD-BEGINNER-01: habit difficulty calibration\n- ONBOARD-BEGINNER-02: first commitment + accountability framing\n- ONBOARD-BEGINNER-03: wrap + first check-in scheduling\n\nVERIFY\n- End-to-end voice happy path covered by P1-26\n- End-to-end manual happy path covered by P1-27",
+      desc: "Implements the MIC-01 screen (mic permission ask). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when permission resolves.\n\nVoice path: Vapi assistant speaks pre-permission explanation (~8 sec); button triggers browser getUserMedia(); Vapi confirms granted or reassures denied; save user_profile.mic_permission\n\nSETUP\n- Create src/screens/MIC-01.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"MIC-01\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
       highlight: ["frontend", "vapi", "cartesia-tts", "user-data"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend", "frontend-user-data"]
     }]
   },
   {
-    id: "p1-20", taskId: "P1-20", name: "Bundle anon_id generation into the auth fix", stage: 5, status: "notstarted", owner: ["Yonas"],
-    acceptance: "SETUP\n□ Branch off Yonas's auth fix; do not block its merge\n\nBUILD\n□ Signup flow generates anon_id and inserts user_profiles row in same transaction as auth\n□ anon_id format = UUIDv7 (time-ordered)\n\nVERIFY\n□ End-to-end test: new TestFlight signup → user_profiles row exists with anon_id\n□ Subsequent session_log writes succeed without retrofit\n□ No code path generates anon_id outside the signup handler",
+    id: "old-p1-20", taskId: "OLD-P1-20", name: "Wire POST-AUTH-01 (Welcome)", stage: 1, status: "obsolete", owner: ["Mint"],
+    acceptance: "SETUP\n□ src/screens/POST-AUTH-01.tsx exists, mounted at the right route\n□ AI context block for POST-AUTH-01 present in screen_contexts table\n\nBUILD\n□ UI matches Figma frame for POST-AUTH-01\n□ useScreenContext(\"POST-AUTH-01\") returns expected context\n\nVERIFY\n□ Voice-only end-to-end: speak the trigger → AI responds → screen advances\n□ Tap-only fallback works identically\n□ No console errors during full flow",
     approved: false,
     tested: false,
-    description: "Bundle anon_id generation INTO the in-progress TestFlight auth fix so we don't need a separate retrofit pass later.",
+    description: "Wire POST-AUTH-01 (welcome + trust-building (~85 sec total)) into the app: voice + text inputs, screen context, navigation.",
     steps: [{
       title: "P1-20: Wire POST-AUTH-01 (Coach Welcome ~85 sec)",
-      desc: "Yonas is mid-fix on TestFlight auth. While he's in there, he generates the anon_id at signup time. This avoids a separate sweep where session_log + posthog + callLLM would need anon_id retrofitted later.\n\nTwo tables result:\n- identity_table: username, password, email, auth_user_id (the connector)\n- user_profiles + behavioral tables: keyed on anon_id ONLY\n\nDepends on the existing TestFlight auth bug fix (in flight as of 2026-05-04).\n\nSETUP\n- Coordinate with Yonas on the auth fix branch\n- Confirm where in the signup flow anon_id should be generated\n\nBUILD\n- Add anon_id generation to signup handler (UUID v7 for time-ordering)\n- Insert into user_profiles immediately on signup\n- Auth code never touches anon_id post-signup\n\nVERIFY\n- New signups have anon_id row immediately after auth completes\n- All existing P1-46 downstream wiring works without retrofit",
+      desc: "Implements the POST-AUTH-01 screen (welcome + trust-building (~85 sec total)). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when user taps 'I'm ready'.\n\nVoice path: ALL-Vapi live TTS; welcome speech (~60s) covers what the app is + anonymization promise; then separate Vapi session for presence ask (~25s)\n\nSETUP\n- Create src/screens/POST-AUTH-01.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"POST-AUTH-01\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
       highlight: ["frontend", "vapi", "cartesia-tts", "anon-mapping"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend", "supabase-auth-anon-mapping"]
     }]
@@ -2139,14 +2139,14 @@
     }]
   },
   {
-    id: "p1-13", taskId: "P1-13", name: "Extend VoiceContext to track Cartesia session lifecycle", stage: 3, status: "notstarted", owner: ["Mint"],
-    acceptance: "SETUP\n□ Type VoiceContextValue includes vapiSessionActive: boolean\n\nBUILD\n□ Flag flips to true when useRealtimeVoice opens a Vapi session\n□ Flag flips to false on session end OR component unmount (whichever first)\n□ Cleanup effect cancels any in-flight Vapi connection on unmount\n\nVERIFY\n□ callLLM() routes to Vapi when flag is true (verified via integration test)\n□ Forced navigation mid-session: Vapi billing shows no minutes leaked beyond unmount",
+    id: "old-p1-13", taskId: "OLD-P1-13", name: "Configure Vapi assistant", stage: 2, status: "done", owner: ["Yonas"],
+    acceptance: "SETUP\n□ Cartesia voice_id matches Yair's clone (verified by ear)\n□ Global Context system prompt is current\n\nBUILD\n□ Vapi dashboard shows assistant in published state\n□ config/vapi-assistant.json checked into repo at HEAD\n\nVERIFY\n□ Frontend can connect to assistant via WebSocket\n□ Test call: greeting plays, user speaks, AI responds, ≥1 tool call fires",
     approved: false,
     tested: false,
-    description: "Extend VoiceContext (P1-11) with vapiSessionActive boolean so callLLM() can route to the right voice path.",
+    description: "Configure the Vapi assistant (system prompt, LLM, voice, first message, tools) via the Vapi dashboard.",
     steps: [{
       title: "P1-13: Configure Vapi assistant in dashboard",
-      desc: "FOLLOW-UP on P1-11. The callLLM() wrapper (P1-34) needs to know whether a Vapi onboarding session is currently live, so it can choose the right path:\n- Vapi if onboarding voice session is active\n- Async Reflection if on a check-in screen\n- Direct LLM otherwise\n\nSETUP\n- Read P1-11's VoiceContext shape; identify where vapiSessionActive belongs\n\nBUILD\n- Add vapiSessionActive: boolean to VoiceContextValue\n- Set true on Vapi session start (useRealtimeVoice), false on session end OR navigation away\n- Add cleanup effect so we don't burn Vapi minutes after a screen unmounts\n\nVERIFY\n- callLLM() reads the flag correctly across all 3 paths\n- Navigation cleanup confirmed by Vapi billing showing no leaked sessions",
+      desc: "The Vapi assistant config is the runtime that all onboarding voice screens connect to. Configure it once in the Vapi dashboard, then version-control the JSON in our repo as a backup.\n\nSETUP\n- Pull system prompt from sheet's Global Context tab\n- Confirm LLM (GPT-4o mini), STT (Cartesia Ink), TTS (Cartesia Sonic-3 + Yair's voice_id)\n\nBUILD\n- In Vapi dashboard: create assistant, paste system prompt, wire LLM/STT/TTS, set first_message generation strategy, attach tools (P1-14)\n- Export assistant config JSON, commit to repo at config/vapi-assistant.json\n\nVERIFY\n- Assistant accepts WebSocket connections from frontend\n- A 30s test call exercises the system prompt + at least one tool call",
       highlight: ["vapi", "cartesia-stt", "cartesia-tts", "llm-api", "global-context"],
       highlightEdges: ["call-llm-vapi", "vapi-cartesia-tts", "call-llm-llm-api", "call-llm-global-context"]
     }]
@@ -2165,14 +2165,14 @@
     }]
   },
   {
-    id: "p1-15", taskId: "P1-15", name: "Build useLLM hook for direct LLM calls (non-voice path)", stage: 3, status: "notstarted", owner: ["Mint"],
-    acceptance: "SETUP\n□ Hook signature documented in /docs/hooks.md\n□ /api/llm contract pinned in /docs/api.md\n\nBUILD\n□ sendMessage() returns response within 1.5s p50\n□ Loading state correctly toggles around the request\n□ Hook works with Vapi entirely disabled (sanity for Path 3 isolation)\n\nVERIFY\n□ Text chat in a smoke screen renders 5 consecutive responses without error\n□ No console references to Vapi or VoiceContext",
+    id: "old-p1-15", taskId: "OLD-P1-15", name: "Deploy Vapi assistant config", stage: 2, status: "done", owner: ["Yonas"],
+    acceptance: "SETUP\n□ Assistant ID logged in repo's /config/README.md\n\nBUILD\n□ Vapi dashboard shows the assistant deployed and active in PROD\n□ All 4 tools (P1-14) are attached and listed in dashboard\n\nVERIFY\n□ Smoke-test: frontend connects via WebSocket, no TLS or CORS errors\n□ One full voice turn completes in <2s p95 over 5 trials",
     approved: false,
     tested: false,
-    description: "React hook (useLLM) for Direct LLM (Path 3): non-voice text chat, free-form Cartesia voice, settings, insights, milestones.",
+    description: "Push the configured Vapi assistant (P1-13 + tools P1-14) to the Vapi platform and verify the runtime endpoint accepts connections.",
     steps: [{
       title: "P1-15: Deploy Vapi assistant",
-      desc: "Path 3 is the simplest of the three: no Vapi, no async state machine, just POST to /api/llm and render the response. Used for text chat, settings UI, insights screens, etc.\n\nSETUP\n- Confirm /api/llm endpoint contract (P1-34 dep)\n\nBUILD\n- Implement useLLM(screenId, anonId) returning {sendMessage, response, isLoading, error}\n- POST to /api/llm with {anon_id, screen_id, user_input}\n- Stream response if backend supports SSE; else single response\n\nVERIFY\n- Text chat in HOME-FIRST works end-to-end\n- No dependency on Vapi state (Path 3 must work even if Vapi is down)",
+      desc: "Final deploy step for the Vapi assistant. The dashboard config + tool schema must land in production so frontend WebSocket connections from useRealtimeVoice (P1-16) can reach it.\n\nSETUP\n- Confirm P1-13 (assistant config) + P1-14 (tool defs) are checked in\n- Confirm production env vars are set (Vapi PROD account, not staging)\n\nBUILD\n- Push assistant config to Vapi production via dashboard or API\n- Verify tools are attached and visible in dashboard\n\nVERIFY\n- WebSocket connection from a smoke-test frontend completes\n- Simple voice round-trip: mic → STT → LLM → TTS → speaker, all under 2s end-to-end",
       highlight: ["vapi", "frontend"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend"]
     }]
@@ -2251,21 +2251,21 @@
     }]
   },
   {
-    id: "p1-19", taskId: "P1-19", name: "Wire all 9 onboarding screens to the shell", stage: 4, status: "inprogress", owner: ["Mint"],
-    acceptance: "PER-SCREEN (apply to each of the 9)\n□ Component file at src/screens/{SCREEN_ID}.tsx exists and uses the shell\n□ UI matches Figma frame\n□ AI context block for the screen present in screen_contexts table\n□ Voice path: speak the trigger → AI responds → screen advances\n□ Text/tap path: works at parity with voice\n\nOVERALL\n□ All 9 screens listed above are implemented and reachable in flow order\n□ Removing the shell breaks all 9 (sanity: confirms shared infrastructure)\n□ Total lines per screen <100 (each screen is a thin shell consumer)",
+    id: "p1-17", taskId: "P1-17", name: "Frontend: Instrument session_log writes", stage: 3, status: "notstarted", owner: ["Mint"],
+    acceptance: "SETUP\n□ POST /api/session_log returns 200 for valid writes (P1-32 sanity)\n□ logEvent() helper at src/lib/sessionLog.ts\n\nBUILD\n□ All 5 screen-mount events instrumented across onboarding screens\n□ Vapi session start/end emit corresponding session_log events\n□ Failed write retries 3x then drops (no infinite loop)\n\nVERIFY\n□ Walk through full onboarding → SELECT * FROM session_log shows expected sequence\n□ LLM response references a recent event (proves the loop is closed)",
     approved: false,
     tested: false,
-    description: "Implement each onboarding screen (SPLASH, VOICE-PREFERENCE, MIC-PERMISSION, POST-AUTH-SIGNUP [DEPRECATED], ONBOARD-01..05) using the shell from P1-17. Each screen ships UI + screen-specific behavior, no shared boilerplate.",
+    description: "Wire frontend to write session_log events on every meaningful user action (taps, screen transitions, voice events).",
     steps: [{
       title: "P1-40: logEvent() everywhere meaningful happens",
-      desc: "Per-screen execution layer. Each screen is now ~50 lines: render its specific UI, declare its AI context lookup, handle its specific tool calls. Everything else (Vapi, fallback, navigation, telemetry) comes from the shell.\n\nPER-SCREEN CHECKLIST (apply to each of 9 screens)\n- Create src/screens/{SCREEN_ID}.tsx using <OnboardingScreenShell screen_id=\"{SCREEN_ID}\">\n- Render UI per Figma frame\n- Confirm screen's AI context block exists in screen_contexts table (P1-31 dep)\n- Wire any screen-specific tool calls (e.g. update_profile on ONBOARD-01)\n- Tap/text fallback at parity with voice\n\nSCREENS (in flow order)\n- SPLASH: silent loading, auto-navigate when init complete (no LLM)\n- VOICE-PREFERENCE: voice vs screen output choice (Vapi 'Can I talk?' broadcast, ~6s)\n- MIC-PERMISSION: mic permission ask (Vapi pre-prompt + browser getUserMedia)\n- POST-AUTH-SIGNUP [DEPRECATED]: welcome + trust-building (~85s, two Vapi sessions)\n- ONBOARD-01: profile setup (name, age, focus) — assistant calls update_profile per field\n- ONBOARD-FORK: habit selection from suggested list\n- ONBOARD-BEGINNER-01: habit difficulty calibration\n- ONBOARD-BEGINNER-02: first commitment + accountability framing\n- ONBOARD-BEGINNER-03: wrap + first check-in scheduling\n\nVERIFY\n- End-to-end voice happy path covered by P1-26\n- End-to-end manual happy path covered by P1-27",
+      desc: "Path 2/3 LLM calls read session_log to catch up on what's happened since the last LLM turn. If frontend doesn't write events, the LLM is blind to user behavior between calls.\n\nEvent taxonomy (start small, add as needed):\n- screen_enter, screen_exit\n- voice_session_start, voice_session_end\n- tool_call_invoked, tool_call_result\n- user_input_text, user_input_voice\n- profile_update\n\nSETUP\n- Confirm POST /api/session_log endpoint exists (P1-32)\n- Decide on a thin client wrapper (e.g. logEvent(event_type, payload))\n\nBUILD\n- Add logEvent() helper in src/lib/sessionLog.ts\n- Instrument: screen mount/unmount, navigate_next calls, every Vapi session boundary, every Direct LLM POST\n- Buffer + batch writes if event volume is high (>10/sec)\n\nVERIFY\n- Walking through the onboarding flow generates a coherent event timeline\n- callLLM (P1-34) reads from session_log and the LLM responds aware of recent events",
       highlight: ["frontend", "session-log", "anon-mapping", "call-llm"],
       highlightEdges: ["frontend-session-log", "anon-mapping-session-log", "call-llm-session-log"]
     }]
   },
   {
     id: "p1-16", taskId: "P1-16", name: "Frontend: useScreenContext + useLLM hooks", stage: 3, status: "notstarted", owner: ["Mint"],
-    acceptance: "SETUP\n□ Hook signatures pinned in /docs/hooks.md\n\nBUILD\n□ useScreenContext(\"WELCOME\") returns the expected context block from a real fetch\n□ Context refresh works (call refresh() → fresh data)\n□ useLLM passes contextBlock + stateDelta in /api/llm POST body\n\nVERIFY\n□ Sample text chat in HOME-FIRST: response references the screen's context (proves wiring)\n□ No duplicate /api/context fetches per screen mount",
+    acceptance: "SETUP\n□ Hook signatures pinned in /docs/hooks.md\n\nBUILD\n□ useScreenContext(\"WELCOME-01\") returns the expected context block from a real fetch\n□ Context refresh works (call refresh() → fresh data)\n□ useLLM passes contextBlock + stateDelta in /api/llm POST body\n\nVERIFY\n□ Sample text chat in HOME-FIRST: response references the screen's context (proves wiring)\n□ No duplicate /api/context fetches per screen mount",
     approved: false,
     tested: false,
     description: "Frontend hooks: useScreenContext(screen_id) fetches per-screen context; useLLM is the consumer for Direct LLM calls (P1-38 hook details).",
@@ -2294,79 +2294,79 @@
   // STAGE 3 - ONBOARDING LLM-ACTIVE SCREENS (6 tasks)
   // ============================================================
   {
-    id: "p1-21", taskId: "P1-21", name: "Anonymization MVP - anon_id everywhere downstream", stage: 5, status: "notstarted", owner: ["Yonas"],
-    acceptance: "SETUP\n□ Migration file checked in and applied to all environments\n\nBUILD\n□ All 6 downstream tables FK on anon_id, not user_id\n□ RLS policy denies non-service_role joins between user_profiles and any behavioral table\n\nVERIFY\n□ Penetration test: forge auth.uid(), attempt to read another user's session_log → denied\n□ Existing behavioral writes (insert_checkin, log_event) succeed under new schema\n□ ~3 hours total spend (per original estimate)",
+    id: "old-p1-21", taskId: "OLD-P1-21", name: "Wire ONBOARD-01 (Profile Setup)", stage: 3, status: "obsolete", owner: ["Mint"],
+    acceptance: "SETUP\n□ src/screens/ONBOARD-01.tsx exists, mounted at the right route\n□ AI context block for ONBOARD-01 present in screen_contexts table\n\nBUILD\n□ UI matches Figma frame for ONBOARD-01\n□ useScreenContext(\"ONBOARD-01\") returns expected context\n\nVERIFY\n□ Voice-only end-to-end: speak the trigger → AI responds → screen advances\n□ Tap-only fallback works identically\n□ No console errors during full flow",
     approved: false,
     tested: false,
-    description: "Anonymization MVP: add anon_id (UUID) column to user_profiles + downstream tables; RLS restricts user_id ↔ anon_id join to service_role only.",
+    description: "Wire ONBOARD-01 (profile setup (name, age, focus)) into the app: voice + text inputs, screen context, navigation.",
     steps: [{
       title: "P1-21: ONBOARD-01 - first two-way Vapi conversation",
-      desc: "Privacy promise from day 1. All behavioral data (session_log, habits, checkins, journal_entries, daily_goals) keys on anon_id, NOT auth user_id. Only service_role can join the two — even compromised user credentials can't expose behavior across users.\n\nSETUP\n- Migration adds anon_id UUID DEFAULT gen_random_uuid() NOT NULL UNIQUE to user_profiles\n- Update FK in: session_log, habits, habit_completions, checkins, journal_entries, daily_goals\n\nBUILD\n- Apply migration in dev → staging → prod\n- Update API endpoints to read/write anon_id (not user_id) for behavioral data\n- RLS policy on user_profiles: user_id ↔ anon_id join is service_role only\n\nVERIFY\n- Compromised auth.uid() cannot read another user's behavioral data via the join\n- All existing behavioral writes still work after switch",
+      desc: "Implements the ONBOARD-01 screen (profile setup (name, age, focus)). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when all required profile fields collected.\n\nVoice path: Vapi conversational — assistant asks each profile field, user answers in voice or types; assistant calls update_profile() per field\n\nSETUP\n- Create src/screens/ONBOARD-01.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"ONBOARD-01\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
       highlight: ["frontend", "user", "cartesia-stt", "vapi", "cartesia-tts", "call-llm", "llm-api", "user-data"],
       highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-vapi", "vapi-frontend", "vapi-cartesia-tts", "call-llm-llm-api", "frontend-user-data"]
     }]
   },
   {
-    id: "p1-22", taskId: "P1-22", name: "RLS policy audit (HARD GATE for direct-Supabase access)", stage: 5, status: "notstarted", owner: ["Mint", "Yonas"],
-    acceptance: "AUDIT CHECKLIST\n□ All 6 behavioral tables + user_profiles + storage bucket explicitly reviewed\n□ Each policy documented with rationale\n\nTRY-TO-BREAK\n□ Cross-user read attempt on each table: explicitly denied\n□ anon_id ↔ user_id join attempt as auth user: denied\n□ MP3 bucket write attempt: denied\n\nVERIFY\n□ Audit report at /docs/rls-audit-2026-MM-DD.md\n□ HARD GATE: no merge to main until all checks pass",
+    id: "old-p1-22", taskId: "OLD-P1-22", name: "Wire ONBOARD-02 (Experience Fork)", stage: 3, status: "obsolete", owner: ["Mint"],
+    acceptance: "SETUP\n□ src/screens/ONBOARD-02.tsx exists, mounted at the right route\n□ AI context block for ONBOARD-02 present in screen_contexts table\n\nBUILD\n□ UI matches Figma frame for ONBOARD-02\n□ useScreenContext(\"ONBOARD-02\") returns expected context\n\nVERIFY\n□ Voice-only end-to-end: speak the trigger → AI responds → screen advances\n□ Tap-only fallback works identically\n□ No console errors during full flow",
     approved: false,
     tested: false,
-    description: "HARD GATE: RLS policy audit for direct-Supabase architecture. Frontend talks straight to Supabase — RLS is the only thing standing between users and each other's data.",
+    description: "Wire ONBOARD-02 (habit selection from suggested list) into the app: voice + text inputs, screen context, navigation.",
     steps: [{
       title: "P1-22: ONBOARD-02 - the experience fork",
-      desc: "Settled May 1: frontend talks directly to Supabase by design. This only works if RLS policies are bulletproof. This task is a formal audit + try-to-break test.\n\nAUDIT CHECKLIST\n- user_profiles: user can read/update own row only (auth.uid() = id)\n- anon_id ↔ user_id join: service_role ONLY\n- habits, habit_completions, checkins, journal_entries, daily_goals: user can read/write rows where anon_id matches their own\n- session_log: append-only for the user's own anon_id; no cross-user reads\n- MP3 storage bucket: read-only for authenticated users, write blocked\n\nTRY-TO-BREAK\n- Log in as user A, attempt to read user B's data via crafted queries\n- Confirm denial at every table\n\nVERIFY\n- Every table passes its RLS test\n- Audit report committed to /docs/rls-audit-{date}.md",
+      desc: "Implements the ONBOARD-02 screen (habit selection from suggested list). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when user confirms a habit set.\n\nVoice path: Vapi presents 3-5 habits relevant to user's focus area; user picks via voice or tap; assistant calls update_profile(habits) and navigate_next\n\nSETUP\n- Create src/screens/ONBOARD-02.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"ONBOARD-02\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
       highlight: ["call-llm", "vapi", "screen-contexts", "user-data"],
       highlightEdges: ["call-llm-vapi", "call-llm-screen-contexts", "frontend-user-data"]
     }]
   },
   {
-    id: "p1-23", taskId: "P1-23", name: "Vapi tuning + latency optimization pass", stage: 6, status: "notstarted", owner: ["Yonas"],
-    acceptance: "ENDPOINTING\n□ End of Turn Timeout set to 2000-2500ms in Vapi dashboard\n□ End of Turn Confidence set to 0.55-0.60\n□ Test conversation: AI responds within 1.5s of user finishing speech (down from current 3-4s)\n\nFALLBACK VOICE\n□ Fallback voice configured (Cartesia generic voice)\n□ Verified by temporarily breaking primary voice_id; call uses fallback without dropping\n\nSTT VENDOR EVAL\n□ One days worth of real Yair coaching speech tested on both Deepgram (current) and Cartesia Ink\n□ WER + latency comparison documented in /docs/stt-eval.md\n□ Decision (switch or stay) with rationale\n\nVOICE MODEL EVAL\n□ Side-by-side audio sample: Yairs cloned voice on Sonic 2 vs Sonic 3\n□ Yair-reviewed by ear; decision documented\n\nLATENCY TARGET\n□ p50 user-perceived turn latency under 600ms (measured over 20 turns)\n□ p95 under 900ms",
+    id: "old-p1-23", taskId: "OLD-P1-23", name: "Wire ONBOARD-03 to ONBOARD-05", stage: 3, status: "obsolete", owner: ["Mint"],
+    acceptance: "SETUP\n□ src/screens/ONBOARD-03.tsx exists, mounted at the right route\n□ AI context block for ONBOARD-03 present in screen_contexts table\n\nBUILD\n□ UI matches Figma frame for ONBOARD-03\n□ useScreenContext(\"ONBOARD-03\") returns expected context\n\nVERIFY\n□ Voice-only end-to-end: speak the trigger → AI responds → screen advances\n□ Tap-only fallback works identically\n□ No console errors during full flow",
     approved: false,
     tested: false,
-    description: "Tune Vapi assistant config (endpointing, confidence, fallback voice) + STT vendor test (Cartesia Ink vs Deepgram) to reduce p50 turn latency under 600ms.",
+    description: "Wire ONBOARD-03 (habit difficulty calibration) into the app: voice + text inputs, screen context, navigation.",
     steps: [{
       title: "P1-23: ONBOARD-03/04/05 - category, subcategory, habits",
-      desc: "Yair flagged this during a Vapi dashboard walkthrough: total latency ~840ms, with most of it accounted for by sequential STT (100ms) → LLM (390ms) → TTS (250ms). Goal: shave 200-300ms with no quality regression.\n\nENDPOINTING (biggest immediate win)\n- Lower End of Turn Timeout from 5000ms to 2000-2500ms (5s feels dead; 2-2.5s feels conversational)\n- Lower End of Turn Confidence from 0.7 to 0.55-0.60 (less waiting to confirm user is done)\n- Keep Smart Endpointing Plan disabled (Vapi warning says this is required to leverage Flux end-of-turn detection)\n\nFALLBACK VOICE\n- Add a fallback Cartesia voice (generic, not cloned) so calls dont drop on Cartesia outages or voice_id issues\n- ~5% of calls hit fallback; saves a session each time\n\nSTT VENDOR EVAL: Cartesia Ink vs current Deepgram Flux\n- Run parallel sessions for one day on real coaching speech samples\n- Compare WER (word error rate) and latency\n- If Cartesia Ink within 1-2% WER of Deepgram: switch (vendor consolidation with our existing Sonic-3 TTS = single billing + SDK)\n- If WER worse: stay on Deepgram\n\nVOICE MODEL EVAL\n- Test Cartesia Sonic 2 vs current Sonic 3 — Sonic 2 may be ~50ms faster, see if quality acceptable for the cloned voice\n- Stay on Sonic 3 unless Sonic 2 is clearly close enough\n\nLLM CHOICE\n- GPT-4o Mini Cluster (current, 390ms) is the fastest in Vapis OpenAI dropdown despite GPT 4.1 Nano sounding faster (510ms actual). Confirmed; no change.\n- If Vapi adds a new model with sub-300ms TTFT, re-evaluate.",
+      desc: "Implements the ONBOARD-03 screen (habit difficulty calibration). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when all habits have cadence set.\n\nVoice path: Vapi asks 'how often do you want to do X?' per habit; user adjusts via voice; assistant updates habit cadence\n\nSETUP\n- Create src/screens/ONBOARD-03.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"ONBOARD-03\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
       highlight: ["call-llm", "vapi", "screen-contexts", "user-data"],
       highlightEdges: ["call-llm-vapi", "call-llm-screen-contexts", "frontend-user-data"]
     }]
   },
   {
-    id: "p1-24", taskId: "P1-24", name: "Test session_log integrity", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
-    acceptance: "PLAN\n□ Load test script in /scripts/test-session-log.py\n\nVERIFY\n□ 10k inserts over 60s complete without errors (sustained 167 writes/sec)\n□ Read returns exactly 10k rows in chronological order\n□ Forged anon_id read returns 0 rows + log entry for the denied attempt\n□ No duplicate event_id observed",
+    id: "old-p1-24", taskId: "OLD-P1-24", name: "Wire ONBOARD-06 to ONBOARD-08", stage: 3, status: "obsolete", owner: ["Mint"],
+    acceptance: "SETUP\n□ src/screens/ONBOARD-04.tsx exists, mounted at the right route\n□ AI context block for ONBOARD-04 present in screen_contexts table\n\nBUILD\n□ UI matches Figma frame for ONBOARD-04\n□ useScreenContext(\"ONBOARD-04\") returns expected context\n\nVERIFY\n□ Voice-only end-to-end: speak the trigger → AI responds → screen advances\n□ Tap-only fallback works identically\n□ No console errors during full flow",
     approved: false,
     tested: false,
-    description: "Verify session_log integrity under load: high-volume writes, ordered reads, RLS enforcement, no duplicate events.",
+    description: "Wire ONBOARD-04 (first commitment + accountability framing) into the app: voice + text inputs, screen context, navigation.",
     steps: [{
       title: "P1-24: ONBOARD-06/07/08 - configure, review, reflection setup",
-      desc: "session_log is append-only, but bugs could cause duplicates, out-of-order reads, or cross-user data leakage via RLS holes. This test stress-tests it.\n\nPLAN\n- Insert 10k events for one anon_id over 60s\n- Read back with ORDER BY timestamp ASC\n- Forge anon_id from another user, attempt read\n\nVERIFY\n- All 10k rows present, no duplicates\n- Read order is strictly chronological\n- RLS denies cross-user reads (forged anon_id returns 0 rows)",
+      desc: "Implements the ONBOARD-04 screen (first commitment + accountability framing). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when user verbalizes commitment.\n\nVoice path: Vapi explains the daily check-in concept; user verbally commits; assistant logs commitment event to session_log\n\nSETUP\n- Create src/screens/ONBOARD-04.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"ONBOARD-04\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
       highlight: ["call-llm", "vapi", "user-data", "session-log"],
       highlightEdges: ["call-llm-vapi", "frontend-user-data", "frontend-session-log"]
     }]
   },
   {
-    id: "p1-25", taskId: "P1-25", name: "Test AI Context across all channels (HARD GATE)", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
-    acceptance: "PLAN\n□ Controlled test fixture set up (test anon_id with seeded session_log + profile)\n\nVERIFY\n□ Diff Path 1 vs Path 3 context payload: empty\n□ Diff Path 2 vs Path 3 context payload: empty\n□ LLM response on each path references the per-screen rule + the recent state delta\n□ HARD GATE: any drift between paths blocks merge",
+    id: "old-p1-25", taskId: "OLD-P1-25", name: "Wire ONBOARD-09 (Plan Summary + Start)", stage: 3, status: "obsolete", owner: ["Mint"],
+    acceptance: "SETUP\n□ src/screens/ONBOARD-05.tsx exists, mounted at the right route\n□ AI context block for ONBOARD-05 present in screen_contexts table\n\nBUILD\n□ UI matches Figma frame for ONBOARD-05\n□ useScreenContext(\"ONBOARD-05\") returns expected context\n\nVERIFY\n□ Voice-only end-to-end: speak the trigger → AI responds → screen advances\n□ Tap-only fallback works identically\n□ No console errors during full flow",
     approved: false,
     tested: false,
-    description: "HARD GATE: verify AI Context (per-screen + global + state delta) is correctly assembled and consumed across all 3 paths.",
+    description: "Wire ONBOARD-05 (wrap + first check-in scheduling) into the app: voice + text inputs, screen context, navigation.",
     steps: [{
       title: "P1-25: ONBOARD-09 - founding user moment",
-      desc: "The 3-context model (per-screen / global / state delta) is the heart of consistent coaching. This test proves all 3 paths see the same context for the same situation, and the LLM responds aware of all 3 layers.\n\nPLAN\n- Set up a controlled user state (specific habits, recent session_log events, on a specific screen)\n- Hit Path 1 (Vapi), Path 2 (Async Reflection), Path 3 (Direct LLM) with same user input\n- Diff the context payload each path sends to the LLM\n\nVERIFY\n- All 3 paths see byte-identical context (proves shared context builder works)\n- Each LLM response references the per-screen context AND the recent session_log event",
+      desc: "Implements the ONBOARD-05 screen (wrap + first check-in scheduling). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when user confirms schedule.\n\nVoice path: Vapi confirms profile + habits, asks when user wants the first check-in nudge; assistant calls update_profile(first_checkin_at) and navigate_next to HOME-FIRST\n\nSETUP\n- Create src/screens/ONBOARD-05.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"ONBOARD-05\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
       highlight: ["frontend", "call-llm", "vapi", "cartesia-tts", "user-data"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend", "vapi-cartesia-tts", "frontend-user-data"]
     }]
   },
   {
-    id: "p1-12", taskId: "P1-12", name: "Build VoiceContext Provider", stage: 3, status: "inprogress", owner: ["Mint"],
-    acceptance: "SETUP\n□ src/contexts/VoiceContext.tsx exports VoiceProvider + useVoiceContext\n□ Compiles under tsconfig strict mode with no any\n\nBUILD\n□ Reducer covers all 4 action types and rejects invalid transitions\n□ <VoiceProvider> wraps app/layout.tsx at root\n□ Default state on first mount matches what VOICE-PREFERENCE reads\n\nVERIFY\n□ console.log(useVoiceContext()) on WELCOME prints all 4 fields\n□ Dev mic-toggle → MIC-PERMISSION re-renders with new permission in <100ms\n□ Removing provider in dev breaks WELCOME (proves wrap is real)",
+    id: "p1-11", taskId: "P1-11", name: "Wire Vapi to use shared context builder", stage: 2, status: "notstarted", owner: ["Yonas"],
+    acceptance: "SETUP\n□ Context builder function exists in shared backend module\n\nBUILD\n□ Vapi assistant config has before_llm_call webhook pointing at our endpoint\n□ Webhook returns within 200ms p99 (so it doesn't block voice latency)\n□ Same backend function feeds Path 1 (Vapi) and Path 3 (/api/llm)\n\nVERIFY\n□ Diff test: Vapi context payload vs Direct LLM context payload for same (screen, user) → empty\n□ Onboarding test session uses fresh per-call context (verified in Vapi logs)",
     approved: false,
     tested: false,
-    description: "React Context provider holding voice state (ai_output_mode, mic_permission, Vapi session) that wraps every LLM-active screen.",
+    description: "Refactor Vapi assistant to pull context via the SAME shared context builder that Path 2/3 use, so all paths see identical context.",
     steps: [{
       title: "P1-42: Vapi uses shared context builder",
-      desc: "Single source of truth for voice state across the app. Eliminates prop-drilling between WELCOME, VOICE-PREFERENCE, MIC-PERMISSION, and all subsequent LLM-active screens.\n\nState shape:\n- ai_output_mode: 'voice' | 'screen'\n- mic_permission: 'granted' | 'denied' | 'pending'\n- vapiSessionActive: boolean\n- currentVoicePath: string (which screen owns the active voice path)\n\nSETUP\n- Create src/contexts/VoiceContext.tsx with strict TypeScript types\n- Define initial state defaults that match VOICE-PREFERENCE's first-mount expectations\n\nBUILD\n- Implement <VoiceProvider> with useReducer + named action creators\n- Export useVoiceContext() hook with discriminated unions\n- Wrap RootLayout in <VoiceProvider> at app/layout.tsx\n\nVERIFY\n- All LLM-active screens consume context — no prop-drilling remains\n- mic_permission toggle propagates within 100ms across mounted screens",
+      desc: "Today the Vapi assistant has a hardcoded system prompt with no per-call context. To get consistent coaching across all 3 paths, Vapi must pull context dynamically — same source as P1-33 / Path 2 / Path 3.\n\nSETUP\n- Define what 'context builder' means: a backend function that returns {context_block, state_delta, user_profile} for (screen_id, anon_id, since_ts)\n- Identify which Vapi config field accepts dynamic context (likely a webhook before_llm_call)\n\nBUILD\n- Implement before_llm_call hook in Vapi assistant config (P1-13)\n- Hook calls our backend's context endpoint, formats response into Vapi's expected shape\n- Same response feeds Path 3 (P1-33), proven by a unit test that diffs the output\n\nVERIFY\n- A Vapi voice session and a Direct LLM call on the same screen + same user state see byte-identical context",
       highlight: ["call-llm", "vapi", "screen-contexts", "session-log"],
       highlightEdges: ["call-llm-vapi", "call-llm-screen-contexts", "call-llm-session-log"]
     }]
@@ -2376,34 +2376,34 @@
   // STAGE 4 - QA + SAFETY + POLISH (15 tasks)
   // ============================================================
   {
-    id: "p1-29", taskId: "P1-29", name: "Test Voice-Driven Navigation Edge Cases", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
-    acceptance: "PLAN\n□ 4 edge scenarios documented + scripted in /docs/test-plans/P1-28.md\n\nVERIFY\n□ Interrupt: AI stops within 200ms of user speech start\n□ 'Go back' from ONBOARD-FORK returns to ONBOARD-01 with state preserved\n□ Ambiguous answer triggers a clarifying question (not a forced re-prompt)\n□ 10s silence triggers a single gentle prompt, not a loop",
+    id: "p1-27", taskId: "P1-27", name: "Test Full Happy Path (Voice)", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
+    acceptance: "PLAN\n□ Test plan documented in /docs/test-plans/P1-26.md\n□ Test anon_id reserved for this run\n\nVERIFY\n□ Full flow SPLASH-01 → ONBOARD-05 completes via voice with zero manual input\n□ Each Vapi turn p95 latency <2s\n□ Final user_profile has name + age + focus + habits + first_checkin_at\n□ session_log shows screen_enter for every screen, voice_session boundaries match",
     approved: false,
     tested: false,
-    description: "Test voice-driven navigation edge cases (interruption, repeat, back, ambiguous answers).",
+    description: "End-to-end voice happy-path test of full onboarding flow (SPLASH-01 → ONBOARD-05) using mic only.",
     steps: [{
       title: "P1-26: End-to-end voice happy path test",
-      desc: "The happy path (P1-26) covers cooperative users. Real users interrupt, ask to go back, give ambiguous answers. This task verifies the assistant + navigate_next handle the messy cases gracefully.\n\nPLAN\n- Edge: user says 'wait' mid-AI-reply → AI yields, listens\n- Edge: user says 'go back' → assistant calls navigate_next(prev_screen)\n- Edge: user gives ambiguous answer → assistant asks clarifying question\n- Edge: user is silent for 10s → assistant prompts gently\n\nVERIFY\n- Each edge case resolves to a sensible state, no crashes, no duplicate navigation",
+      desc: "Validates Path 1 (Vapi) end-to-end with no manual intervention. Confirms latency budget, navigation, session_log integrity, and user_profile correctness for the voice-driven path.\n\nPLAN\n- Run flow on dev environment with a clean test anon_id\n- Use real mic; no automation that bypasses STT\n- Capture timing for each Vapi turn\n\nVERIFY\n- Each screen advances within 2s of user finishing speech\n- session_log has expected events in order\n- user_profile populated with all collected fields\n- No Vapi session leaked (count of session_start = count of session_end)",
       highlight: ["user", "frontend", "vapi", "cartesia-stt", "cartesia-tts", "call-llm", "user-data", "session-log"],
       highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-vapi", "vapi-frontend", "frontend-user-data", "frontend-session-log"]
     }]
   },
   {
-    id: "p1-29", taskId: "P1-29", name: "Test Voice-Driven Navigation Edge Cases", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
-    acceptance: "PLAN\n□ 4 edge scenarios documented + scripted in /docs/test-plans/P1-28.md\n\nVERIFY\n□ Interrupt: AI stops within 200ms of user speech start\n□ 'Go back' from ONBOARD-FORK returns to ONBOARD-01 with state preserved\n□ Ambiguous answer triggers a clarifying question (not a forced re-prompt)\n□ 10s silence triggers a single gentle prompt, not a loop",
+    id: "p1-28", taskId: "P1-28", name: "Test Full Happy Path (Manual)", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
+    acceptance: "PLAN\n□ Test plan in /docs/test-plans/P1-27.md\n□ Mic permission denied at MIC-01\n\nVERIFY\n□ Full flow completes via tap+text only\n□ ai_output_mode='screen' set after PREF-01 and respected through ONBOARD-05\n□ user_profile fields match the voice-path run (P1-26)\n□ No Vapi sessions appear in dashboard during this run",
     approved: false,
     tested: false,
-    description: "Test voice-driven navigation edge cases (interruption, repeat, back, ambiguous answers).",
+    description: "End-to-end MANUAL (text/tap-only) happy-path test — proves the app works without voice for users who decline mic.",
     steps: [{
       title: "P1-27: End-to-end manual happy path test",
-      desc: "The happy path (P1-26) covers cooperative users. Real users interrupt, ask to go back, give ambiguous answers. This task verifies the assistant + navigate_next handle the messy cases gracefully.\n\nPLAN\n- Edge: user says 'wait' mid-AI-reply → AI yields, listens\n- Edge: user says 'go back' → assistant calls navigate_next(prev_screen)\n- Edge: user gives ambiguous answer → assistant asks clarifying question\n- Edge: user is silent for 10s → assistant prompts gently\n\nVERIFY\n- Each edge case resolves to a sensible state, no crashes, no duplicate navigation",
+      desc: "Mirror of P1-26 but exclusively via tap + text input. PREF-01 must offer 'Screen is fine' that disables voice for the rest of the flow. Confirms Path 3 (Direct LLM) handles onboarding.\n\nPLAN\n- Test anon_id, decline mic at MIC-01\n- Complete entire flow via tap + text only\n\nVERIFY\n- ai_output_mode = 'screen' propagates correctly\n- All screens present text alternatives at parity with voice\n- user_profile populated identically to the voice run",
       highlight: ["user", "frontend", "call-llm", "llm-api", "user-data", "session-log"],
       highlightEdges: ["user-frontend", "frontend-call-llm", "call-llm-llm-api", "frontend-user-data", "frontend-session-log"]
     }]
   },
   {
     id: "p1-29", taskId: "P1-29", name: "Test Voice-Driven Navigation Edge Cases", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
-    acceptance: "PLAN\n□ 4 edge scenarios documented + scripted in /docs/test-plans/P1-28.md\n\nVERIFY\n□ Interrupt: AI stops within 200ms of user speech start\n□ 'Go back' from ONBOARD-FORK returns to ONBOARD-01 with state preserved\n□ Ambiguous answer triggers a clarifying question (not a forced re-prompt)\n□ 10s silence triggers a single gentle prompt, not a loop",
+    acceptance: "PLAN\n□ 4 edge scenarios documented + scripted in /docs/test-plans/P1-28.md\n\nVERIFY\n□ Interrupt: AI stops within 200ms of user speech start\n□ 'Go back' from ONBOARD-02 returns to ONBOARD-01 with state preserved\n□ Ambiguous answer triggers a clarifying question (not a forced re-prompt)\n□ 10s silence triggers a single gentle prompt, not a loop",
     approved: false,
     tested: false,
     description: "Test voice-driven navigation edge cases (interruption, repeat, back, ambiguous answers).",
@@ -2415,14 +2415,14 @@
     }]
   },
   {
-    id: "p1-32", taskId: "P1-32", name: "Test on Android APK + Web", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
-    acceptance: "PLAN\n□ APK build artifact pinned for this test run\n□ Test devices listed (e.g. Pixel 7, MacBook+Chrome, iPhone 14+Safari)\n\nVERIFY\n□ Android APK: full onboarding completes; no permission UX bugs\n□ Chrome desktop: full onboarding completes; no audio playback issues\n□ Mobile Safari: full onboarding completes; no WS or audio issues\n□ Resulting user_profile is byte-identical across all 3 platforms",
+    id: "p1-30", taskId: "P1-30", name: "Test Partial/Edge Cases", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
+    acceptance: "PLAN\n□ 4 partial-state scenarios scripted in /docs/test-plans/P1-29a.md\n\nVERIFY\n□ Mid-flow refresh: app resumes at the last completed screen, no fields lost\n□ Browser back: either disabled OR returns to previous screen with state intact\n□ Multi-tab: both tabs reflect the same current state within 2s\n□ Throttled (3G): no requests fail silently; user sees loading indicators",
     approved: false,
     tested: false,
-    description: "Cross-platform smoke test: full onboarding on Android APK + Web (Chrome desktop + mobile Safari).",
+    description: "Test partial-state edge cases: refresh mid-flow, browser back button, multi-tab, slow network.",
     steps: [{
       title: "P1-29a: Partial input + returning user edge cases",
-      desc: "Catches platform-specific issues — mic permissions UX differs by platform, WebSocket reliability varies, Safari often has audio playback quirks.\n\nPLAN\n- Android APK: install fresh build, run P1-26 happy path\n- Chrome desktop: same flow on macOS or Linux\n- Mobile Safari (iOS): same flow on a real iPhone\n\nVERIFY\n- All 3 platforms complete onboarding without platform-specific errors\n- Cross-platform diff in user_profile shape: zero (same data, regardless of platform)",
+      desc: "Users do unexpected things. Refresh in the middle of onboarding. Open the app in two tabs. Lose connection. This task verifies the app recovers cleanly without data corruption.\n\nPLAN\n- Edge: refresh mid-Vapi session → on reload, resume from last completed screen\n- Edge: browser back button → either disabled or navigates intentionally\n- Edge: open in 2 tabs → second tab shows current state (no divergent profiles)\n- Edge: throttled network (3G in dev tools) → degraded experience but no corruption\n\nVERIFY\n- session_log + user_profile remain consistent across all edge cases",
       highlight: ["frontend", "vapi", "call-llm", "user-data"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend", "frontend-user-data"]
     }]
@@ -2480,14 +2480,14 @@
     }]
   },
   {
-    id: "p1-29", taskId: "P1-29", name: "Test Voice-Driven Navigation Edge Cases", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
-    acceptance: "PLAN\n□ 4 edge scenarios documented + scripted in /docs/test-plans/P1-28.md\n\nVERIFY\n□ Interrupt: AI stops within 200ms of user speech start\n□ 'Go back' from ONBOARD-FORK returns to ONBOARD-01 with state preserved\n□ Ambiguous answer triggers a clarifying question (not a forced re-prompt)\n□ 10s silence triggers a single gentle prompt, not a loop",
+    id: "p1-26", taskId: "P1-26", name: "Test cost and latency budget", stage: 6, status: "notstarted", owner: ["Mint", "Yonas"],
+    acceptance: "PLAN\n□ 10 controlled runs completed and instrumented\n\nVERIFY\n□ p95 Vapi turn time across runs <2s\n□ p95 Direct LLM call <500ms\n□ Per-onboarding cost (Vapi + OpenAI + Cartesia) <$0.10 average\n□ Outlier runs (slow + expensive) investigated and root-caused\n□ Numbers documented in /docs/cost-latency-budget.md",
     approved: false,
     tested: false,
-    description: "Test voice-driven navigation edge cases (interruption, repeat, back, ambiguous answers).",
+    description: "Verify cost + latency budget: Vapi onboarding session <$0.10/user, p95 voice turn <2s, per-screen LLM call <500ms.",
     steps: [{
       title: "P1-45: Verify cost + latency targets",
-      desc: "The happy path (P1-26) covers cooperative users. Real users interrupt, ask to go back, give ambiguous answers. This task verifies the assistant + navigate_next handle the messy cases gracefully.\n\nPLAN\n- Edge: user says 'wait' mid-AI-reply → AI yields, listens\n- Edge: user says 'go back' → assistant calls navigate_next(prev_screen)\n- Edge: user gives ambiguous answer → assistant asks clarifying question\n- Edge: user is silent for 10s → assistant prompts gently\n\nVERIFY\n- Each edge case resolves to a sensible state, no crashes, no duplicate navigation",
+      desc: "Set cost + latency targets so we know when the architecture is too slow or expensive. Numbers come from current pricing for Vapi, Cartesia (Sonic API for check-ins), GPT-4o mini, and Cartesia STT/TTS.\n\nPLAN\n- Run 10 full onboarding flows (P1-26 happy path)\n- Measure: per-call latency, total Vapi minutes, OpenAI tokens, Cartesia API usage\n- Compute cost per user from real billing data\n\nVERIFY\n- p95 voice turn <2s\n- p95 Direct LLM call <500ms\n- Total cost per onboarding <$0.10",
       highlight: ["call-llm", "vapi", "cartesia-sonic-api", "llm-api", "posthog"],
       highlightEdges: ["call-llm-llm-api", "call-llm-vapi", "call-llm-cartesia-sonic-api", "frontend-posthog"]
     }]
