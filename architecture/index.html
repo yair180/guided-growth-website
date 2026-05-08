@@ -2065,7 +2065,7 @@
     }]
   },
   {
-    id: "p1-03", taskId: "P1-03", name: "Seed Screens + session_log Events into Supabase (Mint priority)", stage: 2, status: "notstarted", owner: ["Mint"],
+    id: "p1-03", taskId: "P1-03", name: "Seed Screens + session_log Events into Supabase (Mint priority)", stage: 2, status: "inprogress", owner: ["Mint"],
     acceptance: "SETUP\n□ Service-account JSON received and stored in backend secret store\n□ Both target tables exist in Supabase: screen_contexts, session_log (or events_taxonomy if Mint decides)\n\nBUILD\n□ scripts/seed_contexts.py exists, runs end-to-end against the live sheet\n□ scripts/seed_session_log_events.py exists, runs end-to-end\n□ Both scripts are idempotent: re-running with no sheet changes makes zero DB writes\n□ Both scripts have retry-with-backoff on Sheets 5xx\n□ Cloudflare Worker cron deployed firing every 1 min, triggering the backend workflow\n\nVERIFY\n□ Edit a row in Screens tab → within 1 min, SELECT screen_contexts shows the new value\n□ Edit a row in session_log Events tab → within 1 min, target table reflects it\n□ Run sync against unchanged sheet → log shows \"no changes\", DB unchanged\n□ Sync run conclusion=success on the actual cron schedule for 24 hours straight (no failure emails)\n□ Service account stays read-only (Viewer on the Sheet — no write needed for this direction)\n□ Global Context tab is NOT touched by either script (verified by code review)",
     approved: false,
     tested: false,
