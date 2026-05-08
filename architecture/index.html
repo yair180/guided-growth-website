@@ -363,12 +363,20 @@
     #tutorial-banner .meta-chip.priority-low {
       background: rgba(148, 163, 184, 0.14); color: #e2e8f0; border-color: rgba(148, 163, 184, 0.3);
     }
-    /* Weight = relative effort (Fibonacci story points) — monospace, calm teal */
+    /* Weight = relative effort (Fibonacci story points). Heat gradient: bigger
+       weight → stronger fill (more "this is heavy" without implying "more
+       urgent" — that's priority's job). 13 shifts to amber as a "consider
+       splitting" warning. */
     #tutorial-banner .meta-chip.weight {
-      background: rgba(45, 212, 191, 0.12); color: #a7f3d0;
-      border-color: rgba(45, 212, 191, 0.35);
+      color: #a7f3d0;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     }
+    #tutorial-banner .meta-chip.weight-w-1  { background: rgba(45, 212, 191, 0.06); border-color: rgba(45, 212, 191, 0.18); }
+    #tutorial-banner .meta-chip.weight-w-2  { background: rgba(45, 212, 191, 0.10); border-color: rgba(45, 212, 191, 0.26); }
+    #tutorial-banner .meta-chip.weight-w-3  { background: rgba(45, 212, 191, 0.16); border-color: rgba(45, 212, 191, 0.36); }
+    #tutorial-banner .meta-chip.weight-w-5  { background: rgba(45, 212, 191, 0.24); border-color: rgba(45, 212, 191, 0.50); }
+    #tutorial-banner .meta-chip.weight-w-8  { background: rgba(45, 212, 191, 0.34); border-color: rgba(45, 212, 191, 0.62); }
+    #tutorial-banner .meta-chip.weight-w-13 { background: rgba(245, 158, 11, 0.28); border-color: rgba(245, 158, 11, 0.55); color: #fde2b3; }
     /* Estimated Hours — italic, muted, supporting context */
     #tutorial-banner .meta-chip.estimate {
       background: rgba(91, 192, 222, 0.06); color: #94afc6;
@@ -665,15 +673,21 @@
     .z4-task-row.priority-low      { border-left-color: rgba(148, 163, 184, 0.4); }
     .z4-task-row .z4-task-weight {
       flex-shrink: 0; margin: 0 4px;
+      padding: 1px 6px; border-radius: 6px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 11px; color: #a7f3d0;
+      border: 1px solid transparent;
     }
-    .z4-task-row .z4-task-weight.empty { color: rgba(167, 243, 208, 0.25); }
+    .z4-task-row .z4-task-weight.weight-w-1  { background: rgba(45, 212, 191, 0.06); border-color: rgba(45, 212, 191, 0.18); }
+    .z4-task-row .z4-task-weight.weight-w-2  { background: rgba(45, 212, 191, 0.10); border-color: rgba(45, 212, 191, 0.26); }
+    .z4-task-row .z4-task-weight.weight-w-3  { background: rgba(45, 212, 191, 0.16); border-color: rgba(45, 212, 191, 0.36); }
+    .z4-task-row .z4-task-weight.weight-w-5  { background: rgba(45, 212, 191, 0.24); border-color: rgba(45, 212, 191, 0.50); }
+    .z4-task-row .z4-task-weight.weight-w-8  { background: rgba(45, 212, 191, 0.34); border-color: rgba(45, 212, 191, 0.62); }
+    .z4-task-row .z4-task-weight.weight-w-13 { background: rgba(245, 158, 11, 0.28); border-color: rgba(245, 158, 11, 0.55); color: #fde2b3; }
     .z4-task-row .z4-task-est {
       flex-shrink: 0; margin: 0 4px 0 0;
       font-size: 11px; font-style: italic; color: #94afc6;
     }
-    .z4-task-row .z4-task-est.empty { color: rgba(148, 175, 198, 0.25); }
     .z4-task-row .z4-task-status {
       width: 14px; flex-shrink: 0; text-align: center; font-size: 13px;
     }
@@ -2011,11 +2025,11 @@
         const priorityCls = (t.pr && PRIORITY_ROW_CLASS[t.pr]) ? " " + PRIORITY_ROW_CLASS[t.pr] : "";
         const titleEsc  = (t.t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
         const wtBadge = t.wt
-          ? `<span class="z4-task-weight" title="Weight (story points) — relative effort">W·${t.wt}</span>`
-          : `<span class="z4-task-weight empty" title="No weight assigned yet">W·—</span>`;
+          ? `<span class="z4-task-weight weight-w-${t.wt}" title="Weight (story points) — relative effort">W·${t.wt}</span>`
+          : "";
         const estBadge = t.est
           ? `<span class="z4-task-est" title="Estimated hours">≈ ${t.est}h</span>`
-          : `<span class="z4-task-est empty" title="No estimate yet">≈ —</span>`;
+          : "";
         html += `<div class="z4-task-row${activeCls}${priorityCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row${t.pr ? ` · Priority: ${t.pr}` : ""}">
           <span class="z4-task-status z4-${statusCls}">${dot}</span>
           <span class="z4-task-id">${t.i}</span>
@@ -4617,29 +4631,21 @@
         ? TASK_BY_ID[activeTutorial.taskId] : null;
       if (taskMeta) {
         const pr = (taskMeta.pr || "").trim();
-        const prChip = document.createElement("span");
         if (pr && PRIORITY_CLASS[pr]) {
+          const prChip = document.createElement("span");
           prChip.className = "meta-chip " + PRIORITY_CLASS[pr];
           prChip.textContent = pr;
-        } else {
-          prChip.className = "meta-chip empty";
-          prChip.textContent = "Priority —";
-          prChip.title = "No priority assigned in the Master Sheet yet";
+          meta.appendChild(prChip);
         }
-        meta.appendChild(prChip);
 
         const wt = (taskMeta.wt || "").trim();
-        const wtChip = document.createElement("span");
         if (wt) {
-          wtChip.className = "meta-chip weight";
+          const wtChip = document.createElement("span");
+          wtChip.className = "meta-chip weight weight-w-" + wt;
           wtChip.textContent = "W·" + wt;
           wtChip.title = "Weight (Fibonacci story points) — relative effort, not time";
-        } else {
-          wtChip.className = "meta-chip empty";
-          wtChip.textContent = "W·—";
-          wtChip.title = "No weight assigned yet";
+          meta.appendChild(wtChip);
         }
-        meta.appendChild(wtChip);
 
         const est = (taskMeta.est || "").trim();
         if (est) {
