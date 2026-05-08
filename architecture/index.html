@@ -1330,7 +1330,7 @@
   <div id="header">
     <div>
       <h1>Guided Growth - Data Architecture Map <span style="font-size:11px;color:#5bc0de;font-weight:500;margin-left:6px;">v5.1</span></h1>
-      <div class="subtitle">v2.3 May 6 2026 (5-region structure across all 3 zooms). Two paths: Vapi for voice (onboarding + check-ins + voice convos), Direct LLM for text, anon_id in MVP, frontend talks directly to Supabase. Hover for quick info, click for details, or pick a walkthrough.</div>
+      <div class="subtitle">v2.3 May 6 2026 (5-region structure across all 3 zooms). Three LLM paths (Vapi for onboarding, Async Reflection for check-ins, Direct LLM otherwise), anon_id in MVP, frontend talks directly to Supabase. Hover for quick info, click for details, or pick a walkthrough.</div>
     </div>
     <div id="controls-bar">
       <div class="tutorial-launcher">
@@ -1593,17 +1593,23 @@
           owners: "Backend team",
           summary: "Single entry point for all LLM calls. Routes to one of three paths.",
           description: "Single entry point for every LLM call in the app. The architectural keystone.\n\nReads context layers (screen_contexts + session_log delta + on-demand global_context lookups), assembles the prompt, decides the path, returns response.\n\nThree paths (v2 plan):\n(1) Vapi - onboarding only (live voice agent, most expensive).\n(2) Async Reflection - check-ins only (MP3 prompt + Cartesia Sonic API for response, ~$0.006/check-in).\n(3) Direct LLM - everything else (text chat, voice convos, settings, insights).\n\nPath decision: Vapi if onboarding voice session active, Async Reflection if on a check-in screen, Direct otherwise. Routing logic lives here.\n\nGlobal crisis safety rule (P1-47, UX-06, GC-15) is part of the base system prompt and applies to every response on every path.\n\nAlways receives anon_id, never auth user_id (P1-46)." },
-        { id: "vapi", label: "Vapi", group: "external", x: 725, y: 240, width: 260, height: 220,
-          subItems: [
-            { label: "STT: Deepgram Flux", meta: "100ms" },
-            { label: "LLM: GPT-4o Mini Cluster", meta: "390ms" },
-            { label: "TTS: Cartesia Sonic-3 (Yair)", meta: "250ms" },
-            { label: "System prompt + Global Context", meta: "✓" },
-          ],
+        { id: "vapi", label: "Vapi", group: "external", x: 725, y: 180, width: 220, height: 80,
           owners: "Backend team",
           summary: "Path 1: real-time voice for onboarding. Plugs in Cartesia STT/TTS. Replaces Cartesia Line.",
           description: "Vapi is the real-time voice agent orchestrator. The CONDUCTOR of voice conversations.\n\nUsed for Path 1 - ONBOARDING ONLY in v2 plan. Screens: WELCOME-01, PREF-01, MIC-01, POST-AUTH-01, ONBOARD-01 to ONBOARD-09, HOME-RETURN, ADV-01, ADV-02. Also used by P2-31 feedback sessions (1-week, 1-month, manual triggers).\n\nManages turn-taking, interruption handling, latency optimization, the buffering loop between STT, the LLM, and TTS. When the user stops speaking, Vapi knows to send the transcript through. When the LLM responds, Vapi streams it to TTS without waiting for the whole response.\n\nVapi doesn't decide WHAT to say - that's the LLM. Vapi manages WHEN and HOW SMOOTHLY.\n\nPluggable STT/TTS providers - we use Cartesia Ink (STT) and Cartesia Sonic-3 (TTS) through Vapi to keep the cloned voice quality. Pluggable LLM - we bring our own GPT-4o mini key.\n\nMost expensive voice path per minute - reserved for high-trust onboarding moment.\n\n=== MAY 5 2026 PIVOT ===\nVapi replaced Vapi as the orchestrator. Reason: Vapi's per-account concurrency limits don't scale beyond ~50-100 concurrent users. Vapi has built-in concurrency at scale.\n\nWhat survived the pivot: Cartesia STT (Ink), Cartesia TTS (Sonic-3), Cartesia Sonic API for Path 2 - all still used through Vapi or directly. Frontend hooks (useRealtimeVoice) - same name, different SDK underneath. callLLM() wrapper - unchanged. All Supabase data architecture - unchanged." },
-{ id: "llm-api", label: "LLM API", group: "external", x: 1340, y: 250, width: 200, height: 70,
+        { id: "cartesia-stt", label: "STT (Cartesia Ink)", group: "cartesia-sub", x: 725, y: 280, width: 200, height: 60,
+          owners: "Backend team",
+          summary: "Speech-to-text. Used by all 3 paths when user speaks. Provider: Cartesia Ink.",
+          description: "Cartesia Ink - speech-to-text. Converts the audio captured from the user's mic into text the LLM can read.\n\nUsed across all three paths whenever the user speaks:\n- Path 1 (Vapi orchestration) - Vapi calls Cartesia Ink as its STT provider\n- Path 2 (Async Reflection) - frontend calls Cartesia Ink directly during LISTENING state\n- Path 3 (Direct LLM with voice) - free-form voice convos use Cartesia Ink directly" },
+        { id: "cartesia-sonic-api", label: "Streaming TTS API (Cartesia Sonic)", group: "cartesia-sub", x: 725, y: 440, width: 220, height: 60,
+          owners: "Backend team",
+          summary: "Path 2 + 3: TTS-only HTTP endpoint. Cheaper than orchestrated voice (Vapi).",
+          description: "Cartesia's TTS-only HTTP API endpoint. New in v2 plan.\n\nUsed by:\n- Path 2 (Async Reflection) for check-in personalized responses - LLM text streamed here for live TTS in cloned voice.\n- Path 3 (Direct LLM) for free-form voice conversations - no Vapi orchestration, just Sonic API for the spoken response.\n\nCheaper per minute than orchestrated voice (Vapi) because there's no orchestration overhead - we just send text and get audio back. Underlying TTS engine is Sonic-3.\n\nBypasses turn-taking and interruption handling. Frontend manages those concerns directly via the Async Reflection state machine (PROMPT → LISTENING → THINKING → RESPONDING → FOLLOWUP_OPTIONAL → CLOSING → DONE)." },
+        { id: "cartesia-tts", label: "TTS (Cartesia Sonic-3)", group: "cartesia-sub", x: 725, y: 360, width: 200, height: 60,
+          owners: "Backend + Yair voice",
+          summary: "Underlying TTS engine. Used by Vapi, Sonic API, and Phase 2 batch.",
+          description: "Cartesia Sonic-3 - underlying text-to-speech engine. Generates voice audio from text using Yair's cloned voice.\n\nThree consumers:\n(1) Vapi uses Sonic-3 as its TTS provider for Path 1 (live voice during onboarding).\n(2) Cartesia Sonic API uses Sonic-3 internally for HTTP TTS calls (Paths 2 and 3).\n(3) Phase 2: batch pre-generation pipeline reads voice text from App Master, calls Sonic-3 directly via REST, uploads MP3s to Supabase Storage." },
+        { id: "llm-api", label: "LLM API", group: "external", x: 1340, y: 250, width: 200, height: 70,
           owners: "Backend team",
           summary: "GPT-4o mini for MVP cost. Provider-agnostic via callLLM().",
           description: "Large language model that powers all coaching responses.\n\nGPT-4o mini for MVP per v2 plan (cost optimization). Provider-agnostic via callLLM() abstraction - swappable to Gemini Flash for further cost cuts, or Groq/Llama for lowest latency. Never Claude/Anthropic for this use case (cost rule).\n\nSame LLM serves all three paths (Vapi, Async Reflection, Direct LLM) - the path differs in how the response is delivered, not which model generates it.\n\nLong-term per Asana Future Features: post-MVP self-hosted on our infrastructure, eventually local on-device for trivial inference." },
@@ -1647,8 +1653,10 @@
         { from: "frontend", to: "call-llm", label: "text input (Path 3)", type: "data", phase: 1, stage: 2 },
 
         // === FRONTEND -> CARTESIA (voice in) ===
+        { from: "frontend", to: "cartesia-stt", label: "live mic audio", type: "data", phase: 1, stage: 3 },
 
         // === CARTESIA -> CALL-LLM (transcribed user speech) ===
+        { from: "cartesia-stt", to: "call-llm", label: "user speech", type: "data", phase: 1, stage: 2 },
 
         // === CALL-LLM CONTEXT FETCHES ===
         { from: "call-llm", to: "screen-contexts", label: "current screen", type: "data", phase: 1, stage: 2 },
@@ -1661,8 +1669,12 @@
         { from: "vapi", to: "frontend", label: "live voice (Vapi)", type: "data", phase: 1, stage: 3 },
 
         // === PATH 2 - ASYNC REFLECTION (check-ins) ===
+        { from: "call-llm", to: "cartesia-sonic-api", label: "Path 2 + 3: TTS text", type: "data", phase: 1, stage: 5 },
+        { from: "cartesia-sonic-api", to: "frontend", label: "live voice (Sonic)", type: "data", phase: 1, stage: 5 },
 
         // === SONIC-3 IS UNDERLYING ENGINE FOR LINE + SONIC API + BATCH ===
+        { from: "vapi", to: "cartesia-tts", label: "uses Sonic-3", type: "data", phase: 1, stage: 3 },
+        { from: "cartesia-sonic-api", to: "cartesia-tts", label: "uses Sonic-3", type: "data", phase: 1, stage: 5 },
 
         // === ANONYMIZATION (MVP per v2 plan, P1-46, Stage 1) ===
         { from: "supabase-auth", to: "anon-mapping", label: "issues anon_id on signup", type: "data", phase: 1, stage: 1 },
@@ -1671,13 +1683,9 @@
         { from: "anon-mapping", to: "posthog", label: "anon_id only", type: "data", phase: 1, stage: 1 },
         { from: "anon-mapping", to: "call-llm", label: "anon_id, never user_id", type: "data", phase: 1, stage: 2 },
 
-        { from: "frontend", to: "vapi", label: "live mic + voice (Vapi)", type: "data", phase: 1, stage: 3 },
-
-        { from: "app-master", to: "session-log", label: "session_log Events → session_log table", type: "sync", phase: 1, stage: 1 },
-        { from: "app-master", to: "vapi", label: "Global Context → system prompt", type: "sync", phase: 1, stage: 1 },
-
         // === APP MASTER SHEET PIPELINES ===
-        { from: "app-master", to: "screen-contexts", label: "Screens → screen_contexts (auto-sync 1m, P1-03 — Mint)", type: "sync", phase: 1, stage: 1 },
+        { from: "app-master", to: "screen-contexts", label: "Screens → seed_contexts", type: "sync", phase: 1, stage: 1 },
+        { from: "app-master", to: "global-context", label: "Global Context tab", type: "sync", phase: 1, stage: 1 },
         { from: "app-master", to: "gitlab", label: "Tasks → GitLab issues", type: "sync", phase: 1, stage: null },
         { from: "app-master", to: "posthog", label: "PostHog Events spec", type: "human", phase: 1, stage: null },
         { from: "app-master", to: "mp3-storage", label: "manual MP3 upload (P1)", type: "human", phase: 1, stage: 5 },
@@ -1688,6 +1696,8 @@
         { from: "vercel", to: "frontend", label: "hosts app", type: "sync", phase: 1, stage: null },
 
         // === PHASE 2: AUTO TTS PIPELINE ===
+        { from: "app-master", to: "cartesia-tts", label: "auto TTS pipeline", type: "sync", phase: 2, stage: null },
+        { from: "cartesia-tts", to: "mp3-storage", label: "auto upload MP3s", type: "sync", phase: 2, stage: null },
 
         // === PHASE 3: POST-MVP ===
         { from: "app-master", to: "posthog", label: "auto-register via API", type: "future", phase: 3, stage: null }
@@ -1721,24 +1731,24 @@
           { highlight: ["frontend", "vercel"], highlightEdges: ["vercel-frontend"],
             title: "1. Splash screen loads",
             desc: "User opens guidedgrowthos.com. Vercel serves the React app. Splash logo shows briefly while the frontend initializes Supabase and Cartesia clients. SPLASH-01 is silent - no voice, no LLM, no MP3." },
-          { highlight: ["frontend", "vapi", "call-llm"],
-            highlightEdges: ["call-llm-vapi", "vapi-frontend"],
+          { highlight: ["frontend", "vapi", "cartesia-tts", "call-llm"],
+            highlightEdges: ["call-llm-vapi", "vapi-frontend", "vapi-cartesia-tts"],
             title: "2. WELCOME-01: voice hook (Vapi, no MP3)",
             desc: "v2 plan change: NO MP3 here. Frontend opens a Vapi assistant session. Agent speaks the ~8 sec voice hook live via Sonic-3 in cloned voice. One-way broadcast - mic isn't granted yet. Auto-terminates the Vapi session if user taps any auth button." },
           { highlight: ["frontend", "supabase-auth", "anon-mapping", "user-data"],
             highlightEdges: ["frontend-supabase-auth", "supabase-auth-anon-mapping", "anon-mapping-user-data", "frontend-user-data"],
             title: "3. Auth + anon_id issued",
             desc: "User taps an auth button. Frontend calls Supabase Auth (Apple, Google, or email). Auth returns user_id. v2 plan: a hashed anon_id is also generated on signup (P1-46). user_profiles holds identity (email, name, auth user_id). All other behavioral tables key on anon_id only." },
-          { highlight: ["frontend", "vapi", "call-llm"],
+          { highlight: ["frontend", "vapi", "cartesia-tts", "call-llm"],
             highlightEdges: ["call-llm-vapi", "vapi-frontend"],
             title: "4. PREF-01 + MIC-01: voice pref + mic permission (all Vapi, no MP3)",
             desc: "v2 plan change: NO MP3s here either. PREF-01 opens a Vapi session, agent speaks 'Can I talk?' live (~6 sec one-way). User taps 'Talk to me' or 'Screen is fine.' Then MIC-01 opens a new Vapi session, agent speaks the pre-permission explanation live (~8 sec), browser prompt fires, agent confirms or reassures. Tap-only response - mic isn't yet granted before the browser prompt." },
-          { highlight: ["frontend", "vapi", "call-llm"],
+          { highlight: ["frontend", "vapi", "cartesia-tts", "call-llm"],
             highlightEdges: ["call-llm-vapi", "vapi-frontend"],
             title: "5. POST-AUTH-01: welcome from the coach (~85 sec, all Vapi)",
             desc: "v2 plan change: NO MP3 here. The trust-building moment is now all-Vapi. Agent speaks the welcome live (~60 sec) via cloned voice. After 'I'm ready' tap, a new Vapi session speaks the presence ask (~25 sec). Total ~85 sec across two moments. Includes the privacy line: 'anonymized from the first second' (references P1-46)." },
-          { highlight: ["user", "frontend", "vapi", "call-llm", "screen-contexts", "llm-api"],
-            highlightEdges: ["user-frontend", "frontend-vapi", "call-llm-screen-contexts", "call-llm-llm-api", "call-llm-vapi", "vapi-frontend"],
+          { highlight: ["user", "frontend", "cartesia-stt", "vapi", "call-llm", "screen-contexts", "llm-api", "cartesia-tts"],
+            highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-screen-contexts", "call-llm-llm-api", "call-llm-vapi", "vapi-frontend", "vapi-cartesia-tts"],
             title: "6. ONBOARD-01: first two-way Vapi conversation",
             desc: "First time the user actually talks back. User says their name. Browser captures mic → Frontend streams to Ink STT → callLLM. callLLM reads screen_contexts for ONBOARD-01, builds the prompt with anon_id, sends to GPT-4o mini. LLM returns 'Great to meet you, Sarah.' Vapi speaks it via Sonic-3 in cloned voice. The agent says the user's actual name back - magic moment.\n\nLLM = the brain (decides words). Sonic-3 = the voice engine. Vapi = the conductor (orchestrates STT, LLM, TTS, turn-taking)." },
           { highlight: ["call-llm", "screen-contexts", "session-log"], highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log"],
@@ -1764,7 +1774,7 @@
               branchB: {
                 label: "→ Already have experience",
                 steps: [
-                  { highlight: ["user", "frontend", "call-llm"], highlightEdges: ["user-frontend", "frontend-vapi"],
+                  { highlight: ["user", "frontend", "cartesia-stt", "call-llm"], highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm"],
                     title: "8b. ADV-01: voice goals submission",
                     desc: "User describes existing habits free-form by voice. 'I do gym 3x a week, meditate mornings, read before bed.' Browser mic → Frontend streams → Ink STT transcribes the full transcript. The transcript flows into callLLM as the user's first input on this screen." },
                   { highlight: ["call-llm", "llm-api", "user-data", "frontend"], highlightEdges: ["call-llm-llm-api", "frontend-user-data"],
@@ -1780,7 +1790,7 @@
           { highlight: ["frontend", "user-data", "call-llm"], highlightEdges: ["frontend-user-data"],
             title: "11. ONBOARD-07-08: review + reflection setup",
             desc: "User reviews the configured plan. Picks reflection style (guided / custom / freeform - mandatory choice per the v2 plan). Sets evening check-in time. Each preference saved to user_data.user_profile (reflection_style)." },
-          { highlight: ["frontend", "call-llm", "vapi", "user-data"],
+          { highlight: ["frontend", "call-llm", "vapi", "cartesia-tts", "user-data"],
             highlightEdges: ["call-llm-vapi", "vapi-frontend"],
             title: "12. ONBOARD-09: founding user moment",
             desc: "callLLM generates the founding user message: 'as one of the first 50 people to use Guided Growth...'. Vapi speaks it via Sonic-3 in cloned voice. user_profile.onboarding_state = 'complete'. All habits activated. Reminders scheduled. Vapi session terminates - this was the longest single Vapi session of MVP." },
@@ -1796,10 +1806,10 @@
           { highlight: ["user", "frontend", "session-log"], highlightEdges: ["user-frontend", "frontend-session-log"],
             title: "1. Vapi activates on an onboarding screen",
             desc: "v2 plan: Vapi is reserved for ONBOARDING ONLY (most expensive Cartesia path). Frontend opens a WebSocket to Vapi on these screens: WELCOME-01, PREF-01, MIC-01, POST-AUTH-01, ONBOARD-01 to ONBOARD-09, HOME-RETURN, ADV-01, ADV-02. mic_tapped or screen_loaded event written to session_log." },
-          { highlight: ["user", "frontend", "vapi"], highlightEdges: ["user-frontend", "frontend-vapi", "call-llm-vapi"],
+          { highlight: ["user", "frontend", "cartesia-stt", "vapi"], highlightEdges: ["user-frontend", "frontend-cartesia-stt", "call-llm-vapi"],
             title: "2. User speaks - Ink STT captures",
             desc: "User speaks. Browser captures mic via getUserMedia. Frontend streams audio chunks to Cartesia Ink STT. Vapi SDK manages the streaming - silence detection, decides when the user has finished speaking, forwards the transcript." },
-          { highlight: ["call-llm", "vapi"], highlightEdges: [],
+          { highlight: ["cartesia-stt", "call-llm", "vapi"], highlightEdges: ["cartesia-stt-call-llm"],
             title: "3. Transcript routed to callLLM",
             desc: "Once the user pauses, Ink STT sends the final transcript to callLLM. SINGLE entry point for all LLM calls regardless of path. Voice or text input, doesn't matter, it goes through here. callLLM detects the active Vapi session and routes Path 1." },
           { highlight: ["call-llm", "screen-contexts", "session-log", "global-context"], highlightEdges: ["call-llm-screen-contexts", "call-llm-session-log", "call-llm-global-context"],
@@ -1808,7 +1818,7 @@
           { highlight: ["call-llm", "llm-api"], highlightEdges: ["call-llm-llm-api"],
             title: "5. Prompt sent to GPT-4o mini",
             desc: "Final prompt: BASE_PROMPT (with crisis safety rule) + screen_contexts + state_delta + user_input. Sent to GPT-4o mini. Returns text response. Cost: ~$0.0005 per turn. The LLM is the BRAIN - it decides what to say." },
-          { highlight: ["vapi", "call-llm"], highlightEdges: ["call-llm-vapi"],
+          { highlight: ["vapi", "cartesia-tts", "call-llm"], highlightEdges: ["call-llm-vapi", "vapi-cartesia-tts"],
             title: "6. WHAT IS LINE vs SONIC-3 vs SONIC API vs the LLM?",
             desc: "LLM = the brain. Decides the words.\nSonic-3 = the underlying TTS engine. Generates audio in cloned voice.\nVapi SDK = Path 1 conductor. Wraps Sonic-3 with turn-taking, interruption, latency optimization. Used for onboarding only.\nSonic API = Path 2 + 3 alternative. TTS-only HTTP endpoint that uses Sonic-3 internally. Cheaper than Vapi because no orchestration. Used for check-ins (Async Reflection) and free-form voice convos." },
           { highlight: ["vapi", "frontend", "session-log"], highlightEdges: ["vapi-frontend", "frontend-session-log"],
@@ -1826,21 +1836,21 @@
           { highlight: ["frontend", "mp3-storage"], highlightEdges: ["frontend-mp3-storage"],
             title: "2. PROMPT state: pre-recorded MP3 plays",
             desc: "Frontend enters PROMPT state. Loads the prompt MP3 from Supabase Storage in Yair's cloned voice. 'Hey [Name] - let's wrap up your day. Would you like to go through your habits yourself, or want me to read them off?' Pre-recorded once via Vapi (per P2-30). The predictable parts of every check-in are MP3s - that's where the cost savings come from." },
-          { highlight: ["frontend"], highlightEdges: ["frontend-vapi"],
+          { highlight: ["frontend", "cartesia-stt"], highlightEdges: ["frontend-cartesia-stt"],
             title: "3. LISTENING state: mic opens, user responds",
             desc: "MP3 finishes. Frontend enters LISTENING state. Opens Cartesia Ink STT for streaming transcription (parallel with tap UI - user can choose). User responds: 'I'll do it' / 'Read them off' / or just taps." },
-          { highlight: ["frontend", "mp3-storage", "call-llm"], highlightEdges: ["frontend-mp3-storage"],
+          { highlight: ["frontend", "mp3-storage", "cartesia-stt", "call-llm"], highlightEdges: ["frontend-mp3-storage", "cartesia-stt-call-llm"],
             title: "4. THINKING state: ack MP3 plays while LLM processes",
             desc: "User finishes speaking (silence detection) or taps Check In. Frontend enters THINKING state. Plays a brief MP3 acknowledgment ('Got it...' / 'Hmm, let me see...' / 'OK...') from Supabase Storage while callLLM processes. Target: 2-3 sec of perceived latency hidden by the ack MP3. callLLM runs the same context+delta logic as any other path." },
           { highlight: ["call-llm", "llm-api", "screen-contexts", "session-log"], highlightEdges: ["call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log"],
             title: "5. callLLM generates personalized response",
             desc: "callLLM reads screen_contexts (ECHECK-01), session_log delta (today's habit completions captured via tap throughout the day), generates anon_id-keyed prompt, sends to GPT-4o mini. LLM returns personalized response text: 'Three out of four today - solid day. Rest well, [Name].'" },
-          { highlight: ["call-llm", "vapi"], highlightEdges: ["call-llm-vapi"],
-            title: "6. RESPONDING state: Vapi streams TTS (cloned voice)",
-            desc: "callLLM streams the response text via Vapi (which uses Cartesia Sonic-3 internally for TTS in Yair's cloned voice). 2-path consolidation (2026-05-08): all voice now goes through Vapi for MVP simplicity. Cost optimization to direct Cartesia Sonic API moved to Phase 3 (P3-02)." },
-          { highlight: ["vapi", "frontend", "session-log"], highlightEdges: ["vapi-frontend", "frontend-session-log"],
+          { highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts"], highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-cartesia-tts"],
+            title: "6. RESPONDING state: Sonic API streams TTS (NOT Vapi)",
+            desc: "callLLM streams the response text to Cartesia Sonic API (TTS-only HTTP endpoint, uses Sonic-3 underneath). NOT Vapi. Sonic API returns TTS audio in cloned voice. Cheaper than Vapi because there's no agent orchestration - just text-in, audio-out." },
+          { highlight: ["cartesia-sonic-api", "frontend", "session-log"], highlightEdges: ["cartesia-sonic-api-frontend", "frontend-session-log"],
             title: "7. Audio plays + voice/text sync",
-            desc: "Frontend plays the Vapi audio AND displays text alongside (UX-22 voice + text sync). User can read along or just listen. llm_call event written to session_log with anon_id." },
+            desc: "Frontend plays the Sonic API audio AND displays text alongside (UX-22 voice + text sync). User can read along or just listen. llm_call event written to session_log with anon_id." },
           { highlight: ["frontend", "mp3-storage"], highlightEdges: ["frontend-mp3-storage"],
             title: "8. FOLLOWUP_OPTIONAL → CLOSING → DONE",
             desc: "If LLM determined a follow-up is needed (FOLLOWUP_OPTIONAL), state machine loops back to LISTENING. Otherwise CLOSING state plays a mood-matched MP3 closing from Supabase Storage (4 evening closings: all-done / most / few / none). State machine ends in DONE.\n\nv2 plan inventory: ~30 MP3s for MVP per P2-30 (reduced from 65) (prompts, thinking acks, mood-matched closings) - VA-generated via Vapi. Filenames TBD per P2-36 (Yair tone bible)." }
@@ -1856,15 +1866,15 @@
           { highlight: ["user", "frontend", "call-llm"], highlightEdges: ["user-frontend", "frontend-call-llm"],
             title: "2. Text path: typing → callLLM directly",
             desc: "Text input case: user types in a chat field. Frontend POSTs to /api/llm. callLLM runs context fetch + state delta + GPT-4o mini call. Pure text round-trip. No voice infrastructure involved. Cheapest path - just LLM API tokens." },
-          { highlight: ["user", "frontend", "call-llm"], highlightEdges: ["user-frontend", "frontend-vapi"],
+          { highlight: ["user", "frontend", "cartesia-stt", "call-llm"], highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm"],
             title: "3. Voice path: Ink STT → callLLM (no Vapi)",
             desc: "Voice input case (VOICE-01 free-form): user taps mic, speaks. Frontend streams mic audio to Cartesia Ink STT. STT sends transcript to callLLM. NO Vapi assistant here - this is a one-shot transcription, not a managed conversation. callLLM detects no Vapi session active and routes Path 3." },
           { highlight: ["call-llm", "llm-api", "screen-contexts", "session-log"], highlightEdges: ["call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log"],
             title: "4. callLLM does its standard thing",
             desc: "Same wrapper, same context layers, same anon_id. Crisis safety rule (P1-47) applies as always. Returns text response." },
-          { highlight: ["call-llm", "vapi", "frontend"], highlightEdges: ["call-llm-vapi", "vapi-frontend"],
-            title: "5. Optional voice TTS via Vapi",
-            desc: "If voice mode (ai_output_mode = 'voice'): callLLM streams the response text via Vapi for live TTS in cloned voice. Frontend plays audio. 2-path consolidation (2026-05-08): all voice through Vapi for MVP. If text mode: response just renders as text. Cost optimization to direct Cartesia Sonic API moved to Phase 3 (P3-02)." }
+          { highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts", "frontend"], highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-frontend"],
+            title: "5. Optional voice TTS via Sonic API",
+            desc: "If voice mode (ai_output_mode = 'voice'): callLLM streams the response text to Sonic API for live TTS in cloned voice. Frontend plays audio. Same Sonic API used by Async Reflection - just no MP3 brackets around it. If text mode: response just renders as text. No Vapi, no MP3, no async state machine. Simplest path." }
         ]
       },
 
@@ -1881,11 +1891,11 @@
             title: "3. session_log accumulates the state delta",
             desc: "Throughout the day, the user might tap-complete several habits, change a setting, navigate around. Each action writes to session_log. The LLM is silent the whole time. session_log is building up a delta the LLM hasn't seen yet." },
           { highlight: ["frontend", "mp3-storage", "call-llm", "session-log"], highlightEdges: ["frontend-mp3-storage", "call-llm-session-log"],
-            title: "4. Later: user opens evening check-in (Vapi check-in variant fires)",
-            desc: "Later, when the user opens the evening check-in, the Vapi check-in assistant variant starts (configured per P2-03). PROMPT MP3 plays first. Then in the THINKING state, callLLM fires. callLLM reads the session_log delta since the last llm_call event - all those taps from earlier are right there in the prompt." },
-          { highlight: ["call-llm", "vapi", "frontend", "session-log"], highlightEdges: ["call-llm-vapi", "vapi-frontend", "frontend-session-log"],
-            title: "5. LLM is fully caught up, responds via Vapi",
-            desc: "Prompt to LLM includes: 'Recent activity: habit_completed gym at 14:30, habit_completed water at 15:00, settings_changed (evening reminder time)...'. LLM responds: 'I see you knocked out gym and water already. Solid day. How are you feeling about your evening?'\n\n2-path consolidation: response goes through Vapi for TTS in cloned voice.\n\nThe LLM was silent for the taps but is now fully aware of them. THIS is the 'caught up' principle." }
+            title: "4. Later: user opens evening check-in (Async Reflection fires)",
+            desc: "Later, when the user opens the evening check-in, the Async Reflection state machine starts (NOT Vapi - this is a check-in). PROMPT MP3 plays first. Then in the THINKING state, callLLM fires. callLLM reads the session_log delta since the last llm_call event - all those taps from earlier are right there in the prompt." },
+          { highlight: ["call-llm", "llm-api", "session-log", "cartesia-sonic-api"], highlightEdges: ["call-llm-llm-api", "call-llm-session-log", "call-llm-cartesia-sonic-api"],
+            title: "5. LLM is fully caught up, responds via Sonic API",
+            desc: "Prompt to LLM includes: 'Recent activity: habit_completed gym at 14:30, habit_completed water at 15:00, settings_changed (evening reminder time)...'. LLM responds: 'I see you knocked out gym and water already. Solid day. How are you feeling about your evening?'\n\nResponse goes through Sonic API for TTS (Async Reflection RESPONDING state), not Vapi.\n\nThe LLM was silent for the taps but is now fully aware of them. THIS is the 'caught up' principle." }
         ]
       },
 
@@ -1902,10 +1912,10 @@
           { highlight: ["app-master"], highlightEdges: [],
             title: "3. Phase 2: sheet schema gets a content hash column",
             desc: "Before automation works, the MP3 Files tab needs schema changes: text_hash (hash of source voice text), last_generated_at (timestamp), current_storage_url (where the MP3 lives), version (bump on regenerate). Without text_hash we can't detect what changed. Without version we can't roll back." },
-          { highlight: ["app-master"], highlightEdges: [],
+          { highlight: ["app-master", "cartesia-tts"], highlightEdges: ["app-master-cartesia-tts"],
             title: "4. Pipeline script reads sheet, hashes text",
             desc: "generate_mp3.py reads the MP3 Files tab. For each row, computes hash(voice_text). Compares to the sheet's stored text_hash. Only rows where the hash differs (or has no current_storage_url) get queued for regeneration. Idempotent re-runs are free.\n\nNote: this calls Cartesia's REST API to Sonic-3 directly. NOT through Vapi, NOT through Sonic API runtime. Batch generation is just HTTPS POST to Sonic-3 directly." },
-          { highlight: ["mp3-storage"], highlightEdges: [],
+          { highlight: ["cartesia-tts", "mp3-storage"], highlightEdges: ["cartesia-tts-mp3-storage"],
             title: "5. Sonic-3 returns MP3, pipeline uploads with version",
             desc: "Sonic-3 returns MP3 binary in Yair's cloned voice. Pipeline uploads to Supabase Storage at a versioned path (e.g. voice-assets/checkin/morning_prompt_v3.mp3). Old version stays in storage for safe rollback. Sheet row is updated: text_hash, last_generated_at, current_storage_url, version all written back via Sheets API." },
           { highlight: ["frontend", "mp3-storage"], highlightEdges: ["frontend-mp3-storage"],
@@ -2017,8 +2027,8 @@
     steps: [{
       title: "P1-18: Wire PREF-01 (Voice/Screen Preference)",
       desc: "Per-screen execution layer. Each screen is now ~50 lines: render its specific UI, declare its AI context lookup, handle its specific tool calls. Everything else (Vapi, fallback, navigation, telemetry) comes from the shell.\n\nPER-SCREEN CHECKLIST (apply to each of 9 screens)\n- Create src/screens/{SCREEN_ID}.tsx using <OnboardingScreenShell screen_id=\"{SCREEN_ID}\">\n- Render UI per Figma frame\n- Confirm screen's AI context block exists in screen_contexts table (P1-31 dep)\n- Wire any screen-specific tool calls (e.g. update_profile on ONBOARD-01)\n- Tap/text fallback at parity with voice\n\nSCREENS (in flow order)\n- SPLASH: silent loading, auto-navigate when init complete (no LLM)\n- VOICE-PREFERENCE: voice vs screen output choice (Vapi 'Can I talk?' broadcast, ~6s)\n- MIC-PERMISSION: mic permission ask (Vapi pre-prompt + browser getUserMedia)\n- POST-AUTH-SIGNUP [DEPRECATED]: welcome + trust-building (~85s, two Vapi sessions)\n- ONBOARD-01: profile setup (name, age, focus) — assistant calls update_profile per field\n- ONBOARD-FORK: habit selection from suggested list\n- ONBOARD-BEGINNER-01: habit difficulty calibration\n- ONBOARD-BEGINNER-02: first commitment + accountability framing\n- ONBOARD-BEGINNER-03: wrap + first check-in scheduling\n\nVERIFY\n- End-to-end voice happy path covered by P1-26\n- End-to-end manual happy path covered by P1-27",
-      highlight: ["frontend", "vapi", "user-data"],
-      highlightEdges: ["call-llm-vapi", "vapi-frontend", "frontend-user-data"]
+      highlight: ["frontend", "vapi", "cartesia-tts", "user-data"],
+      highlightEdges: ["call-llm-vapi", "vapi-frontend", "vapi-cartesia-tts", "frontend-user-data"]
     }]
   },
   {
@@ -2030,7 +2040,7 @@
     steps: [{
       title: "P1-19: Wire MIC-01 (Mic Permission)",
       desc: "Implements the MIC-PERMISSION screen (mic permission ask). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when permission resolves.\n\nVoice path: Vapi assistant speaks pre-permission explanation (~8 sec); button triggers browser getUserMedia(); Vapi confirms granted or reassures denied; save user_profile.mic_permission\n\nSETUP\n- Create src/screens/MIC-PERMISSION.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"MIC-PERMISSION\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
-      highlight: ["frontend", "vapi", "user-data"],
+      highlight: ["frontend", "vapi", "cartesia-tts", "user-data"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend", "frontend-user-data"]
     }]
   },
@@ -2043,7 +2053,7 @@
     steps: [{
       title: "P1-20: Wire POST-AUTH-01 (Coach Welcome ~85 sec)",
       desc: "Implements the POST-AUTH-SIGNUP [DEPRECATED] screen (welcome + trust-building (~85 sec total)). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when user taps 'I'm ready'.\n\nVoice path: ALL-Vapi live TTS; welcome speech (~60s) covers what the app is + anonymization promise; then separate Vapi session for presence ask (~25s)\n\nSETUP\n- Create src/screens/POST-AUTH-SIGNUP [DEPRECATED].tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"POST-AUTH-SIGNUP [DEPRECATED]\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
-      highlight: ["frontend", "vapi", "anon-mapping"],
+      highlight: ["frontend", "vapi", "cartesia-tts", "anon-mapping"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend", "supabase-auth-anon-mapping"]
     }]
   },
@@ -2145,7 +2155,7 @@
     description: "Install Vapi SDKs (frontend + optional server) so the rest of the team can wire Vapi into the app.",
     steps: [{
       title: "P1-12: Install Vapi SDK on frontend + backend",
-      desc: "Vapi orchestrates the onboarding voice flow: STT (Cartesia Ink) → LLM (GPT-4o mini) → TTS (Cartesia Sonic-3 with Yair's cloned voice). The web SDK is what the frontend imports; server SDK is optional (most config lives in the Vapi dashboard).\n\nSETUP\n- Confirm package versions: @vapi-ai/web (latest stable)\n- Add CARTESIA_API_KEY, OPENAI_API_KEY, VAPI_PUBLIC_KEY env vars (P1-04 dep)\n\nBUILD\n- npm install @vapi-ai/web in the frontend repo\n- Optionally install @vapi-ai/server-sdk in the backend if dashboard config isn't enough\n\nVERIFY\n- Hello-world Vapi voice session runs from the dashboard\n- Cartesia voice provider responds with cloned voice",
+      desc: "Vapi orchestrates the onboarding voice flow: STT (Cartesia Ink) → LLM (GPT-4o mini) → TTS (Cartesia Sonic-3 with Yair'''s cloned voice). The web SDK is what the frontend imports; server SDK is optional (most config lives in the Vapi dashboard).\n\nSETUP\n- Confirm package version: @vapi-ai/web (latest stable)\n- Add VAPI_PUBLIC_KEY env var — the only frontend env var needed for the SDK to connect\n- Note: Cartesia + OpenAI API keys are ALREADY configured inside the Vapi dashboard (Vapi calls those services on the backend). No need to put them in our app env vars unless we later call those APIs directly (e.g. Cartesia Sonic API for Path 2 check-in MP3 generation in P2-05).\n\nBUILD\n- npm install @vapi-ai/web in the frontend repo\n- Optionally install @vapi-ai/server-sdk in the backend if dashboard config isn'''t enough\n\nVERIFY\n- Hello-world Vapi voice session runs from the dashboard\n- Cartesia voice provider responds with cloned voice",
       highlight: ["frontend", "vapi"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend"]
     }]
@@ -2159,8 +2169,8 @@
     steps: [{
       title: "P1-13: Configure Vapi assistant in dashboard",
       desc: "The Vapi assistant config is the runtime that all onboarding voice screens connect to. Configure it once in the Vapi dashboard, then version-control the JSON in our repo as a backup.\n\nSETUP\n- Pull system prompt from sheet's Global Context tab\n- Confirm LLM (GPT-4o mini), STT (Cartesia Ink), TTS (Cartesia Sonic-3 + Yair's voice_id)\n\nBUILD\n- In Vapi dashboard: create assistant, paste system prompt, wire LLM/STT/TTS, set first_message generation strategy, attach tools (P1-14)\n- Export assistant config JSON, commit to repo at config/vapi-assistant.json\n\nVERIFY\n- Assistant accepts WebSocket connections from frontend\n- A 30s test call exercises the system prompt + at least one tool call",
-      highlight: ["vapi", "llm-api", "global-context"],
-      highlightEdges: ["call-llm-vapi", "call-llm-llm-api", "call-llm-global-context"]
+      highlight: ["vapi", "cartesia-stt", "cartesia-tts", "llm-api", "global-context"],
+      highlightEdges: ["call-llm-vapi", "vapi-cartesia-tts", "call-llm-llm-api", "call-llm-global-context"]
     }]
   },
   {
@@ -2198,8 +2208,8 @@
     steps: [{
       title: "P1-16: useRealtimeVoice hook",
       desc: "Frontend's interface to Vapi. Used exclusively by the Vapi (Path 1) onboarding screens — check-ins use useAsyncReflection, Direct LLM uses useLLM.\n\nSETUP\n- Read Vapi @vapi-ai/web docs for connection lifecycle + interruption handling\n- Confirm useVoiceContext (P1-11) provides the mic_permission state we'll gate on\n\nBUILD\n- Implement useRealtimeVoice() returning {start, stop, isListening, isSpeaking, error}\n- Open WS on start, stream mic via getUserMedia, play TTS audio chunks as they arrive\n- Set vapiSessionActive in VoiceContext while session is live\n- Handle interruption: user speaks while AI is talking → AI yields\n\nVERIFY\n- Open onboarding screen → start() works first try\n- Navigate away mid-session → session closes cleanly, no leaked WS",
-      highlight: ["frontend", "vapi"],
-      highlightEdges: ["frontend-vapi", "vapi-frontend", "call-llm-vapi"]
+      highlight: ["frontend", "vapi", "cartesia-stt"],
+      highlightEdges: ["frontend-cartesia-stt", "vapi-frontend", "call-llm-vapi"]
     }]
   },
   {
@@ -2218,7 +2228,8 @@
       {
         title: "P1-34 (2/2): Path routing decision",
         desc: "Decides path based on context:\n• Vapi if onboarding voice session active for this user (Path 1)\n• Async Reflection if on a check-in screen (Path 2)\n• Direct LLM otherwise (Path 3)\n\nRouting logic lives here. Provider-agnostic - LLM can be GPT-4o mini (MVP), Gemini Flash, etc. Returns response.\n\nPseudo-code in Architecture tab.",
-        highlightEdges: ["call-llm-vapi", "call-llm-llm-api"]
+        highlight: ["call-llm", "vapi", "cartesia-sonic-api", "llm-api"],
+        highlightEdges: ["call-llm-vapi", "call-llm-cartesia-sonic-api", "call-llm-llm-api"]
       }
     ]
   },
@@ -2313,8 +2324,8 @@
     steps: [{
       title: "P1-21: ONBOARD-01 - first two-way Vapi conversation",
       desc: "Implements the ONBOARD-01 screen (profile setup (name, age, focus)). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when all required profile fields collected.\n\nVoice path: Vapi conversational — assistant asks each profile field, user answers in voice or types; assistant calls update_profile() per field\n\nSETUP\n- Create src/screens/ONBOARD-01.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"ONBOARD-01\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
-      highlight: ["frontend", "user", "vapi", "call-llm", "llm-api", "user-data"],
-      highlightEdges: ["user-frontend", "frontend-vapi", "call-llm-vapi", "vapi-frontend", "call-llm-llm-api", "frontend-user-data"]
+      highlight: ["frontend", "user", "cartesia-stt", "vapi", "cartesia-tts", "call-llm", "llm-api", "user-data"],
+      highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-vapi", "vapi-frontend", "vapi-cartesia-tts", "call-llm-llm-api", "frontend-user-data"]
     }]
   },
   {
@@ -2365,8 +2376,8 @@
     steps: [{
       title: "P1-25: ONBOARD-09 - founding user moment",
       desc: "Implements the ONBOARD-BEGINNER-03 screen (wrap + first check-in scheduling). User can input via voice (Vapi) or tap/text. Screen reads its AI context block from screen_contexts (P1-31) and advances when user confirms schedule.\n\nVoice path: Vapi confirms profile + habits, asks when user wants the first check-in nudge; assistant calls update_profile(first_checkin_at) and navigate_next to HOME-FIRST\n\nSETUP\n- Create src/screens/ONBOARD-BEGINNER-03.tsx\n- Wrap in <VoiceProvider> via root layout (P1-11 dep)\n- Confirm screen's AI context block exists in Screens tab + seeded to DB\n\nBUILD\n- Render UI per Figma frame\n- Wire useScreenContext(\"ONBOARD-BEGINNER-03\") for AI context\n- Wire useVoiceContext() to detect input modality\n- Hook navigate_next tool call to advance\n\nVERIFY\n- Voice path: complete the screen using mic only\n- Text/tap path: same, with no voice\n- Navigation fires only on the documented trigger",
-      highlight: ["frontend", "call-llm", "vapi", "user-data"],
-      highlightEdges: ["call-llm-vapi", "vapi-frontend", "frontend-user-data"]
+      highlight: ["frontend", "call-llm", "vapi", "cartesia-tts", "user-data"],
+      highlightEdges: ["call-llm-vapi", "vapi-frontend", "vapi-cartesia-tts", "frontend-user-data"]
     }]
   },
   {
@@ -2395,8 +2406,8 @@
     steps: [{
       title: "P1-26: End-to-end voice happy path test",
       desc: "Validates Path 1 (Vapi) end-to-end with no manual intervention. Confirms latency budget, navigation, session_log integrity, and user_profile correctness for the voice-driven path.\n\nPLAN\n- Run flow on dev environment with a clean test anon_id\n- Use real mic; no automation that bypasses STT\n- Capture timing for each Vapi turn\n\nVERIFY\n- Each screen advances within 2s of user finishing speech\n- session_log has expected events in order\n- user_profile populated with all collected fields\n- No Vapi session leaked (count of session_start = count of session_end)",
-      highlight: ["user", "frontend", "vapi", "call-llm", "user-data", "session-log"],
-      highlightEdges: ["user-frontend", "frontend-vapi", "call-llm-vapi", "vapi-frontend", "frontend-user-data", "frontend-session-log"]
+      highlight: ["user", "frontend", "vapi", "cartesia-stt", "cartesia-tts", "call-llm", "user-data", "session-log"],
+      highlightEdges: ["user-frontend", "frontend-cartesia-stt", "cartesia-stt-call-llm", "call-llm-vapi", "vapi-frontend", "frontend-user-data", "frontend-session-log"]
     }]
   },
   {
@@ -2447,7 +2458,8 @@
     steps: [{
       title: "P1-29b: Verify crisis safety rule fires on all 3 paths",
       desc: "Hard gate. The AI's tone is warm and conversational, but it MUST recognize crisis language (suicidal ideation, self-harm intent) and pivot to the safety response defined in Global Context. Tested on both Vapi (Path 1) and Direct LLM (Path 3) to prove the rule fires regardless of channel.\n\nPLAN\n- Use canonical crisis test phrases from /docs/safety-test-phrases.md (DO NOT commit phrases publicly)\n- Test on both voice (mic) and text (chat) channels\n- Verify response matches the documented safety script + provides crisis resources\n\nVERIFY\n- 100% of test phrases trigger safety pivot (zero false negatives)\n- Pivot includes the crisis resource (hotline number / link) per Global Context\n- Event logged to session_log with event_type='safety_trigger'",
-      highlightEdges: ["call-llm-vapi", "call-llm-llm-api", "call-llm-global-context"]
+      highlight: ["call-llm", "vapi", "cartesia-sonic-api", "llm-api", "global-context"],
+      highlightEdges: ["call-llm-vapi", "call-llm-cartesia-sonic-api", "call-llm-llm-api", "call-llm-global-context"]
     }]
   },
   {
@@ -2472,7 +2484,8 @@
     steps: [{
       title: "P1-43: All 3 paths see consistent context (HARD GATE)",
       desc: "The 3-context model (per-screen / global / state delta) is the heart of consistent coaching. This test proves all 3 paths see the same context for the same situation, and the LLM responds aware of all 3 layers.\n\nPLAN\n- Set up a controlled user state (specific habits, recent session_log events, on a specific screen)\n- Hit Path 1 (Vapi), Path 2 (Async Reflection), Path 3 (Direct LLM) with same user input\n- Diff the context payload each path sends to the LLM\n\nVERIFY\n- All 3 paths see byte-identical context (proves shared context builder works)\n- Each LLM response references the per-screen context AND the recent session_log event",
-      highlightEdges: ["call-llm-vapi", "call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log", "frontend-user-data", "frontend-session-log"]
+      highlight: ["frontend", "call-llm", "vapi", "cartesia-sonic-api", "llm-api", "screen-contexts", "session-log", "user-data"],
+      highlightEdges: ["call-llm-vapi", "call-llm-cartesia-sonic-api", "call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log", "frontend-user-data", "frontend-session-log"]
     }]
   },
   {
@@ -2497,7 +2510,8 @@
     steps: [{
       title: "P1-45: Verify cost + latency targets",
       desc: "Set cost + latency targets so we know when the architecture is too slow or expensive. Numbers come from current pricing for Vapi, Cartesia (Sonic API for check-ins), GPT-4o mini, and Cartesia STT/TTS.\n\nPLAN\n- Run 10 full onboarding flows (P1-26 happy path)\n- Measure: per-call latency, total Vapi minutes, OpenAI tokens, Cartesia API usage\n- Compute cost per user from real billing data\n\nVERIFY\n- p95 voice turn <2s\n- p95 Direct LLM call <500ms\n- Total cost per onboarding <$0.10",
-      highlightEdges: ["call-llm-llm-api", "call-llm-vapi", "frontend-posthog"]
+      highlight: ["call-llm", "vapi", "cartesia-sonic-api", "llm-api", "posthog"],
+      highlightEdges: ["call-llm-llm-api", "call-llm-vapi", "call-llm-cartesia-sonic-api", "frontend-posthog"]
     }]
   },
   {
@@ -2527,7 +2541,7 @@
     }]
   },
   {
-    id: "p2-02", taskId: "P2-02", name: "Stage 5 prep: scaffold async reflection state machine", stage: 7, status: "obsolete", owner: ["Mint"],
+    id: "p2-02", taskId: "P2-02", name: "Stage 5 prep: scaffold async reflection state machine", stage: 7, status: "notstarted", owner: ["Mint"],
     acceptance: "SETUP\n□ Hook contract pinned in /docs/hooks.md\n\nBUILD\n□ useAsyncReflection() exists with mock backend returning canned responses\n□ Mock can be swapped via env var or import path (one-line change)\n\nVERIFY\n□ A smoke check-in screen using the mock completes the flow\n□ Once P2-29 backend lands, no screen-side code changes needed",
     approved: false,
     tested: false,
@@ -2535,7 +2549,8 @@
     steps: [{
       title: "P2-37: Pre-build the Async Reflection state machine",
       desc: "Pre-work for the Stage 5 (Check-ins + text chat + feedback) sprint. Scaffolding async reflection means the screen-wiring tasks (P2-33, P2-34) don't block on backend completion — they can stub against a real interface.\n\nSETUP\n- Define the contract: {start, stop, status, result} hook signature\n\nBUILD\n- Implement useAsyncReflection() with mock backend that returns canned responses\n- Document the contract so screen tasks can wire against it now, swap in real backend later\n\nVERIFY\n- A test screen using mocked useAsyncReflection works end-to-end\n- Real backend (P2-29) can drop in without changing screen code",
-      highlightEdges: ["frontend-mp3-storage", "frontend-vapi"]
+      highlight: ["frontend", "mp3-storage", "cartesia-stt", "cartesia-sonic-api"],
+      highlightEdges: ["frontend-mp3-storage", "frontend-cartesia-stt", "cartesia-sonic-api-frontend"]
     }]
   },
   {
@@ -2619,26 +2634,28 @@
     steps: [{
       title: "P2-28: Cross-channel QA (HARD GATE)",
       desc: "Mirror of P1-43 but for Phase 2 features (insights, milestones, habit edits). Confirms the 3-path consistency invariant still holds as the surface area grows.\n\nPLAN\n- Set up controlled user with seeded session_log + completed habits\n- Test 5 scenarios per path (Vapi / Async Reflection / Direct LLM)\n- Diff context payloads + response shape across paths\n\nVERIFY\n- Same scenario on different paths produces equivalent coaching (same intent, similar wording is fine — same tool calls is required)",
-      highlightEdges: ["call-llm-vapi", "call-llm-session-log", "anon-mapping-call-llm"]
+      highlight: ["call-llm", "vapi", "cartesia-sonic-api", "session-log", "anon-mapping"],
+      highlightEdges: ["call-llm-vapi", "call-llm-cartesia-sonic-api", "call-llm-session-log", "anon-mapping-call-llm"]
     }]
   },
   {
-    id: "p2-03", taskId: "P2-03", name: "Configure Vapi check-in assistant variant", stage: 7, status: "notstarted", owner: ["Mint"],
-    acceptance: "SETUP\n□ Check-in system prompt drafted, reviewed, in /docs/vapi-checkin-prompt.md\n□ Check-in first message defined\n\nBUILD\n□ Second Vapi assistant published in dashboard with check-in config\n□ useRealtimeVoice accepts a variant parameter ('onboarding' | 'checkin')\n□ MCHECK / ECHECK screens connect to check-in variant; ONBOARD screens to onboarding variant\n\nVERIFY\n□ End-to-end: open MCHECK-01, complete check-in via voice, no errors\n□ p95 latency under 1.5s per turn\n□ AI tone matches the check-in framing (qualitative, Yair-reviewed)",
+    id: "p2-03", taskId: "P2-03", name: "Async reflection check-in flow / state machine", stage: 7, status: "notstarted", owner: ["Mint"],
+    acceptance: "SETUP\n□ State machine documented in /docs/state-machines/async-reflection.md\n□ Check-in Figma frames pinned for reference\n\nBUILD\n□ useAsyncReflection() returns {start, stop, status, result}\n□ POST /api/reflection accepts both audio (multipart) + text (json)\n□ Async job uses shared context builder\n\nVERIFY\n□ Voice check-in: 60s of speech → coaching insight in <30s\n□ Text check-in: paragraph → coaching insight in <10s\n□ Insight references user's actual habits (not generic)",
     approved: false,
     tested: false,
-    description: "Configure a second Vapi assistant variant (different system prompt + first message + shorter session config) for check-ins. Reuses Vapi infrastructure; no separate state machine needed.",
+    description: "Async reflection check-in flow + state machine: user opens check-in, talks about their day, AI processes asynchronously, returns coaching insights.",
     steps: [
       {
         title: "P2-29 (1/2): Implement Async Reflection state machine",
-        desc: "Per the 2-path consolidation (2026-05-08): Vapi handles all live voice. Check-ins use the SAME Vapi infrastructure as onboarding, just with a check-in-specific system prompt + first message + session config.\n\nSETUP\n- Confirm Vapi account supports multiple assistant variants\n- Define check-in system prompt (extends global context with check-in framing — e.g. 'this is a daily reflection, ask one question at a time, listen more than you speak')\n- Define check-in first message (e.g. 'Hey Yair, how are you feeling today?')\n\nBUILD\n- Create second Vapi assistant in dashboard\n- Wire its system prompt + first message + voice (same Yair clone) + tools\n- Update useRealtimeVoice hook to accept an assistant variant parameter\n- Backend logic: when user opens a check-in screen, frontend connects to check-in Vapi variant; when onboarding screen, connects to onboarding variant\n\nVERIFY\n- Onboarding flow still uses onboarding assistant\n- Check-in flow uses check-in assistant\n- Voice quality + latency comparable to onboarding (Vapi tuning applies to both)",
-        highlight: ["frontend", "mp3-storage", "call-llm"],
-        highlightEdges: ["frontend-mp3-storage", "frontend-vapi"]
+        desc: "Path 2. Unlike Vapi (real-time conversational), Async Reflection accepts a user's free-form input (voice or text), runs LLM analysis in the background, and returns coaching insights when ready. Supports voice via Cartesia Sonic API; text via Direct LLM.\n\nSETUP\n- Define the state machine: idle → recording → processing → result → idle\n- Confirm check-in screen designs in Figma\n\nBUILD\n- Implement useAsyncReflection() hook\n- Backend: POST /api/reflection accepts audio/text, kicks off async LLM job\n- Polling or SSE returns result when ready\n- LLM uses same context shape as Path 1/3 (P1-42 dep)\n\nVERIFY\n- Check-in completes for both voice + text input\n- Response includes specific insight referencing user's habits + recent session_log",
+        highlight: ["frontend", "mp3-storage", "cartesia-stt", "call-llm"],
+        highlightEdges: ["frontend-mp3-storage", "frontend-cartesia-stt", "cartesia-stt-call-llm"]
       },
       {
         title: "P2-29 (2/2): Sonic API for personalized response",
         desc: "RESPONDING state: callLLM streams text to Cartesia Sonic API for live TTS in cloned voice. NOT Vapi. Frontend plays audio + displays text alongside (UX-22 voice + text sync).\n\nWhy cheaper than Vapi: predictable parts (prompt, ack, closing) are MP3s. Only the personalized response runs through live LLM + Sonic API. Cuts cost ~10x.",
-        highlightEdges: ["frontend-mp3-storage"]
+        highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts", "frontend", "mp3-storage"],
+        highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-cartesia-tts", "cartesia-sonic-api-frontend", "frontend-mp3-storage"]
       }
     ]
   },
@@ -2651,7 +2668,7 @@
     steps: [{
       title: "P2-30: Pre-record ~30 check-in MP3s for MVP",
       desc: "Check-in screens use pre-recorded MP3s for the AI's prompts (lower latency than live TTS, less cost). Yair generates the audio in Cartesia playground using his cloned voice. ~30 prompts cover the standard check-in moments.\n\nSETUP\n- Confirm prompt scripts in /docs/checkin-scripts.md (or Master Sheet's MP3 Files tab)\n- Confirm Cartesia voice_id for cloned voice\n\nBUILD\n- For each prompt: paste script into Cartesia playground, generate, download MP3\n- Name files per /docs/mp3-naming.md (consistent with existing P1 MP3s)\n- Upload to Supabase Storage voice-assets bucket\n- Update voice-manifest.json with new entries\n\nVERIFY\n- All 30 MP3s playable in browser\n- Frontend useVoicePlayer can resolve each by ID",
-      highlight: ["app-master", "mp3-storage"],
+      highlight: ["app-master", "mp3-storage", "cartesia-tts"],
       highlightEdges: ["app-master-mp3-storage"]
     }]
   },
@@ -2664,7 +2681,7 @@
     steps: [{
       title: "P2-31: Scheduled feedback sessions via Vapi",
       desc: "Phase 2 retention play. Instead of waiting for the user to open the app, the AI initiates a check-in conversation at meaningful intervals. Uses Vapi (Path 1) since it's a real-time conversation.\n\nSETUP\n- Define trigger rules: 7 days after onboarding, 30 days, plus a manual 'request feedback' button\n\nBUILD\n- Backend cron: nightly job picks users hitting a trigger date, sends push notification\n- On notification tap: launches Vapi assistant with feedback-mode system prompt\n- Vapi calls log_event(feedback_completed, payload) to mark done\n\nVERIFY\n- Trigger fires for users hitting day 7 / day 30\n- Manual button always works\n- Feedback session writes session_log entry",
-      highlight: ["call-llm", "vapi", "frontend"],
+      highlight: ["call-llm", "vapi", "cartesia-tts", "frontend"],
       highlightEdges: ["call-llm-vapi", "vapi-frontend"]
     }]
   },
@@ -2704,13 +2721,14 @@
       {
         title: "P2-34 (1/2): Wire 9 check-in screens (Async Reflection)",
         desc: "Daily check-in flow screens. Morning is short (2 screens, intent-setting). Evening is longer (6 screens, reflection + planning tomorrow). Most use Async Reflection (Path 2) for the user's free-form input.\n\nSETUP\n- Confirm context blocks seeded for all 8 screens\n- Confirm useAsyncReflection ready (P2-29)\n\nBUILD\n- Wire each screen using P1-17..P1-25 pattern\n- MCHECK-01..02: intent for the day; quick (~30 sec total)\n- ECHECK-01..06: reflection on day, gratitude, tomorrow's intent (~5 min total)\n\nVERIFY\n- Full morning + evening check-in flows complete\n- Each writes habit_completion + checkin entries to DB",
-        highlight: ["frontend", "mp3-storage", "user-data"],
-        highlightEdges: ["frontend-mp3-storage", "frontend-vapi", "frontend-user-data"]
+        highlight: ["frontend", "mp3-storage", "cartesia-stt", "user-data"],
+        highlightEdges: ["frontend-mp3-storage", "frontend-cartesia-stt", "frontend-user-data"]
       },
       {
         title: "P2-34 (2/2): callLLM + Sonic API for personalized responses",
         desc: "Each check-in screen's LLM-generated personalized response goes through callLLM → Cartesia Sonic API → live TTS in cloned voice → frontend.\n\nVoice + text sync (UX-22) shows text alongside audio. Save check-in data to Supabase user_data tables (checkins, daily_goals, journal_entries) keyed on anon_id.",
-        highlightEdges: ["frontend-user-data", "frontend-session-log", "anon-mapping-user-data"]
+        highlight: ["call-llm", "cartesia-sonic-api", "cartesia-tts", "frontend", "user-data", "session-log", "anon-mapping"],
+        highlightEdges: ["call-llm-cartesia-sonic-api", "cartesia-sonic-api-cartesia-tts", "cartesia-sonic-api-frontend", "frontend-user-data", "frontend-session-log", "anon-mapping-user-data"]
       }
     ]
   },
@@ -2805,17 +2823,19 @@
       },
       2: {
         subtitle: "12 tasks. Vapi setup (install SDK, configure assistant, define tools, deploy), callLLM() wrapper + the 3 path-specific hooks, plus document the polling-vs-sockets decision.",
-        focus: ["call-llm", "vapi", "screen-contexts", "session-log", "global-context", "llm-api", "frontend"]
+        focus: ["call-llm", "vapi", "cartesia-stt", "screen-contexts", "session-log", "global-context", "llm-api", "frontend"]
       },
       3: {
         subtitle: "6 tasks. Wire all 9 onboarding screens to Vapi. The first user touchpoint.",
-        focus: ["frontend", "vapi", "call-llm", "user-data"]
+        focus: ["frontend", "vapi", "cartesia-stt", "cartesia-tts", "call-llm", "user-data"]
       },
       4: {
         subtitle: "15 tasks. End-to-end testing (including new P1-29a edge cases + P1-29b crisis safety HARD GATE), RLS audit, process improvements, GitLab tooling, GitHub Actions CI, Stage 5 prep.",
+        focus: ["frontend", "call-llm", "vapi", "cartesia-sonic-api", "session-log", "anon-mapping", "global-context", "posthog", "supabase", "gitlab", "app-master"]
       },
       5: {
         subtitle: "11 tasks. Check-ins (Async Reflection), text chat (Direct), feedback sessions, MP3 generation, streaming text UX, BR research prompt library.",
+        focus: ["frontend", "mp3-storage", "cartesia-stt", "cartesia-sonic-api", "vapi", "call-llm", "user-data", "session-log", "global-context"]
       }
     };
 
@@ -3231,10 +3251,7 @@
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       text.setAttribute("x", n.width / 2);
       text.setAttribute("text-anchor", "middle");
-      text.setAttribute("dominant-baseline", n.subItems ? "hanging" : "central");
-      if (n.subItems) {
-        text.setAttribute("y", 14);
-      }
+      text.setAttribute("dominant-baseline", "central");
       text.setAttribute("font-size", n.isHub ? "28" : "22");
       text.setAttribute("font-weight", "700");
       text.setAttribute("font-family", "-apple-system, sans-serif");
@@ -3284,60 +3301,12 @@
 
       textGroup.appendChild(text);
 
-      // Compound node sub-items: rounded sub-boxes inside parent (Vapi-style)
-      if (n.subItems && n.subItems.length) {
-        const padX = 14, padTop = 56, rowH = 30, rowGap = 6;
-        n.subItems.forEach((item, idx) => {
-          const y = padTop + idx * (rowH + rowGap);
-
-          // Sub-box (rounded rect, subtle fill)
-          const box = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-          box.setAttribute("x", padX);
-          box.setAttribute("y", y);
-          box.setAttribute("width", n.width - padX * 2);
-          box.setAttribute("height", rowH);
-          box.setAttribute("rx", 5);
-          box.setAttribute("fill", "rgba(0,0,0,0.28)");
-          box.setAttribute("stroke", "rgba(255,255,255,0.18)");
-          box.setAttribute("stroke-width", "1");
-          textGroup.appendChild(box);
-
-          // Sub-label (left)
-          const lbl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-          lbl.setAttribute("x", padX + 10);
-          lbl.setAttribute("y", y + rowH / 2 + 1);
-          lbl.setAttribute("dominant-baseline", "central");
-          lbl.setAttribute("font-size", "12");
-          lbl.setAttribute("font-weight", "500");
-          lbl.setAttribute("fill", "rgba(255,255,255,0.96)");
-          lbl.setAttribute("pointer-events", "none");
-          lbl.textContent = item.label;
-          textGroup.appendChild(lbl);
-
-          // Meta badge (right)
-          if (item.meta) {
-            const metaText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            const metaX = n.width - padX - 10;
-            metaText.setAttribute("x", metaX);
-            metaText.setAttribute("y", y + rowH / 2 + 1);
-            metaText.setAttribute("text-anchor", "end");
-            metaText.setAttribute("dominant-baseline", "central");
-            metaText.setAttribute("font-size", "11");
-            metaText.setAttribute("font-weight", "700");
-            metaText.setAttribute("fill", "rgba(255,255,255,0.85)");
-            metaText.setAttribute("pointer-events", "none");
-            metaText.textContent = item.meta;
-            textGroup.appendChild(metaText);
-          }
-        });
-      }
-
       if (n.owners) {
         const sub = document.createElementNS("http://www.w3.org/2000/svg", "text");
         sub.setAttribute("x", n.width / 2);
-        sub.setAttribute("y", n.subItems ? 34 : n.height / 2 + 20);
+        sub.setAttribute("y", n.height / 2 + 20);
         sub.setAttribute("text-anchor", "middle");
-        sub.setAttribute("dominant-baseline", n.subItems ? "hanging" : "central");
+        sub.setAttribute("dominant-baseline", "central");
         sub.setAttribute("font-size", "14");
         sub.setAttribute("font-weight", "500");
         sub.setAttribute("font-family", "-apple-system, sans-serif");
