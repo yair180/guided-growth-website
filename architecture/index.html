@@ -669,6 +669,11 @@
       font-size: 11px; color: #a7f3d0;
     }
     .z4-task-row .z4-task-weight.empty { color: rgba(167, 243, 208, 0.25); }
+    .z4-task-row .z4-task-est {
+      flex-shrink: 0; margin: 0 4px 0 0;
+      font-size: 11px; font-style: italic; color: #94afc6;
+    }
+    .z4-task-row .z4-task-est.empty { color: rgba(148, 175, 198, 0.25); }
     .z4-task-row .z4-task-status {
       width: 14px; flex-shrink: 0; text-align: center; font-size: 13px;
     }
@@ -1006,7 +1011,7 @@
       <span class="zoom-num">3</span>Engineering
     </button>
     <button type="button" class="zoom-btn" data-zoom="4" onclick="setZoomLevel(4)">
-      <span class="zoom-num">4</span>Tasks
+      <span class="zoom-num">4</span>App master
     </button>
     <button type="button" class="zoom-btn" data-zoom="5" onclick="setZoomLevel(5)">
       <span class="zoom-num">5</span>Screens
@@ -1785,7 +1790,7 @@
       <aside id="z4-sidebar">
         <div id="z4-sidebar-header">
           <div class="z4-title-row">
-            <div class="z4-sidebar-title">Tasks</div>
+            <div class="z4-sidebar-title">App master</div>
             <button type="button" id="z4-collapse-btn" onclick="toggleZoom4Sidebar()" title="Collapse / expand sidebar">‹</button>
           </div>
           <input id="z4-search" type="search" placeholder="Search by ID or title…" oninput="filterTaskSidebar(this.value)" autocomplete="off" />
@@ -2008,11 +2013,15 @@
         const wtBadge = t.wt
           ? `<span class="z4-task-weight" title="Weight (story points) — relative effort">W·${t.wt}</span>`
           : `<span class="z4-task-weight empty" title="No weight assigned yet">W·—</span>`;
+        const estBadge = t.est
+          ? `<span class="z4-task-est" title="Estimated hours">≈ ${t.est}h</span>`
+          : `<span class="z4-task-est empty" title="No estimate yet">≈ —</span>`;
         html += `<div class="z4-task-row${activeCls}${priorityCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row${t.pr ? ` · Priority: ${t.pr}` : ""}">
           <span class="z4-task-status z4-${statusCls}">${dot}</span>
           <span class="z4-task-id">${t.i}</span>
           <span class="z4-task-title">${titleEsc}</span>
           ${wtBadge}
+          ${estBadge}
           ${hasWalk ? `<button type="button" class="z4-walk-btn" onclick="event.stopPropagation(); jumpToWalkthrough('${t.i}')" title="Open walkthrough in Engineering view">Walkthrough →</button>` : `<span class="z4-walk-placeholder" title="No walkthrough — sheet only">—</span>`}
         </div>`;
       });
@@ -4547,7 +4556,13 @@
       const step = stepStack[currentStepIdx];
 
       document.getElementById("strip-counter").textContent = `Step ${currentStepIdx + 1}/${stepStack.length}`;
-      document.getElementById("step-title").textContent = step.title || "";
+      // Strip any stale "Pn-NN:" prefix from step.title (left over from before
+      // task renumbering) and prepend the canonical taskId from activeTutorial.
+      const rawStepTitle = (step.title || "").replace(/^(?:OLD-)?P\d+-\d+:\s*/, "");
+      const canonicalId  = activeTutorial.taskId || "";
+      document.getElementById("step-title").textContent = canonicalId
+        ? `${canonicalId}: ${rawStepTitle}`
+        : rawStepTitle;
       document.getElementById("step-desc").textContent = step.desc || "";
 
       // 1-line elevator description (above body) — synced from sheet col J
