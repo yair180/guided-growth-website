@@ -1835,10 +1835,12 @@
           { highlight: ["call-llm", "llm-api", "screen-contexts", "session-log"], highlightEdges: ["call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log"],
             title: "5. callLLM generates personalized response",
             desc: "callLLM reads screen_contexts (ECHECK-01), session_log delta (today's habit completions captured via tap throughout the day), generates anon_id-keyed prompt, sends to GPT-4o mini. LLM returns personalized response text: 'Three out of four today - solid day. Rest well, [Name].'" },
-            title: "6. RESPONDING state: Sonic API streams TTS (NOT Vapi)",
-            desc: "callLLM streams the response text to Cartesia Sonic API (TTS-only HTTP endpoint, uses Sonic-3 underneath). NOT Vapi. Sonic API returns TTS audio in cloned voice. Cheaper than Vapi because there's no agent orchestration - just text-in, audio-out." },
+          { highlight: ["call-llm", "vapi"], highlightEdges: ["call-llm-vapi"],
+            title: "6. RESPONDING state: Vapi streams TTS (cloned voice)",
+            desc: "callLLM streams the response text via Vapi (which uses Cartesia Sonic-3 internally for TTS in Yair's cloned voice). 2-path consolidation (2026-05-08): all voice now goes through Vapi for MVP simplicity. Cost optimization to direct Cartesia Sonic API moved to Phase 3 (P3-02)." },
+          { highlight: ["vapi", "frontend", "session-log"], highlightEdges: ["vapi-frontend", "frontend-session-log"],
             title: "7. Audio plays + voice/text sync",
-            desc: "Frontend plays the Sonic API audio AND displays text alongside (UX-22 voice + text sync). User can read along or just listen. llm_call event written to session_log with anon_id." },
+            desc: "Frontend plays the Vapi audio AND displays text alongside (UX-22 voice + text sync). User can read along or just listen. llm_call event written to session_log with anon_id." },
           { highlight: ["frontend", "mp3-storage"], highlightEdges: ["frontend-mp3-storage"],
             title: "8. FOLLOWUP_OPTIONAL → CLOSING → DONE",
             desc: "If LLM determined a follow-up is needed (FOLLOWUP_OPTIONAL), state machine loops back to LISTENING. Otherwise CLOSING state plays a mood-matched MP3 closing from Supabase Storage (4 evening closings: all-done / most / few / none). State machine ends in DONE.\n\nv2 plan inventory: ~30 MP3s for MVP per P2-30 (reduced from 65) (prompts, thinking acks, mood-matched closings) - VA-generated via Vapi. Filenames TBD per P2-36 (Yair tone bible)." }
@@ -1860,8 +1862,9 @@
           { highlight: ["call-llm", "llm-api", "screen-contexts", "session-log"], highlightEdges: ["call-llm-llm-api", "call-llm-screen-contexts", "call-llm-session-log"],
             title: "4. callLLM does its standard thing",
             desc: "Same wrapper, same context layers, same anon_id. Crisis safety rule (P1-47) applies as always. Returns text response." },
-            title: "5. Optional voice TTS via Sonic API",
-            desc: "If voice mode (ai_output_mode = 'voice'): callLLM streams the response text to Sonic API for live TTS in cloned voice. Frontend plays audio. Same Sonic API used by Async Reflection - just no MP3 brackets around it. If text mode: response just renders as text. No Vapi, no MP3, no async state machine. Simplest path." }
+          { highlight: ["call-llm", "vapi", "frontend"], highlightEdges: ["call-llm-vapi", "vapi-frontend"],
+            title: "5. Optional voice TTS via Vapi",
+            desc: "If voice mode (ai_output_mode = 'voice'): callLLM streams the response text via Vapi for live TTS in cloned voice. Frontend plays audio. 2-path consolidation (2026-05-08): all voice through Vapi for MVP. If text mode: response just renders as text. Cost optimization to direct Cartesia Sonic API moved to Phase 3 (P3-02)." }
         ]
       },
 
@@ -1878,10 +1881,11 @@
             title: "3. session_log accumulates the state delta",
             desc: "Throughout the day, the user might tap-complete several habits, change a setting, navigate around. Each action writes to session_log. The LLM is silent the whole time. session_log is building up a delta the LLM hasn't seen yet." },
           { highlight: ["frontend", "mp3-storage", "call-llm", "session-log"], highlightEdges: ["frontend-mp3-storage", "call-llm-session-log"],
-            title: "4. Later: user opens evening check-in (Async Reflection fires)",
-            desc: "Later, when the user opens the evening check-in, the Async Reflection state machine starts (NOT Vapi - this is a check-in). PROMPT MP3 plays first. Then in the THINKING state, callLLM fires. callLLM reads the session_log delta since the last llm_call event - all those taps from earlier are right there in the prompt." },
-            title: "5. LLM is fully caught up, responds via Sonic API",
-            desc: "Prompt to LLM includes: 'Recent activity: habit_completed gym at 14:30, habit_completed water at 15:00, settings_changed (evening reminder time)...'. LLM responds: 'I see you knocked out gym and water already. Solid day. How are you feeling about your evening?'\n\nResponse goes through Sonic API for TTS (Async Reflection RESPONDING state), not Vapi.\n\nThe LLM was silent for the taps but is now fully aware of them. THIS is the 'caught up' principle." }
+            title: "4. Later: user opens evening check-in (Vapi check-in variant fires)",
+            desc: "Later, when the user opens the evening check-in, the Vapi check-in assistant variant starts (configured per P2-03). PROMPT MP3 plays first. Then in the THINKING state, callLLM fires. callLLM reads the session_log delta since the last llm_call event - all those taps from earlier are right there in the prompt." },
+          { highlight: ["call-llm", "vapi", "frontend", "session-log"], highlightEdges: ["call-llm-vapi", "vapi-frontend", "frontend-session-log"],
+            title: "5. LLM is fully caught up, responds via Vapi",
+            desc: "Prompt to LLM includes: 'Recent activity: habit_completed gym at 14:30, habit_completed water at 15:00, settings_changed (evening reminder time)...'. LLM responds: 'I see you knocked out gym and water already. Solid day. How are you feeling about your evening?'\n\n2-path consolidation: response goes through Vapi for TTS in cloned voice.\n\nThe LLM was silent for the taps but is now fully aware of them. THIS is the 'caught up' principle." }
         ]
       },
 
