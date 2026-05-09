@@ -3576,7 +3576,14 @@
             title: step.title,
             desc: `${prefix}\n\n${step.desc}`,
             highlight: step.highlight || [],
-            highlightEdges: step.highlightEdges || []
+            highlightEdges: step.highlightEdges || [],
+            // Carry per-task metadata so renderStep can show chips for the
+            // CURRENT step's task (not the parent flow walkthrough).
+            taskId: task.taskId,
+            status: task.status,
+            owner: task.owner,
+            tested: task.tested,
+            approved: task.approved
           });
         });
       });
@@ -4582,9 +4589,10 @@
 
       document.getElementById("strip-counter").textContent = `Step ${currentStepIdx + 1}/${stepStack.length}`;
       // Strip any stale "Pn-NN:" prefix from step.title (left over from before
-      // task renumbering) and prepend the canonical taskId from activeTutorial.
+      // task renumbering) and prepend the canonical taskId. Prefer step.taskId
+      // (per-task in flow walkthroughs) over activeTutorial.taskId.
       const rawStepTitle = (step.title || "").replace(/^(?:OLD-)?P\d+-\d+:\s*/, "");
-      const canonicalId  = activeTutorial.taskId || "";
+      const canonicalId  = step.taskId || activeTutorial.taskId || "";
       document.getElementById("step-title").textContent = canonicalId
         ? `${canonicalId}: ${rawStepTitle}`
         : rawStepTitle;
@@ -4606,8 +4614,15 @@
         done:       "Done",
         obsolete:   "Obsolete"
       };
-      const status = activeTutorial.status;
-      const owners = Array.isArray(activeTutorial.owner) ? activeTutorial.owner.filter(Boolean) : [];
+      // Effective per-step metadata: in flow walkthroughs each step is for a
+      // different task, so prefer step.* and fall back to activeTutorial.* for
+      // single-task tutorials.
+      const effTaskId  = step.taskId  || activeTutorial.taskId;
+      const status     = step.status  || activeTutorial.status;
+      const ownerRaw   = step.owner   || activeTutorial.owner;
+      const owners     = Array.isArray(ownerRaw) ? ownerRaw.filter(Boolean) : [];
+      const effTested  = (step.tested != null)   ? step.tested   : activeTutorial.tested;
+      const effApprov  = (step.approved != null) ? step.approved : activeTutorial.approved;
       if (status && STATUS_LABELS[status]) {
         const chip = document.createElement("span");
         chip.className = "meta-chip status-" + status;
@@ -4624,7 +4639,7 @@
       // Source: TASK_INDEX (synced from Tasks tab formula cols J + K). Falls back
       // to legacy boolean flag if the count isn't synced yet.
       const _taskMetaForCounts = (typeof TASK_BY_ID !== "undefined")
-        ? TASK_BY_ID[activeTutorial.taskId] : null;
+        ? TASK_BY_ID[effTaskId] : null;
       const countChip = (label, value, legacyFlag) => {
         const c = document.createElement("span");
         if (value && value.trim()) {
@@ -4638,8 +4653,8 @@
         }
         meta.appendChild(c);
       };
-      countChip("Tested", _taskMetaForCounts && _taskMetaForCounts.tst, !!activeTutorial.tested);
-      countChip("Approved", _taskMetaForCounts && _taskMetaForCounts.apv, !!activeTutorial.approved);
+      countChip("Tested", _taskMetaForCounts && _taskMetaForCounts.tst, !!effTested);
+      countChip("Approved", _taskMetaForCounts && _taskMetaForCounts.apv, !!effApprov);
 
       // Priority + Weight + Estimated Hours, sourced from TASK_INDEX (which
       // syncs from the Master Sheet). Priority is user-assigned; Weight is
@@ -4651,7 +4666,7 @@
         "Low":      "priority-low"
       };
       const taskMeta = (typeof TASK_BY_ID !== "undefined")
-        ? TASK_BY_ID[activeTutorial.taskId] : null;
+        ? TASK_BY_ID[effTaskId] : null;
       if (taskMeta) {
         const pr = (taskMeta.pr || "").trim();
         if (pr && PRIORITY_CLASS[pr]) {
@@ -4680,14 +4695,14 @@
         }
       }
 
-      // "Show in Sheet" jump — only for tasks that exist in the Master Sheet
-      const taskId = activeTutorial.taskId;
-      if (taskId && rowForTask(taskId)) {
+      // "Show in Sheet" jump — only for tasks that exist in the Master Sheet.
+      // Use effTaskId (per-step in flow walkthroughs) so jump targets the right row.
+      if (effTaskId && rowForTask(effTaskId)) {
         const jump = document.createElement("button");
         jump.type = "button";
         jump.className = "meta-chip jump-sheet";
         jump.textContent = "Show in Sheet ↗";
-        jump.onclick = () => jumpToSheetRow(taskId);
+        jump.onclick = () => jumpToSheetRow(effTaskId);
         meta.appendChild(jump);
       }
       meta.classList.toggle("visible", meta.children.length > 0);
