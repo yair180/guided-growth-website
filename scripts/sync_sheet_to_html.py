@@ -172,6 +172,8 @@ def build_task_index(rows: list[list[str]]) -> list[dict]:
     priority_col = headers.index("Priority") if "Priority" in headers else -1
     weight_col   = headers.index("Weight") if "Weight" in headers else -1
     est_col      = headers.index("Estimated Hours") if "Estimated Hours" in headers else -1
+    tested_col   = headers.index("Tested by Owner") if "Tested by Owner" in headers else -1
+    approved_col = headers.index("Approved by Supervisor") if "Approved by Supervisor" in headers else -1
 
     out: list[dict] = []
     for i, row in enumerate(rows[1:], start=2):
@@ -199,6 +201,16 @@ def build_task_index(rows: list[list[str]]) -> list[dict]:
             est = (padded[est_col] or "").strip()
             if est:
                 entry["est"] = est
+        # Tested by Owner / Approved by Supervisor are formula columns returning
+        # "x/y" strings or "✓" when fully complete; sync as-is for chip rendering.
+        if tested_col >= 0:
+            tst = (padded[tested_col] or "").strip()
+            if tst:
+                entry["tst"] = tst
+        if approved_col >= 0:
+            apv = (padded[approved_col] or "").strip()
+            if apv:
+                entry["apv"] = apv
         out.append(entry)
     return out
 

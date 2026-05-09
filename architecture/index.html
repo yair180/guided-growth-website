@@ -350,6 +350,17 @@
       background: rgba(22, 163, 74, 0.22); color: #bbf7d0;
       border-color: rgba(22, 163, 74, 0.55);
     }
+    /* Count chips (Tested / Approved x/y) — neutral until "✓", then green */
+    #tutorial-banner .meta-chip.count {
+      background: rgba(91, 192, 222, 0.08); color: #c2cee0;
+      border-color: rgba(91, 192, 222, 0.28);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    #tutorial-banner .meta-chip.count.done {
+      background: rgba(22, 163, 74, 0.22); color: #bbf7d0;
+      border-color: rgba(22, 163, 74, 0.55);
+      font-weight: 700;
+    }
     /* Priority chips (match the Master Sheet's CF colors) */
     #tutorial-banner .meta-chip.priority-critical {
       background: rgba(243, 89, 111, 0.22); color: #fecdd3; border-color: rgba(243, 89, 111, 0.55);
@@ -4609,14 +4620,26 @@
         chip.textContent = (owners.length === 1 ? "Owner: " : "Owners: ") + owners.join(", ");
         meta.appendChild(chip);
       }
-      const flagChip = (label, on) => {
+      // Tested + Approved chips: count form ("3/7"), or green ✓ when fully complete.
+      // Source: TASK_INDEX (synced from Tasks tab formula cols J + K). Falls back
+      // to legacy boolean flag if the count isn't synced yet.
+      const _taskMetaForCounts = (typeof TASK_BY_ID !== "undefined")
+        ? TASK_BY_ID[activeTutorial.taskId] : null;
+      const countChip = (label, value, legacyFlag) => {
         const c = document.createElement("span");
-        c.className = "meta-chip flag" + (on ? " on" : "");
-        c.textContent = (on ? "✓ " : "○ ") + label;
+        if (value && value.trim()) {
+          const isDone = value.trim() === "✓";
+          c.className = "meta-chip count" + (isDone ? " done" : "");
+          c.textContent = label + ": " + value.trim();
+        } else {
+          // Fall back to old boolean flag rendering when no count is available
+          c.className = "meta-chip flag" + (legacyFlag ? " on" : "");
+          c.textContent = (legacyFlag ? "✓ " : "○ ") + label;
+        }
         meta.appendChild(c);
       };
-      flagChip("Tested by Owner", !!activeTutorial.tested);
-      flagChip("Approved by Supervisor", !!activeTutorial.approved);
+      countChip("Tested", _taskMetaForCounts && _taskMetaForCounts.tst, !!activeTutorial.tested);
+      countChip("Approved", _taskMetaForCounts && _taskMetaForCounts.apv, !!activeTutorial.approved);
 
       // Priority + Weight + Estimated Hours, sourced from TASK_INDEX (which
       // syncs from the Master Sheet). Priority is user-assigned; Weight is
