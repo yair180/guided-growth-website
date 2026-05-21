@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guided Growth — v2 preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* Color tokens — OKLCH, warm hue family, committed accent */
+      --paper:        oklch(96.5% 0.005 65);    /* warm off-white background */
+      --paper-2:      oklch(94% 0.008 65);      /* slightly deeper paper, section break */
+      --ink:          oklch(22% 0.012 55);      /* deep warm text */
+      --ink-muted:    oklch(42% 0.012 55);
+      --ink-soft:     oklch(60% 0.010 55);
+      --rule:         oklch(86% 0.010 55);      /* hairline */
+
+      --sienna:       oklch(63% 0.135 38);      /* committed accent */
+      --sienna-deep:  oklch(52% 0.140 32);
+      --sienna-tint:  oklch(94% 0.040 50);
+
+      --font: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+
+    body {
+      font-family: var(--font);
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: "ss01", "cv11";
+      overflow-x: hidden;
+    }
+
+    /* ============ NAV ============ */
+    .nav {
+      position: fixed; inset: 0 0 auto 0;
+      z-index: 100;
+      padding: 22px clamp(20px, 4vw, 56px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background .3s ease, border-color .3s ease;
+      border-bottom: 1px solid transparent;
+    }
+    .nav.scrolled {
+      background: color-mix(in oklch, var(--paper) 92%, transparent);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom-color: var(--rule);
+    }
+
+    .nav__brand {
+      font-weight: 800;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .nav__brand::before {
+      content: "";
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: var(--sienna);
+      border-radius: 50%;
+      transform: translateY(-1px);
+    }
+
+    .nav__cta {
+      font: 500 14px/1 var(--font);
+      letter-spacing: 0.01em;
+      color: var(--ink);
+      text-decoration: none;
+      padding: 10px 16px;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      transition: background .2s ease, color .2s ease;
+    }
+    .nav__cta:hover { background: var(--ink); color: var(--paper); }
+
+    @media (max-width: 640px) {
+      .nav { padding: 16px 20px; }
+      .nav__cta { padding: 8px 14px; font-size: 13px; }
+    }
+
+    /* ============ HERO ============ */
+    .hero {
+      min-height: 100vh;
+      padding: 140px clamp(20px, 4vw, 56px) 100px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: clamp(32px, 5vw, 80px);
+      align-items: center;
+      position: relative;
+    }
+
+    .hero__text { max-width: 620px; }
+
+    .hero__kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--ink-muted);
+      margin-bottom: 28px;
+    }
+    .hero__kicker-dot {
+      width: 6px; height: 6px;
+      background: var(--sienna);
+      border-radius: 50%;
+      animation: breathe 4s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .35; transform: scale(0.65); }
+    }
+
+    .hero__h {
+      font-weight: 800;
+      font-size: clamp(46px, 7.2vw, 96px);
+      line-height: 0.98;
+      letter-spacing: -0.035em;
+      color: var(--ink);
+    }
+    .hero__h em {
+      font-style: normal;
+      color: var(--sienna-deep);
+      /* Hand-set underline using gradient — distinct from "gradient text" ban
+         (this is a UNDERLINE decoration, not text fill). */
+      background-image: linear-gradient(transparent 78%, var(--sienna-tint) 78%);
+      background-size: 100% 100%;
+      padding: 0 0.04em;
+    }
+
+    .hero__sub {
+      margin-top: 28px;
+      font-size: clamp(17px, 1.4vw, 19px);
+      line-height: 1.6;
+      color: var(--ink-muted);
+      max-width: 52ch;
+      font-weight: 400;
+    }
+
+    .hero__form {
+      margin-top: 40px;
+      display: flex;
+      gap: 0;
+      max-width: 480px;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px;
+      background: var(--paper);
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .hero__form:focus-within {
+      border-color: var(--sienna);
+      box-shadow: 0 0 0 4px var(--sienna-tint);
+    }
+    .hero__form input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      padding: 12px 18px;
+      font: 500 16px/1 var(--font);
+      color: var(--ink);
+      outline: none;
+    }
+    .hero__form input::placeholder { color: var(--ink-soft); }
+    .hero__form button {
+      border: 0;
+      background: var(--ink);
+      color: var(--paper);
+      font: 600 15px/1 var(--font);
+      padding: 14px 22px;
+      border-radius: 999px;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      transition: background .2s ease;
+    }
+    .hero__form button:hover { background: var(--sienna-deep); }
+
+    .hero__note {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--ink-soft);
+      letter-spacing: 0.01em;
+    }
+
+    /* ===== HERO MOTIF — breathing waveform ===== */
+    .hero__motif {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      max-width: 520px;
+      width: 100%;
+      justify-self: end;
+    }
+    .hero__motif svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    .motif__line {
+      fill: none;
+      stroke: var(--sienna);
+      stroke-width: 1.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      animation: motif-breath 11s ease-in-out infinite;
+      transform-origin: center;
+      transform-box: fill-box;
+    }
+    .motif__ring {
+      fill: none;
+      stroke: var(--ink);
+      stroke-opacity: 0.10;
+      stroke-width: 1;
+    }
+    .motif__dot {
+      fill: var(--sienna);
+      animation: motif-dot 11s ease-in-out infinite;
+    }
+    @keyframes motif-breath {
+      0%, 100% { transform: scaleY(1) translateY(0); opacity: 0.92; }
+      50%      { transform: scaleY(1.18) translateY(-2px); opacity: 1; }
+    }
+    @keyframes motif-dot {
+      0%, 100% { transform: scale(1);   opacity: 1; }
+      50%      { transform: scale(0.6); opacity: 0.55; }
+    }
+
+    .motif__caption {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      font-weight: 500;
+    }
+
+    @media (max-width: 880px) {
+      .hero {
+        grid-template-columns: 1fr;
+        padding-top: 120px;
+        padding-bottom: 60px;
+        gap: 48px;
+      }
+      .hero__motif {
+        order: -1;
+        max-width: 320px;
+        justify-self: start;
+      }
+      .hero__form {
+        flex-direction: row;
+      }
+    }
+    @media (max-width: 480px) {
+      .hero__form { flex-wrap: wrap; padding: 8px; gap: 8px; }
+      .hero__form input { flex: 1 1 100%; padding: 12px 14px; }
+      .hero__form button { flex: 1 1 100%; padding: 14px 18px; }
+    }
+
+    /* ============ RULE ============ */
+    .divider {
+      height: 1px;
+      background: var(--rule);
+      margin: 0 clamp(20px, 4vw, 56px);
+    }
+
+    /* ============ WAITLIST (CTA repeat) ============ */
+    .closer {
+      padding: clamp(90px, 12vw, 160px) clamp(20px, 4vw, 56px);
+      background: var(--paper-2);
+      position: relative;
+      overflow: hidden;
+    }
+    .closer__inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(40px, 6vw, 96px);
+      align-items: end;
+    }
+    .closer__label {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--sienna-deep);
+      margin-bottom: 24px;
+    }
+    .closer__h {
+      font-weight: 800;
+      font-size: clamp(36px, 5.4vw, 72px);
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+    .closer__sub {
+      font-size: 17px;
+      line-height: 1.6;
+      color: var(--ink-muted);
+      max-width: 44ch;
+      margin-top: 24px;
+    }
+
+    .closer__form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .closer__field {
+      display: flex;
+      border-bottom: 2px solid var(--ink);
+      padding: 14px 4px 14px 4px;
+      transition: border-color .2s ease;
+    }
+    .closer__field:focus-within { border-bottom-color: var(--sienna); }
+    .closer__field input {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      font: 500 20px/1.2 var(--font);
+      color: var(--ink);
+      outline: none;
+    }
+    .closer__field input::placeholder { color: var(--ink-soft); }
+    .closer__submit {
+      align-self: flex-start;
+      border: 0;
+      background: var(--ink);
+      color: var(--paper);
+      font: 600 15px/1 var(--font);
+      padding: 16px 28px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background .2s ease;
+    }
+    .closer__submit:hover { background: var(--sienna-deep); }
+    .closer__fine {
+      font-size: 12px;
+      color: var(--ink-soft);
+      letter-spacing: 0.02em;
+    }
+
+    @media (max-width: 880px) {
+      .closer__inner { grid-template-columns: 1fr; align-items: start; gap: 40px; }
+    }
+
+    /* ============ FOOTER ============ */
+    footer {
+      padding: 40px clamp(20px, 4vw, 56px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--ink-soft);
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* ============ TOAST ============ */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--ink);
+      color: var(--paper);
+      padding: 14px 22px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 10px 32px oklch(22% 0.012 55 / 0.18);
+      transition: transform .35s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 200;
+      pointer-events: none;
+      max-width: min(92vw, 420px);
+      text-align: center;
+    }
+    .toast.visible { transform: translateX(-50%) translateY(0); }
+
+    /* ============ Reduce motion ============ */
+    @media (prefers-reduced-motion: reduce) {
+      .motif__line, .motif__dot, .hero__kicker-dot { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <a href="#" class="nav__brand">Guided Growth</a>
+    <a href="#waitlist" class="nav__cta">Join waitlist</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero__text">
+      <div class="hero__kicker">
+        <span class="hero__kicker-dot" aria-hidden="true"></span>
+        Quiet check-ins. Real change.
+      </div>
+      <h1 class="hero__h">
+        A coach that listens, in the time it takes to <em>tie your shoes</em>.
+      </h1>
+      <p class="hero__sub">
+        Guided Growth is a voice-first behavioral OS. Two minutes a day, by voice. Your AI coach connects what you say across sleep, energy, habits, and stress, and gives you guidance that actually fits your life. Built deliberately against the addictive-app playbook.
+      </p>
+      <form class="hero__form" id="hero-form" data-source="hero-v2" novalidate>
+        <input type="email" name="email" placeholder="your@email.com" required autocomplete="email" aria-label="Email address" />
+        <button type="submit">Join waitlist</button>
+      </form>
+      <p class="hero__note">50 founding spots. June 2026. No spam, no streaks, no guilt.</p>
+    </div>
+
+    <!-- Breathing waveform motif -->
+    <div class="hero__motif" aria-hidden="true">
+      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <!-- ambient rings -->
+        <circle class="motif__ring" cx="200" cy="200" r="180" />
+        <circle class="motif__ring" cx="200" cy="200" r="130" />
+        <circle class="motif__ring" cx="200" cy="200" r="80" />
+
+        <!-- waveform — drawn as a horizontal line of varying amplitude across the diameter -->
+        <g transform="translate(0 200)">
+          <path class="motif__line" d="
+            M 20 0
+            L 60 0
+            L 70 -8  L 80 8   L 90 -14  L 100 14  L 110 -22 L 120 22
+            L 130 -32 L 140 32 L 150 -28 L 160 28 L 170 -18 L 180 18
+            L 190 -10 L 200 10 L 210 -28 L 220 28 L 230 -42 L 240 42
+            L 250 -36 L 260 36 L 270 -20 L 280 20 L 290 -12 L 300 12
+            L 310 -6  L 320 6  L 330 0
+            L 380 0
+          " />
+          <!-- center pulse dot -->
+          <circle class="motif__dot" cx="200" cy="0" r="3.5" />
+        </g>
+
+        <!-- secondary fainter line, offset, slightly different amplitude -->
+        <g transform="translate(0 200)" opacity="0.35">
+          <path class="motif__line" style="animation-delay: -3.5s;" d="
+            M 20 0
+            L 80 0
+            L 90 5   L 100 -5  L 110 12  L 120 -12 L 130 18  L 140 -18
+            L 150 24  L 160 -24 L 170 18 L 180 -18 L 190 8   L 200 -8
+            L 210 14  L 220 -14 L 230 22 L 240 -22 L 250 16  L 260 -16
+            L 270 8   L 280 -8  L 290 4  L 300 -4  L 310 0
+            L 380 0
+          " />
+        </g>
+      </svg>
+      <span class="motif__caption">Voice · 2 min · Daily</span>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- CLOSER / WAITLIST -->
+  <section class="closer" id="waitlist">
+    <div class="closer__inner">
+      <div>
+        <div class="closer__label">Founding cohort · 50 spots · June 2026</div>
+        <h2 class="closer__h">
+          Built for the people Headspace gave up on.
+        </h2>
+        <p class="closer__sub">
+          Join the waitlist. We open access in small batches and read every reply. No drip campaign, no streak guilt, no sales sequence.
+        </p>
+      </div>
+      <form class="closer__form" id="waitlist-form" data-source="waitlist-v2" novalidate>
+        <div class="closer__field">
+          <input type="email" name="email" placeholder="your@email.com" required autocomplete="email" aria-label="Email address" />
+        </div>
+        <button type="submit" class="closer__submit">Save my spot</button>
+        <p class="closer__fine">We email maybe twice a month. Unsubscribe with one tap.</p>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+    <span>© 2026 Guided Growth</span>
+    <span>Technology that lets you put the phone down.</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">You're on the list.</div>
+
+  <script>
+    // Scrolled nav
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 24);
+    }, { passive: true });
+
+    // Toast helper
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      if (msg) t.textContent = msg;
+      t.classList.add('visible');
+      setTimeout(() => t.classList.remove('visible'), 3800);
+    }
+
+    // Form preview (no backend wired in v2 preview)
+    ['hero-form', 'waitlist-form'].forEach(id => {
+      const f = document.getElementById(id);
+      if (!f) return;
+      f.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = f.querySelector('input[name=email]');
+        const btn = f.querySelector('button');
+        const email = input.value.trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          input.focus();
+          showToast('Enter a valid email.');
+          return;
+        }
+        const original = btn.textContent;
+        btn.textContent = 'Joining…';
+        btn.disabled = true;
+        await new Promise(r => setTimeout(r, 500));
+        f.reset();
+        btn.textContent = original;
+        btn.disabled = false;
+        showToast("You're on the list. Two emails a year, tops.");
+      });
+    });
+  </script>
+</body>
+</html>

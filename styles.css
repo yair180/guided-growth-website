@@ -39,6 +39,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Offset for the fixed 80px nav so #anchor jumps don't land under it. */
+  scroll-padding-top: 96px;
 }
 
 body {
@@ -185,6 +187,87 @@ body {
   color: var(--text);
 }
 
+/* Mobile menu toggle (hidden on desktop) */
+.nav__toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  border-radius: 10px;
+}
+
+.nav__toggle:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.nav__toggle-bar {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 0.25s var(--ease), opacity 0.2s ease;
+}
+
+.nav.is-open .nav__toggle-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.nav.is-open .nav__toggle-bar:nth-child(2) {
+  opacity: 0;
+}
+.nav.is-open .nav__toggle-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+@media (max-width: 720px) {
+  .nav .nav__inner { padding: 0 18px; height: 68px; }
+  .nav .nav__brand { display: none; }
+  .nav .nav__cta   { display: none; }
+  .nav .nav__toggle { display: inline-flex; }
+
+  .nav__links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 8px 18px 14px;
+    transform: translateY(-8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s var(--ease), opacity 0.2s ease;
+  }
+
+  .nav.is-open .nav__links {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .nav__link {
+    display: block;
+    padding: 14px 4px;
+    font-size: 16px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav__links li:last-child .nav__link { border-bottom: 0; }
+}
+
 .footer__logo-img {
   height: 42px;
   width: auto;
@@ -284,6 +367,11 @@ body {
 .input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.input[aria-invalid="true"] {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
 }
 
 /* ==========================================
@@ -446,10 +534,11 @@ body {
   letter-spacing: 0.01em;
 }
 
-@media (max-width: 580px) {
-  .hero { padding: 120px 0 80px; }
-  .hero__form { flex-direction: column; }
-  .hero__form .btn { width: 100%; }
+@media (max-width: 640px) {
+  .hero { padding: 120px 0 72px; }
+  .hero__form { flex-direction: column; gap: 12px; }
+  .hero__form .btn { width: 100%; padding: 14px 22px; }
+  .hero__form .input { padding: 14px 16px; font-size: 16px; } /* 16px avoids iOS zoom */
 }
 
 /* ==========================================
@@ -827,10 +916,19 @@ body {
   z-index: 1;
 }
 
-@media (max-width: 600px) {
-  .waitlist__inner { padding: 56px 24px; }
-  .waitlist__form  { flex-direction: column; }
-  .waitlist__form .btn { width: 100%; }
+@media (max-width: 640px) {
+  .waitlist__inner { padding: 56px 22px; }
+  .waitlist__form  { flex-direction: column; gap: 12px; }
+  .waitlist__form .btn { width: 100%; padding: 16px 24px; }
+  .waitlist__form .input { font-size: 16px; }
+}
+
+.waitlist__error {
+  font-size: 13px;
+  color: #b91c1c;
+  margin-top: 12px;
+  position: relative;
+  z-index: 1;
 }
 
 /* ==========================================
@@ -910,7 +1008,7 @@ body {
 
 .toast {
   position: fixed;
-  bottom: 32px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
   display: flex;
@@ -926,7 +1024,13 @@ body {
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 1000;
   pointer-events: none;
-  white-space: nowrap;
+  max-width: min(92vw, 480px);
+  text-align: center;
+  line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+  .toast { font-size: 13px; padding: 12px 18px; }
 }
 
 .toast.visible {

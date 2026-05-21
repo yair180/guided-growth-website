@@ -13,6 +13,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Public config. Anon key is safe to expose — Row Level Security on
+    // `waitlist_signups` allows INSERT only from the anon role. Fill in
+    // when wiring to production.
+    window.GG_PUBLIC = {
+      supabaseUrl:     "https://pmunbflbjpoawicgimyc.supabase.co",
+      supabaseAnonKey: "sb_publishable_5bPgufddcvI-TJPHcHsdMQ_MAFGztKJ"
+    };
+  </script>
 </head>
 <body>
 
@@ -23,12 +32,18 @@
         <img src="logo.svg" alt="Guided Growth OS" class="nav__logo-img" />
         <span class="nav__brand">Guided Growth</span>
       </a>
-      <ul class="nav__links">
+      <ul class="nav__links" id="nav-links">
         <li><a href="#how-it-works" class="nav__link">How It Works</a></li>
         <li><a href="#features" class="nav__link">Features</a></li>
         <li><a href="#who" class="nav__link">For Who</a></li>
       </ul>
-      <a href="#waitlist" class="btn btn--sm btn--accent">Join Waitlist</a>
+      <a href="#waitlist" class="btn btn--sm btn--accent nav__cta">Join Waitlist</a>
+      <button class="nav__toggle" id="nav-toggle"
+              aria-label="Open menu" aria-expanded="false" aria-controls="nav-links" type="button">
+        <span class="nav__toggle-bar"></span>
+        <span class="nav__toggle-bar"></span>
+        <span class="nav__toggle-bar"></span>
+      </button>
     </div>
   </nav>
 
@@ -47,13 +62,7 @@
       <p class="hero__sub fade-in fade-in--delay-2">
         Guided Growth is a voice-first behavioral OS. Quick check-ins with your AI coach help you track your life and make real progress without it feeling like work.
       </p>
-      <form class="hero__form fade-in fade-in--delay-3" id="hero-form"
-            action="https://formsubmit.co/yair@guidedgrowthos.com" method="POST">
-        <input type="hidden" name="_next" value="https://guided-growth-website.yair-c11.workers.dev/success.html" />
-        <input type="hidden" name="_subject" value="New Waitlist Signup - Guided Growth OS" />
-        <input type="hidden" name="_autoresponse" value="Thanks for joining the Guided Growth OS waitlist! We'll be in touch soon." />
-        <input type="hidden" name="_template" value="table" />
-        <input type="hidden" name="_captcha" value="false" />
+      <form class="hero__form fade-in fade-in--delay-3" id="hero-form" data-source="hero" novalidate>
         <input
           type="email"
           name="email"
@@ -214,13 +223,7 @@
         <div class="waitlist__blob"></div>
         <h2 class="waitlist__title">Join the Waitlist</h2>
         <p class="waitlist__sub">We're opening access in stages. Join the waitlist to be first to know when Guided Growth is available.</p>
-        <form class="waitlist__form" id="waitlist-form"
-              action="https://formsubmit.co/yair@guidedgrowthos.com" method="POST">
-          <input type="hidden" name="_next" value="https://guided-growth-website.yair-c11.workers.dev/success.html" />
-          <input type="hidden" name="_subject" value="New Waitlist Signup - Guided Growth OS" />
-          <input type="hidden" name="_autoresponse" value="Thanks for joining the Guided Growth OS waitlist! We'll be in touch soon." />
-          <input type="hidden" name="_template" value="table" />
-          <input type="hidden" name="_captcha" value="false" />
+        <form class="waitlist__form" id="waitlist-form" data-source="waitlist-section" novalidate>
           <input
             type="email"
             name="email"
@@ -232,6 +235,7 @@
           />
           <button type="submit" class="btn btn--gradient btn--lg">Join the waitlist</button>
         </form>
+        <p class="waitlist__error" id="waitlist-error" role="alert" aria-live="polite" hidden></p>
         <p class="waitlist__note">No spam. No pressure. Unsubscribe anytime.</p>
       </div>
     </div>
