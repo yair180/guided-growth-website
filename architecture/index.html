@@ -1003,6 +1003,118 @@
       background: #060d18; padding: 1px 5px; border-radius: 3px;
     }
 
+    /* --- Proposed Findings section (sits above Open issues) --- */
+    #z6-proposed-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 0 0 12px;
+    }
+    #z6-proposed-header .z6-proposed-title {
+      font-size: 11px; font-weight: 700; color: #6b8aaf;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    #z6-proposed-header .z6-proposed-sublabel {
+      color: #6b8aaf; font-size: 11px; font-style: italic;
+      margin-left: 8px; font-weight: 400; text-transform: none; letter-spacing: 0;
+    }
+    #z6-proposed-count {
+      background: #060d18; color: #5bc0de; padding: 2px 8px;
+      border-radius: 10px; font-size: 11px; font-weight: 600;
+    }
+    #z6-proposed-list { font-size: 13px; margin-bottom: 24px; }
+    #z6-proposed-list .z6-empty,
+    #z6-proposed-list .z6-error {
+      color: #6b8aaf; font-style: italic; padding: 14px 0; text-align: center;
+    }
+    #z6-proposed-list .z6-error { color: #f87171; font-style: normal; }
+    .z6-proposed-card {
+      background: #051422;
+      border: 1px solid #1e3a5f; border-left: 3px solid #64748b;
+      border-radius: 7px; padding: 10px 12px; margin-bottom: 8px;
+      transition: border-color 80ms, opacity 240ms, transform 240ms;
+      position: relative;
+    }
+    .z6-proposed-card.sev-high   { border-left-color: #f3596f; }
+    .z6-proposed-card.sev-medium { border-left-color: #f59e0b; }
+    .z6-proposed-card.sev-low    { border-left-color: #fbbf24; }
+    .z6-proposed-card.fading { opacity: 0; transform: translateY(-4px); }
+    .z6-proposed-card .z6-proposed-head {
+      display: flex; align-items: baseline; gap: 8px;
+    }
+    .z6-proposed-card .z6-proposed-source {
+      font-size: 14px; flex-shrink: 0;
+    }
+    .z6-proposed-card .z6-proposed-title-text {
+      font-weight: 600; font-size: 13.5px; color: #e0e6ed;
+      flex: 1; min-width: 0; cursor: pointer;
+    }
+    .z6-proposed-card .z6-proposed-title-text:hover { color: #fff; }
+    .z6-proposed-card .z6-sev-badge {
+      padding: 2px 7px; border-radius: 10px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+      text-transform: uppercase; color: #fff; flex-shrink: 0;
+    }
+    .z6-proposed-card .z6-sev-badge.sev-high   { background: #f3596f; }
+    .z6-proposed-card .z6-sev-badge.sev-medium { background: #f59e0b; }
+    .z6-proposed-card .z6-sev-badge.sev-low    { background: #fbbf24; color: #1a2942; }
+    .z6-proposed-card .z6-sev-badge.sev-unset  { background: #64748b; }
+    .z6-proposed-card .z6-proposed-meta {
+      font-size: 11.5px; color: #6b8aaf;
+      display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 0;
+      align-items: center;
+    }
+    .z6-proposed-card .z6-proposed-meta code {
+      background: #060d18; border: 1px solid #1e3a5f; border-radius: 4px;
+      padding: 1px 6px; font-size: 11px; color: #8fa8c4;
+    }
+    .z6-file-btn {
+      position: absolute; top: 10px; right: 10px;
+      padding: 4px 10px; font-size: 11.5px; font-weight: 600;
+      background: transparent; color: #5bc0de;
+      border: 1px solid #5bc0de; border-radius: 14px;
+      cursor: pointer; user-select: none;
+      transition: all 0.12s; font-family: inherit;
+    }
+    .z6-file-btn:hover { background: rgba(91, 192, 222, 0.16); color: #fff; }
+    .z6-file-btn:disabled { opacity: 0.55; cursor: progress; }
+    .z6-proposed-card .z6-proposed-detail {
+      display: none; margin-top: 8px;
+      border-top: 1px solid #142a44; padding-top: 8px;
+    }
+    .z6-proposed-card.expanded .z6-proposed-detail { display: block; }
+    .z6-proposed-card .z6-proposed-detail .z6-detail-label {
+      font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #6b8aaf; margin: 6px 0 3px; font-weight: 700;
+    }
+    .z6-proposed-card .z6-proposed-detail p {
+      margin: 0 0 6px; color: #c2cee0; font-size: 12.5px; line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .z6-proposed-card .z6-proposed-detail img {
+      max-width: 280px; max-height: 200px; margin-top: 4px;
+      border: 1px solid #1e3a5f; border-radius: 4px; display: block;
+    }
+    .z6-proposed-card .z6-proposed-detail a { color: #5bc0de; }
+    .z6-proposed-card.filed-success {
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.07);
+    }
+    .z6-proposed-card.filed-success .z6-filed-msg {
+      color: #6ee7b7; font-size: 12.5px; font-weight: 600; padding: 4px 0;
+    }
+    .z6-proposed-card.filed-success .z6-filed-msg a {
+      color: #6ee7b7; text-decoration: underline;
+    }
+    .z6-proposed-card .z6-file-error {
+      color: #f87171; font-size: 12px; margin-top: 6px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .z6-proposed-card .z6-retry-btn {
+      background: transparent; color: #f87171;
+      border: 1px solid #f87171; border-radius: 12px;
+      padding: 2px 8px; font-size: 11px; cursor: pointer; font-family: inherit;
+    }
+    .z6-proposed-card .z6-retry-btn:hover { background: rgba(248, 113, 113, 0.12); color: #fff; }
+
     @media (max-width: 900px) { #z6-sidebar { width: 300px; } }
 
     /* Push zoom-3 content below the fixed 41px zoom-toggle-bar.
@@ -2045,13 +2157,20 @@
       <div id="z6-source-filters">
         <span class="z6-filter-label">Source:</span>
         <button type="button" class="z6-chip active" data-source="all" onclick="setQASource('all')">All <span class="z6-chip-count" id="z6-count-all">…</span></button>
-        <button type="button" class="z6-chip disabled" data-source="human" title="Coming soon" aria-disabled="true">Human <span class="z6-chip-count">—</span></button>
+        <button type="button" class="z6-chip" data-source="human" onclick="setQASource('human')">Human <span class="z6-chip-count" id="z6-count-human">…</span></button>
         <button type="button" class="z6-chip" data-source="mobai" onclick="setQASource('mobai')">MobAI <span class="z6-chip-count" id="z6-count-mobai">…</span></button>
+        <button type="button" class="z6-chip" data-source="video" onclick="setQASource('video')">Video <span class="z6-chip-count" id="z6-count-video">…</span></button>
         <button type="button" class="z6-chip disabled" data-source="ai-quality" title="Coming soon" aria-disabled="true">AI Quality <span class="z6-chip-count">—</span></button>
       </div>
 
+      <div id="z6-proposed-header">
+        <div class="z6-proposed-title">Proposed Findings <span class="z6-proposed-sublabel">needs review</span></div>
+        <span id="z6-proposed-count">…</span>
+      </div>
+      <div id="z6-proposed-list"><div class="z6-empty">Loading…</div></div>
+
       <div id="z6-issues-header">
-        <div class="z6-issues-title">Open issues</div>
+        <div class="z6-issues-title">Open issues (label=mobai)</div>
         <span id="z6-issues-count">…</span>
       </div>
       <div id="z6-issues-list"><div class="z6-empty">Loading…</div></div>
@@ -2066,12 +2185,18 @@
     // ============================================================
     const QA_API_RUNS = '/internal/mobai/api/runs';
     const QA_API_ISSUES = '/internal/mobai/api/issues';
+    const QA_API_PROPOSED = '/internal/mobai/api/proposed-findings';
+    const QA_API_FILE_FINDING = '/internal/mobai/api/file-finding';
     let _qaPollHandle = null;
 
     // Cached fetched data so chip + search re-renders don't need a network round-trip.
     let _qaRuns = [];
     let _qaIssues = [];
-    let qaCurrentSource = 'all';  // 'all' | 'mobai' (Human / AI Quality chips are disabled stubs)
+    let _qaProposed = [];
+    let _qaProposedExpanded = new Set();   // finding ids currently expanded
+    let _qaProposedFiling = new Set();     // finding ids currently in-flight POSTs
+    let _qaProposedError = new Map();      // finding id → last error string
+    let qaCurrentSource = 'all';  // 'all' | 'human' | 'mobai' | 'video' (AI Quality chip is a disabled stub)
 
     function qaEscape(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -2090,7 +2215,16 @@
     // is MobAI-sourced. The classifier is wired now so when the worker adds a
     // wider feed, swapping the rule is a one-liner.
     function qaInferSource(issue) {
-      return (issue.labels || []).includes('mobai') ? 'mobai' : 'human';
+      const labels = issue.labels || [];
+      if (labels.includes('mobai')) return 'mobai';
+      if (labels.includes('video')) return 'video';
+      return 'human';
+    }
+    // Pick a source emoji for the proposed-finding card.
+    function qaSourceEmoji(source) {
+      return source === 'mobai' ? '\u{1F916}'   // 🤖
+        : source === 'video' ? '\u{1F4F9}'      // 📹
+        : '\u{1F464}';                          // 👤  (human / unknown)
     }
 
     function renderRunsSidebar(filter) {
@@ -2135,13 +2269,9 @@
         return qaInferSource(i) === qaCurrentSource;
       });
 
-      // Chip counts always reflect the full fetched set.
-      const allCount = _qaIssues.length;
-      const mobaiCount = _qaIssues.filter(i => qaInferSource(i) === 'mobai').length;
-      const elAll = document.getElementById('z6-count-all');
-      const elMobai = document.getElementById('z6-count-mobai');
-      if (elAll) elAll.textContent = allCount;
-      if (elMobai) elMobai.textContent = mobaiCount;
+      // Chip counts: combined issues + proposed findings per source.
+      // 'All' counts everything (proposed + open) so the chip rolls up the workload.
+      updateChipCounts();
 
       countEl.textContent = filtered.length;
 
@@ -2178,13 +2308,33 @@
     }
 
     function setQASource(source) {
-      // 'human' and 'ai-quality' chips are stubs until the worker supports a wider feed.
-      if (source !== 'all' && source !== 'mobai') return;
+      // 'ai-quality' chip is still a stub. The proposed-findings aggregator
+      // currently exposes mobai / video / human, so all four other chips are live.
+      if (!['all', 'mobai', 'video', 'human'].includes(source)) return;
       qaCurrentSource = source;
       document.querySelectorAll('#z6-source-filters .z6-chip').forEach(chip => {
         chip.classList.toggle('active', chip.dataset.source === source);
       });
+      renderProposed();
       renderIssues();
+    }
+
+    function updateChipCounts() {
+      const issuesBy = { mobai: 0, video: 0, human: 0 };
+      for (const i of _qaIssues) issuesBy[qaInferSource(i)]++;
+      const proposedBy = { mobai: 0, video: 0, human: 0 };
+      for (const f of _qaProposed) {
+        const s = (f.source || 'human').toLowerCase();
+        if (proposedBy[s] !== undefined) proposedBy[s]++;
+        else proposedBy.human++;
+      }
+      const get = id => document.getElementById(id);
+      const set = (id, n) => { const el = get(id); if (el) el.textContent = n; };
+      const all = _qaIssues.length + _qaProposed.length;
+      set('z6-count-all', all);
+      set('z6-count-mobai', issuesBy.mobai + proposedBy.mobai);
+      set('z6-count-video', issuesBy.video + proposedBy.video);
+      set('z6-count-human', issuesBy.human + proposedBy.human);
     }
 
     function filterRunsSidebar(value) { renderRunsSidebar(value); }
@@ -2203,6 +2353,164 @@
         const saved = localStorage.getItem('gg_arch_z6_sidebar_collapsed');
         if (saved === '1') toggleZoom6Sidebar(true);
       } catch (e) {}
+    }
+
+    function renderProposed() {
+      const listEl = document.getElementById('z6-proposed-list');
+      const countEl = document.getElementById('z6-proposed-count');
+      if (!listEl || !countEl) return;
+
+      const filtered = _qaProposed.filter(f => {
+        if (qaCurrentSource === 'all') return true;
+        return (f.source || 'human').toLowerCase() === qaCurrentSource;
+      });
+      countEl.textContent = filtered.length;
+      // Roll up combined chip counts whenever proposed list re-renders too.
+      updateChipCounts();
+
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="z6-empty">'
+          + (qaCurrentSource === 'all'
+              ? 'No proposed findings — review queue is clear.'
+              : 'No proposed ' + qaEscape(qaCurrentSource) + ' findings.')
+          + '</div>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(f => qaProposedCardHtml(f)).join('');
+    }
+
+    function qaProposedCardHtml(f) {
+      const sev = (f.severity || 'unset').toLowerCase();
+      const sevClass = ['high','medium','low'].includes(sev) ? 'sev-' + sev : 'sev-unset';
+      const source = (f.source || 'human').toLowerCase();
+      const emoji = qaSourceEmoji(source);
+      const expanded = _qaProposedExpanded.has(f.id);
+      const filing = _qaProposedFiling.has(f.id);
+      const errorMsg = _qaProposedError.get(f.id);
+      const screen = f.screen || 'global';
+      const conf = f.confidence || 'unset';
+
+      // Detail block
+      const detail = expanded
+        ? '<div class="z6-proposed-detail">'
+          + (f.evidence ? '<div class="z6-detail-label">Evidence</div><p>' + qaEscape(f.evidence) + '</p>' : '')
+          + (f.ai_block && f.ai_block.repro_steps
+              ? '<div class="z6-detail-label">Repro steps</div><p>' + qaEscape(f.ai_block.repro_steps) + '</p>'
+              : '')
+          + (f.ai_block && f.ai_block.file_hypothesis
+              ? '<div class="z6-detail-label">File hypothesis</div><p><code style="background:#060d18;border:1px solid #1e3a5f;border-radius:4px;padding:1px 6px;font-size:11.5px;color:#8fa8c4">'
+                + qaEscape(f.ai_block.file_hypothesis) + '</code></p>'
+              : '')
+          + (f.screenshot_url
+              ? '<div class="z6-detail-label">Screenshot</div><a href="' + qaEscape(f.screenshot_url) + '" target="_blank" rel="noopener"><img loading="lazy" src="' + qaEscape(f.screenshot_url) + '" alt="screenshot"></a>'
+              : '')
+          + (f.video_url
+              ? '<div class="z6-detail-label">Video</div><p><a href="' + qaEscape(f.video_url) + '" target="_blank" rel="noopener">' + qaEscape(f.video_url) + '</a>'
+                + (typeof f.timestamp_seconds === 'number' ? ' (@ ' + f.timestamp_seconds + 's)' : '')
+                + '</p>'
+              : '')
+          + '</div>'
+        : '';
+
+      const btn = filing
+        ? '<button class="z6-file-btn" disabled>Filing…</button>'
+        : '<button class="z6-file-btn" onclick="qaFileFinding(\'' + qaEscape(f.id) + '\', event)">File as bug</button>';
+
+      const errorBlock = errorMsg
+        ? '<div class="z6-file-error"><span>Filing failed: ' + qaEscape(errorMsg) + '</span>'
+          + '<button class="z6-retry-btn" onclick="qaFileFinding(\'' + qaEscape(f.id) + '\', event)">Retry</button></div>'
+        : '';
+
+      return '<div class="z6-proposed-card ' + sevClass + (expanded ? ' expanded' : '') + '" data-finding-id="' + qaEscape(f.id) + '">'
+        + btn
+        + '<div class="z6-proposed-head">'
+          + '<span class="z6-proposed-source">' + emoji + '</span>'
+          + '<span class="z6-proposed-title-text" onclick="qaToggleProposedExpand(\'' + qaEscape(f.id) + '\')">' + qaEscape(f.title || '(untitled)') + '</span>'
+          + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(f.severity || 'unset') + '</span>'
+        + '</div>'
+        + '<div class="z6-proposed-meta">'
+          + '<code>' + qaEscape(screen) + '</code>'
+          + (f.run ? '<span>' + qaEscape(f.run) + '</span>' : '')
+          + '<span>confidence: ' + qaEscape(conf) + '</span>'
+          + '<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px">' + qaEscape(f.id) + '</span>'
+        + '</div>'
+        + detail
+        + errorBlock
+        + '</div>';
+    }
+
+    function qaToggleProposedExpand(findingId) {
+      if (_qaProposedExpanded.has(findingId)) _qaProposedExpanded.delete(findingId);
+      else _qaProposedExpanded.add(findingId);
+      renderProposed();
+    }
+
+    async function qaFileFinding(findingId, ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      if (_qaProposedFiling.has(findingId)) return;
+      _qaProposedFiling.add(findingId);
+      _qaProposedError.delete(findingId);
+      renderProposed();
+      let result;
+      try {
+        const res = await fetch(QA_API_FILE_FINDING, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ finding_id: findingId }),
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (_e) {}
+        if (!res.ok) {
+          throw new Error((data && data.error) || ('HTTP ' + res.status));
+        }
+        if (!data || !data.issue_iid) throw new Error('worker returned no issue_iid');
+        result = data;
+      } catch (e) {
+        _qaProposedFiling.delete(findingId);
+        _qaProposedError.set(findingId, e.message || String(e));
+        renderProposed();
+        return;
+      }
+      _qaProposedFiling.delete(findingId);
+
+      // Flip card to filed-success, fade out, then drop from local cache.
+      const card = document.querySelector('.z6-proposed-card[data-finding-id="' + cssEscape(findingId) + '"]');
+      if (card) {
+        card.classList.add('filed-success');
+        card.innerHTML = '<div class="z6-filed-msg">Filed as <a href="' + qaEscape(result.issue_url) + '" target="_blank" rel="noopener">#' + result.issue_iid + '</a>. Will appear in Open issues on the next poll.</div>';
+        setTimeout(() => { card.classList.add('fading'); }, 2500);
+        setTimeout(() => {
+          _qaProposed = _qaProposed.filter(f => f.id !== findingId);
+          renderProposed();
+          // Trigger an immediate issues refresh so it shows up faster than 60s.
+          qaLoadIssues();
+        }, 3200);
+      } else {
+        _qaProposed = _qaProposed.filter(f => f.id !== findingId);
+        renderProposed();
+        qaLoadIssues();
+      }
+    }
+
+    // Escape an id for use inside a CSS attribute-selector value.
+    function cssEscape(s) {
+      if (window.CSS && window.CSS.escape) return window.CSS.escape(s);
+      return String(s).replace(/(["\\\]])/g, '\\$1');
+    }
+
+    async function qaLoadProposed() {
+      const listEl = document.getElementById('z6-proposed-list');
+      try {
+        const r = await fetch(QA_API_PROPOSED, { cache: 'no-cache' });
+        const data = await r.json();
+        if (data && data.error) throw new Error(data.error);
+        _qaProposed = Array.isArray(data) ? data : [];
+        renderProposed();
+      } catch (e) {
+        if (listEl) listEl.innerHTML = '<div class="z6-error">Error: ' + qaEscape(e.message) + '</div>';
+      }
     }
 
     async function qaLoadRuns() {
@@ -2240,11 +2548,13 @@
       }
       qaLoadRuns();
       qaLoadIssues();
+      qaLoadProposed();
       if (_qaPollHandle) clearInterval(_qaPollHandle);
       _qaPollHandle = setInterval(() => {
         // Only poll while the tab is visible
         if (document.getElementById('zoom-6-view')?.classList.contains('active')) {
           qaLoadIssues();
+          qaLoadProposed();
         }
       }, 60000);
     }
