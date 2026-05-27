@@ -1038,11 +1038,23 @@
     .z6-proposed-card.sev-low    { border-left-color: #fbbf24; }
     .z6-proposed-card.fading { opacity: 0; transform: translateY(-4px); }
     .z6-proposed-card .z6-proposed-head {
-      display: flex; align-items: baseline; gap: 8px;
+      display: flex; align-items: center; gap: 8px;
     }
     .z6-proposed-card .z6-proposed-source {
       font-size: 14px; flex-shrink: 0;
     }
+    /* source chip — distinct color per source so MobAI vs Video vs Human reads at a glance */
+    .z6-proposed-card .z6-src-chip {
+      flex-shrink: 0;
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: 1px solid; line-height: 1.5;
+    }
+    .z6-proposed-card .z6-src-chip.src-mobai  { background: rgba(91,192,222,0.10);  color: #5bc0de; border-color: rgba(91,192,222,0.35); }
+    .z6-proposed-card .z6-src-chip.src-video  { background: rgba(167,139,250,0.10); color: #a78bfa; border-color: rgba(167,139,250,0.35); }
+    .z6-proposed-card .z6-src-chip.src-human  { background: rgba(52,211,153,0.10);  color: #34d399; border-color: rgba(52,211,153,0.35); }
+    .z6-proposed-card .z6-src-chip.src-ai-quality { background: rgba(251,146,60,0.10); color: #fb923c; border-color: rgba(251,146,60,0.35); }
     .z6-proposed-card .z6-proposed-title-text {
       font-weight: 600; font-size: 13.5px; color: #e0e6ed;
       flex: 1; min-width: 0; cursor: pointer;
@@ -1066,9 +1078,10 @@
       background: #060d18; border: 1px solid #1e3a5f; border-radius: 4px;
       padding: 1px 6px; font-size: 11px; color: #8fa8c4;
     }
+    /* file-as-bug button is now inline at the end of the head row, not absolute, so it never overlaps the severity badge */
     .z6-file-btn {
-      position: absolute; top: 10px; right: 10px;
-      padding: 4px 10px; font-size: 11.5px; font-weight: 600;
+      flex-shrink: 0; margin-left: 4px;
+      padding: 4px 10px; font-size: 11px; font-weight: 600;
       background: transparent; color: #5bc0de;
       border: 1px solid #5bc0de; border-radius: 14px;
       cursor: pointer; user-select: none;
@@ -2422,12 +2435,16 @@
           + '<button class="z6-retry-btn" onclick="qaFileFinding(\'' + qaEscape(f.id) + '\', event)">Retry</button></div>'
         : '';
 
+      const srcClass = 'src-' + source.replace(/[^a-z0-9-]/g, '-');
+      const srcLabel = source.charAt(0).toUpperCase() + source.slice(1).replace(/-/g, ' ');
+
       return '<div class="z6-proposed-card ' + sevClass + (expanded ? ' expanded' : '') + '" data-finding-id="' + qaEscape(f.id) + '">'
-        + btn
         + '<div class="z6-proposed-head">'
           + '<span class="z6-proposed-source">' + emoji + '</span>'
+          + '<span class="z6-src-chip ' + srcClass + '">' + qaEscape(srcLabel) + '</span>'
           + '<span class="z6-proposed-title-text" onclick="qaToggleProposedExpand(\'' + qaEscape(f.id) + '\')">' + qaEscape(f.title || '(untitled)') + '</span>'
           + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(f.severity || 'unset') + '</span>'
+          + btn
         + '</div>'
         + '<div class="z6-proposed-meta">'
           + '<code>' + qaEscape(screen) + '</code>'
