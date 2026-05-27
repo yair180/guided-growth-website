@@ -595,7 +595,7 @@
     #zoom-1-view.active, #zoom-2-view.active { display: block; }
     #zoom-3-view.active { display: block; }
     #zoom-4-view.active, #zoom-5-view.active { display: flex; flex-direction: column; }
-    #zoom-6-view.active { display: block; }
+    #zoom-6-view.active { display: flex; flex-direction: row; }
     #zoom-4-view {
       position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
       background: #0a1929; font-family: -apple-system, sans-serif;
@@ -833,6 +833,178 @@
 
     @media (max-width: 900px) { #z5-sidebar { width: 260px; } }
 
+    /* === ZOOM 6: QA Dashboard — sidebar mirrors zoom-4/5; main shows issues === */
+    #zoom-6-view {
+      position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
+      background: #0a1929; font-family: -apple-system, sans-serif;
+    }
+    #z6-sidebar {
+      width: 420px; flex-shrink: 0; display: flex; flex-direction: column;
+      background: #0d2238; border-right: 1px solid rgba(255,255,255,0.08);
+      color: #c2cee0; font-size: 13px;
+      transition: width 140ms ease;
+    }
+    #z6-sidebar.collapsed { width: 44px; }
+    #z6-sidebar-header {
+      padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    #z6-sidebar.collapsed #z6-sidebar-header { padding: 10px 6px; }
+    #z6-sidebar-header .z6-title-row { display: flex; align-items: center; gap: 8px; }
+    #z6-sidebar-header .z6-sidebar-title {
+      font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.3px;
+      flex: 1; min-width: 0;
+    }
+    #z6-collapse-btn {
+      flex-shrink: 0; width: 28px; height: 28px; padding: 0;
+      background: transparent; color: #5bc0de;
+      border: 1px solid rgba(91, 192, 222, 0.35); border-radius: 6px;
+      font: inherit; font-size: 14px; line-height: 1; cursor: pointer;
+    }
+    #z6-collapse-btn:hover { background: rgba(91, 192, 222, 0.12); border-color: #5bc0de; }
+    #z6-sidebar.collapsed .z6-sidebar-title,
+    #z6-sidebar.collapsed #z6-search,
+    #z6-sidebar.collapsed .z6-run-card,
+    #z6-sidebar.collapsed .z6-section-header { display: none; }
+    #z6-sidebar-header input {
+      background: #0a1929; color: #fff; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px; padding: 7px 10px; font: inherit;
+    }
+    #z6-sidebar-header input:focus { outline: none; border-color: #5bc0de; }
+
+    #z6-runs-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 10px 14px; }
+    #z6-runs-list .z6-empty,
+    #z6-runs-list .z6-error {
+      padding: 18px 6px; color: #6b8aaf; font-size: 12px; text-align: center; font-style: italic;
+    }
+    #z6-runs-list .z6-error { color: #f87171; font-style: normal; }
+    .z6-run-card {
+      background: #060d18; border: 1px solid #1e3a5f; border-radius: 7px;
+      padding: 10px 12px; margin: 6px 0;
+    }
+    .z6-run-card .z6-run-date {
+      font-weight: 600; font-size: 13px; color: #e0e6ed;
+      font-variant-numeric: tabular-nums; margin-bottom: 3px;
+    }
+    .z6-run-card .z6-run-meta {
+      color: #6b8aaf; font-size: 11px; margin-bottom: 8px;
+    }
+    .z6-run-card .z6-run-links {
+      display: flex; gap: 4px; flex-wrap: wrap;
+    }
+    .z6-run-card a {
+      font-size: 11px; background: #0a1420; border: 1px solid #1e3a5f;
+      border-radius: 5px; padding: 3px 8px; text-decoration: none; color: #5bc0de;
+    }
+    .z6-run-card a:hover { background: rgba(91, 192, 222, 0.12); border-color: #5bc0de; }
+
+    #zoom-6-main {
+      flex: 1; min-width: 0; overflow-y: auto;
+      padding: 28px 32px 60px; color: #e0e6ed; box-sizing: border-box;
+    }
+    #zoom-6-main .zoom-title {
+      margin: 0 0 4px; font-size: 26px; font-weight: 600; color: #fff;
+    }
+    #zoom-6-main .zoom-subtitle {
+      color: #6b8aaf; font-size: 13px; margin: 0 0 22px; max-width: 72ch;
+    }
+    #z6-source-filters {
+      display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap;
+      align-items: center;
+    }
+    #z6-source-filters .z6-filter-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+      color: #6b8aaf; font-weight: 700; margin-right: 4px;
+    }
+    .z6-chip {
+      padding: 5px 12px; font-size: 12px;
+      background: transparent; color: #8fa8c4;
+      border: 1px solid #1e3a5f; border-radius: 14px;
+      cursor: pointer; user-select: none;
+      transition: all 0.12s; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .z6-chip:hover:not(.disabled):not(.active) {
+      background: rgba(30, 58, 95, 0.5); color: #fff;
+    }
+    .z6-chip.active {
+      background: rgba(13, 148, 136, 0.25); color: #fff;
+      border-color: #5bc0de; font-weight: 600;
+    }
+    .z6-chip.disabled {
+      opacity: 0.45; cursor: not-allowed;
+    }
+    .z6-chip .z6-chip-count {
+      font-size: 10.5px; color: #6b8aaf; font-variant-numeric: tabular-nums;
+    }
+    .z6-chip.active .z6-chip-count { color: #5bc0de; }
+
+    #z6-issues-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 0 0 12px;
+    }
+    #z6-issues-header .z6-issues-title {
+      font-size: 11px; font-weight: 700; color: #6b8aaf;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    #z6-issues-count {
+      background: #060d18; color: #6b8aaf; padding: 2px 8px;
+      border-radius: 10px; font-size: 11px; font-weight: 600;
+    }
+    #z6-issues-list { font-size: 13px; }
+    #z6-issues-list .z6-empty,
+    #z6-issues-list .z6-error {
+      color: #6b8aaf; font-style: italic; padding: 14px 0; text-align: center;
+    }
+    #z6-issues-list .z6-error { color: #f87171; font-style: normal; }
+    .z6-issue-card {
+      display: block; background: #060d18;
+      border: 1px solid #1e3a5f; border-left: 3px solid #64748b;
+      border-radius: 7px; padding: 10px 12px; margin-bottom: 8px;
+      text-decoration: none; color: inherit;
+      transition: border-color 80ms;
+    }
+    .z6-issue-card:hover { border-color: #5bc0de; }
+    .z6-issue-card.sev-high   { border-left-color: #f3596f; }
+    .z6-issue-card.sev-medium { border-left-color: #f59e0b; }
+    .z6-issue-card.sev-low    { border-left-color: #fbbf24; }
+    .z6-issue-card .z6-issue-head {
+      display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px;
+    }
+    .z6-issue-card .z6-issue-iid {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 11.5px; color: #6b8aaf; font-weight: 600;
+    }
+    .z6-issue-card .z6-issue-title {
+      font-weight: 600; font-size: 13.5px; color: #e0e6ed;
+      flex: 1; min-width: 0;
+    }
+    .z6-issue-card .z6-sev-badge {
+      padding: 2px 7px; border-radius: 10px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+      text-transform: uppercase; color: #fff;
+    }
+    .z6-issue-card .z6-sev-badge.sev-high   { background: #f3596f; }
+    .z6-issue-card .z6-sev-badge.sev-medium { background: #f59e0b; }
+    .z6-issue-card .z6-sev-badge.sev-low    { background: #fbbf24; color: #1a2942; }
+    .z6-issue-card .z6-sev-badge.sev-unset  { background: #64748b; }
+    .z6-issue-card .z6-issue-meta {
+      font-size: 11.5px; color: #6b8aaf;
+      display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; align-items: center;
+    }
+    .z6-issue-card .z6-issue-meta .z6-label {
+      background: #0a1420; border: 1px solid #1e3a5f; border-radius: 4px;
+      padding: 1px 6px; font-size: 10.5px; color: #6b8aaf;
+    }
+    #z6-footer {
+      margin-top: 18px; color: #6b8aaf; font-size: 11.5px;
+    }
+    #z6-footer code {
+      background: #060d18; padding: 1px 5px; border-radius: 3px;
+    }
+
+    @media (max-width: 900px) { #z6-sidebar { width: 300px; } }
+
     /* Push zoom-3 content below the fixed 41px zoom-toggle-bar.
        The header / tutorial-strip / tutorial-banner are static-flow elements,
        so a top-level padding on the zoom view is what actually offsets them. */
@@ -1026,7 +1198,7 @@
 
   <!-- ZOOM LEVEL TOGGLE BAR (visible after password unlock) -->
   <div id="zoom-toggle-bar">
-    <span class="zoom-label">Zoom:</span>
+    <span class="zoom-label">View:</span>
     <button type="button" class="zoom-btn active" data-zoom="1" onclick="setZoomLevel(1)">
       <span class="zoom-num">1</span>System
     </button>
@@ -1042,8 +1214,8 @@
     <button type="button" class="zoom-btn" data-zoom="5" onclick="setZoomLevel(5)">
       <span class="zoom-num">5</span>Screens
     </button>
-    <button type="button" class="zoom-btn" data-zoom="6" onclick="setZoomLevel(6)" style="background:rgba(233,30,99,0.08);border-color:rgba(233,30,99,0.3)">
-      <span class="zoom-num" style="color:#E91E63">6</span>QA
+    <button type="button" class="zoom-btn" data-zoom="6" onclick="setZoomLevel(6)">
+      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#34d399;margin-right:6px;vertical-align:middle"></span><span class="zoom-num">6</span>QA
     </button>
     <span style="flex: 1"></span>
     <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.3</span>
@@ -1854,33 +2026,38 @@
     </div>
   </div>
 
-  <!-- ZOOM 6: QA DASHBOARD — runs (left) + mobai-labeled gg-mvp issues (right) -->
-  <div id="zoom-6-view" style="padding:24px 28px 60px;max-width:1240px;margin:0 auto;color:#e0e6ed">
-    <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 6px">
-      <h2 style="font-size:22px;font-weight:600;margin:0;color:#fff;letter-spacing:-0.01em">QA Dashboard</h2>
-      <span style="font-size:11px;color:#E91E63;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">MobAI · live</span>
-    </div>
-    <p style="color:#6b8aaf;font-size:13.5px;margin:0 0 22px;max-width:72ch">Left: MobAI scenario runs against the GG app on the test iPhone. Right: open issues from those runs (label=mobai in gg-mvp). Both pull live from gg-spec + gg-mvp.</p>
-
-    <div id="qa-panels" style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start">
-      <section style="background:#0a1420;border:1px solid #1e3a5f;border-radius:10px;padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 12px">
-          <div style="font-size:11px;font-weight:700;color:#6b8aaf;text-transform:uppercase;letter-spacing:0.08em">Audit runs</div>
-          <span id="qa-runs-count" style="background:#060d18;color:#6b8aaf;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">…</span>
+  <!-- ZOOM 6: QA DASHBOARD — sidebar of audit runs (left) + filtered issues (main) -->
+  <div id="zoom-6-view">
+    <aside id="z6-sidebar">
+      <div id="z6-sidebar-header">
+        <div class="z6-title-row">
+          <div class="z6-sidebar-title">Audit Runs</div>
+          <button type="button" id="z6-collapse-btn" onclick="toggleZoom6Sidebar()" title="Collapse / expand sidebar">‹</button>
         </div>
-        <div id="qa-runs-list" style="font-size:13px"><div style="color:#6b8aaf;font-style:italic;padding:14px 0;text-align:center">Loading…</div></div>
-      </section>
+        <input id="z6-search" type="search" placeholder="Search by date…" oninput="filterRunsSidebar(this.value)" autocomplete="off" />
+      </div>
+      <div id="z6-runs-list" role="list"><div class="z6-empty">Loading…</div></div>
+    </aside>
+    <main id="zoom-6-main">
+      <div class="zoom-title">QA Dashboard</div>
+      <div class="zoom-subtitle">Live state from MobAI runs and gg-mvp issues. Polls every 60s.</div>
 
-      <section style="background:#0a1420;border:1px solid #1e3a5f;border-radius:10px;padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 12px">
-          <div style="font-size:11px;font-weight:700;color:#6b8aaf;text-transform:uppercase;letter-spacing:0.08em">Open issues (label=mobai)</div>
-          <span id="qa-issues-count" style="background:#060d18;color:#6b8aaf;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">…</span>
-        </div>
-        <div id="qa-issues-list" style="font-size:13px"><div style="color:#6b8aaf;font-style:italic;padding:14px 0;text-align:center">Loading…</div></div>
-      </section>
-    </div>
+      <div id="z6-source-filters">
+        <span class="z6-filter-label">Source:</span>
+        <button type="button" class="z6-chip active" data-source="all" onclick="setQASource('all')">All <span class="z6-chip-count" id="z6-count-all">…</span></button>
+        <button type="button" class="z6-chip disabled" data-source="human" title="Coming soon" aria-disabled="true">Human <span class="z6-chip-count">—</span></button>
+        <button type="button" class="z6-chip" data-source="mobai" onclick="setQASource('mobai')">MobAI <span class="z6-chip-count" id="z6-count-mobai">…</span></button>
+        <button type="button" class="z6-chip disabled" data-source="ai-quality" title="Coming soon" aria-disabled="true">AI Quality <span class="z6-chip-count">—</span></button>
+      </div>
 
-    <div style="margin-top:18px;color:#6b8aaf;font-size:11.5px">Polls every 60s while this tab is open. Source: gg-cron-worker proxy at <code style="background:#060d18;padding:1px 5px;border-radius:3px">/internal/mobai/api/*</code> (GitLab PAT stays on the worker).</div>
+      <div id="z6-issues-header">
+        <div class="z6-issues-title">Open issues</div>
+        <span id="z6-issues-count">…</span>
+      </div>
+      <div id="z6-issues-list"><div class="z6-empty">Loading…</div></div>
+
+      <div id="z6-footer">Polls every 60s while this view is open. Source: gg-cron-worker proxy at <code>/internal/mobai/api/*</code> (GitLab PAT stays on the worker).</div>
+    </main>
   </div>
 
   <script>
@@ -1890,6 +2067,11 @@
     const QA_API_RUNS = '/internal/mobai/api/runs';
     const QA_API_ISSUES = '/internal/mobai/api/issues';
     let _qaPollHandle = null;
+
+    // Cached fetched data so chip + search re-renders don't need a network round-trip.
+    let _qaRuns = [];
+    let _qaIssues = [];
+    let qaCurrentSource = 'all';  // 'all' | 'mobai' (Human / AI Quality chips are disabled stubs)
 
     function qaEscape(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -1904,77 +2086,158 @@
       if (hr < 24) return hr + 'h';
       return Math.floor(hr / 24) + 'd';
     }
-    function qaSevColor(sev) {
-      return { high: '#dc2626', medium: '#f59e0b', low: '#94a3b8' }[sev] || '#64748b';
+    // The worker only fetches with label=mobai today, so every issue we receive
+    // is MobAI-sourced. The classifier is wired now so when the worker adds a
+    // wider feed, swapping the rule is a one-liner.
+    function qaInferSource(issue) {
+      return (issue.labels || []).includes('mobai') ? 'mobai' : 'human';
+    }
+
+    function renderRunsSidebar(filter) {
+      const listEl = document.getElementById('z6-runs-list');
+      if (!listEl) return;
+      const needle = (filter || '').trim().toLowerCase();
+      const runs = needle
+        ? _qaRuns.filter(r => (r.date || '').toLowerCase().includes(needle))
+        : _qaRuns;
+      if (!_qaRuns.length) {
+        listEl.innerHTML = '<div class="z6-empty">No runs yet.</div>';
+        return;
+      }
+      if (!runs.length) {
+        listEl.innerHTML = '<div class="z6-empty">No runs match.</div>';
+        return;
+      }
+      listEl.innerHTML = runs.map(run => {
+        const reports = (run.html_reports || []).map(rep =>
+          '<a href="' + qaEscape(rep.web_url) + '" target="_blank" rel="noopener">'
+          + qaEscape(rep.name.replace(/\.html$/, '')) + '</a>'
+        ).join('');
+        const findingsLink = run.findings_url
+          ? '<a href="' + qaEscape(run.findings_url) + '" target="_blank" rel="noopener">findings.md</a>'
+          : '';
+        const reportCount = (run.html_reports || []).length;
+        return '<div class="z6-run-card">'
+          + '<div class="z6-run-date">' + qaEscape(run.date) + '</div>'
+          + '<div class="z6-run-meta">' + reportCount + ' report' + (reportCount === 1 ? '' : 's') + '</div>'
+          + '<div class="z6-run-links">' + reports + findingsLink + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    function renderIssues() {
+      const listEl = document.getElementById('z6-issues-list');
+      const countEl = document.getElementById('z6-issues-count');
+      if (!listEl || !countEl) return;
+
+      const filtered = _qaIssues.filter(i => {
+        if (qaCurrentSource === 'all') return true;
+        return qaInferSource(i) === qaCurrentSource;
+      });
+
+      // Chip counts always reflect the full fetched set.
+      const allCount = _qaIssues.length;
+      const mobaiCount = _qaIssues.filter(i => qaInferSource(i) === 'mobai').length;
+      const elAll = document.getElementById('z6-count-all');
+      const elMobai = document.getElementById('z6-count-mobai');
+      if (elAll) elAll.textContent = allCount;
+      if (elMobai) elMobai.textContent = mobaiCount;
+
+      countEl.textContent = filtered.length;
+
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="z6-empty">'
+          + (qaCurrentSource === 'all'
+              ? 'No open issues with label=mobai.'
+              : 'No open ' + qaEscape(qaCurrentSource) + ' issues.')
+          + '</div>';
+        return;
+      }
+      listEl.innerHTML = filtered.map(i => {
+        const sev = (i.severity || 'unset').toLowerCase();
+        const sevClass = ['high','medium','low'].includes(sev) ? 'sev-' + sev : 'sev-unset';
+        const labels = (i.labels || [])
+          .filter(l => l !== 'mobai' && !l.startsWith('priority::'))
+          .slice(0, 4);
+        const labelHtml = labels.map(l =>
+          '<span class="z6-label">' + qaEscape(l) + '</span>'
+        ).join(' ');
+        return '<a class="z6-issue-card ' + sevClass + '" href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener">'
+          + '<div class="z6-issue-head">'
+            + '<span class="z6-issue-iid">#' + qaEscape(i.iid) + '</span>'
+            + '<span class="z6-issue-title">' + qaEscape(i.title) + '</span>'
+            + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(i.severity || 'unset') + '</span>'
+          + '</div>'
+          + '<div class="z6-issue-meta">'
+            + (i.assignee ? '<span>@' + qaEscape(i.assignee) + '</span>' : '<span>unassigned</span>')
+            + '<span>' + qaAgo(i.created_at) + ' ago</span>'
+            + (labelHtml ? '<span style="display:inline-flex;gap:4px;flex-wrap:wrap">' + labelHtml + '</span>' : '')
+          + '</div>'
+        + '</a>';
+      }).join('');
+    }
+
+    function setQASource(source) {
+      // 'human' and 'ai-quality' chips are stubs until the worker supports a wider feed.
+      if (source !== 'all' && source !== 'mobai') return;
+      qaCurrentSource = source;
+      document.querySelectorAll('#z6-source-filters .z6-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.source === source);
+      });
+      renderIssues();
+    }
+
+    function filterRunsSidebar(value) { renderRunsSidebar(value); }
+
+    function toggleZoom6Sidebar(force) {
+      const bar = document.getElementById('z6-sidebar');
+      const btn = document.getElementById('z6-collapse-btn');
+      if (!bar) return;
+      const collapsed = (typeof force === 'boolean') ? force : !bar.classList.contains('collapsed');
+      bar.classList.toggle('collapsed', collapsed);
+      if (btn) btn.textContent = collapsed ? '›' : '‹';
+      try { localStorage.setItem('gg_arch_z6_sidebar_collapsed', collapsed ? '1' : '0'); } catch (e) {}
+    }
+    function restoreZoom6SidebarState() {
+      try {
+        const saved = localStorage.getItem('gg_arch_z6_sidebar_collapsed');
+        if (saved === '1') toggleZoom6Sidebar(true);
+      } catch (e) {}
     }
 
     async function qaLoadRuns() {
-      const listEl = document.getElementById('qa-runs-list');
-      const countEl = document.getElementById('qa-runs-count');
+      const listEl = document.getElementById('z6-runs-list');
       try {
         const r = await fetch(QA_API_RUNS, { cache: 'no-cache' });
         const data = await r.json();
         if (data.error) throw new Error(data.error);
-        countEl.textContent = data.length;
-        if (!data.length) {
-          listEl.innerHTML = '<div style="color:#6b8aaf;font-style:italic;padding:14px 0;text-align:center">No runs yet.</div>';
-          return;
-        }
-        listEl.innerHTML = data.map(run => {
-          const reports = run.html_reports.map(rep =>
-            '<a href="' + qaEscape(rep.web_url) + '" target="_blank" rel="noopener" style="font-size:11.5px;background:#0a1420;border:1px solid #1e3a5f;border-radius:5px;padding:3px 8px;text-decoration:none;color:#5bc0de;margin-right:4px">' + qaEscape(rep.name.replace(/\.html$/, '')) + '</a>'
-          ).join('');
-          const findingsLink = run.findings_url
-            ? '<a href="' + qaEscape(run.findings_url) + '" target="_blank" rel="noopener" style="font-size:11.5px;background:#0a1420;border:1px solid #1e3a5f;border-radius:5px;padding:3px 8px;text-decoration:none;color:#5bc0de">findings.md</a>'
-            : '';
-          return '<div style="background:#060d18;border:1px solid #1e3a5f;border-radius:7px;padding:10px 12px;margin-bottom:8px">' +
-            '<div style="font-weight:600;font-size:13.5px;color:#e0e6ed;font-variant-numeric:tabular-nums;margin-bottom:3px">' + qaEscape(run.date) + '</div>' +
-            '<div style="color:#6b8aaf;font-size:11.5px;margin-bottom:8px">' + run.html_reports.length + ' report' + (run.html_reports.length === 1 ? '' : 's') + '</div>' +
-            '<div style="display:flex;gap:4px;flex-wrap:wrap">' + reports + findingsLink + '</div>' +
-            '</div>';
-        }).join('');
+        _qaRuns = Array.isArray(data) ? data : [];
+        renderRunsSidebar(document.getElementById('z6-search')?.value || '');
       } catch (e) {
-        countEl.textContent = '!';
-        listEl.innerHTML = '<div style="color:#f87171;padding:14px 0;text-align:center">Error: ' + qaEscape(e.message) + '</div>';
+        if (listEl) listEl.innerHTML = '<div class="z6-error">Error: ' + qaEscape(e.message) + '</div>';
       }
     }
 
     async function qaLoadIssues() {
-      const listEl = document.getElementById('qa-issues-list');
-      const countEl = document.getElementById('qa-issues-count');
+      const listEl = document.getElementById('z6-issues-list');
+      const countEl = document.getElementById('z6-issues-count');
       try {
         const r = await fetch(QA_API_ISSUES, { cache: 'no-cache' });
         const data = await r.json();
         if (data.error) throw new Error(data.error);
-        countEl.textContent = data.length;
-        if (!data.length) {
-          listEl.innerHTML = '<div style="color:#6b8aaf;font-style:italic;padding:14px 0;text-align:center">No open issues with label=mobai.</div>';
-          return;
-        }
-        listEl.innerHTML = data.map(i => {
-          const sevColor = qaSevColor(i.severity);
-          const labels = i.labels.filter(l => l !== 'mobai' && !l.startsWith('priority::')).slice(0, 4);
-          const labelHtml = labels.map(l => '<span style="background:#060d18;border:1px solid #1e3a5f;border-radius:4px;padding:1px 6px;font-size:10.5px;color:#6b8aaf">' + qaEscape(l) + '</span>').join(' ');
-          return '<a href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener" style="display:block;background:#060d18;border:1px solid #1e3a5f;border-left:3px solid ' + sevColor + ';border-radius:7px;padding:10px 12px;margin-bottom:8px;text-decoration:none;color:inherit">' +
-            '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px">' +
-              '<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:#6b8aaf;font-weight:600">#' + i.iid + '</span>' +
-              '<span style="font-weight:600;font-size:13.5px;color:#e0e6ed;flex:1;min-width:0">' + qaEscape(i.title) + '</span>' +
-              '<span style="background:' + sevColor + ';color:#fff;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:0.02em;text-transform:uppercase">' + qaEscape(i.severity) + '</span>' +
-            '</div>' +
-            '<div style="font-size:11.5px;color:#6b8aaf;display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;align-items:center">' +
-              (i.assignee ? '<span>@' + qaEscape(i.assignee) + '</span>' : '<span>unassigned</span>') +
-              '<span>' + qaAgo(i.created_at) + ' ago</span>' +
-              '<span style="display:inline-flex;gap:4px;flex-wrap:wrap">' + labelHtml + '</span>' +
-            '</div>' +
-          '</a>';
-        }).join('');
+        _qaIssues = Array.isArray(data) ? data : [];
+        renderIssues();
       } catch (e) {
-        countEl.textContent = '!';
-        listEl.innerHTML = '<div style="color:#f87171;padding:14px 0;text-align:center">Error: ' + qaEscape(e.message) + '</div>';
+        if (countEl) countEl.textContent = '!';
+        if (listEl) listEl.innerHTML = '<div class="z6-error">Error: ' + qaEscape(e.message) + '</div>';
       }
     }
 
     function loadQADashboard() {
+      if (!document.getElementById('z6-sidebar').dataset.stateRestored) {
+        document.getElementById('z6-sidebar').dataset.stateRestored = '1';
+        restoreZoom6SidebarState();
+      }
       qaLoadRuns();
       qaLoadIssues();
       if (_qaPollHandle) clearInterval(_qaPollHandle);
