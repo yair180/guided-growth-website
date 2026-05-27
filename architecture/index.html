@@ -591,10 +591,11 @@
     #zoom-toggle-bar .zoom-btn.active .zoom-num { color: #5bc0de; }
 
     /* Zoom view containers */
-    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view { display: none; }
+    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view { display: none; }
     #zoom-1-view.active, #zoom-2-view.active { display: block; }
     #zoom-3-view.active { display: block; }
     #zoom-4-view.active, #zoom-5-view.active { display: flex; flex-direction: column; }
+    #zoom-6-view.active { display: block; }
     #zoom-4-view {
       position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
       background: #0a1929; font-family: -apple-system, sans-serif;
@@ -1040,6 +1041,9 @@
     </button>
     <button type="button" class="zoom-btn" data-zoom="5" onclick="setZoomLevel(5)">
       <span class="zoom-num">5</span>Screens
+    </button>
+    <button type="button" class="zoom-btn" data-zoom="6" onclick="setZoomLevel(6)" style="background:rgba(233,30,99,0.08);border-color:rgba(233,30,99,0.3)">
+      <span class="zoom-num" style="color:#E91E63">6</span>QA
     </button>
     <span style="flex: 1"></span>
     <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.3</span>
@@ -1850,6 +1854,139 @@
     </div>
   </div>
 
+  <!-- ZOOM 6: QA DASHBOARD — runs (left) + mobai-labeled gg-mvp issues (right) -->
+  <div id="zoom-6-view" style="padding:24px 28px 60px;max-width:1240px;margin:0 auto;color:#e0e6ed">
+    <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 6px">
+      <h2 style="font-size:22px;font-weight:600;margin:0;color:#fff;letter-spacing:-0.01em">QA Dashboard</h2>
+      <span style="font-size:11px;color:#E91E63;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">MobAI · live</span>
+    </div>
+    <p style="color:#6b8aaf;font-size:13.5px;margin:0 0 22px;max-width:72ch">Left: MobAI scenario runs against the GG app on the test iPhone. Right: open issues from those runs (label=mobai in gg-mvp). Both pull live from gg-spec + gg-mvp.</p>
+
+    <div id="qa-panels" style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start">
+      <section style="background:#0a1420;border:1px solid #1e3a5f;border-radius:10px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 12px">
+          <div style="font-size:11px;font-weight:700;color:#6b8aaf;text-transform:uppercase;letter-spacing:0.08em">Audit runs</div>
+          <span id="qa-runs-count" style="background:#060d18;color:#6b8aaf;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">…</span>
+        </div>
+        <div id="qa-runs-list" style="font-size:13px"><div style="color:#6b8aaf;font-style:italic;padding:14px 0;text-align:center">Loading…</div></div>
+      </section>
+
+      <section style="background:#0a1420;border:1px solid #1e3a5f;border-radius:10px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 12px">
+          <div style="font-size:11px;font-weight:700;color:#6b8aaf;text-transform:uppercase;letter-spacing:0.08em">Open issues (label=mobai)</div>
+          <span id="qa-issues-count" style="background:#060d18;color:#6b8aaf;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">…</span>
+        </div>
+        <div id="qa-issues-list" style="font-size:13px"><div style="color:#6b8aaf;font-style:italic;padding:14px 0;text-align:center">Loading…</div></div>
+      </section>
+    </div>
+
+    <div style="margin-top:18px;color:#6b8aaf;font-size:11.5px">Polls every 60s while this tab is open. Source: gg-cron-worker proxy at <code style="background:#060d18;padding:1px 5px;border-radius:3px">/internal/mobai/api/*</code> (GitLab PAT stays on the worker).</div>
+  </div>
+
+  <script>
+    // ============================================================
+    // ZOOM 6: QA DASHBOARD
+    // ============================================================
+    const QA_API_RUNS = '/internal/mobai/api/runs';
+    const QA_API_ISSUES = '/internal/mobai/api/issues';
+    let _qaPollHandle = null;
+
+    function qaEscape(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+      );
+    }
+    function qaAgo(iso) {
+      const ms = Date.now() - new Date(iso).getTime();
+      const min = Math.floor(ms / 60000);
+      if (min < 60) return min + 'm';
+      const hr = Math.floor(min / 60);
+      if (hr < 24) return hr + 'h';
+      return Math.floor(hr / 24) + 'd';
+    }
+    function qaSevColor(sev) {
+      return { high: '#dc2626', medium: '#f59e0b', low: '#94a3b8' }[sev] || '#64748b';
+    }
+
+    async function qaLoadRuns() {
+      const listEl = document.getElementById('qa-runs-list');
+      const countEl = document.getElementById('qa-runs-count');
+      try {
+        const r = await fetch(QA_API_RUNS, { cache: 'no-cache' });
+        const data = await r.json();
+        if (data.error) throw new Error(data.error);
+        countEl.textContent = data.length;
+        if (!data.length) {
+          listEl.innerHTML = '<div style="color:#6b8aaf;font-style:italic;padding:14px 0;text-align:center">No runs yet.</div>';
+          return;
+        }
+        listEl.innerHTML = data.map(run => {
+          const reports = run.html_reports.map(rep =>
+            '<a href="' + qaEscape(rep.web_url) + '" target="_blank" rel="noopener" style="font-size:11.5px;background:#0a1420;border:1px solid #1e3a5f;border-radius:5px;padding:3px 8px;text-decoration:none;color:#5bc0de;margin-right:4px">' + qaEscape(rep.name.replace(/\.html$/, '')) + '</a>'
+          ).join('');
+          const findingsLink = run.findings_url
+            ? '<a href="' + qaEscape(run.findings_url) + '" target="_blank" rel="noopener" style="font-size:11.5px;background:#0a1420;border:1px solid #1e3a5f;border-radius:5px;padding:3px 8px;text-decoration:none;color:#5bc0de">findings.md</a>'
+            : '';
+          return '<div style="background:#060d18;border:1px solid #1e3a5f;border-radius:7px;padding:10px 12px;margin-bottom:8px">' +
+            '<div style="font-weight:600;font-size:13.5px;color:#e0e6ed;font-variant-numeric:tabular-nums;margin-bottom:3px">' + qaEscape(run.date) + '</div>' +
+            '<div style="color:#6b8aaf;font-size:11.5px;margin-bottom:8px">' + run.html_reports.length + ' report' + (run.html_reports.length === 1 ? '' : 's') + '</div>' +
+            '<div style="display:flex;gap:4px;flex-wrap:wrap">' + reports + findingsLink + '</div>' +
+            '</div>';
+        }).join('');
+      } catch (e) {
+        countEl.textContent = '!';
+        listEl.innerHTML = '<div style="color:#f87171;padding:14px 0;text-align:center">Error: ' + qaEscape(e.message) + '</div>';
+      }
+    }
+
+    async function qaLoadIssues() {
+      const listEl = document.getElementById('qa-issues-list');
+      const countEl = document.getElementById('qa-issues-count');
+      try {
+        const r = await fetch(QA_API_ISSUES, { cache: 'no-cache' });
+        const data = await r.json();
+        if (data.error) throw new Error(data.error);
+        countEl.textContent = data.length;
+        if (!data.length) {
+          listEl.innerHTML = '<div style="color:#6b8aaf;font-style:italic;padding:14px 0;text-align:center">No open issues with label=mobai.</div>';
+          return;
+        }
+        listEl.innerHTML = data.map(i => {
+          const sevColor = qaSevColor(i.severity);
+          const labels = i.labels.filter(l => l !== 'mobai' && !l.startsWith('priority::')).slice(0, 4);
+          const labelHtml = labels.map(l => '<span style="background:#060d18;border:1px solid #1e3a5f;border-radius:4px;padding:1px 6px;font-size:10.5px;color:#6b8aaf">' + qaEscape(l) + '</span>').join(' ');
+          return '<a href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener" style="display:block;background:#060d18;border:1px solid #1e3a5f;border-left:3px solid ' + sevColor + ';border-radius:7px;padding:10px 12px;margin-bottom:8px;text-decoration:none;color:inherit">' +
+            '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px">' +
+              '<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:#6b8aaf;font-weight:600">#' + i.iid + '</span>' +
+              '<span style="font-weight:600;font-size:13.5px;color:#e0e6ed;flex:1;min-width:0">' + qaEscape(i.title) + '</span>' +
+              '<span style="background:' + sevColor + ';color:#fff;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:0.02em;text-transform:uppercase">' + qaEscape(i.severity) + '</span>' +
+            '</div>' +
+            '<div style="font-size:11.5px;color:#6b8aaf;display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;align-items:center">' +
+              (i.assignee ? '<span>@' + qaEscape(i.assignee) + '</span>' : '<span>unassigned</span>') +
+              '<span>' + qaAgo(i.created_at) + ' ago</span>' +
+              '<span style="display:inline-flex;gap:4px;flex-wrap:wrap">' + labelHtml + '</span>' +
+            '</div>' +
+          '</a>';
+        }).join('');
+      } catch (e) {
+        countEl.textContent = '!';
+        listEl.innerHTML = '<div style="color:#f87171;padding:14px 0;text-align:center">Error: ' + qaEscape(e.message) + '</div>';
+      }
+    }
+
+    function loadQADashboard() {
+      qaLoadRuns();
+      qaLoadIssues();
+      if (_qaPollHandle) clearInterval(_qaPollHandle);
+      _qaPollHandle = setInterval(() => {
+        // Only poll while the tab is visible
+        if (document.getElementById('zoom-6-view')?.classList.contains('active')) {
+          qaLoadIssues();
+        }
+      }, 60000);
+    }
+  </script>
+
   <script>
 
     // ============================================================
@@ -2194,11 +2331,18 @@
       document.getElementById('zoom-3-view').classList.toggle('active', level === 3);
       document.getElementById('zoom-4-view').classList.toggle('active', level === 4);
       document.getElementById('zoom-5-view').classList.toggle('active', level === 5);
+      const qaView = document.getElementById('zoom-6-view');
+      if (qaView) qaView.classList.toggle('active', level === 6);
 
       // Update active state on buttons
       document.querySelectorAll('#zoom-toggle-bar .zoom-btn').forEach(btn => {
         btn.classList.toggle('active', parseInt(btn.dataset.zoom) === level);
       });
+
+      // Lazy-load QA data the first time level 6 is opened, then refresh on every revisit.
+      if (level === 6 && typeof loadQADashboard === 'function') {
+        loadQADashboard();
+      }
 
       // Re-render zoom-3 if it just became visible (the SVG may have layout dependencies)
       if (level === 3 && typeof render === 'function') {
