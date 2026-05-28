@@ -912,6 +912,26 @@
       display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap;
       align-items: center;
     }
+    /* Bucket toggle: Needs review vs Already in GitLab */
+    #z6-list-toggle {
+      display: flex; gap: 8px; margin-bottom: 20px;
+      background: #0a1626; border: 1px solid #1e3a5f; border-radius: 12px;
+      padding: 5px; width: fit-content;
+    }
+    #z6-list-toggle .z6-list-btn {
+      padding: 7px 16px; font-size: 13px; font-weight: 700;
+      background: transparent; color: #8fa8c4; border: none; border-radius: 8px;
+      cursor: pointer; font-family: inherit; transition: all 0.12s;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    #z6-list-toggle .z6-list-btn:hover { color: #e0e6ed; }
+    #z6-list-toggle .z6-list-btn.active { background: #16273f; color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+    #z6-list-toggle .z6-list-btn-count {
+      min-width: 18px; text-align: center; background: #060d18; color: #8fa8c4;
+      border: 1px solid #1e3a5f; border-radius: 9px; padding: 0 7px;
+      font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+    }
+    #z6-list-toggle .z6-list-btn.active .z6-list-btn-count { color: #5bc0de; border-color: rgba(91,192,222,0.4); }
     #z6-source-filters .z6-filter-label {
       font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
       color: #6b8aaf; font-weight: 700; margin-right: 4px;
@@ -2640,17 +2660,26 @@
         <button type="button" class="z6-chip disabled" data-source="ai-quality" title="Coming soon" aria-disabled="true">AI Quality <span class="z6-chip-count">—</span></button>
       </div>
 
+      <div id="z6-list-toggle">
+        <button type="button" class="z6-list-btn active" data-list="needs" onclick="setQAListView('needs')">&#x1F50D; Needs review <span class="z6-list-btn-count" id="z6-toggle-needs">…</span></button>
+        <button type="button" class="z6-list-btn" data-list="gitlab" onclick="setQAListView('gitlab')">&#x2705; Already in GitLab <span class="z6-list-btn-count" id="z6-toggle-gitlab">…</span></button>
+      </div>
+
+      <div id="z6-needs-group">
       <div id="z6-proposed-header">
         <div class="z6-proposed-title">&#x1F50D; Needs review <span class="z6-proposed-sublabel">proposed — not yet in GitLab</span></div>
         <span id="z6-proposed-count">…</span>
       </div>
       <div id="z6-proposed-list"><div class="z6-empty">Loading…</div></div>
+      </div>
 
+      <div id="z6-gitlab-group" style="display:none">
       <div id="z6-issues-header">
         <div class="z6-issues-title">&#x2705; Already in GitLab <span class="z6-proposed-sublabel">source of truth — file/merge moves findings here; Remove closes</span></div>
         <span id="z6-issues-count">…</span>
       </div>
       <div id="z6-issues-list"><div class="z6-empty">Loading…</div></div>
+      </div><!-- /#z6-gitlab-group -->
 
       <div id="z6-footer">Polls every 60s while this view is open. Source: gg-cron-worker proxy at <code>/internal/mobai/api/*</code> (GitLab PAT stays on the worker).</div>
       </div><!-- /#z6-overview-panel -->
@@ -2741,6 +2770,7 @@
     let _qaProposedBucketOpen = new Set(); // finding ids with the AI Learning bucket picker open
     let _qaProposedError = new Map();      // finding id → last error string
     let qaCurrentSource = 'all';  // 'all' | 'human' | 'mobai' | 'video' (AI Quality chip is a disabled stub)
+    let _qaListView = 'needs';    // 'needs' (proposed) | 'gitlab' (already filed) — Overview list toggle
 
     function qaEscape(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -2883,6 +2913,36 @@
       renderIssues();
     }
 
+    // Overview list toggle: show EITHER the "Needs review" (proposed) list OR
+    // the "Already in GitLab" (filed issues) list, so the two buckets are
+    // clearly separated rather than stacked.
+    function setQAListView(view) {
+      if (view !== 'needs' && view !== 'gitlab') return;
+      _qaListView = view;
+      try { localStorage.setItem('gg_qa_listview_v1', view); } catch (_e) {}
+      document.querySelectorAll('#z6-list-toggle .z6-list-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.list === view));
+      const needs = document.getElementById('z6-needs-group');
+      const gitlab = document.getElementById('z6-gitlab-group');
+      if (needs) needs.style.display = view === 'needs' ? '' : 'none';
+      if (gitlab) gitlab.style.display = view === 'gitlab' ? '' : 'none';
+    }
+
+    function restoreQAListView() {
+      let v = 'needs';
+      try { const s = localStorage.getItem('gg_qa_listview_v1'); if (s === 'needs' || s === 'gitlab') v = s; } catch (_e) {}
+      setQAListView(v);
+    }
+
+    // Keep the toggle button counts in sync with the source-filtered lists.
+    function updateListToggleCounts() {
+      const needsEl = document.getElementById('z6-toggle-needs');
+      const glEl = document.getElementById('z6-toggle-gitlab');
+      const inSrc = (s) => qaCurrentSource === 'all' || s === qaCurrentSource;
+      if (needsEl) needsEl.textContent = _qaProposed.filter(f => inSrc((f.source || 'human').toLowerCase())).length;
+      if (glEl) glEl.textContent = _qaIssues.filter(i => inSrc(qaInferSource(i))).length;
+    }
+
     function updateChipCounts() {
       const issuesBy = { mobai: 0, video: 0, human: 0 };
       for (const i of _qaIssues) issuesBy[qaInferSource(i)]++;
@@ -2899,6 +2959,7 @@
       set('z6-count-mobai', issuesBy.mobai + proposedBy.mobai);
       set('z6-count-video', issuesBy.video + proposedBy.video);
       set('z6-count-human', issuesBy.human + proposedBy.human);
+      updateListToggleCounts();
     }
 
     // Sidebar search box is shared between modes. In Overview it filters audit
@@ -3467,6 +3528,7 @@
         restoreZoom6SidebarState();
       }
       restoreQASummaryState();
+      restoreQAListView();
       qaLoadSummary();
       qaLoadRuns();
       qaLoadIssues();
