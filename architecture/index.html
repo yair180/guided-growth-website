@@ -3421,6 +3421,7 @@
   <!-- ZOOM 7: GITLAB TAB -->
   <div id="zoom-7-view">
     <div id="z7-topbar">
+      <button type="button" id="z7-back-to-qa" class="z7-btn-ghost" onclick="glBackToQA()" style="display:none;margin-right:10px" title="Return to the QA dashboard">&larr; Back to QA</button>
       <div class="z7-title">GitLab <span class="z7-subtle">Docs, issues &amp; merge requests</span></div>
       <div id="z7-conn-area">
         <button type="button" id="z7-theme-toggle" onclick="glToggleTheme()" title="Toggle light/dark theme"><!-- label injected by glApplyTheme() --></button>
@@ -3637,7 +3638,7 @@
         return '<div class="z6-dup-hint internal">&#x21BB; Duplicate of finding <code>' + qaEscape(d.finding)
           + '</code> already in this queue — archive this one, keep the other.</div>';
       }
-      const link = '<a href="' + QA_GL_ISSUE_URL(d.issue) + '" target="_blank" rel="noopener">#' + d.issue + '</a>';
+      const link = '<a href="' + QA_GL_ISSUE_URL(d.issue) + '" target="_blank" rel="noopener" onclick="return qaOpenIssue(' + d.issue + ', event)">#' + d.issue + '</a>';
       const note = d.note ? '<span class="z6-dup-note">' + qaEscape(d.note) + '</span>' : '';
       if (d.kind === 'merge') {
         return '<div class="z6-dup-hint merge">&#x1F4CC; Likely already tracked in ' + link
@@ -3834,7 +3835,7 @@
       var iScreen = i.screen || '';
       var iIsGlobal = !iScreen || /^global/i.test(iScreen);
       var iScreenLabel = iScreen || 'no screen';
-      return '<a class="z6-issue-card ' + sevClass + '" data-issue-iid="' + qaEscape(i.iid) + '" href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener">'
+      return '<a class="z6-issue-card ' + sevClass + '" data-issue-iid="' + qaEscape(i.iid) + '" href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener" onclick="return qaOpenIssue(' + i.iid + ', event)">'
         + '<div class="z6-issue-head">'
           + '<span class="z6-screen-badge' + (iIsGlobal ? ' is-global' : '') + '" title="Screen: ' + qaEscape(iScreenLabel) + '">' + qaEscape(iScreenLabel) + '</span>'
           + '<span class="z6-issue-iid">#' + qaEscape(i.iid) + '</span>'
@@ -4190,7 +4191,7 @@
       const card = document.querySelector('.z6-proposed-card[data-finding-id="' + cssEscape(findingId) + '"]');
       if (card) {
         card.classList.add('filed-success');
-        card.innerHTML = '<div class="z6-filed-msg">Filed as <a href="' + qaEscape(result.issue_url) + '" target="_blank" rel="noopener">#' + result.issue_iid + '</a>. Will appear in Open issues on the next poll.</div>';
+        card.innerHTML = '<div class="z6-filed-msg">Filed as <a href="' + qaEscape(result.issue_url) + '" target="_blank" rel="noopener" onclick="return qaOpenIssue(' + result.issue_iid + ', event)">#' + result.issue_iid + '</a>. Will appear in Open issues on the next poll.</div>';
         setTimeout(() => { card.classList.add('fading'); }, 2500);
         setTimeout(() => {
           _qaProposed = _qaProposed.filter(f => f.id !== findingId);
@@ -4285,7 +4286,7 @@
       const card = document.querySelector('.z6-proposed-card[data-finding-id="' + cssEscape(findingId) + '"]');
       if (card) {
         card.classList.add('ai-filed-success');
-        card.innerHTML = '<div class="z6-filed-msg">Filed as AI Learning <a href="' + qaEscape(result.issue_url) + '" target="_blank" rel="noopener">#' + result.issue_iid + '</a> &middot; ' + qaEscape(result.bucket || bucket) + '. Will appear in Open issues on the next poll.</div>';
+        card.innerHTML = '<div class="z6-filed-msg">Filed as AI Learning <a href="' + qaEscape(result.issue_url) + '" target="_blank" rel="noopener" onclick="return qaOpenIssue(' + result.issue_iid + ', event)">#' + result.issue_iid + '</a> &middot; ' + qaEscape(result.bucket || bucket) + '. Will appear in Open issues on the next poll.</div>';
         setTimeout(() => { card.classList.add('fading'); }, 2500);
         setTimeout(() => {
           _qaProposed = _qaProposed.filter(f => f.id !== findingId);
@@ -5303,6 +5304,11 @@
       if (qaView) qaView.classList.toggle('active', level === 6);
       const glView = document.getElementById('zoom-7-view');
       if (glView) glView.classList.toggle('active', level === 7);
+
+      // Cross-zoom round-trip housekeeping: landing back on QA completes the
+      // trip (drop the flag); keep the "Back to QA" button in sync otherwise.
+      if (level === 6) _glReturnFromQA = false;
+      if (typeof glSyncBackToQA === 'function') glSyncBackToQA();
 
       // Update active state on buttons
       document.querySelectorAll('#zoom-toggle-bar .zoom-btn').forEach(btn => {
@@ -8158,6 +8164,11 @@
     const GL_VIEW_KEY = 'gg_arch_z7_view';
     let _glIssues = [];                 // last fetched issues (single clean list, no kanban)
     let _glAwardSupported = true;       // flips false on first 404 from /issue/award
+    // Cross-zoom round-trip: when QA (zoom 6) deep-links into an issue here, we
+    // remember to show a "Back to QA" affordance and queue the issue to open
+    // once the issues sub-view is live and the connection check has resolved.
+    let _glReturnFromQA = false;
+    let _glPendingIssueIid = null;
 
     // ---- theme (light default + dark, GitLab-faithful) --------------------
     const GL_THEME_KEY = 'gg_arch_z7_theme';
@@ -8482,7 +8493,16 @@
         const s = document.getElementById('z7-view-' + v);
         if (s) s.style.display = v === view ? '' : 'none';
       });
-      if (view === 'issues') loadGitLabIssues();
+      if (view === 'issues') {
+        loadGitLabIssues();
+        // Honour a QA deep-link: open the requested issue in-page (the list and
+        // the detail render into separate nodes, so both can run together).
+        if (_glPendingIssueIid != null) {
+          const _iid = _glPendingIssueIid;
+          _glPendingIssueIid = null;
+          openGitLabIssue('gg-mvp', _iid);
+        }
+      }
       else if (view === 'mrs') loadGitLabMRs();
       else if (view === 'docs') loadGitLabDocs();
       else if (view === 'repo') loadGitLabRepo();
@@ -9499,6 +9519,35 @@
       if (typeof setQAMode === 'function') setQAMode('byscreen');
       if (typeof selectQAScreen === 'function') selectQAScreen(name);
       setZoomLevel(6);
+    }
+
+    // QA (zoom 6) -> GitLab (zoom 7): open an issue in the in-page GitLab view
+    // instead of opening gitlab.com in a new browser tab. A modifier/middle
+    // click still follows the href to the real site (escape hatch).
+    function qaOpenIssue(iid, ev) {
+      if (ev && (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button === 1)) return true;
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      iid = parseInt(iid, 10);
+      if (!iid) return false;
+      _glReturnFromQA = true;
+      _glPendingIssueIid = iid;
+      setZoomLevel(7);          // runs loadGitLabTab -> connection check -> forced setGitLabView
+      _glView = 'issues';       // set AFTER setZoomLevel so restoreGitLabView can't clobber it
+      glSyncBackToQA();
+      return false;
+    }
+
+    // GitLab (zoom 7) -> QA (zoom 6): the jump back.
+    function glBackToQA() {
+      _glReturnFromQA = false;
+      glSyncBackToQA();
+      setZoomLevel(6);
+    }
+
+    // Show the "Back to QA" button only when we arrived here from QA.
+    function glSyncBackToQA() {
+      const b = document.getElementById('z7-back-to-qa');
+      if (b) b.style.display = _glReturnFromQA ? '' : 'none';
     }
 
     // ---- shared list error + small utilities ------------------------------
