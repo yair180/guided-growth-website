@@ -1308,6 +1308,164 @@
       color: #6b8aaf; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #1e3a5f;
     }
 
+    /* ============================================================
+       ZOOM 7: GitLab rich experience (board, avatars, labels,
+       reactions, MR list, docs tree). All additive, all .z7- scoped.
+       ============================================================ */
+
+    /* Avatars: round img with colored-initial fallback */
+    .z7-av {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      object-fit: cover; background: #1e3a5f; display: inline-flex;
+      align-items: center; justify-content: center; font-size: 10px;
+      font-weight: 700; color: #fff; text-transform: uppercase; line-height: 1;
+      border: 1px solid rgba(255,255,255,0.12); overflow: hidden; vertical-align: middle;
+    }
+    .z7-av.sm { width: 18px; height: 18px; font-size: 8.5px; }
+    .z7-av.lg { width: 30px; height: 30px; font-size: 12px; }
+    .z7-av-stack { display: inline-flex; align-items: center; }
+    .z7-av-stack .z7-av:not(:first-child) { margin-left: -7px; }
+    .z7-who { display: inline-flex; align-items: center; gap: 6px; }
+    .z7-who .z7-who-name { color: #c2cee0; }
+
+    /* Colored label pills (from API color/text_color) + scoped two-tone */
+    .z7-lbl {
+      display: inline-flex; align-items: center; border-radius: 9px;
+      font-size: 10.5px; font-weight: 600; line-height: 1.5; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.10); max-width: 100%;
+    }
+    .z7-lbl .z7-lbl-solo { padding: 1px 8px; white-space: nowrap; }
+    .z7-lbl.scoped .z7-lbl-k {
+      padding: 1px 7px; background: rgba(0,0,0,0.32); color: #cdd8e6;
+    }
+    .z7-lbl.scoped .z7-lbl-v { padding: 1px 7px; white-space: nowrap; }
+    .z7-lbls { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+    /* Board / List + Group-by control bar */
+    .z7-viewbar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin: 4px 0 16px;
+    }
+    .z7-seg {
+      display: inline-flex; gap: 2px; background: #060d18;
+      border: 1px solid #1e3a5f; border-radius: 9px; padding: 3px;
+    }
+    .z7-seg button {
+      padding: 5px 14px; font-size: 12px; font-weight: 600; font-family: inherit;
+      background: transparent; color: #8fa8c4; border: none; border-radius: 6px; cursor: pointer;
+      transition: all 0.12s;
+    }
+    .z7-seg button:hover:not(.active) { color: #fff; background: rgba(30,58,95,0.45); }
+    .z7-seg button.active { background: rgba(91,192,222,0.18); color: #fff; box-shadow: inset 0 0 0 1px rgba(91,192,222,0.5); }
+    .z7-viewbar .z7-groupby { display: inline-flex; align-items: center; gap: 8px; }
+    .z7-viewbar .z7-groupby label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b8aaf; font-weight: 700;
+    }
+    .z7-viewbar .z7-count-hint { margin-left: auto; font-size: 11.5px; color: #6b8aaf; }
+
+    /* Kanban board */
+    .z7-board {
+      display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px;
+      align-items: flex-start;
+    }
+    .z7-col {
+      flex: 0 0 290px; max-width: 290px; background: #0a1726;
+      border: 1px solid #1e3a5f; border-radius: 10px; display: flex; flex-direction: column;
+      max-height: calc(100vh - 320px);
+    }
+    .z7-col-head {
+      display: flex; align-items: center; gap: 8px; padding: 11px 13px 9px;
+      font-size: 12px; font-weight: 700; color: #dbe6f2; border-bottom: 1px solid #16293f;
+    }
+    .z7-col-head .z7-col-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .z7-col-head .z7-col-n {
+      margin-left: auto; font-size: 10.5px; font-weight: 700; color: #6b8aaf;
+      background: #060d18; border: 1px solid #1e3a5f; border-radius: 9px; padding: 0 7px;
+    }
+    .z7-col-body { padding: 10px; display: flex; flex-direction: column; gap: 9px; overflow-y: auto; min-height: 40px; }
+    .z7-col-empty { color: #4f6a8a; font-size: 11px; font-style: italic; padding: 8px 4px; }
+    .z7-card {
+      text-align: left; width: 100%; background: #0d2238; border: 1px solid #1e3a5f;
+      border-left: 3px solid #34d399; border-radius: 8px; padding: 10px 11px; cursor: pointer;
+      font: inherit; display: flex; flex-direction: column; gap: 7px; transition: border-color 0.12s;
+    }
+    .z7-card:hover { border-color: #5bc0de; }
+    .z7-card.state-closed { border-left-color: #f3596f; }
+    .z7-card-top { display: flex; align-items: baseline; gap: 7px; }
+    .z7-card-iid { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10.5px; color: #5bc0de; flex-shrink: 0; }
+    .z7-card-proj { font-size: 9.5px; color: #6b8aaf; }
+    .z7-card-title {
+      font-size: 12.5px; font-weight: 600; color: #e0e6ed; line-height: 1.35;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .z7-card-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .z7-card-foot .z7-chip {
+      font-size: 10.5px; color: #8fa8c4; display: inline-flex; align-items: center; gap: 3px;
+    }
+    .z7-card-foot .z7-screen-chip {
+      font-size: 9.5px; color: #5bc0de; background: rgba(91,192,222,0.12);
+      border: 1px solid rgba(91,192,222,0.3); border-radius: 4px; padding: 0 6px;
+    }
+    .z7-card-foot .z7-spacer { margin-left: auto; }
+
+    /* Metadata sidebar block in detail */
+    .z7-meta-grid { display: flex; flex-wrap: wrap; gap: 20px 36px; margin: 4px 0 18px; }
+    .z7-meta-blk { min-width: 130px; }
+    .z7-meta-blk .z7-meta-h {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b8aaf;
+      font-weight: 700; margin-bottom: 7px;
+    }
+    .z7-meta-blk .z7-meta-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 12px; color: #c2cee0; }
+    .z7-meta-blk .z7-meta-none { font-size: 12px; color: #4f6a8a; font-style: italic; }
+
+    /* Reactions */
+    .z7-reactions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 14px 0 4px; }
+    .z7-react {
+      display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12px;
+      background: #060d18; border: 1px solid #1e3a5f; border-radius: 13px; padding: 2px 10px;
+      color: #c2cee0; cursor: pointer; transition: all 0.12s;
+    }
+    .z7-react:hover { border-color: #5bc0de; }
+    .z7-react.mine { background: rgba(91,192,222,0.16); border-color: rgba(91,192,222,0.55); color: #cdeefb; }
+    .z7-react.static { cursor: default; }
+    .z7-react.static:hover { border-color: #1e3a5f; }
+    .z7-react-count { font-weight: 700; font-size: 11px; }
+    .z7-react-add {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 14px;
+      background: transparent; border: 1px dashed #28456a; border-radius: 13px;
+      padding: 1px 9px; color: #6b8aaf; cursor: pointer; line-height: 1.3;
+    }
+    .z7-react-add:hover { border-color: #5bc0de; color: #cdeefb; }
+    .z7-react-pick {
+      display: inline-flex; gap: 4px; align-items: center; background: #0d2238;
+      border: 1px solid #1e3a5f; border-radius: 13px; padding: 2px 8px;
+    }
+    .z7-react-pick button { background: transparent; border: none; font-size: 15px; cursor: pointer; padding: 0 2px; line-height: 1.2; }
+    .z7-react-pick button:hover { transform: scale(1.2); }
+
+    /* MR helper text + changes line */
+    .z7-mr-changes {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      background: #0a1726; border: 1px solid #1e3a5f; border-radius: 8px;
+      padding: 11px 14px; margin: 14px 0; font-size: 12.5px; color: #c2cee0;
+    }
+    .z7-mr-changes .z7-mr-changes-spacer { margin-left: auto; }
+    .z7-helper { font-size: 11px; color: #6b8aaf; font-style: italic; margin-top: 6px; }
+
+    /* Docs tree folders (expandable) */
+    .z7-tree-folder {
+      display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+      background: transparent; border: none; color: #dbe6f2; font: inherit; font-size: 12px;
+      font-weight: 700; padding: 7px 8px 5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .z7-tree-folder:hover { color: #fff; }
+    .z7-tree-folder .z7-tree-caret { font-size: 9px; transition: transform 0.12s; display: inline-block; color: #6b8aaf; }
+    .z7-tree-folder.open .z7-tree-caret { transform: rotate(90deg); }
+    .z7-tree-children { display: none; padding-left: 6px; }
+    .z7-tree-children.open { display: block; }
+    #z7-docs-reader .z7-reader-path a { color: #5bc0de; text-decoration: none; float: right; }
+    #z7-docs-reader .z7-reader-path a:hover { text-decoration: underline; }
+
     /* === Mode toggle (Overview | By Screen) — segmented control at top of main === */
     #z6-mode-toggle {
       display: inline-flex; gap: 2px; margin: 0 0 20px;
@@ -1379,13 +1537,10 @@
     }
     #z6-screen-statusfilter .z6-order-btn:hover:not(.active) { color: #fff; }
     #z6-screen-statusfilter .z6-order-btn.active { background: rgba(91,192,222,0.18); color: #fff; }
-    #z6-showempty-toggle {
-      margin-top: 6px; width: 100%; padding: 5px 8px; font-size: 10.5px; font-weight: 600;
-      background: transparent; color: #6b8aaf; border: 1px dashed #1e3a5f; border-radius: 8px;
-      cursor: pointer; font-family: inherit; transition: all 0.12s;
+    #z6-screens-hint {
+      margin-top: 6px; padding: 0 2px; font-size: 10px; line-height: 1.4;
+      color: #6b8aaf; font-style: italic;
     }
-    #z6-showempty-toggle:hover { color: #c2cee0; border-color: #2e5180; }
-    #z6-showempty-toggle.active { color: #8fa8c4; border-style: solid; background: rgba(91,192,222,0.08); }
     #z6-screens-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 8px 14px; }
     #z6-sidebar.collapsed #z6-screens-controls,
     #z6-sidebar.collapsed #z6-screens-list { display: none; }
@@ -1802,6 +1957,27 @@
       border: 1px solid #1e3a5f; border-radius: 4px; display: block;
     }
     .z6-proposed-card .z6-proposed-detail a { color: #5bc0de; }
+    /* Multi-screenshot strip: 2-3 candidate frames around the moment. */
+    .z6-shot-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .z6-shot { margin: 0; display: flex; flex-direction: column; align-items: flex-start; }
+    .z6-shot a { line-height: 0; }
+    .z6-shot img {
+      width: 150px; max-width: 150px; max-height: 200px; margin: 0;
+      border: 1px solid #1e3a5f; border-radius: 4px; display: block; object-fit: cover;
+    }
+    .z6-shot.is-context img { border-color: #6b5a2e; }
+    .z6-shot figcaption {
+      font-size: 9.5px; color: #8fa8c4; margin-top: 3px; letter-spacing: 0.02em;
+    }
+    .z6-shot.is-context figcaption { color: #c9a24a; }
+    /* Collapsed-card thumbnail can carry a small "+N more frames" badge. */
+    .z6-thumb-wrap { position: relative; flex-shrink: 0; display: inline-flex; line-height: 0; }
+    .z6-thumb-count {
+      position: absolute; right: -3px; bottom: -3px; min-width: 13px; height: 13px;
+      padding: 0 2px; border-radius: 7px; background: #1e3a5f; color: #cdd8e8;
+      font-size: 8.5px; font-weight: 700; line-height: 13px; text-align: center;
+      border: 1px solid #0b1422;
+    }
     .z6-proposed-card.filed-success {
       border-left-color: #10b981;
       background: rgba(16, 185, 129, 0.07);
@@ -2898,7 +3074,7 @@
             <button type="button" class="z6-order-btn" data-status="needs-review" onclick="setScreenStatusFilter('needs-review')">Needs review</button>
             <button type="button" class="z6-order-btn" data-status="triaged" onclick="setScreenStatusFilter('triaged')">Human reviewed</button>
           </div>
-          <button type="button" id="z6-showempty-toggle" onclick="toggleShowEmptyScreens()">Show all screens</button>
+          <div id="z6-screens-hint">Screens with QA items only. Search to reach any screen.</div>
         </div>
         <div id="z6-screens-list" role="list"><div class="z6-empty">Loading…</div></div>
       </div>
@@ -3089,8 +3265,25 @@
             <button type="button" class="z7-btn-primary" onclick="openNewIssueForm()">+ New Issue</button>
           </div>
         </div>
+        <div class="z7-viewbar">
+          <div class="z7-seg" role="group" aria-label="Issues layout">
+            <button type="button" id="z7-issues-board-btn" class="active" onclick="setIssuesLayout('board')">Board</button>
+            <button type="button" id="z7-issues-list-btn" onclick="setIssuesLayout('list')">List</button>
+          </div>
+          <div class="z7-groupby" id="z7-issues-groupby-wrap">
+            <label for="z7-issues-groupby">Group by</label>
+            <select class="z7-select" id="z7-issues-groupby" onchange="renderGitLabIssues()">
+              <option value="priority">Priority</option>
+              <option value="type">Type</option>
+              <option value="status">Status</option>
+              <option value="assignee">Assignee</option>
+            </select>
+          </div>
+          <span class="z7-count-hint" id="z7-issues-count"></span>
+        </div>
         <div id="z7-issues-detail"></div>
-        <div id="z7-issues-list"></div>
+        <div id="z7-issues-board"></div>
+        <div id="z7-issues-list" style="display:none"></div>
       </section>
 
       <!-- MERGE REQUESTS sub-view -->
@@ -3179,6 +3372,23 @@
       'MOBAI-2026-05-27-F27': { kind: 'related',  issue: 88, note: 'Vapi-reset symptom; kept as its own AI Learning per the reconciliation.' },
     };
 
+    // Normalize a finding's screenshots into a list. Prefers the new
+    // screenshots[] array (2-3 candidate frames around the moment); falls back
+    // to the single legacy screenshot_url. Each entry: {url, label, isContext}.
+    // isContext === true means the frame is nearby context, not the exact moment.
+    function qaScreenshotList(f) {
+      if (!f) return [];
+      if (Array.isArray(f.screenshots) && f.screenshots.length) {
+        return f.screenshots
+          .filter(s => s && s.url)
+          .map(s => ({ url: s.url, label: s.label || '', isContext: s.is_exact === false }));
+      }
+      if (f.screenshot_url) {
+        return [{ url: f.screenshot_url, label: '', isContext: f.screenshot_is_exact === false }];
+      }
+      return [];
+    }
+
     function qaDupHintHtml(f) {
       const d = QA_DUP_MAP[f && f.id];
       if (!d) return '';
@@ -3198,7 +3408,6 @@
     let qaCurrentMode = 'overview';      // 'overview' | 'byscreen'
     let qaScreenOrder = 'flow';          // 'flow' | 'hot'
     let _qaScreenStatusFilter = 'all';   // 'all' | 'needs-review' | 'triaged'
-    let _qaShowEmptyScreens = false;     // include screens with no findings AND no issues
     let qaSelectedScreen = null;         // currently selected screen in By Screen mode
     let _qaScreenSearch = '';
 
@@ -3538,8 +3747,22 @@
       // Screenshot honesty: when screenshot_is_exact === false the image is a
       // context view of the screen, not the exact moment. Legacy / true / absent
       // findings keep the plain "Screenshot" label.
-      const shotIsContext = (f.screenshot_is_exact === false);
-      const shotLabel = shotIsContext ? 'Screen view (context)' : 'Screenshot';
+      // Screenshot honesty + multi-frame support. screenshots[] (2-3 candidate
+      // frames) is preferred; otherwise the single legacy screenshot_url is used.
+      const shots = qaScreenshotList(f);
+      const shotsHeader = shots.length > 1
+        ? ('Screenshots (' + shots.length + ' frames around the moment)')
+        : (shots.length === 1 && shots[0].isContext ? 'Screen view (context)' : 'Screenshot');
+      const shotsStrip = shots.length
+        ? '<div class="z6-shot-strip">' + shots.map(s =>
+            '<figure class="z6-shot' + (s.isContext ? ' is-context' : '') + '">'
+            + '<a href="' + qaEscape(s.url) + '" target="_blank" rel="noopener">'
+            + '<img loading="lazy" src="' + qaEscape(s.url) + '" alt="screenshot"></a>'
+            + (s.label || s.isContext
+                ? '<figcaption>' + qaEscape([s.label, s.isContext ? 'context' : ''].filter(Boolean).join(' · ')) + '</figcaption>'
+                : '')
+            + '</figure>').join('') + '</div>'
+        : '';
       const suggestedFix = (f.suggested_fix && String(f.suggested_fix).trim()) ? String(f.suggested_fix).trim() : '';
 
       // Detail block
@@ -3556,8 +3779,8 @@
               ? '<div class="z6-detail-label">File hypothesis</div><p><code style="background:#060d18;border:1px solid #1e3a5f;border-radius:4px;padding:1px 6px;font-size:11.5px;color:#8fa8c4">'
                 + qaEscape(f.ai_block.file_hypothesis) + '</code></p>'
               : '')
-          + (f.screenshot_url
-              ? '<div class="z6-detail-label">' + shotLabel + '</div><a href="' + qaEscape(f.screenshot_url) + '" target="_blank" rel="noopener"><img loading="lazy" src="' + qaEscape(f.screenshot_url) + '" alt="' + shotLabel.toLowerCase() + '"></a>'
+          + (shots.length
+              ? '<div class="z6-detail-label">' + shotsHeader + '</div>' + shotsStrip
               : '')
           + (f.video_url
               // Drive doesn't reliably honor deep-seek via URL, so we surface the
@@ -3629,9 +3852,16 @@
       // Collapsed-card thumbnail: lets Timothy pre-judge before expanding.
       // Clicking opens the full screenshot in a new tab (stopPropagation so it
       // doesn't toggle the expand).
-      const thumb = (!expanded && f.screenshot_url)
-        ? '<img class="z6-thumb" loading="lazy" src="' + qaEscape(f.screenshot_url) + '" alt="screenshot thumbnail"'
-          + ' onclick="event.stopPropagation(); window.open(\'' + qaEscape(f.screenshot_url) + '\',\'_blank\',\'noopener\')">'
+      // Collapsed thumbnail shows the primary frame; a "+N" badge signals that
+      // expanding reveals more candidate frames.
+      const thumbUrl = f.screenshot_url || (shots.length ? shots[0].url : '');
+      const thumbCount = shots.length > 1
+        ? '<span class="z6-thumb-count">+' + (shots.length - 1) + '</span>'
+        : '';
+      const thumb = (!expanded && thumbUrl)
+        ? '<span class="z6-thumb-wrap"><img class="z6-thumb" loading="lazy" src="' + qaEscape(thumbUrl) + '" alt="screenshot thumbnail"'
+          + ' onclick="event.stopPropagation(); window.open(\'' + qaEscape(thumbUrl) + '\',\'_blank\',\'noopener\')">'
+          + thumbCount + '</span>'
         : '';
 
       return '<div class="z6-proposed-card ' + sevClass + (expanded ? ' expanded' : '') + '" data-finding-id="' + qaEscape(f.id) + '">'
@@ -4117,7 +4347,6 @@
       restoreQASummaryState();
       restoreQAListView();
       restoreQACategory();
-      restoreShowEmptyScreens();
       qaLoadSummary();
       qaLoadRuns();
       qaLoadIssues();
@@ -4214,19 +4443,6 @@
       renderScreensSidebar();
     }
 
-    // Independent of the status filter: whether to list screens that have NO QA
-    // items at all (no findings, no issues). Off by default so the list shows
-    // only screens with something to look at. Searching always reaches any screen.
-    function toggleShowEmptyScreens() {
-      _qaShowEmptyScreens = !_qaShowEmptyScreens;
-      try { localStorage.setItem('gg_qa_showempty_v1', _qaShowEmptyScreens ? '1' : '0'); } catch (_e) {}
-      renderScreensSidebar();
-    }
-
-    function restoreShowEmptyScreens() {
-      try { _qaShowEmptyScreens = localStorage.getItem('gg_qa_showempty_v1') === '1'; } catch (_e) {}
-    }
-
     // Collapsible Audit Runs section (Overview sidebar). Collapsed by default.
     function toggleRunsSection() {
       const sec = document.getElementById('z6-runs-section');
@@ -4283,16 +4499,11 @@
       if (_qaScreenStatusFilter !== 'all') {
         agg = agg.filter(a => qaScreenStatus(a) === _qaScreenStatusFilter);
       }
-      // Hide screens with no QA items unless the user opted to show them — but a
-      // search needle always reaches any screen so navigation still works.
-      if (!_qaShowEmptyScreens && !needle) {
+      // By-Screen lists only screens that have QA items (findings or issues). A
+      // search needle still reaches any screen, including clean ones, so coverage
+      // checks and navigation to a specific screen always work.
+      if (!needle) {
         agg = agg.filter(a => qaScreenStatus(a) !== 'clean');
-      }
-      // Keep the toggle label in sync with state.
-      const _emptyBtn = document.getElementById('z6-showempty-toggle');
-      if (_emptyBtn) {
-        _emptyBtn.textContent = _qaShowEmptyScreens ? 'Hide empty screens' : 'Show all screens';
-        _emptyBtn.classList.toggle('active', _qaShowEmptyScreens);
       }
 
       if (!agg.length) {
@@ -7677,6 +7888,11 @@
     let _glSearchDebounce = null;
     let _glDocsLoaded = false;         // docs tree fetched once per session
     const GL_VIEW_KEY = 'gg_arch_z7_view';
+    let _glIssues = [];                 // last fetched issues, kept for re-grouping client-side
+    let _glIssuesLayout = 'board';      // board | list
+    let _glAwardSupported = true;       // flips false on first 404 from /issue/award
+    const GL_LAYOUT_KEY = 'gg_arch_z7_issues_layout';
+    try { const L = localStorage.getItem(GL_LAYOUT_KEY); if (L === 'board' || L === 'list') _glIssuesLayout = L; } catch (_e) {}
 
     // ---- shared helpers ----------------------------------------------------
 
@@ -7715,6 +7931,97 @@
       let h = ''; for (let i = 0; i < (n || 4); i++) h += '<div class="z7-skel"></div>'; return h;
     }
     function glStateClass(s) { return 'state-' + (s || 'opened'); }
+
+    // ---- rich render helpers (avatars, labels, reactions, time) -----------
+
+    // Relative time WITH the "ago" suffix in one place.
+    function glRel(iso) { if (!iso) return ''; return glAgo(iso) + ' ago'; }
+
+    // Deterministic color for an initial-circle fallback avatar.
+    const GL_AV_COLORS = ['#3b6ea5','#a05a8a','#5a9a78','#a0795a','#6a5aa0','#a05a5a','#5a8aa0','#8a8a5a'];
+    function glAvColor(seed) {
+      const s = String(seed || '?'); let h = 0;
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return GL_AV_COLORS[h % GL_AV_COLORS.length];
+    }
+    function glAvatar(person, size) {
+      if (!person) return '';
+      const cls = 'z7-av' + (size ? ' ' + size : '');
+      const nm = person.name || person.username || '?';
+      const title = qaEscape(person.name || person.username || '');
+      if (person.avatar_url) {
+        return '<img class="' + cls + '" src="' + qaEscape(person.avatar_url) + '" alt="' + title
+          + '" title="' + title + '" referrerpolicy="no-referrer" loading="lazy">';
+      }
+      const ini = qaEscape(nm.trim().charAt(0) || '?');
+      return '<span class="' + cls + '" style="background:' + glAvColor(nm) + '" title="' + title + '">' + ini + '</span>';
+    }
+    function glAvatarStack(people, size) {
+      const arr = (people || []).slice(0, 4);
+      if (!arr.length) return '';
+      return '<span class="z7-av-stack">' + arr.map(p => glAvatar(p, size)).join('') + '</span>';
+    }
+    function glWho(person) {
+      if (!person) return '';
+      return '<span class="z7-who">' + glAvatar(person, 'sm')
+        + '<span class="z7-who-name">' + qaEscape(person.name || person.username || '') + '</span></span>';
+    }
+
+    // Pick readable text color when the API only gives a background.
+    function glTextOn(bg) {
+      if (!bg || bg[0] !== '#') return '#fff';
+      const h = bg.length === 4
+        ? bg.slice(1).split('').map(c => parseInt(c + c, 16))
+        : [parseInt(bg.slice(1,3),16), parseInt(bg.slice(3,5),16), parseInt(bg.slice(5,7),16)];
+      const lum = (0.299*h[0] + 0.587*h[1] + 0.114*h[2]) / 255;
+      return lum > 0.6 ? '#11202f' : '#fff';
+    }
+    // Normalize a label (object {name,color,text_color} OR a bare string).
+    function glLabelNorm(l) {
+      if (l && typeof l === 'object') {
+        const bg = l.color || '#1e3a5f';
+        return { name: l.name || '', bg, fg: l.text_color || glTextOn(bg) };
+      }
+      return { name: String(l || ''), bg: '#162a40', fg: '#9db2c9' };
+    }
+    // One colored pill; scoped labels (key::value) render two-tone.
+    function glLabelPill(l) {
+      const n = glLabelNorm(l);
+      if (!n.name) return '';
+      const idx = n.name.indexOf('::');
+      if (idx > -1) {
+        const k = n.name.slice(0, idx), v = n.name.slice(idx + 2);
+        return '<span class="z7-lbl scoped"><span class="z7-lbl-k">' + qaEscape(k) + '</span>'
+          + '<span class="z7-lbl-v" style="background:' + qaEscape(n.bg) + ';color:' + qaEscape(n.fg) + '">'
+          + qaEscape(v) + '</span></span>';
+      }
+      return '<span class="z7-lbl"><span class="z7-lbl-solo" style="background:' + qaEscape(n.bg)
+        + ';color:' + qaEscape(n.fg) + '">' + qaEscape(n.name) + '</span></span>';
+    }
+    function glLabelPills(labels, opts) {
+      const skipScreen = !(opts && opts.includeScreen);
+      const arr = (labels || []).filter(l => {
+        const name = (l && typeof l === 'object') ? (l.name || '') : String(l || '');
+        return skipScreen ? !/^screen::/i.test(name) : true;
+      });
+      if (!arr.length) return '';
+      return '<span class="z7-lbls">' + arr.map(glLabelPill).join('') + '</span>';
+    }
+    // Plain lowercase names of labels (objects or strings), for grouping logic.
+    function glLabelNames(labels) {
+      return (labels || []).map(l => ((l && typeof l === 'object') ? (l.name || '') : String(l || '')).toLowerCase());
+    }
+
+    // Emoji name -> glyph map for reactions.
+    const GL_EMOJI = {
+      thumbsup: '👍', '+1': '👍',
+      thumbsdown: '👎', '-1': '👎',
+      heart: '❤️', tada: '🎉', rocket: '🚀',
+      eyes: '👀', smile: '😄', laughing: '😆',
+      confused: '😕', fire: '🔥', clap: '👏', '100': '💯'
+    };
+    const GL_EMOJI_PICKER = ['thumbsup','thumbsdown','heart','tada','rocket','eyes','smile'];
+    function glEmojiGlyph(name) { return GL_EMOJI[name] || (':' + name + ':'); }
 
     // ---- connection lifecycle ---------------------------------------------
 
