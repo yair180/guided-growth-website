@@ -1187,6 +1187,35 @@
     .z7-input.z7-search { min-width: 220px; }
     .z7-filters-spacer { margin-left: auto; }
 
+    /* Board: status columns (Open / In progress / Testing) */
+    #z7-board { display: flex; gap: 14px; align-items: flex-start; overflow-x: auto; padding-bottom: 8px; }
+    #z7-board > .z7-loading, #z7-board > .z7-empty { width: 100%; }
+    .z7-board-col {
+      flex: 1 1 0; min-width: 264px; background: var(--z7-panel-2);
+      border: 1px solid var(--z7-border); border-radius: 8px;
+      display: flex; flex-direction: column; max-height: calc(100vh - 232px);
+    }
+    .z7-board-col-h {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-bottom: 1px solid var(--z7-border);
+      position: sticky; top: 0; background: var(--z7-panel-2); border-radius: 8px 8px 0 0; z-index: 1;
+    }
+    .z7-bc-name { font-weight: 600; font-size: 13px; color: var(--z7-text); display: flex; align-items: center; gap: 8px; }
+    .z7-bc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .z7-bc-count { font-size: 11.5px; color: var(--z7-text-2); background: var(--z7-panel-3); border-radius: 9px; padding: 1px 9px; }
+    .z7-board-cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+    .z7-board-card {
+      text-align: left; width: 100%; background: var(--z7-panel); border: 1px solid var(--z7-border);
+      border-radius: 7px; padding: 10px 11px; cursor: pointer; font-family: inherit;
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .z7-board-card:hover { border-color: var(--z7-border-strong); box-shadow: 0 1px 4px var(--z7-shadow); }
+    .z7-board-card-title { font-size: 13px; color: var(--z7-text); line-height: 1.45; margin-bottom: 8px; }
+    .z7-board-card:hover .z7-board-card-title { color: var(--z7-accent); }
+    .z7-board-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .z7-board-card-iid { font-size: 11px; color: var(--z7-text-3); font-variant-numeric: tabular-nums; }
+    .z7-board-empty { color: var(--z7-text-3); font-size: 12px; padding: 16px 4px; text-align: center; }
+
     /* Results-count line above the issues list */
     .z7-count-hint {
       display: block; font-size: 11.5px; color: var(--z7-text-2);
@@ -3483,6 +3512,7 @@
       <button type="button" class="z7-subnav-btn active" data-view="docs" onclick="setGitLabView('docs')">Docs</button>
       <button type="button" class="z7-subnav-btn" data-view="repo" onclick="setGitLabView('repo')">Repository</button>
       <button type="button" class="z7-subnav-btn" data-view="issues" onclick="setGitLabView('issues')">Issues</button>
+      <button type="button" class="z7-subnav-btn" data-view="board" onclick="setGitLabView('board')">Board</button>
       <button type="button" class="z7-subnav-btn" data-view="mrs" onclick="setGitLabView('mrs')">Merge Requests</button>
     </div>
     <div id="z7-body">
@@ -3535,6 +3565,23 @@
         <div id="z7-issues-detail"></div>
         <span class="z7-count-hint" id="z7-issues-count"></span>
         <div id="z7-issues-list"></div>
+      </section>
+
+      <!-- BOARD sub-view (status columns: Open / In progress / Testing) -->
+      <section id="z7-view-board" style="display:none">
+        <div class="z7-filters">
+          <div class="z7-filter-group">
+            <label for="z7-board-project">Project</label>
+            <select class="z7-select" id="z7-board-project" onchange="loadGitLabBoard()">
+              <option value="gg-mvp" selected>gg-mvp</option>
+              <option value="gg-spec">gg-spec</option>
+              <option value="all">All projects</option>
+            </select>
+          </div>
+          <div class="z7-filters-spacer"></div>
+          <span class="z7-count-hint" id="z7-board-count"></span>
+        </div>
+        <div id="z7-board"><div class="z7-loading">Loading…</div></div>
       </section>
 
       <!-- MERGE REQUESTS sub-view -->
@@ -8275,6 +8322,7 @@
     let _glDocsLoaded = false;         // docs tree fetched once per session
     const GL_VIEW_KEY = 'gg_arch_z7_view';
     let _glIssues = [];                 // last fetched issues (single clean list, no kanban)
+    let _glBoardIssues = [];            // last fetched open issues for the Board status columns
     let _glAwardSupported = true;       // flips false on first 404 from /issue/award
     // Cross-zoom round-trip: when QA (zoom 6) deep-links into an issue here, we
     // remember to show a "Back to QA" affordance and queue the issue to open
@@ -8571,7 +8619,7 @@
     function showGitLabDisconnected() {
       const subnav = document.getElementById('z7-subnav');
       if (subnav) subnav.style.display = 'none';
-      ['issues', 'mrs', 'docs', 'repo'].forEach(v => {
+      ['issues', 'board', 'mrs', 'docs', 'repo'].forEach(v => {
         const s = document.getElementById('z7-view-' + v); if (s) s.style.display = 'none';
       });
       const prompt = document.getElementById('z7-connect-prompt');
@@ -8591,17 +8639,17 @@
     // ---- sub-view switching ------------------------------------------------
 
     function restoreGitLabView() {
-      try { const v = localStorage.getItem(GL_VIEW_KEY); if (['issues','mrs','docs','repo'].includes(v)) _glView = v; } catch (_e) {}
+      try { const v = localStorage.getItem(GL_VIEW_KEY); if (['issues','board','mrs','docs','repo'].includes(v)) _glView = v; } catch (_e) {}
     }
 
     function setGitLabView(view, force) {
-      if (!['issues', 'mrs', 'docs', 'repo'].includes(view)) return;
+      if (!['issues', 'board', 'mrs', 'docs', 'repo'].includes(view)) return;
       if (view === _glView && !force) return;
       _glView = view;
       try { localStorage.setItem(GL_VIEW_KEY, view); } catch (_e) {}
       document.querySelectorAll('#z7-subnav .z7-subnav-btn').forEach(b =>
         b.classList.toggle('active', b.dataset.view === view));
-      ['issues', 'mrs', 'docs', 'repo'].forEach(v => {
+      ['issues', 'board', 'mrs', 'docs', 'repo'].forEach(v => {
         const s = document.getElementById('z7-view-' + v);
         if (s) s.style.display = v === view ? '' : 'none';
       });
@@ -8615,6 +8663,7 @@
           openGitLabIssue('gg-mvp', _iid);
         }
       }
+      else if (view === 'board') loadGitLabBoard();
       else if (view === 'mrs') loadGitLabMRs();
       else if (view === 'docs') loadGitLabDocs();
       else if (view === 'repo') loadGitLabRepo();
@@ -8630,6 +8679,90 @@
         });
         sel.appendChild(frag);
       }
+    }
+
+    // ---- BOARD (status columns) -------------------------------------------
+    // Columns render left to right by workflow; a card lands in the most
+    // advanced column whose label it carries (testing > in progress > open).
+    const GL_BOARD_COLS = [
+      { key: 'open',        name: 'Open',        color: 'var(--z7-open)' },
+      { key: 'in progress', name: 'In progress', color: 'var(--z7-accent)' },
+      { key: 'testing',     name: 'Testing',     color: '#0fb5ba' }
+    ];
+
+    async function loadGitLabBoard() {
+      const el = document.getElementById('z7-board');
+      if (!el) return;
+      const project = document.getElementById('z7-board-project').value;
+      el.innerHTML = '<div class="z7-loading">Loading…</div>';
+      try {
+        const all = [];
+        let page = 1; const MAX_PAGES = 8;
+        while (page <= MAX_PAGES) {
+          const qs = new URLSearchParams({ project, state: 'opened', page: String(page) });
+          const data = await glFetch('/api/issues?' + qs.toString());
+          const batch = (data && data.issues) || [];
+          all.push(...batch);
+          if (!data || !data.has_more) break;
+          page++;
+        }
+        _glBoardIssues = all;
+        renderGitLabBoard();
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        glHandleListError(el, e);
+      }
+    }
+
+    function renderGitLabBoard() {
+      const el = document.getElementById('z7-board');
+      if (!el) return;
+      const issues = _glBoardIssues || [];
+      const cntEl = document.getElementById('z7-board-count');
+      if (cntEl) cntEl.textContent = issues.length
+        ? (issues.length + ' open issue' + (issues.length === 1 ? '' : 's')) : '';
+      if (!issues.length) { el.innerHTML = '<div class="z7-empty">No open issues.</div>'; return; }
+      const buckets = { open: [], 'in progress': [], testing: [] };
+      issues.forEach(iss => {
+        const names = glLabelNames(iss.labels);
+        if (names.indexOf('testing') !== -1) buckets.testing.push(iss);
+        else if (names.some(n => n === 'in progress' || n === 'in-progress' || n === 'doing' || n === 'wip'))
+          buckets['in progress'].push(iss);
+        else buckets.open.push(iss);
+      });
+      el.innerHTML = GL_BOARD_COLS.map(c => {
+        const list = buckets[c.key] || [];
+        const cards = list.length
+          ? list.map(glBoardCard).join('')
+          : '<div class="z7-board-empty">Nothing here.</div>';
+        return '<div class="z7-board-col">'
+          + '<div class="z7-board-col-h">'
+          + '<span class="z7-bc-name"><span class="z7-bc-dot" style="background:' + c.color + '"></span>' + c.name + '</span>'
+          + '<span class="z7-bc-count">' + list.length + '</span>'
+          + '</div>'
+          + '<div class="z7-board-cards">' + cards + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    function glBoardCard(iss) {
+      return '<button type="button" class="z7-board-card" '
+        + 'onclick="glBoardOpenIssue(' + glAttr(iss.project) + ', ' + iss.iid + ')">'
+        + '<div class="z7-board-card-title">' + qaEscape(iss.title) + '</div>'
+        + '<div class="z7-board-card-meta">'
+        + '<span class="z7-board-card-iid">' + qaEscape(iss.project) + ' #' + iss.iid + '</span>'
+        + (iss.screen ? '<span class="z7-screen-chip">' + qaEscape(iss.screen) + '</span>' : '')
+        + (glLabelPills(iss.labels) || '')
+        + (iss.assignees && iss.assignees.length ? glAvatarStack(iss.assignees, 'sm') : '')
+        + '</div>'
+        + '</button>';
+    }
+
+    // Drill into a card: jump to the Issues view and open the full detail there
+    // (reuses the issue detail renderer, comment box, reactions, state toggle).
+    function glBoardOpenIssue(project, iid) {
+      setGitLabView('issues');
+      openGitLabIssue(project, iid);
     }
 
     // ---- ISSUES ------------------------------------------------------------
