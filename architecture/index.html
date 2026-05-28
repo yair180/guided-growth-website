@@ -1094,8 +1094,25 @@
       font-variant-numeric: tabular-nums;
     }
     .z6-screen-row.active .z6-screen-badge { color: #5bc0de; border-color: rgba(91,192,222,0.4); }
+    /* Needs-review badge (pending findings) reads hotter than a neutral count. */
+    .z6-screen-row .z6-screen-badge.needs {
+      background: rgba(243,89,111,0.14); color: #f3a9b4; border-color: #5c2533;
+    }
+    /* Triaged screens (queue clear, tracked in GitLab) get a green check. */
+    .z6-screen-row .z6-screen-check {
+      flex-shrink: 0; min-width: 20px; text-align: center; color: #4ade80;
+      font-size: 13px; font-weight: 700;
+    }
+    .z6-screen-row.st-triaged .z6-screen-name { color: #8fb9a0; }
 
     /* === By Screen: main panel === */
+    .z6-status-chip {
+      font-size: 11px; font-weight: 700; border-radius: 11px; padding: 2px 9px;
+      align-self: center; white-space: nowrap;
+    }
+    .z6-status-chip.needs    { background: rgba(243,89,111,0.14); color: #f3a9b4; border: 1px solid #5c2533; }
+    .z6-status-chip.triaged  { background: rgba(74,222,128,0.12); color: #86efac; border: 1px solid #245c37; }
+    .z6-status-chip.clean    { background: rgba(148,163,184,0.10); color: #94a3b8; border: 1px solid #334155; }
     #z6-byscreen-header {
       display: flex; align-items: baseline; gap: 12px; margin: 0 0 4px;
     }
@@ -3562,15 +3579,38 @@
       }
 
       listEl.innerHTML = agg.map(a => {
+        const pending = (a.items || []).length;   // proposed findings still to triage
+        const gl = (a.issues || []).length;        // already tracked in GitLab
+        const st = qaScreenStatus(a);              // 'needs-review' | 'triaged' | 'clean'
         const active = a.screen === qaSelectedScreen ? ' active' : '';
-        const zero = a.total === 0 ? ' zero' : '';
+        const zero = st === 'clean' ? ' zero' : '';
         const hot = a.high > 0 ? '<span class="z6-screen-hotdot" title="' + a.high + ' high-severity"></span>' : '';
-        return '<div class="z6-screen-row' + active + zero + '" onclick="selectQAScreen(\'' + qaEscape(a.screen).replace(/'/g, "\\'") + '\')">'
+        let marker;
+        if (st === 'needs-review') {
+          marker = '<span class="z6-screen-badge needs" title="' + pending + ' to review">' + pending + '</span>';
+        } else if (st === 'triaged') {
+          marker = '<span class="z6-screen-check" title="Queue clear — ' + gl + ' tracked in GitLab">&#x2713;</span>';
+        } else {
+          marker = '';
+        }
+        return '<div class="z6-screen-row' + active + zero + ' st-' + st + '" onclick="selectQAScreen(\'' + qaEscape(a.screen).replace(/'/g, "\\'") + '\')">'
           + '<span class="z6-screen-name" title="' + qaEscape(a.screen) + '">' + qaEscape(a.screen) + '</span>'
           + hot
-          + '<span class="z6-screen-badge">' + a.total + '</span>'
+          + marker
         + '</div>';
       }).join('');
+    }
+
+    // Per-screen QA status derived from current data (no persisted state):
+    //   needs-review — proposed findings still in the queue
+    //   triaged      — queue clear AND at least one issue tracked in GitLab
+    //   clean        — nothing surfaced (no findings, no issues)
+    function qaScreenStatus(a) {
+      const pending = (a.items || []).length;
+      const gl = (a.issues || []).length;
+      if (pending > 0) return 'needs-review';
+      if (gl > 0) return 'triaged';
+      return 'clean';
     }
 
     function selectQAScreen(screen) {
@@ -3611,8 +3651,15 @@
         learnByBucket[b].push(f);
       }
 
+      const _st = qaScreenStatus({ items, issues: screenIssues });
+      const _stChip = _st === 'needs-review'
+        ? '<span class="z6-status-chip needs">Needs review &middot; ' + items.length + '</span>'
+        : _st === 'triaged'
+          ? '<span class="z6-status-chip triaged">&#x2713; Triaged &middot; all in GitLab</span>'
+          : '<span class="z6-status-chip clean">No findings yet</span>';
       let html = '<div id="z6-byscreen-header">'
         + '<span class="z6-bs-screen">' + qaEscape(qaSelectedScreen) + '</span>'
+        + _stChip
         + '<span class="z6-bs-count">' + screenIssues.length + ' in GitLab &middot; '
           + items.length + ' to review</span>'
       + '</div>';
