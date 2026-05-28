@@ -1003,6 +1003,98 @@
       background: #060d18; padding: 1px 5px; border-radius: 3px;
     }
 
+    /* --- QA Status glance panel (sits at the very top of zoom-6 main) --- */
+    #z6-summary {
+      background: #0a1420; border: 1px solid #1e3a5f; border-radius: 10px;
+      padding: 0; margin: 0 0 22px; overflow: hidden;
+    }
+    #z6-summary-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-bottom: 1px solid #142a44;
+    }
+    #z6-summary-bar .z6-summary-heading {
+      font-size: 11px; font-weight: 700; color: #6b8aaf;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    #z6-summary-bar .z6-summary-generated {
+      font-size: 10.5px; color: #6b8aaf; flex: 1; font-variant-numeric: tabular-nums;
+    }
+    #z6-summary-toggle {
+      background: transparent; color: #6b8aaf; border: 1px solid #1e3a5f;
+      border-radius: 6px; width: 24px; height: 24px; line-height: 1;
+      cursor: pointer; font-family: inherit; font-size: 15px; padding: 0;
+      transition: all 0.12s;
+    }
+    #z6-summary-toggle:hover { color: #fff; border-color: #5bc0de; }
+    #z6-summary-body { padding: 14px; }
+    #z6-summary.collapsed #z6-summary-body { display: none; }
+    #z6-summary.collapsed #z6-summary-bar { border-bottom: none; }
+
+    /* Row 1 — headline tiles */
+    .z6-tiles { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .z6-tile {
+      flex: 1 1 130px; min-width: 120px;
+      display: flex; flex-direction: column; gap: 4px;
+      background: #060d18; border: 1px solid #1e3a5f; border-left: 3px solid #1e3a5f;
+      border-radius: 8px; padding: 12px 14px; text-align: left;
+      font-family: inherit; color: inherit;
+    }
+    button.z6-tile { cursor: pointer; transition: border-color 0.12s, background 0.12s; }
+    button.z6-tile:hover { border-color: #5bc0de; background: rgba(91,192,222,0.06); }
+    .z6-tile .z6-tile-num {
+      font-size: 28px; font-weight: 700; line-height: 1; color: #e0e6ed;
+      font-variant-numeric: tabular-nums;
+    }
+    .z6-tile .z6-tile-label { font-size: 11.5px; color: #8fa8c4; }
+    .z6-tile-blockers { border-left-color: #f3596f; }
+    .z6-tile-blockers .z6-tile-num { color: #f3596f; }
+    .z6-tile-review { border-left-color: #5bc0de; }
+    .z6-tile-review .z6-tile-num { color: #5bc0de; }
+    .z6-tile-bugs { border-left-color: #6b8aaf; }
+
+    /* Row 2 — breakdowns */
+    .z6-breakdowns {
+      display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 14px;
+      padding: 10px 0; border-top: 1px solid #142a44; border-bottom: 1px solid #142a44;
+    }
+    .z6-breakdown { display: flex; flex-direction: column; gap: 3px; }
+    .z6-breakdown-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #6b8aaf; font-weight: 700;
+    }
+    .z6-breakdown-val {
+      font-size: 13px; color: #c2cee0; font-variant-numeric: tabular-nums;
+    }
+    .z6-heuristic { color: #6b8aaf; cursor: help; font-weight: 400; }
+
+    /* Row 3 — per-person strip */
+    .z6-people { display: flex; flex-direction: column; gap: 8px; }
+    .z6-people-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #6b8aaf; font-weight: 700;
+    }
+    .z6-people-cards { display: flex; gap: 10px; flex-wrap: wrap; }
+    .z6-person {
+      flex: 1 1 160px; min-width: 150px;
+      display: flex; flex-direction: column; gap: 3px;
+      background: #060d18; border: 1px solid #1e3a5f; border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .z6-person .z6-person-name {
+      font-size: 12.5px; font-weight: 700; color: #e0e6ed;
+    }
+    .z6-person .z6-person-stat {
+      font-size: 12.5px; color: #5bc0de; font-variant-numeric: tabular-nums;
+    }
+    .z6-person .z6-person-hint { font-size: 10.5px; color: #6b8aaf; line-height: 1.4; }
+
+    /* Collapsed-card screenshot thumbnail (pre-judge before expanding) */
+    .z6-proposed-card .z6-thumb {
+      flex-shrink: 0; width: 36px; height: 36px; border-radius: 4px;
+      object-fit: cover; border: 1px solid #1e3a5f; cursor: pointer;
+    }
+    .z6-proposed-card .z6-thumb:hover { border-color: #5bc0de; }
+
     /* --- Proposed Findings section (sits above Open issues) --- */
     #z6-proposed-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -2186,6 +2278,64 @@
       <div class="zoom-title">QA Dashboard</div>
       <div class="zoom-subtitle">Live state from MobAI runs and gg-mvp issues. Polls every 60s.</div>
 
+      <!-- QA STATUS — glance panel rolling up proposed findings + open bugs -->
+      <section id="z6-summary" aria-label="QA status summary">
+        <div id="z6-summary-bar">
+          <span class="z6-summary-heading">QA Status</span>
+          <span class="z6-summary-generated" id="z6-summary-generated"></span>
+          <button type="button" id="z6-summary-toggle" onclick="toggleQASummary()" title="Collapse / expand QA status">–</button>
+        </div>
+        <div id="z6-summary-body">
+          <!-- Row 1: headline tiles -->
+          <div class="z6-tiles">
+            <button type="button" class="z6-tile z6-tile-blockers" onclick="qaScrollToIssues()" title="High-priority open bugs">
+              <span class="z6-tile-num" id="z6-tile-blockers">–</span>
+              <span class="z6-tile-label">&#x1F534; Blockers</span>
+            </button>
+            <button type="button" class="z6-tile z6-tile-review" onclick="qaScrollToProposed()" title="Proposed findings awaiting review">
+              <span class="z6-tile-num" id="z6-tile-review">–</span>
+              <span class="z6-tile-label">&#x1F4CB; Awaiting review</span>
+            </button>
+            <div class="z6-tile z6-tile-bugs" title="All open bugs in gg-mvp">
+              <span class="z6-tile-num" id="z6-tile-bugs">–</span>
+              <span class="z6-tile-label">&#x1F6E0;&#xFE0F; Open bugs</span>
+            </div>
+          </div>
+          <!-- Row 2: breakdowns -->
+          <div class="z6-breakdowns">
+            <div class="z6-breakdown">
+              <span class="z6-breakdown-label">Proposed by source</span>
+              <span class="z6-breakdown-val" id="z6-bd-source">&middot;</span>
+            </div>
+            <div class="z6-breakdown">
+              <span class="z6-breakdown-label">Open bugs by layer <span class="z6-heuristic" title="Coarse heuristic: area labels map to backend (ai, ci-cd, deployment, infrastructure, analytics, data) or frontend (prototype, testing, voice). Items with no area but a named screen count as frontend; everything else is unknown.">&#9432;</span></span>
+              <span class="z6-breakdown-val" id="z6-bd-layer">&middot;</span>
+            </div>
+          </div>
+          <!-- Row 3: per-person strip -->
+          <div class="z6-people">
+            <span class="z6-people-label">By person</span>
+            <div class="z6-people-cards">
+              <div class="z6-person">
+                <span class="z6-person-name">Timothy</span>
+                <span class="z6-person-stat" id="z6-person-timothy">&#x1F4CB; – to review</span>
+                <span class="z6-person-hint">scan, File real bugs, Not-a-bug the noise</span>
+              </div>
+              <div class="z6-person">
+                <span class="z6-person-name">Yonas</span>
+                <span class="z6-person-stat" id="z6-person-yonas">&#x1F6E0; – assigned</span>
+                <span class="z6-person-hint">owns the GitLab bug queue</span>
+              </div>
+              <div class="z6-person">
+                <span class="z6-person-name">Mint</span>
+                <span class="z6-person-stat" id="z6-person-mint">&#x1F6E0; – assigned</span>
+                <span class="z6-person-hint">context + tool-calling</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div id="z6-source-filters">
         <span class="z6-filter-label">Source:</span>
         <button type="button" class="z6-chip active" data-source="all" onclick="setQASource('all')">All <span class="z6-chip-count" id="z6-count-all">…</span></button>
@@ -2220,6 +2370,8 @@
     const QA_API_PROPOSED = '/internal/mobai/api/proposed-findings';
     const QA_API_FILE_FINDING = '/internal/mobai/api/file-finding';
     const QA_API_REJECT_FINDING = '/internal/mobai/api/reject-finding';
+    const QA_API_SUMMARY = '/internal/mobai/api/qa-summary';
+    const QA_SUMMARY_COLLAPSE_KEY = 'gg_arch_z6_summary_collapsed';
     let _qaPollHandle = null;
 
     // Cached fetched data so chip + search re-renders don't need a network round-trip.
@@ -2253,6 +2405,13 @@
       if (labels.includes('mobai')) return 'mobai';
       if (labels.includes('video')) return 'video';
       return 'human';
+    }
+    // Format a seconds offset as M:SS for video deep-link labels.
+    function qaFmtTimestamp(sec) {
+      const total = Math.max(0, Math.floor(Number(sec) || 0));
+      const m = Math.floor(total / 60);
+      const s = total % 60;
+      return m + ':' + String(s).padStart(2, '0');
     }
     // Pick a source emoji for the proposed-finding card.
     function qaSourceEmoji(source) {
@@ -2442,9 +2601,11 @@
               ? '<div class="z6-detail-label">Screenshot</div><a href="' + qaEscape(f.screenshot_url) + '" target="_blank" rel="noopener"><img loading="lazy" src="' + qaEscape(f.screenshot_url) + '" alt="screenshot"></a>'
               : '')
           + (f.video_url
-              ? '<div class="z6-detail-label">Video</div><p><a href="' + qaEscape(f.video_url) + '" target="_blank" rel="noopener">' + qaEscape(f.video_url) + '</a>'
-                + (typeof f.timestamp_seconds === 'number' ? ' (@ ' + f.timestamp_seconds + 's)' : '')
-                + '</p>'
+              // Drive doesn't reliably honor deep-seek via URL, so we surface the
+              // timestamp as text in the link label ("jump to M:SS") rather than a #t= anchor.
+              ? '<div class="z6-detail-label">Video</div><p><a href="' + qaEscape(f.video_url) + '" target="_blank" rel="noopener">▶ Open video'
+                + (typeof f.timestamp_seconds === 'number' ? ' (jump to ' + qaFmtTimestamp(f.timestamp_seconds) + ')' : '')
+                + '</a></p>'
               : '')
           + '</div>'
         : '';
@@ -2592,6 +2753,85 @@
       return String(s).replace(/(["\\\]])/g, '\\$1');
     }
 
+    // --- QA Status glance panel ---
+    function qaFmtClock(iso) {
+      try {
+        const d = new Date(iso);
+        return 'updated ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch (_e) { return ''; }
+    }
+
+    function renderQASummary(s) {
+      if (!s) return;
+      const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      const p = s.proposed || {};
+      const ob = s.open_bugs || {};
+      const pp = s.per_person || {};
+      const bySrc = p.by_source || {};
+      const byLayer = ob.by_layer || {};
+
+      // Row 1 tiles
+      setText('z6-tile-blockers', ob.blockers != null ? ob.blockers : 0);
+      setText('z6-tile-review', p.total != null ? p.total : 0);
+      setText('z6-tile-bugs', ob.total != null ? ob.total : 0);
+
+      // Row 2 breakdowns
+      setText('z6-bd-source',
+        'Human ' + (bySrc.human || 0) + ' · MobAI ' + (bySrc.mobai || 0) + ' · Video ' + (bySrc.video || 0));
+      let layerStr = 'Frontend ' + (byLayer.frontend || 0) + ' · Backend ' + (byLayer.backend || 0);
+      if ((byLayer.unknown || 0) > 0) layerStr += ' · Unknown ' + byLayer.unknown;
+      setText('z6-bd-layer', layerStr);
+
+      // Row 3 per-person
+      const tim = pp.timothy || {};
+      const yon = pp.yonas || {};
+      const min = pp.mint || {};
+      setText('z6-person-timothy', '\u{1F4CB} ' + (tim.review_queue || 0) + ' to review');
+      setText('z6-person-yonas', '\u{1F6E0} ' + (yon.assigned || 0) + ' assigned · ' + (yon.high || 0) + ' high');
+      setText('z6-person-mint', '\u{1F6E0} ' + (min.assigned || 0) + ' assigned · ' + (min.high || 0) + ' high');
+
+      setText('z6-summary-generated', s.generated_at ? qaFmtClock(s.generated_at) : '');
+    }
+
+    async function qaLoadSummary() {
+      try {
+        const r = await fetch(QA_API_SUMMARY, { cache: 'no-cache' });
+        const data = await r.json();
+        renderQASummary(data);
+      } catch (e) {
+        // Glance panel is best-effort; leave prior values rather than blanking.
+        const gen = document.getElementById('z6-summary-generated');
+        if (gen) gen.textContent = 'update failed';
+      }
+    }
+
+    function toggleQASummary() {
+      const wrap = document.getElementById('z6-summary');
+      const btn = document.getElementById('z6-summary-toggle');
+      if (!wrap) return;
+      const collapsed = wrap.classList.toggle('collapsed');
+      if (btn) btn.textContent = collapsed ? '+' : '–';
+      try { localStorage.setItem(QA_SUMMARY_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch (_e) {}
+    }
+
+    function restoreQASummaryState() {
+      let collapsed = false;
+      try { collapsed = localStorage.getItem(QA_SUMMARY_COLLAPSE_KEY) === '1'; } catch (_e) {}
+      const wrap = document.getElementById('z6-summary');
+      const btn = document.getElementById('z6-summary-toggle');
+      if (wrap && collapsed) wrap.classList.add('collapsed');
+      if (btn) btn.textContent = collapsed ? '+' : '–';
+    }
+
+    function qaScrollToProposed() {
+      const el = document.getElementById('z6-proposed-header');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function qaScrollToIssues() {
+      const el = document.getElementById('z6-issues-header');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     async function qaLoadProposed() {
       const listEl = document.getElementById('z6-proposed-list');
       try {
@@ -2638,6 +2878,8 @@
         document.getElementById('z6-sidebar').dataset.stateRestored = '1';
         restoreZoom6SidebarState();
       }
+      restoreQASummaryState();
+      qaLoadSummary();
       qaLoadRuns();
       qaLoadIssues();
       qaLoadProposed();
@@ -2645,6 +2887,7 @@
       _qaPollHandle = setInterval(() => {
         // Only poll while the tab is visible
         if (document.getElementById('zoom-6-view')?.classList.contains('active')) {
+          qaLoadSummary();
           qaLoadIssues();
           qaLoadProposed();
         }
