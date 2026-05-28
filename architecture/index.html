@@ -2722,6 +2722,7 @@
     const QA_API_REJECT_FINDING = '/internal/mobai/api/reject-finding';
     const QA_API_MERGE_FINDING = '/internal/mobai/api/merge-finding';
     const QA_API_CLOSE_ISSUE = '/internal/mobai/api/close-issue';
+    const QA_API_REVERT_ISSUE = '/internal/mobai/api/revert-issue';
     const QA_API_SUMMARY = '/internal/mobai/api/qa-summary';
     const QA_SUMMARY_COLLAPSE_KEY = 'gg_arch_z6_summary_collapsed';
     const QA_MODE_KEY = 'gg_arch_z6_mode';
@@ -2906,10 +2907,16 @@
       ).join(' ');
       const kind = i.finding_type === 'ai-learning' ? '\u{1F9E0}' : '\u{1F534}';
       const closing = _qaIssuesClosing.has(i.iid);
+      // Issues the dashboard created from a finding get "Revert" (close + send the
+      // finding back to the queue). Pre-existing issues get "Remove" (close only).
+      const isRevert = !!i.from_finding;
       const removeBtn = closing
-        ? '<button class="z6-remove-btn" disabled>Removing…</button>'
-        : '<button class="z6-remove-btn" title="Close this issue (reversible in GitLab)"'
-          + ' onclick="qaCloseIssue(' + i.iid + ', event)">Remove</button>';
+        ? '<button class="z6-remove-btn" disabled>' + (isRevert ? 'Reverting…' : 'Removing…') + '</button>'
+        : isRevert
+          ? '<button class="z6-remove-btn z6-revert-btn" title="Close the issue and send finding ' + qaEscape(i.finding_id || '') + ' back to the review queue"'
+            + ' onclick="qaRevertIssue(' + i.iid + ', event)">Revert</button>'
+          : '<button class="z6-remove-btn" title="Close this issue (reversible in GitLab)"'
+            + ' onclick="qaCloseIssue(' + i.iid + ', event)">Remove</button>';
       return '<a class="z6-issue-card ' + sevClass + '" data-issue-iid="' + qaEscape(i.iid) + '" href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener">'
         + '<div class="z6-issue-head">'
           + '<span class="z6-issue-iid">#' + qaEscape(i.iid) + '</span>'
