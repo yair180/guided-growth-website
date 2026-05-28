@@ -1415,6 +1415,8 @@
     }
     .z6-remove-btn:hover { background: rgba(243,89,111,0.14); color: #f3a9b4; border-color: #5c2533; }
     .z6-remove-btn:disabled { opacity: 0.55; cursor: progress; }
+    .z6-revert-btn { color: #86efac; border-color: #245c37; }
+    .z6-revert-btn:hover { background: rgba(74,222,128,0.14); color: #bbf7d0; border-color: #2e7d4a; }
     /* Triage actions get their own row under the meta so the head never crowds */
     .z6-proposed-card .z6-actions {
       display: flex; flex-wrap: wrap; gap: 0; align-items: center;
@@ -3466,6 +3468,43 @@
       _qaIssuesClosing.delete(issueIid);
       _qaIssues = _qaIssues.filter(i => i.iid !== issueIid);
       renderIssues();
+      qaLoadSummary();
+      if (qaCurrentMode === 'byscreen') { renderScreensSidebar(); renderByScreenPanel(); }
+    }
+
+    // Revert a finding-created issue: closes the issue AND restores the finding
+    // to the review queue (so it "goes back"). Only shown on issues the dashboard
+    // filed; pre-existing issues use qaCloseIssue instead.
+    async function qaRevertIssue(issueIid, ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      issueIid = parseInt(issueIid, 10);
+      if (!issueIid || _qaIssuesClosing.has(issueIid)) return;
+      if (!window.confirm('Revert #' + issueIid + '?\n\nThis closes the issue and sends its finding back to the review queue (Needs review). Use this to undo a filing.')) return;
+      _qaIssuesClosing.add(issueIid);
+      renderIssues();
+      if (qaCurrentMode === 'byscreen') renderByScreenPanel();
+      try {
+        const res = await fetch(QA_API_REVERT_ISSUE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ issue_iid: issueIid }),
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (_e) {}
+        if (!res.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
+        if (!data || data.status !== 'ok') throw new Error('worker did not confirm revert');
+      } catch (e) {
+        _qaIssuesClosing.delete(issueIid);
+        window.alert('Could not revert #' + issueIid + ': ' + (e.message || String(e)));
+        renderIssues();
+        if (qaCurrentMode === 'byscreen') renderByScreenPanel();
+        return;
+      }
+      _qaIssuesClosing.delete(issueIid);
+      _qaIssues = _qaIssues.filter(i => i.iid !== issueIid);
+      renderIssues();
+      qaLoadProposed();   // the restored finding reappears in the queue
       qaLoadSummary();
       if (qaCurrentMode === 'byscreen') { renderScreensSidebar(); renderByScreenPanel(); }
     }
