@@ -1614,6 +1614,8 @@
     #z6-runs-section #z6-runs-list { display: none; max-height: 320px; flex: none; }
     #z6-runs-section.expanded #z6-runs-list { display: block; }
     #z6-sidebar.collapsed #z6-runs-section { display: none; }
+    .z6-runs-toggle { margin: 8px 2px 2px; font-size: 11px; color: #7c8aa0; cursor: pointer; text-align: center; padding: 4px; border-radius: 4px; }
+    .z6-runs-toggle:hover { color: #c2cee0; background: rgba(255,255,255,0.04); }
 
     /* === By Screen: sidebar screen list === */
     #z6-screens-controls {
@@ -3574,6 +3576,14 @@
 
     // Cached fetched data so chip + search re-renders don't need a network round-trip.
     let _qaRuns = [];
+    // Smoke/proof runs (names containing "proof" or "smoke") are dev noise, not
+    // real QA passes. Hide them by default; a footer toggle reveals them.
+    const QA_JUNK_RUN_RE = /proof|smoke/i;
+    let _qaShowTestRuns = false;
+    function qaToggleTestRuns() {
+      _qaShowTestRuns = !_qaShowTestRuns;
+      renderRunsSidebar(document.getElementById('z6-search')?.value || '');
+    }
     let _qaIssues = [];
     let _qaProposed = [];
     let _qaProposedExpanded = new Set();   // finding ids currently expanded
@@ -3654,15 +3664,23 @@
       const listEl = document.getElementById('z6-runs-list');
       if (!listEl) return;
       const needle = (filter || '').trim().toLowerCase();
-      const runs = needle
+      let base = needle
         ? _qaRuns.filter(r => (r.date || '').toLowerCase().includes(needle))
-        : _qaRuns;
+        : _qaRuns.slice();
+      const junkCount = base.filter(r => QA_JUNK_RUN_RE.test(r.date || '')).length;
+      const runs = _qaShowTestRuns ? base : base.filter(r => !QA_JUNK_RUN_RE.test(r.date || ''));
       if (!_qaRuns.length) {
         listEl.innerHTML = '<div class="z6-empty">No runs yet.</div>';
         return;
       }
+      const toggleFooter = junkCount
+        ? '<div class="z6-runs-toggle" onclick="qaToggleTestRuns()">'
+          + (_qaShowTestRuns ? 'Hide ' + junkCount + ' test/smoke run' + (junkCount === 1 ? '' : 's')
+                             : 'Show ' + junkCount + ' hidden test/smoke run' + (junkCount === 1 ? '' : 's'))
+          + '</div>'
+        : '';
       if (!runs.length) {
-        listEl.innerHTML = '<div class="z6-empty">No runs match.</div>';
+        listEl.innerHTML = '<div class="z6-empty">No real runs' + (needle ? ' match' : ' yet') + '.</div>' + toggleFooter;
         return;
       }
       listEl.innerHTML = runs.map(run => {
@@ -3679,7 +3697,7 @@
           + '<div class="z6-run-meta">' + reportCount + ' report' + (reportCount === 1 ? '' : 's') + '</div>'
           + '<div class="z6-run-links">' + reports + findingsLink + '</div>'
           + '</div>';
-      }).join('');
+      }).join('') + toggleFooter;
     }
 
     function renderIssues() {
