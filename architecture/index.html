@@ -1003,6 +1003,136 @@
       background: #060d18; padding: 1px 5px; border-radius: 3px;
     }
 
+    /* === Mode toggle (Overview | By Screen) — segmented control at top of main === */
+    #z6-mode-toggle {
+      display: inline-flex; gap: 2px; margin: 0 0 20px;
+      background: #060d18; border: 1px solid #1e3a5f; border-radius: 9px; padding: 3px;
+    }
+    #z6-mode-toggle .z6-mode-btn {
+      padding: 6px 16px; font-size: 12.5px; font-weight: 600;
+      background: transparent; color: #8fa8c4; border: none; border-radius: 6px;
+      cursor: pointer; font-family: inherit; transition: all 0.12s;
+    }
+    #z6-mode-toggle .z6-mode-btn:hover:not(.active) { color: #fff; background: rgba(30,58,95,0.45); }
+    #z6-mode-toggle .z6-mode-btn.active {
+      background: rgba(91,192,222,0.18); color: #fff; box-shadow: inset 0 0 0 1px rgba(91,192,222,0.5);
+    }
+
+    /* Overview-only vs by-screen-only main blocks toggle by body data-attr below */
+    #z6-byscreen-panel { display: none; }
+
+    /* === Audit Runs de-emphasis: collapsed secondary section in the sidebar === */
+    #z6-runs-section { border-top: 1px solid rgba(255,255,255,0.07); }
+    #z6-runs-section-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 9px 12px; cursor: pointer; user-select: none;
+      color: #6b8aaf; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    #z6-runs-section-header:hover { color: #c2cee0; }
+    #z6-runs-section-header .z6-runs-caret {
+      font-size: 10px; transition: transform 0.12s; display: inline-block;
+    }
+    #z6-runs-section.expanded #z6-runs-section-header .z6-runs-caret { transform: rotate(90deg); }
+    #z6-runs-section-header .z6-runs-hint {
+      font-weight: 400; text-transform: none; letter-spacing: 0; color: #4f6a8a;
+      font-style: italic; font-size: 10.5px; margin-left: auto;
+    }
+    #z6-runs-section #z6-runs-list { display: none; max-height: 320px; flex: none; }
+    #z6-runs-section.expanded #z6-runs-list { display: block; }
+    #z6-sidebar.collapsed #z6-runs-section { display: none; }
+
+    /* === By Screen: sidebar screen list === */
+    #z6-screens-controls {
+      padding: 8px 12px; display: flex; flex-direction: column; gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    #z6-screens-controls input {
+      background: #0a1929; color: #fff; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px; padding: 7px 10px; font: inherit; font-size: 13px;
+    }
+    #z6-screens-controls input:focus { outline: none; border-color: #5bc0de; }
+    #z6-screen-order {
+      display: inline-flex; gap: 2px; background: #060d18;
+      border: 1px solid #1e3a5f; border-radius: 8px; padding: 2px;
+    }
+    #z6-screen-order .z6-order-btn {
+      flex: 1; padding: 5px 8px; font-size: 11px; font-weight: 600;
+      background: transparent; color: #8fa8c4; border: none; border-radius: 5px;
+      cursor: pointer; font-family: inherit; transition: all 0.12s; white-space: nowrap;
+    }
+    #z6-screen-order .z6-order-btn:hover:not(.active) { color: #fff; }
+    #z6-screen-order .z6-order-btn.active { background: rgba(91,192,222,0.18); color: #fff; }
+    #z6-screens-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 8px 14px; }
+    #z6-sidebar.collapsed #z6-screens-controls,
+    #z6-sidebar.collapsed #z6-screens-list { display: none; }
+    #z6-screens-list .z6-empty {
+      padding: 18px 6px; color: #6b8aaf; font-size: 12px; text-align: center; font-style: italic;
+    }
+    .z6-screen-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; margin: 3px 0; border-radius: 7px;
+      border: 1px solid transparent; cursor: pointer; transition: all 0.1s;
+    }
+    .z6-screen-row:hover { background: rgba(30,58,95,0.4); }
+    .z6-screen-row.active { background: rgba(91,192,222,0.14); border-color: rgba(91,192,222,0.45); }
+    .z6-screen-row.zero { opacity: 0.45; }
+    .z6-screen-row .z6-screen-name {
+      flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: #c2cee0;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .z6-screen-row.active .z6-screen-name { color: #fff; }
+    .z6-screen-row .z6-screen-hotdot {
+      flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%;
+      background: #f3596f; box-shadow: 0 0 6px rgba(243,89,111,0.6);
+    }
+    .z6-screen-row .z6-screen-badge {
+      flex-shrink: 0; min-width: 20px; text-align: center;
+      background: #060d18; color: #8fa8c4; border: 1px solid #1e3a5f;
+      border-radius: 9px; padding: 1px 7px; font-size: 11px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .z6-screen-row.active .z6-screen-badge { color: #5bc0de; border-color: rgba(91,192,222,0.4); }
+
+    /* === By Screen: main panel === */
+    #z6-byscreen-header {
+      display: flex; align-items: baseline; gap: 12px; margin: 0 0 4px;
+    }
+    #z6-byscreen-header .z6-bs-screen {
+      font-size: 20px; font-weight: 700; color: #fff;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
+    #z6-byscreen-header .z6-bs-count {
+      color: #5bc0de; font-size: 13px; font-weight: 600;
+    }
+    #z6-byscreen-subnote { color: #6b8aaf; font-size: 12px; margin: 0 0 20px; }
+    .z6-bs-group { margin-bottom: 22px; }
+    .z6-bs-group-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .z6-bs-group-title.bugs { color: #f3596f; }
+    .z6-bs-group-title.learnings { color: #a78bfa; }
+    .z6-bs-group-title .z6-bs-grp-count {
+      background: #060d18; border: 1px solid #1e3a5f; border-radius: 9px;
+      padding: 1px 8px; font-size: 10.5px; color: #8fa8c4; font-weight: 600;
+    }
+    .z6-bs-subgroup { margin: 0 0 14px; }
+    .z6-bs-subgroup-title {
+      font-size: 11px; font-weight: 600; color: #6b8aaf;
+      margin: 0 0 8px 2px; display: flex; align-items: center; gap: 6px;
+    }
+    .z6-bs-subgroup-title .z6-bs-layer-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .z6-bs-subgroup-title .z6-bs-layer-dot.frontend { background: #5bc0de; }
+    .z6-bs-subgroup-title .z6-bs-layer-dot.backend  { background: #a78bfa; }
+    .z6-bs-subgroup-title .z6-bs-layer-dot.unknown  { background: #64748b; }
+    #z6-byscreen-panel .z6-empty {
+      color: #6b8aaf; font-style: italic; padding: 40px 0; text-align: center;
+    }
+
     /* --- QA Status glance panel (sits at the very top of zoom-6 main) --- */
     #z6-summary {
       background: #0a1420; border: 1px solid #1e3a5f; border-radius: 10px;
@@ -2330,21 +2460,57 @@
     </div>
   </div>
 
-  <!-- ZOOM 6: QA DASHBOARD — sidebar of audit runs (left) + filtered issues (main) -->
+  <!-- ZOOM 6: QA DASHBOARD — sidebar (screens or audit runs, by mode) + main (Overview or By Screen) -->
   <div id="zoom-6-view">
     <aside id="z6-sidebar">
       <div id="z6-sidebar-header">
         <div class="z6-title-row">
-          <div class="z6-sidebar-title">Audit Runs</div>
+          <div class="z6-sidebar-title" id="z6-sidebar-title">Audit Runs</div>
           <button type="button" id="z6-collapse-btn" onclick="toggleZoom6Sidebar()" title="Collapse / expand sidebar">‹</button>
         </div>
         <input id="z6-search" type="search" placeholder="Search by date…" oninput="filterRunsSidebar(this.value)" autocomplete="off" />
       </div>
-      <div id="z6-runs-list" role="list"><div class="z6-empty">Loading…</div></div>
+
+      <!-- OVERVIEW mode: Audit Runs is now a COLLAPSED secondary section (noise for devs) -->
+      <div id="z6-overview-sidebar">
+        <section id="z6-runs-section" role="group" aria-label="Audit runs (raw MobAI reports)">
+          <div id="z6-runs-section-header" onclick="toggleRunsSection()" title="Raw MobAI run reports — secondary detail">
+            <span class="z6-runs-caret">&#9656;</span>
+            <span>Audit Runs</span>
+            <span class="z6-runs-hint">raw run reports</span>
+          </div>
+          <div id="z6-runs-list" role="list"><div class="z6-empty">Loading…</div></div>
+        </section>
+      </div>
+
+      <!-- BY SCREEN mode: sidebar lists screens (replaces audit runs) -->
+      <div id="z6-byscreen-sidebar" style="display:none; flex:1; min-height:0; flex-direction:column;">
+        <div id="z6-screens-controls">
+          <div id="z6-screen-order" role="group" aria-label="Screen ordering">
+            <button type="button" class="z6-order-btn active" data-order="flow" onclick="setScreenOrder('flow')">Flow order</button>
+            <button type="button" class="z6-order-btn" data-order="hot" onclick="setScreenOrder('hot')">Hottest first</button>
+          </div>
+        </div>
+        <div id="z6-screens-list" role="list"><div class="z6-empty">Loading…</div></div>
+      </div>
     </aside>
     <main id="zoom-6-main">
       <div class="zoom-title">QA Dashboard</div>
       <div class="zoom-subtitle">Live state from MobAI runs and gg-mvp issues. Polls every 60s.</div>
+
+      <!-- Mode toggle: Overview (default) | By Screen -->
+      <div id="z6-mode-toggle" role="group" aria-label="Dashboard mode">
+        <button type="button" class="z6-mode-btn active" data-mode="overview" onclick="setQAMode('overview')">Overview</button>
+        <button type="button" class="z6-mode-btn" data-mode="byscreen" onclick="setQAMode('byscreen')">By Screen</button>
+      </div>
+
+      <!-- BY SCREEN main panel (hidden in Overview mode) -->
+      <div id="z6-byscreen-panel">
+        <div id="z6-byscreen-content"><div class="z6-empty">Select a screen from the left to see its findings.</div></div>
+      </div>
+
+      <!-- OVERVIEW main content (status panel, chips, proposed, open issues) -->
+      <div id="z6-overview-panel">
 
       <!-- QA STATUS — glance panel rolling up proposed findings + open bugs -->
       <section id="z6-summary" aria-label="QA status summary">
@@ -2435,6 +2601,7 @@
       <div id="z6-issues-list"><div class="z6-empty">Loading…</div></div>
 
       <div id="z6-footer">Polls every 60s while this view is open. Source: gg-cron-worker proxy at <code>/internal/mobai/api/*</code> (GitLab PAT stays on the worker).</div>
+      </div><!-- /#z6-overview-panel -->
     </main>
   </div>
 
@@ -2450,7 +2617,23 @@
     const QA_API_REJECT_FINDING = '/internal/mobai/api/reject-finding';
     const QA_API_SUMMARY = '/internal/mobai/api/qa-summary';
     const QA_SUMMARY_COLLAPSE_KEY = 'gg_arch_z6_summary_collapsed';
+    const QA_MODE_KEY = 'gg_arch_z6_mode';
     let _qaPollHandle = null;
+
+    // Canonical flow order, snapshot from gg-spec/data/nav.json (screens object
+    // preserves pipeline order). Browser can't fetch nav.json (GitLab PAT lives
+    // on the worker), so this static snapshot drives "Flow order". Both screen_id
+    // and logical_screen are listed so finding screen-names map either way.
+    const QA_FLOW_ORDER = ["SPLASH","WELCOME","AUTH-SIGNUP","AUTH-LOGIN","AUTH-FORGOT-PASSWORD","VOICE-PREFERENCE","MIC-PERMISSION","MIC-PERMISSION--AI-TEXT-MODE","ONBOARD-01--FORM","ONBOARD-01","ONBOARD-01--VOICE-STEP-1","ONBOARD-FORK--FORM","ONBOARD-FORK","ONBOARD-FORK--VOICE","ONBOARD-BEGINNER-01","ONBOARD-BEGINNER-02","ONBOARD-BEGINNER-03","ONBOARD-BEGINNER-04","ONBOARD-BEGINNER-05","ONBOARD-BEGINNER-06","ONBOARD-BEGINNER-07","ONBOARD-BEGINNER-08","ONBOARD-BEGINNER-09","ONBOARD-ADVANCED","STARTING-PLAN","HOME-DEFAULT","HOME-MORNING-CHECKIN-EXPANDED","HABIT-LIST","HABIT-DETAIL","HABIT-EDIT","HABIT-EDIT--DELETE-CONFIRM","HABIT-CREATE-FORK","HABIT-CREATE-TEMPLATE-01","HABIT-CREATE-TEMPLATE-02","HABIT-CREATE-TEMPLATE-03","HABIT-CREATE-TEMPLATE-04","HABIT-CREATE-TEMPLATE-05","HABIT-CREATE-TEMPLATE-06","HABIT-CREATE-TEMPLATE-07","REFLECTION-LOG","EVENING-REFLECTION-GUIDED","EVENING-REFLECTION-FREEFORM","EVENING-REFLECTION-ENTRY","RECENT-REFLECTIONS","EDIT-REFLECTION-01","EDIT-REFLECTION-02","EDIT-REFLECTION--DELETE-CONFIRM","INSIGHTS-ANALYTICS","INSIGHTS-HISTORY","MONTHLY-CALENDAR","FOCUS-SETUP","FOCUS-TIMER","SETTINGS","FEEDBACK","BACK","CHAT--AI-VOICE--MIC-ON-01","CHAT"];
+    const QA_FLOW_RANK = (() => { const m = {}; QA_FLOW_ORDER.forEach((s, i) => { m[s] = i; }); return m; })();
+    // nav.json had this many screens — used to decide whether flow-order is the
+    // authoritative full list (true) or we fell back to count order.
+    const QA_FLOW_AVAILABLE = QA_FLOW_ORDER.length > 0;
+
+    let qaCurrentMode = 'overview';      // 'overview' | 'byscreen'
+    let qaScreenOrder = 'flow';          // 'flow' | 'hot'
+    let qaSelectedScreen = null;         // currently selected screen in By Screen mode
+    let _qaScreenSearch = '';
 
     // Cached fetched data so chip + search re-renders don't need a network round-trip.
     let _qaRuns = [];
@@ -2610,7 +2793,16 @@
       set('z6-count-human', issuesBy.human + proposedBy.human);
     }
 
-    function filterRunsSidebar(value) { renderRunsSidebar(value); }
+    // Sidebar search box is shared between modes. In Overview it filters audit
+    // runs; in By Screen it filters the screen list.
+    function filterRunsSidebar(value) {
+      if (qaCurrentMode === 'byscreen') {
+        _qaScreenSearch = value || '';
+        renderScreensSidebar();
+      } else {
+        renderRunsSidebar(value);
+      }
+    }
 
     function toggleZoom6Sidebar(force) {
       const bar = document.getElementById('z6-sidebar');
@@ -2647,10 +2839,14 @@
               ? 'No proposed findings — review queue is clear.'
               : 'No proposed ' + qaEscape(qaCurrentSource) + ' findings.')
           + '</div>';
-        return;
+      } else {
+        listEl.innerHTML = filtered.map(f => qaProposedCardHtml(f)).join('');
       }
-
-      listEl.innerHTML = filtered.map(f => qaProposedCardHtml(f)).join('');
+      // By Screen mode reads the same _qaProposed cache; keep it in sync.
+      if (qaCurrentMode === 'byscreen') {
+        renderScreensSidebar();
+        renderByScreenPanel();
+      }
     }
 
     function qaProposedCardHtml(f) {
@@ -3078,6 +3274,219 @@
           qaLoadProposed();
         }
       }, 60000);
+      restoreQAMode();
+    }
+
+    // ============================================================
+    // ZOOM 6 — MODE TOGGLE (Overview | By Screen) + By-Screen view
+    // ============================================================
+
+    // Normalize a finding's screen tag to a display key. `global`, null, empty,
+    // and the literal "null" all collapse into the cross-screen bucket.
+    function qaScreenKey(f) {
+      const s = (f && f.screen ? String(f.screen) : '').trim();
+      if (!s || s.toLowerCase() === 'global' || s.toLowerCase() === 'null') return 'Global / cross-screen';
+      return s;
+    }
+
+    function setQAMode(mode) {
+      if (mode !== 'overview' && mode !== 'byscreen') return;
+      qaCurrentMode = mode;
+      try { localStorage.setItem(QA_MODE_KEY, mode); } catch (_e) {}
+      document.querySelectorAll('#z6-mode-toggle .z6-mode-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === mode));
+
+      const overviewMain = document.getElementById('z6-overview-panel');
+      const byscreenMain = document.getElementById('z6-byscreen-panel');
+      const overviewSide = document.getElementById('z6-overview-sidebar');
+      const byscreenSide = document.getElementById('z6-byscreen-sidebar');
+      const sideTitle = document.getElementById('z6-sidebar-title');
+      const searchEl = document.getElementById('z6-search');
+
+      const isBs = mode === 'byscreen';
+      if (overviewMain) overviewMain.style.display = isBs ? 'none' : '';
+      if (byscreenMain) byscreenMain.style.display = isBs ? 'block' : 'none';
+      if (overviewSide) overviewSide.style.display = isBs ? 'none' : '';
+      if (byscreenSide) byscreenSide.style.display = isBs ? 'flex' : 'none';
+      if (sideTitle) sideTitle.textContent = isBs ? 'Screens' : 'Audit Runs';
+      if (searchEl) {
+        searchEl.placeholder = isBs ? 'Search screens…' : 'Search by date…';
+        searchEl.value = '';
+        _qaScreenSearch = '';
+      }
+
+      if (isBs) {
+        renderScreensSidebar();
+        renderByScreenPanel();
+      }
+    }
+
+    function restoreQAMode() {
+      let mode = 'overview';
+      try { const v = localStorage.getItem(QA_MODE_KEY); if (v === 'byscreen' || v === 'overview') mode = v; } catch (_e) {}
+      setQAMode(mode);
+    }
+
+    function setScreenOrder(order) {
+      if (order !== 'flow' && order !== 'hot') return;
+      qaScreenOrder = order;
+      document.querySelectorAll('#z6-screen-order .z6-order-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.order === order));
+      renderScreensSidebar();
+    }
+
+    // Collapsible Audit Runs section (Overview sidebar). Collapsed by default.
+    function toggleRunsSection() {
+      const sec = document.getElementById('z6-runs-section');
+      if (sec) sec.classList.toggle('expanded');
+    }
+
+    // Build per-screen aggregates from the proposed-findings cache.
+    // Returns [{ screen, total, high, bugsFront, bugsBack, bugsUnknown, learnings }]
+    function qaBuildScreenAgg() {
+      const map = new Map();
+      for (const f of _qaProposed) {
+        const key = qaScreenKey(f);
+        if (!map.has(key)) map.set(key, { screen: key, total: 0, high: 0, items: [] });
+        const e = map.get(key);
+        e.total++;
+        e.items.push(f);
+        if ((f.severity || '').toLowerCase() === 'high') e.high++;
+      }
+      return [...map.values()];
+    }
+
+    function qaScreenRank(name) {
+      // "Global / cross-screen" always sorts last in flow order.
+      if (name === 'Global / cross-screen') return QA_FLOW_ORDER.length + 1000;
+      const r = QA_FLOW_RANK[name];
+      // Screens not in nav.json go after all known flow screens, alpha among themselves.
+      return (r === undefined) ? QA_FLOW_ORDER.length + 1 : r;
+    }
+
+    function renderScreensSidebar() {
+      const listEl = document.getElementById('z6-screens-list');
+      if (!listEl) return;
+      let agg = qaBuildScreenAgg();
+      const needle = (_qaScreenSearch || '').trim().toLowerCase();
+      if (needle) agg = agg.filter(a => a.screen.toLowerCase().includes(needle));
+
+      if (!agg.length) {
+        listEl.innerHTML = '<div class="z6-empty">'
+          + (needle ? 'No screens match.' : 'No findings yet.') + '</div>';
+        return;
+      }
+
+      if (qaScreenOrder === 'hot') {
+        agg.sort((a, b) => (b.total - a.total) || (b.high - a.high) || qaScreenRank(a.screen) - qaScreenRank(b.screen));
+      } else {
+        // Flow order — falls back to count order for screens not in nav.json,
+        // which are appended after known screens and ranked alpha among themselves.
+        agg.sort((a, b) => {
+          const ra = qaScreenRank(a.screen), rb = qaScreenRank(b.screen);
+          if (ra !== rb) return ra - rb;
+          return a.screen.localeCompare(b.screen);
+        });
+      }
+
+      // Auto-select the first screen if nothing is selected (or selection vanished).
+      if (!qaSelectedScreen || !agg.some(a => a.screen === qaSelectedScreen)) {
+        qaSelectedScreen = agg[0].screen;
+      }
+
+      listEl.innerHTML = agg.map(a => {
+        const active = a.screen === qaSelectedScreen ? ' active' : '';
+        const zero = a.total === 0 ? ' zero' : '';
+        const hot = a.high > 0 ? '<span class="z6-screen-hotdot" title="' + a.high + ' high-severity"></span>' : '';
+        return '<div class="z6-screen-row' + active + zero + '" onclick="selectQAScreen(\'' + qaEscape(a.screen).replace(/'/g, "\\'") + '\')">'
+          + '<span class="z6-screen-name" title="' + qaEscape(a.screen) + '">' + qaEscape(a.screen) + '</span>'
+          + hot
+          + '<span class="z6-screen-badge">' + a.total + '</span>'
+        + '</div>';
+      }).join('');
+    }
+
+    function selectQAScreen(screen) {
+      qaSelectedScreen = screen;
+      renderScreensSidebar();
+      renderByScreenPanel();
+    }
+
+    function renderByScreenPanel() {
+      const el = document.getElementById('z6-byscreen-content');
+      if (!el) return;
+      if (!_qaProposed.length) {
+        el.innerHTML = '<div class="z6-empty">No proposed findings — review queue is clear.</div>';
+        return;
+      }
+      if (!qaSelectedScreen) {
+        el.innerHTML = '<div class="z6-empty">Select a screen from the left to see its findings.</div>';
+        return;
+      }
+      const items = _qaProposed.filter(f => qaScreenKey(f) === qaSelectedScreen);
+      if (!items.length) {
+        el.innerHTML = '<div class="z6-empty">No findings on ' + qaEscape(qaSelectedScreen) + '.</div>';
+        return;
+      }
+
+      // Split: Bugs (→ frontend/backend by layer) vs AI Learnings (→ by bucket).
+      const bugs = items.filter(f => (f.finding_type || 'bug') !== 'ai-learning');
+      const learnings = items.filter(f => (f.finding_type || 'bug') === 'ai-learning');
+
+      const bugsByLayer = { frontend: [], backend: [], unknown: [] };
+      for (const f of bugs) {
+        const l = (f.layer === 'frontend' || f.layer === 'backend') ? f.layer : 'unknown';
+        bugsByLayer[l].push(f);
+      }
+      // AI Learning buckets per taxonomy: screen / behavior (global) / knowledge.
+      const bucketLabel = { screen: 'Screen', behavior: 'Global behavior', knowledge: 'Knowledge', other: 'Other' };
+      const learnByBucket = { screen: [], behavior: [], knowledge: [], other: [] };
+      for (const f of learnings) {
+        const b = ['screen', 'behavior', 'knowledge'].includes(f.bucket) ? f.bucket : 'other';
+        learnByBucket[b].push(f);
+      }
+
+      let html = '<div id="z6-byscreen-header">'
+        + '<span class="z6-bs-screen">' + qaEscape(qaSelectedScreen) + '</span>'
+        + '<span class="z6-bs-count">' + items.length + ' finding' + (items.length === 1 ? '' : 's') + '</span>'
+      + '</div>';
+      html += '<div id="z6-byscreen-subnote">' + bugs.length + ' bug' + (bugs.length === 1 ? '' : 's')
+        + ' &middot; ' + learnings.length + ' AI Learning' + (learnings.length === 1 ? '' : 's') + '</div>';
+
+      // --- Bugs group, sub-split Frontend / Backend (/ Unknown) ---
+      if (bugs.length) {
+        html += '<div class="z6-bs-group">';
+        html += '<div class="z6-bs-group-title bugs">&#x1F534; Bugs <span class="z6-bs-grp-count">' + bugs.length + '</span></div>';
+        const layerOrder = ['frontend', 'backend', 'unknown'];
+        const layerName = { frontend: 'Frontend', backend: 'Backend', unknown: 'Unknown' };
+        for (const lyr of layerOrder) {
+          const arr = bugsByLayer[lyr];
+          if (!arr.length) continue;
+          html += '<div class="z6-bs-subgroup">'
+            + '<div class="z6-bs-subgroup-title"><span class="z6-bs-layer-dot ' + lyr + '"></span>'
+            + layerName[lyr] + ' &middot; ' + arr.length + '</div>'
+            + arr.map(f => qaProposedCardHtml(f)).join('')
+          + '</div>';
+        }
+        html += '</div>';
+      }
+
+      // --- AI Learnings group, grouped by bucket ---
+      if (learnings.length) {
+        html += '<div class="z6-bs-group">';
+        html += '<div class="z6-bs-group-title learnings">&#x1F9E0; AI Learnings <span class="z6-bs-grp-count">' + learnings.length + '</span></div>';
+        for (const b of ['screen', 'behavior', 'knowledge', 'other']) {
+          const arr = learnByBucket[b];
+          if (!arr.length) continue;
+          html += '<div class="z6-bs-subgroup">'
+            + '<div class="z6-bs-subgroup-title">' + qaEscape(bucketLabel[b]) + ' &middot; ' + arr.length + '</div>'
+            + arr.map(f => qaProposedCardHtml(f)).join('')
+          + '</div>';
+        }
+        html += '</div>';
+      }
+
+      el.innerHTML = html;
     }
   </script>
 
