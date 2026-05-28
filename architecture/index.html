@@ -589,6 +589,24 @@
       color: #6b8aaf; font-size: 9px; margin-right: 2px; font-weight: 700;
     }
     #zoom-toggle-bar .zoom-btn.active .zoom-num { color: #5bc0de; }
+    /* Global text/UI size control (drives CSS zoom on <body>, persists per browser). */
+    #text-size-ctl { display: inline-flex; align-items: center; gap: 6px; margin-right: 4px; }
+    #text-size-ctl .ts-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+      color: #6b8aaf; font-weight: 700;
+    }
+    #text-size-ctl .ts-btn {
+      width: 24px; height: 24px; padding: 0; line-height: 1;
+      background: transparent; color: #8fa8c4; border: 1px solid #1e3a5f;
+      border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 13px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    #text-size-ctl .ts-btn:hover { background: rgba(30, 58, 95, 0.5); color: #fff; }
+    #text-size-ctl .ts-val {
+      font-size: 11px; color: #8fa8c4; min-width: 36px; text-align: center;
+      cursor: pointer; user-select: none;
+    }
+    #text-size-ctl .ts-val:hover { color: #fff; }
 
     /* Zoom view containers */
     #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view, #zoom-7-view { display: none; }
@@ -2469,6 +2487,12 @@
       <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#34d399;margin-right:6px;vertical-align:middle"></span><span class="zoom-num">7</span>QA
     </button>
     <span style="flex: 1"></span>
+    <div id="text-size-ctl" title="Make all text and UI bigger or smaller. Click the percentage to reset to 100%.">
+      <span class="ts-label">Text</span>
+      <button type="button" class="ts-btn" onclick="adjustTextSize(-1)" title="Smaller">A&minus;</button>
+      <span class="ts-val" id="ts-val" onclick="resetTextSize()" title="Reset to 100%">100%</span>
+      <button type="button" class="ts-btn" onclick="adjustTextSize(1)" title="Bigger">A+</button>
+    </div>
     <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.5</span>
   </div>
 
@@ -3690,6 +3714,31 @@
         if (box && box.classList.contains('open')) qaCloseLightbox();
       }
     });
+
+    // Global UI text/zoom scaling. Drives CSS zoom on <body> so text, controls,
+    // and layout all scale together and reflow. Persists per browser. Applies to
+    // every view (System through QA), so it's one knob for the whole system.
+    var TEXT_SCALE_KEY = 'gg_arch_text_scale';
+    var TEXT_SCALE_MIN = 0.8, TEXT_SCALE_MAX = 1.8, TEXT_SCALE_STEP = 0.1;
+    function getTextScale() {
+      var v = parseFloat(localStorage.getItem(TEXT_SCALE_KEY));
+      if (!v || isNaN(v)) v = 1;
+      return Math.min(TEXT_SCALE_MAX, Math.max(TEXT_SCALE_MIN, v));
+    }
+    function applyTextScale(scale) {
+      scale = Math.min(TEXT_SCALE_MAX, Math.max(TEXT_SCALE_MIN, Math.round(scale * 100) / 100));
+      try { document.body.style.zoom = scale; } catch (e) {}
+      try { localStorage.setItem(TEXT_SCALE_KEY, String(scale)); } catch (e) {}
+      var el = document.getElementById('ts-val');
+      if (el) el.textContent = Math.round(scale * 100) + '%';
+      return scale;
+    }
+    function adjustTextSize(dir) { applyTextScale(getTextScale() + dir * TEXT_SCALE_STEP); }
+    function resetTextSize() { applyTextScale(1); }
+    // Apply the saved size as soon as this script runs (the top bar is already
+    // parsed above), then re-apply on DOMContentLoaded as a belt-and-suspenders.
+    applyTextScale(getTextScale());
+    document.addEventListener('DOMContentLoaded', function () { applyTextScale(getTextScale()); });
 
     function qaDupHintHtml(f) {
       const d = QA_DUP_MAP[f && f.id];
