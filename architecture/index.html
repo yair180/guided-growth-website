@@ -2626,11 +2626,20 @@
       const srcClass = 'src-' + source.replace(/[^a-z0-9-]/g, '-');
       const srcLabel = source.charAt(0).toUpperCase() + source.slice(1).replace(/-/g, ' ');
 
+      // Collapsed-card thumbnail: lets Timothy pre-judge before expanding.
+      // Clicking opens the full screenshot in a new tab (stopPropagation so it
+      // doesn't toggle the expand).
+      const thumb = (!expanded && f.screenshot_url)
+        ? '<img class="z6-thumb" loading="lazy" src="' + qaEscape(f.screenshot_url) + '" alt="screenshot thumbnail"'
+          + ' onclick="event.stopPropagation(); window.open(\'' + qaEscape(f.screenshot_url) + '\',\'_blank\',\'noopener\')">'
+        : '';
+
       return '<div class="z6-proposed-card ' + sevClass + (expanded ? ' expanded' : '') + '" data-finding-id="' + qaEscape(f.id) + '">'
         + '<div class="z6-proposed-head">'
           + '<span class="z6-proposed-source">' + emoji + '</span>'
           + '<span class="z6-src-chip ' + srcClass + '">' + qaEscape(srcLabel) + '</span>'
           + '<span class="z6-proposed-title-text" onclick="qaToggleProposedExpand(\'' + qaEscape(f.id) + '\')">' + qaEscape(f.title || '(untitled)') + '</span>'
+          + thumb
           + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(f.severity || 'unset') + '</span>'
           + btn
           + rejectBtn
