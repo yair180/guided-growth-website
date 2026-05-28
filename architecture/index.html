@@ -8063,7 +8063,24 @@
       if (prompt) prompt.style.display = 'none';
       if (subnav) subnav.style.display = '';
       populateScreenFilterOnce();
+      glSyncIssuesLayoutToggle();
       setGitLabView(_glView, true);
+    }
+
+    // Reflect the persisted layout in the toggle buttons without forcing a render
+    // (the subsequent loadGitLabIssues() will paint the right pane).
+    function glSyncIssuesLayoutToggle() {
+      const bBtn = document.getElementById('z7-issues-board-btn');
+      const lBtn = document.getElementById('z7-issues-list-btn');
+      const gWrap = document.getElementById('z7-issues-groupby-wrap');
+      const isBoard = _glIssuesLayout === 'board';
+      if (bBtn) bBtn.classList.toggle('active', isBoard);
+      if (lBtn) lBtn.classList.toggle('active', !isBoard);
+      if (gWrap) gWrap.style.display = isBoard ? '' : 'none';
+      const boardEl = document.getElementById('z7-issues-board');
+      const listEl = document.getElementById('z7-issues-list');
+      if (boardEl) boardEl.style.display = isBoard ? '' : 'none';
+      if (listEl) listEl.style.display = isBoard ? 'none' : '';
     }
 
     function showGitLabDisconnected() {
@@ -8123,27 +8140,133 @@
     // ---- ISSUES ------------------------------------------------------------
 
     function loadGitLabIssues() {
+      const boardEl = document.getElementById('z7-issues-board');
       const listEl = document.getElementById('z7-issues-list');
       const project = document.getElementById('z7-issues-project').value;
       const state = document.getElementById('z7-issues-state').value;
       const screen = document.getElementById('z7-issues-screen').value;
       const search = document.getElementById('z7-issues-search').value.trim();
-      if (listEl) listEl.innerHTML = glSkeleton(5);
+      const active = (_glIssuesLayout === 'list') ? listEl : boardEl;
+      if (active) active.innerHTML = glSkeleton(5);
       const qs = new URLSearchParams({ project, state });
       if (screen) qs.set('screen', screen);
       if (search) qs.set('search', search);
       glFetch('/api/issues?' + qs.toString())
-        .then(data => renderGitLabIssues((data && data.issues) || []))
-        .catch(e => glHandleListError(listEl, e));
+        .then(data => { _glIssues = (data && data.issues) || []; renderGitLabIssues(); })
+        .catch(e => glHandleListError(active, e));
     }
 
-    function renderGitLabIssues(issues) {
+    function setIssuesLayout(layout) {
+      if (layout !== 'board' && layout !== 'list') return;
+      _glIssuesLayout = layout;
+      try { localStorage.setItem(GL_LAYOUT_KEY, layout); } catch (_e) {}
+      const bBtn = document.getElementById('z7-issues-board-btn');
+      const lBtn = document.getElementById('z7-issues-list-btn');
+      const gWrap = document.getElementById('z7-issues-groupby-wrap');
+      if (bBtn) bBtn.classList.toggle('active', layout === 'board');
+      if (lBtn) lBtn.classList.toggle('active', layout === 'list');
+      if (gWrap) gWrap.style.display = (layout === 'board') ? '' : 'none';
+      renderGitLabIssues();
+    }
+
+    // Re-render from the cached _glIssues using the current layout + grouping.
+    function renderGitLabIssues() {
+      const boardEl = document.getElementById('z7-issues-board');
       const listEl = document.getElementById('z7-issues-list');
-      if (!listEl) return;
-      if (!issues.length) { listEl.innerHTML = '<div class="z7-empty">No issues match these filters.</div>'; return; }
-      listEl.innerHTML = issues.map(iss => {
-        const labels = (iss.labels || []).filter(l => !/^screen::/i.test(l))
-          .map(l => '<span class="z7-label-chip">' + qaEscape(l) + '</span>').join('');
+      if (!boardEl || !listEl) return;
+      const isList = _glIssuesLayout === 'list';
+      boardEl.style.display = isList ? 'none' : '';
+      listEl.style.display = isList ? '' : 'none';
+      const countEl = document.getElementById('z7-issues-count');
+      if (countEl) countEl.textContent = _glIssues.length
+        ? (_glIssues.length + ' issue' + (_glIssues.length === 1 ? '' : 's')) : '';
+      if (isList) glRenderIssuesList(listEl); else glRenderIssuesBoard(boardEl);
+    }
+
+    // --- Board (kanban) ---
+    function glIssuePriority(iss) {
+      const names = glLabelNames(iss.labels);
+      if (names.includes('priority::high')) return 'high';
+      if (names.includes('priority::medium')) return 'medium';
+      if (names.includes('priority::low')) return 'low';
+      return 'unset';
+    }
+    function glIssueType(iss) {
+      const names = glLabelNames(iss.labels);
+      if (names.includes('bug')) return 'bug';
+      if (names.includes('ai-learning')) return 'ai-learning';
+      return 'other';
+    }
+    function glIssueColumns(issues, groupBy) {
+      // returns ordered [{key,label,dot,issues:[]}]
+      const cols = [];
+      const push = (key, label, dot) => { const c = { key, label, dot: dot || '', issues: [] }; cols.push(c); return c; };
+      if (groupBy === 'priority') {
+        const m = { high: push('high','High','#f3596f'), medium: push('medium','Medium','#fcd34d'),
+                    low: push('low','Low','#5bc0de'), unset: push('unset','Unset','#4f6a8a') };
+        issues.forEach(i => m[glIssuePriority(i)].issues.push(i));
+      } else if (groupBy === 'type') {
+        const m = { bug: push('bug','Bug','#f3596f'), 'ai-learning': push('ai-learning','AI Learning','#a78bfa'),
+                    other: push('other','Other','#4f6a8a') };
+        issues.forEach(i => m[glIssueType(i)].issues.push(i));
+      } else if (groupBy === 'status') {
+        const m = { opened: push('opened','Open','#34d399'), closed: push('closed','Closed','#f3596f') };
+        issues.forEach(i => (m[i.state] || m.opened).issues.push(i));
+      } else { // assignee
+        const byKey = {}; const order = [];
+        const ensure = (key, label) => { if (!byKey[key]) { byKey[key] = push(key, label, '#3b6ea5'); order.push(key); } return byKey[key]; };
+        issues.forEach(i => {
+          const as = i.assignees || [];
+          if (!as.length) { ensure('__unassigned__', 'Unassigned').issues.push(i); return; }
+          as.forEach(a => ensure('u:' + (a.username || a.name), a.name || a.username).issues.push(i));
+        });
+        // float Unassigned to the end
+        cols.sort((a, b) => (a.key === '__unassigned__') - (b.key === '__unassigned__'));
+      }
+      cols.forEach(c => c.issues.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0)));
+      return cols;
+    }
+    function glRenderIssuesBoard(boardEl) {
+      if (!_glIssues.length) { boardEl.innerHTML = '<div class="z7-empty">No issues match these filters.</div>'; return; }
+      const gSel = document.getElementById('z7-issues-groupby');
+      const groupBy = gSel ? gSel.value : 'priority';
+      const cols = glIssueColumns(_glIssues, groupBy);
+      boardEl.innerHTML = '<div class="z7-board">' + cols.map(c => {
+        const cards = c.issues.length
+          ? c.issues.map(glIssueCard).join('')
+          : '<div class="z7-col-empty">No issues</div>';
+        return '<div class="z7-col">'
+          + '<div class="z7-col-head">'
+          + (c.dot ? '<span class="z7-col-dot" style="background:' + c.dot + '"></span>' : '')
+          + qaEscape(c.label)
+          + '<span class="z7-col-n">' + c.issues.length + '</span>'
+          + '</div>'
+          + '<div class="z7-col-body">' + cards + '</div>'
+          + '</div>';
+      }).join('') + '</div>';
+    }
+    function glIssueCard(iss) {
+      return '<button type="button" class="z7-card ' + glStateClass(iss.state) + '" '
+        + 'onclick="openGitLabIssue(' + glAttr(iss.project) + ', ' + iss.iid + ')">'
+        + '<div class="z7-card-top">'
+        + '<span class="z7-card-iid">#' + iss.iid + '</span>'
+        + '<span class="z7-card-proj">' + qaEscape(iss.project) + '</span>'
+        + '</div>'
+        + '<div class="z7-card-title">' + qaEscape(iss.title) + '</div>'
+        + (glLabelPills(iss.labels) || '')
+        + '<div class="z7-card-foot">'
+        + (iss.screen ? '<span class="z7-screen-chip">' + qaEscape(iss.screen) + '</span>' : '')
+        + (iss.user_notes_count ? '<span class="z7-chip">&#x1F4AC; ' + iss.user_notes_count + '</span>' : '')
+        + '<span class="z7-spacer"></span>'
+        + glAvatarStack(iss.assignees, 'sm')
+        + '</div>'
+        + '</button>';
+    }
+
+    // --- List ---
+    function glRenderIssuesList(listEl) {
+      if (!_glIssues.length) { listEl.innerHTML = '<div class="z7-empty">No issues match these filters.</div>'; return; }
+      listEl.innerHTML = _glIssues.map(iss => {
         const goBtn = iss.screen
           ? '<button type="button" class="z7-goscreen" onclick="glGoToScreen(' + glAttr(iss.screen) + ', event)">Go to screen &rarr;</button>'
           : '';
@@ -8155,11 +8278,12 @@
           + '<span class="z7-badge ' + glStateClass(iss.state) + '">' + qaEscape(iss.state || '') + '</span>'
           + '</div>'
           + '<div class="z7-row-meta">'
-          + (iss.screen ? '<span class="z7-label-chip">' + qaEscape(iss.screen) + '</span>' : '')
-          + labels
+          + (iss.screen ? '<span class="z7-screen-chip">' + qaEscape(iss.screen) + '</span>' : '')
+          + (glLabelPills(iss.labels) || '')
           + (iss.user_notes_count ? '<span>&#x1F4AC; ' + iss.user_notes_count + '</span>' : '')
+          + (iss.assignees && iss.assignees.length ? glAvatarStack(iss.assignees, 'sm') : '')
           + (iss.author ? '<span>by ' + qaEscape(iss.author.name || iss.author.username) + '</span>' : '')
-          + (iss.updated_at ? '<span>updated ' + glAgo(iss.updated_at) + ' ago</span>' : '')
+          + (iss.updated_at ? '<span>updated ' + glRel(iss.updated_at) + '</span>' : '')
           + goBtn
           + '</div>'
           + '</button>';
@@ -8173,20 +8297,20 @@
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
       try {
         const data = await glFetch('/api/issue?project=' + encodeURIComponent(project) + '&iid=' + encodeURIComponent(iid));
-        renderGitLabIssueDetail(project, data.issue || {}, data.notes || []);
+        renderGitLabIssueDetail(project, data.issue || {}, data.notes || [], data.emoji || []);
       } catch (e) {
         if (e.unauthorized) return glCheckConnection();
         detail.innerHTML = '<div id="z7-detail"><div class="z7-detail-body"><div class="z7-error">Could not load issue: ' + qaEscape(e.message) + '</div></div></div>';
       }
     }
 
-    function renderGitLabIssueDetail(project, iss, notes) {
+    function renderGitLabIssueDetail(project, iss, notes, emoji) {
       const detail = document.getElementById('z7-issues-detail');
       if (!detail) return;
       const isOpen = iss.state === 'opened';
       const toggleBtn = isOpen
         ? '<button type="button" class="z7-btn-ghost danger" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'close\', this)">Close issue</button>'
-        : '<button type="button" class="z7-btn-ghost reopen" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'reopen\', this)">Reopen</button>';
+        : '<button type="button" class="z7-btn-ghost reopen" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'reopen\', this)">Reopen issue</button>';
       const goBtn = iss.screen
         ? '<button type="button" class="z7-btn-ghost" onclick="glGoToScreen(' + glAttr(iss.screen) + ', event)">Go to screen &rarr;</button>'
         : '';
@@ -8196,11 +8320,12 @@
         + '<div class="z7-dh-main">'
         + '<div class="z7-dh-title">' + qaEscape(iss.title) + '</div>'
         + '<div class="z7-dh-meta">'
-        + '<span class="z7-badge ' + glStateClass(iss.state) + '">' + qaEscape(iss.state || '') + '</span>'
+        + '<span class="z7-badge ' + glStateClass(iss.state) + '">' + (isOpen ? 'Open' : 'Closed') + '</span>'
         + '<span class="z7-row-iid">' + qaEscape(project) + ' #' + iss.iid + '</span>'
-        + (iss.screen ? '<span class="z7-label-chip">' + qaEscape(iss.screen) + '</span>' : '')
-        + (iss.author ? '<span>by ' + qaEscape(iss.author.name || iss.author.username) + '</span>' : '')
-        + (iss.created_at ? '<span>opened ' + glAgo(iss.created_at) + ' ago</span>' : '')
+        + (iss.author ? '<span class="z7-who">' + glAvatar(iss.author, 'sm')
+            + '<span class="z7-who-name">' + qaEscape(iss.author.name || iss.author.username) + '</span></span>' : '')
+        + (iss.created_at ? '<span>opened ' + glRel(iss.created_at) + '</span>' : '')
+        + (iss.updated_at ? '<span>&middot; updated ' + glRel(iss.updated_at) + '</span>' : '')
         + '</div></div>'
         + '<div class="z7-detail-actions">'
         + goBtn + toggleBtn
@@ -8208,18 +8333,108 @@
         + '<button type="button" class="z7-btn-ghost" onclick="closeGitLabDetail(\'issues\')">Close &#x2715;</button>'
         + '</div></div>'
         + '<div class="z7-detail-body">'
+        + glRenderMetaGrid(iss)
         + '<div class="z7-section-label">Description</div>'
         + '<div class="z7-md' + (iss.description ? '' : ' empty') + '">' + (iss.description ? ggMd(iss.description) : 'No description.') + '</div>'
+        + glRenderReactions(project, iss.iid, emoji)
         + glRenderNotes(notes)
         + glRenderCommentBox('issue', project, iss.iid)
         + '</div>'
         + '</div>';
     }
 
+    // GitLab-style metadata sidebar block (assignees / labels / milestone / screen).
+    function glRenderMetaGrid(item) {
+      const blocks = [];
+      const assignees = item.assignees || [];
+      blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Assignees</div>'
+        + (assignees.length
+            ? assignees.map(a => '<div class="z7-meta-row">' + glAvatar(a, 'sm')
+                + '<span>' + qaEscape(a.name || a.username) + '</span></div>').join('')
+            : '<div class="z7-meta-none">None</div>') + '</div>');
+      const reviewers = item.reviewers;
+      if (reviewers) {
+        blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Reviewers</div>'
+          + (reviewers.length
+              ? reviewers.map(a => '<div class="z7-meta-row">' + glAvatar(a, 'sm')
+                  + '<span>' + qaEscape(a.name || a.username) + '</span></div>').join('')
+              : '<div class="z7-meta-none">None</div>') + '</div>');
+      }
+      const pills = glLabelPills(item.labels, { includeScreen: true });
+      blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Labels</div>'
+        + (pills || '<div class="z7-meta-none">None</div>') + '</div>');
+      blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Milestone</div>'
+        + (item.milestone
+            ? '<div class="z7-meta-row"><a href="' + qaEscape(item.milestone.web_url || '#')
+                + '" target="_blank" rel="noopener" style="color:#5bc0de;text-decoration:none">'
+                + qaEscape(item.milestone.title) + '</a></div>'
+            : '<div class="z7-meta-none">None</div>') + '</div>');
+      if (item.screen) {
+        blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Screen</div>'
+          + '<div class="z7-meta-row"><span class="z7-screen-chip">' + qaEscape(item.screen) + '</span></div></div>');
+      }
+      if (item.due_date) {
+        blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Due</div>'
+          + '<div class="z7-meta-row">' + qaEscape(item.due_date) + '</div></div>');
+      }
+      return '<div class="z7-meta-grid">' + blocks.join('') + '</div>';
+    }
+
+    // ---- reactions (issues only; degrade if award endpoint 404s) ----------
+    function glRenderReactions(project, iid, emoji) {
+      const list = emoji || [];
+      const canToggle = _glAwardSupported;
+      const pills = list.filter(e => e.count > 0).map(e => {
+        const cls = 'z7-react' + (e.awarded_by_me ? ' mine' : '') + (canToggle ? '' : ' static');
+        const onclick = canToggle
+          ? ' onclick="glToggleAward(' + glAttr(project) + ',' + iid + ',' + glAttr(e.name) + ','
+              + (e.awarded_by_me ? '\'remove\'' : '\'add\'') + ', this)"'
+          : '';
+        return '<button type="button" class="' + cls + '"' + onclick + ' title="' + qaEscape(e.name) + '">'
+          + glEmojiGlyph(e.name) + ' <span class="z7-react-count">' + e.count + '</span></button>';
+      }).join('');
+      const adder = canToggle
+        ? '<button type="button" class="z7-react-add" onclick="glShowReactionPicker(' + glAttr(project) + ',' + iid + ', this)" title="Add reaction">&#x1F642;+</button>'
+        : '';
+      return '<div class="z7-reactions" id="z7-react-' + iid + '">' + pills + adder + '</div>';
+    }
+    function glShowReactionPicker(project, iid, btn) {
+      const picker = '<span class="z7-react-pick">' + GL_EMOJI_PICKER.map(n =>
+        '<button type="button" title="' + n + '" onclick="glToggleAward(' + glAttr(project) + ',' + iid + ',' + glAttr(n) + ',\'add\', this)">'
+        + glEmojiGlyph(n) + '</button>').join('') + '</span>';
+      btn.outerHTML = picker;
+    }
+    async function glToggleAward(project, iid, name, op, btn) {
+      if (btn) btn.disabled = true;
+      try {
+        const res = await glFetch('/api/issue/award', { method: 'POST', body: { project, iid, name, op } });
+        const wrap = document.getElementById('z7-react-' + iid);
+        if (wrap) wrap.outerHTML = glRenderReactions(project, iid, (res && res.emoji) || []);
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (e.status === 404) {
+          // Award endpoint not supported by the worker: hide the add affordance,
+          // keep counts static. Re-render from cached counts is not available, so
+          // just disable further toggling and drop the picker.
+          _glAwardSupported = false;
+          const wrap = document.getElementById('z7-react-' + iid);
+          if (wrap) {
+            wrap.querySelectorAll('.z7-react-add, .z7-react-pick').forEach(el => el.remove());
+            wrap.querySelectorAll('.z7-react').forEach(el => {
+              el.classList.add('static'); el.removeAttribute('onclick'); el.disabled = false;
+            });
+          }
+          return;
+        }
+        if (btn) btn.disabled = false;
+        alert('Could not update reaction: ' + e.message);
+      }
+    }
+
     async function glSetIssueState(project, iid, ev, btn) {
       if (btn) { btn.disabled = true; btn.textContent = '…'; }
       try {
-        await glFetch('/api/issue/state', { method: 'PUT', body: { project, iid, state_event: ev } });
+        await glFetch('/api/issue/state', { method: 'PUT', body: { project, iid, state: ev } });
         await openGitLabIssue(project, iid);
         loadGitLabIssues();
       } catch (e) {
@@ -8237,21 +8452,24 @@
     // ---- comments (issues + MRs share the markup) --------------------------
 
     function glRenderNotes(notes) {
-      if (!notes || !notes.length) return '<div class="z7-notes"><div class="z7-section-label">Comments</div><div class="z7-empty">No comments yet.</div></div>';
-      const rows = notes.map(n => {
+      if (!notes || !notes.length) return '<div class="z7-notes"><div class="z7-section-label">Activity</div><div class="z7-empty">No comments yet.</div></div>';
+      // Oldest -> newest.
+      const ordered = notes.slice().sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+      const rows = ordered.map(n => {
+        const who = (n.author && (n.author.name || n.author.username)) || 'system';
         if (n.system) {
           return '<div class="z7-note system"><span class="z7-note-body">'
-            + qaEscape((n.author && (n.author.name || n.author.username)) || 'system') + ' ' + qaEscape(n.body || '')
-            + ' &middot; ' + glAgo(n.created_at) + ' ago</span></div>';
+            + '&#x2699;&#xFE0E; ' + qaEscape(who) + ' ' + qaEscape(n.body || '')
+            + ' &middot; ' + glRel(n.created_at) + '</span></div>';
         }
         return '<div class="z7-note">'
-          + '<div class="z7-note-head"><span class="z7-note-author">'
-          + qaEscape((n.author && (n.author.name || n.author.username)) || 'unknown')
-          + '</span><span class="z7-note-time">' + glAgo(n.created_at) + ' ago</span></div>'
+          + '<div class="z7-note-head">' + glAvatar(n.author, 'sm')
+          + '<span class="z7-note-author">' + qaEscape(who)
+          + '</span><span class="z7-note-time">' + glRel(n.created_at) + '</span></div>'
           + '<div class="z7-md">' + ggMd(n.body) + '</div>'
           + '</div>';
       }).join('');
-      return '<div class="z7-notes"><div class="z7-section-label">Comments</div>' + rows + '</div>';
+      return '<div class="z7-notes"><div class="z7-section-label">Activity</div>' + rows + '</div>';
     }
 
     function glRenderCommentBox(kind, project, iid) {
@@ -8360,16 +8578,25 @@
           + '<div class="z7-row-head">'
           + '<span class="z7-row-iid">' + qaEscape(mr.project) + ' !' + mr.iid + '</span>'
           + '<span class="z7-row-title">' + qaEscape(mr.title) + '</span>'
-          + (mr.draft ? '<span class="z7-badge draft">Draft</span>' : '')
-          + '<span class="z7-badge ' + glStateClass(mr.state) + '">' + qaEscape(mr.state || '') + '</span>'
+          + glMRStateBadge(mr)
           + '</div>'
           + '<div class="z7-row-meta">'
           + '<span class="z7-branch">' + qaEscape(mr.source_branch || '?') + ' &rarr; ' + qaEscape(mr.target_branch || '?') + '</span>'
-          + (mr.author ? '<span>by ' + qaEscape(mr.author.name || mr.author.username) + '</span>' : '')
-          + (mr.updated_at ? '<span>updated ' + glAgo(mr.updated_at) + ' ago</span>' : '')
+          + (glLabelPills(mr.labels) || '')
+          + (mr.user_notes_count ? '<span>&#x1F4AC; ' + mr.user_notes_count + '</span>' : '')
+          + (mr.author ? '<span class="z7-who">' + glAvatar(mr.author, 'sm')
+              + '<span class="z7-who-name">' + qaEscape(mr.author.name || mr.author.username) + '</span></span>' : '')
+          + (mr.updated_at ? '<span>updated ' + glRel(mr.updated_at) + '</span>' : '')
           + '</div>'
           + '</button>';
       }).join('');
+    }
+
+    // MR state badge: Draft (grey) takes precedence, else Open/Merged/Closed colored.
+    function glMRStateBadge(mr) {
+      if (mr.draft) return '<span class="z7-badge draft">Draft</span>';
+      const label = mr.state === 'merged' ? 'Merged' : mr.state === 'closed' ? 'Closed' : 'Open';
+      return '<span class="z7-badge ' + glStateClass(mr.state) + '">' + label + '</span>';
     }
 
     async function openGitLabMR(project, iid) {
@@ -8389,23 +8616,34 @@
     function renderGitLabMRDetail(project, mr, notes) {
       const detail = document.getElementById('z7-mrs-detail');
       if (!detail) return;
+      const mergeStatus = mr.merge_status ? String(mr.merge_status).replace(/_/g, ' ') : '';
+      const changeCount = (mr.changes_count != null) ? mr.changes_count : '?';
       detail.innerHTML =
         '<div id="z7-detail">'
         + '<div class="z7-detail-head">'
         + '<div class="z7-dh-main">'
         + '<div class="z7-dh-title">' + qaEscape(mr.title) + '</div>'
         + '<div class="z7-dh-meta">'
-        + (mr.draft ? '<span class="z7-badge draft">Draft</span>' : '')
-        + '<span class="z7-badge ' + glStateClass(mr.state) + '">' + qaEscape(mr.state || '') + '</span>'
+        + glMRStateBadge(mr)
         + '<span class="z7-row-iid">' + qaEscape(project) + ' !' + mr.iid + '</span>'
         + '<span class="z7-branch">' + qaEscape(mr.source_branch || '?') + ' &rarr; ' + qaEscape(mr.target_branch || '?') + '</span>'
-        + (mr.author ? '<span>by ' + qaEscape(mr.author.name || mr.author.username) + '</span>' : '')
+        + (mr.author ? '<span class="z7-who">' + glAvatar(mr.author, 'sm')
+            + '<span class="z7-who-name">' + qaEscape(mr.author.name || mr.author.username) + '</span></span>' : '')
+        + (mr.created_at ? '<span>opened ' + glRel(mr.created_at) + '</span>' : '')
         + '</div></div>'
         + '<div class="z7-detail-actions">'
         + '<a class="z7-btn-ghost" href="' + qaEscape(mr.web_url || '#') + '" target="_blank" rel="noopener">Open in GitLab &#x2197;</a>'
         + '<button type="button" class="z7-btn-ghost" onclick="closeGitLabDetail(\'mrs\')">Close &#x2715;</button>'
         + '</div></div>'
         + '<div class="z7-detail-body">'
+        + glRenderMetaGrid(mr)
+        + '<div class="z7-mr-changes">'
+        + '<span>&#x1F4C4; <strong>' + qaEscape(String(changeCount)) + '</strong> changed file' + (changeCount === 1 ? '' : 's') + '</span>'
+        + (mergeStatus ? '<span>&middot; ' + qaEscape(mergeStatus) + '</span>' : '')
+        + '<span class="z7-mr-changes-spacer"></span>'
+        + '<a class="z7-btn-primary" href="' + qaEscape(mr.web_url || '#') + '" target="_blank" rel="noopener">Open in GitLab to review &amp; merge &#x2197;</a>'
+        + '</div>'
+        + '<div class="z7-helper">Diffs, approvals, and merging happen in GitLab. This view is read &amp; comment only.</div>'
         + '<div class="z7-section-label">Description</div>'
         + '<div class="z7-md' + (mr.description ? '' : ' empty') + '">' + (mr.description ? ggMd(mr.description) : 'No description.') + '</div>'
         + glRenderNotes(notes)
@@ -8416,43 +8654,58 @@
 
     // ---- DOCS --------------------------------------------------------------
 
+    let _glDocWebBase = '';  // GitLab blob base URL, derived from a doc's web_url if present
+
     function loadGitLabDocs() {
       const tree = document.getElementById('z7-docs-tree');
       if (_glDocsLoaded && tree && tree.querySelector('.z7-tree-file')) return; // keep tree across switches
       if (tree) tree.innerHTML = '<div class="z7-loading">Loading…</div>';
-      glFetch('/api/docs?project=gg-spec')
-        .then(data => { _glDocsLoaded = true; renderGitLabDocsTree((data && data.tree) || []); })
+      glFetch('/api/docs')
+        .then(data => { _glDocsLoaded = true; renderGitLabDocsTree((data && data.files) || []); })
         .catch(e => {
           if (e.unauthorized) return glCheckConnection();
           if (tree) tree.innerHTML = '<div class="z7-error">Could not load docs: ' + qaEscape(e.message) + '</div>';
         });
     }
 
-    function renderGitLabDocsTree(tree) {
+    function renderGitLabDocsTree(files) {
       const el = document.getElementById('z7-docs-tree');
       if (!el) return;
-      const files = tree.filter(t => t.type === 'blob' || t.type === 'file' || !t.type);
       if (!files.length) { el.innerHTML = '<div class="z7-empty">No markdown files found.</div>'; return; }
-      // Group by top-level folder (docs/ vs screens/ vs other).
+      // Group by the API-provided "dir" (e.g. docs/, screens/), falling back to the
+      // top path segment so older worker shapes still render.
       const groups = {};
       files.forEach(f => {
         const path = f.path || f.name || '';
-        const top = path.indexOf('/') > -1 ? path.split('/')[0] + '/' : 'root';
-        (groups[top] = groups[top] || []).push(f);
+        let dir = f.dir;
+        if (dir == null) dir = path.indexOf('/') > -1 ? path.split('/')[0] : '';
+        dir = dir || 'root';
+        (groups[dir] = groups[dir] || []).push(f);
       });
       const order = Object.keys(groups).sort((a, b) => {
-        const rank = s => s === 'screens/' ? 0 : s === 'docs/' ? 1 : 2;
+        const rank = s => /^screens/.test(s) ? 0 : /^docs/.test(s) ? 1 : 2;
         return rank(a) - rank(b) || a.localeCompare(b);
       });
-      el.innerHTML = order.map(g => {
+      el.innerHTML = order.map((g, gi) => {
+        const open = gi === 0 ? ' open' : '';
         const items = groups[g].sort((a, b) => (a.path || a.name).localeCompare(b.path || b.name)).map(f => {
           const path = f.path || f.name || '';
           const label = f.name || path.split('/').pop();
           return '<button type="button" class="z7-tree-file" data-path="' + qaEscape(path) + '" '
             + 'onclick="openGitLabDoc(' + glAttr(path) + ', this)" title="' + qaEscape(path) + '">' + qaEscape(label) + '</button>';
         }).join('');
-        return '<div class="z7-tree-group-label">' + qaEscape(g) + '</div>' + items;
+        const cnt = groups[g].length;
+        return '<button type="button" class="z7-tree-folder' + open + '" onclick="glToggleDocFolder(this)">'
+          + '<span class="z7-tree-caret">&#x25B6;</span>' + qaEscape(g.replace(/\/$/, '') + '/')
+          + ' <span style="color:#4f6a8a;font-weight:600;text-transform:none">(' + cnt + ')</span></button>'
+          + '<div class="z7-tree-children' + open + '">' + items + '</div>';
       }).join('');
+    }
+
+    function glToggleDocFolder(btn) {
+      const open = btn.classList.toggle('open');
+      const kids = btn.nextElementSibling;
+      if (kids && kids.classList.contains('z7-tree-children')) kids.classList.toggle('open', open);
     }
 
     async function openGitLabDoc(path, btn) {
@@ -8460,10 +8713,16 @@
       document.querySelectorAll('#z7-docs-tree .z7-tree-file').forEach(b => b.classList.toggle('active', b === btn));
       if (reader) reader.innerHTML = '<div class="z7-loading">Loading…</div>';
       try {
-        const data = await glFetch('/api/doc?project=gg-spec&path=' + encodeURIComponent(path));
+        const data = await glFetch('/api/doc?path=' + encodeURIComponent(path));
+        const md = (data && (data.content != null ? data.content : data.content_markdown)) || '';
+        if (data && data.web_url) _glDocWebBase = '';  // prefer per-file link below
         if (reader) {
-          reader.innerHTML = '<div class="z7-reader-path">' + qaEscape(data.path || path) + '</div>'
-            + '<div class="z7-md">' + ggMd(data.content_markdown || '') + '</div>';
+          const finalPath = (data && data.path) || path;
+          const gitlabLink = (data && data.web_url)
+            ? '<a href="' + qaEscape(data.web_url) + '" target="_blank" rel="noopener">Open in GitLab &#x2197;</a>'
+            : '';
+          reader.innerHTML = '<div class="z7-reader-path">' + gitlabLink + qaEscape(finalPath) + '</div>'
+            + '<div class="z7-md">' + ggMd(md) + '</div>';
           reader.scrollTop = 0;
         }
       } catch (e) {
