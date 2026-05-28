@@ -8583,6 +8583,9 @@
     // ---- DOCS --------------------------------------------------------------
 
     let _glDocWebBase = '';  // GitLab blob base URL, derived from a doc's web_url if present
+    let _glDocRaw = '';       // raw markdown of the currently open doc (for edit/cancel)
+    let _glDocPathCur = '';   // path of the currently open doc
+    let _glDocWebUrl = '';    // GitLab web_url of the currently open doc (if any)
 
     function loadGitLabDocs() {
       const tree = document.getElementById('z7-docs-tree');
@@ -8625,7 +8628,7 @@
         const cnt = groups[g].length;
         return '<button type="button" class="z7-tree-folder' + open + '" onclick="glToggleDocFolder(this)">'
           + '<span class="z7-tree-caret">&#x25B6;</span>' + qaEscape(g.replace(/\/$/, '') + '/')
-          + ' <span style="color:#4f6a8a;font-weight:600;text-transform:none">(' + cnt + ')</span></button>'
+          + ' <span class="z7-tree-count">(' + cnt + ')</span></button>'
           + '<div class="z7-tree-children' + open + '">' + items + '</div>';
       }).join('');
     }
@@ -8638,25 +8641,144 @@
 
     async function openGitLabDoc(path, btn) {
       const reader = document.getElementById('z7-docs-reader');
-      document.querySelectorAll('#z7-docs-tree .z7-tree-file').forEach(b => b.classList.toggle('active', b === btn));
+      // Keep the active tree highlight: prefer the clicked button, else match by path.
+      if (btn) {
+        document.querySelectorAll('#z7-docs-tree .z7-tree-file').forEach(b => b.classList.toggle('active', b === btn));
+      } else {
+        document.querySelectorAll('#z7-docs-tree .z7-tree-file').forEach(b =>
+          b.classList.toggle('active', b.getAttribute('data-path') === path));
+      }
       if (reader) reader.innerHTML = '<div class="z7-loading">Loading…</div>';
       try {
         const data = await glFetch('/api/doc?path=' + encodeURIComponent(path));
         const md = (data && (data.content != null ? data.content : data.content_markdown)) || '';
         if (data && data.web_url) _glDocWebBase = '';  // prefer per-file link below
+        const finalPath = (data && data.path) || path;
+        // Cache the raw markdown + path for the editor (and cancel) flow.
+        _glDocRaw = md;
+        _glDocPathCur = finalPath;
+        _glDocWebUrl = (data && data.web_url) || '';
         if (reader) {
-          const finalPath = (data && data.path) || path;
-          const gitlabLink = (data && data.web_url)
-            ? '<a href="' + qaEscape(data.web_url) + '" target="_blank" rel="noopener">Open in GitLab &#x2197;</a>'
-            : '';
-          reader.innerHTML = '<div class="z7-reader-path">' + gitlabLink + qaEscape(finalPath) + '</div>'
-            + '<div class="z7-md">' + ggMd(md) + '</div>';
+          glRenderDocReadMode();
           reader.scrollTop = 0;
         }
       } catch (e) {
         if (e.unauthorized) return glCheckConnection();
         if (reader) reader.innerHTML = '<div class="z7-error">Could not load file: ' + qaEscape(e.message) + '</div>';
       }
+    }
+
+    // Read mode: GitLab-style rendered blob with a header row (path, Open in
+    // GitLab, Edit). Re-renders from the cached _glDocRaw, no network call.
+    function glRenderDocReadMode() {
+      const reader = document.getElementById('z7-docs-reader');
+      if (!reader) return;
+      const gitlabLink = _glDocWebUrl
+        ? '<a class="z7-btn-ghost" href="' + qaEscape(_glDocWebUrl) + '" target="_blank" rel="noopener">Open in GitLab &#x2197;</a>'
+        : '';
+      reader.innerHTML = '<div class="z7-reader-inner">'
+        + '<div class="z7-reader-path">'
+        + '<span class="z7-reader-pathtext">' + qaEscape(_glDocPathCur) + '</span>'
+        + '<span class="z7-reader-actions">'
+        + gitlabLink
+        + '<button type="button" class="z7-btn-ghost" onclick="glEditDoc()">&#x270E; Edit</button>'
+        + '</span></div>'
+        + '<div class="z7-md">' + ggMd(_glDocRaw) + '</div>'
+        + '</div>';
+    }
+
+    // Swap the rendered blob for a full editor (textarea + commit message +
+    // Save / Cancel / Preview). Mirrors GitLab's web editor.
+    function glEditDoc() {
+      const reader = document.getElementById('z7-docs-reader');
+      if (!reader || !_glDocPathCur) return;
+      const defaultMsg = 'Update ' + _glDocPathCur;
+      reader.innerHTML = '<div class="z7-reader-inner">'
+        + '<div class="z7-reader-path"><span class="z7-reader-pathtext">Editing ' + qaEscape(_glDocPathCur) + '</span></div>'
+        + '<textarea id="z7-doc-editor" class="z7-doc-editor" spellcheck="false"></textarea>'
+        + '<input type="text" id="z7-doc-commit" class="z7-doc-commit" placeholder="' + qaEscape(defaultMsg) + '">'
+        + '<div class="z7-doc-actions">'
+        + '<button type="button" class="z7-btn-primary" id="z7-doc-save-btn" onclick="glSaveDoc(this)">Save</button>'
+        + '<button type="button" class="z7-btn-ghost" onclick="glCancelDocEdit()">Cancel</button>'
+        + '<button type="button" class="z7-btn-ghost" id="z7-doc-preview-btn" onclick="glToggleDocPreview()">Preview</button>'
+        + '</div>'
+        + '<div id="z7-doc-editstatus"></div>'
+        + '<div id="z7-doc-preview" class="z7-doc-preview" style="display:none"></div>'
+        + '</div>';
+      const ta = document.getElementById('z7-doc-editor');
+      if (ta) { ta.value = _glDocRaw; ta.focus(); }
+      const ci = document.getElementById('z7-doc-commit');
+      if (ci) ci.value = defaultMsg;
+    }
+
+    // Preview toggle: render ggMd(textarea.value) into the preview panel.
+    function glToggleDocPreview() {
+      const panel = document.getElementById('z7-doc-preview');
+      const btn = document.getElementById('z7-doc-preview-btn');
+      const ta = document.getElementById('z7-doc-editor');
+      if (!panel || !ta) return;
+      const showing = panel.style.display !== 'none';
+      if (showing) {
+        panel.style.display = 'none';
+        if (btn) btn.textContent = 'Preview';
+      } else {
+        panel.innerHTML = '<div class="z7-md">' + ggMd(ta.value) + '</div>';
+        panel.style.display = '';
+        if (btn) btn.textContent = 'Hide preview';
+      }
+    }
+
+    // Save: PUT /api/doc. Worker may commit direct (Maintainer) or open an MR
+    // (protected main). Both shapes are handled distinctly.
+    async function glSaveDoc(btn) {
+      const ta = document.getElementById('z7-doc-editor');
+      const ci = document.getElementById('z7-doc-commit');
+      const status = document.getElementById('z7-doc-editstatus');
+      if (!ta) return;
+      const content = ta.value;
+      const message = (ci && ci.value.trim()) || ('Update ' + _glDocPathCur);
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+      if (status) { status.className = ''; status.textContent = 'Saving…'; }
+      try {
+        const res = await glFetch('/api/doc', { method: 'PUT', body: { path: _glDocPathCur, content, message } });
+        if (res && res.mode === 'mr') {
+          const url = res.web_url || '#';
+          const iid = res.iid != null ? res.iid : '';
+          if (status) {
+            status.className = 'ok';
+            status.innerHTML = 'Your change opened merge request '
+              + '<a href="' + qaEscape(url) + '" target="_blank" rel="noopener">!' + qaEscape(String(iid)) + '</a>'
+              + '. Main is protected for your role, so review and merge it in GitLab.';
+          }
+          // Keep the editor visible; offer a way back to reading.
+          const actions = document.querySelector('#z7-docs-reader .z7-doc-actions');
+          if (actions && !document.getElementById('z7-doc-back-btn')) {
+            const back = document.createElement('button');
+            back.type = 'button'; back.id = 'z7-doc-back-btn'; back.className = 'z7-btn-ghost';
+            back.textContent = 'Back to reading';
+            back.onclick = function () { openGitLabDoc(_glDocPathCur); };
+            actions.appendChild(back);
+          }
+          if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+        } else {
+          // Direct commit to main.
+          if (status) { status.className = 'ok'; status.textContent = 'Saved to main.'; }
+          // Re-fetch to show fresh rendered content in read mode.
+          openGitLabDoc(_glDocPathCur);
+        }
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (status) { status.className = 'err'; status.textContent = 'Could not save: ' + e.message; }
+        if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+      }
+    }
+
+    // Cancel: discard edits and restore read mode from the cached raw markdown,
+    // no network call.
+    function glCancelDocEdit() {
+      glRenderDocReadMode();
+      const reader = document.getElementById('z7-docs-reader');
+      if (reader) reader.scrollTop = 0;
     }
 
     // ---- cross-link to QA By-Screen view ----------------------------------
