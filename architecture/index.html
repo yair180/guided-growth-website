@@ -1114,6 +1114,11 @@
     }
     .z6-bs-group-title.bugs { color: #f3596f; }
     .z6-bs-group-title.learnings { color: #a78bfa; }
+    .z6-bs-reviewhead {
+      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #64748b; margin: 4px 0 12px;
+      padding-top: 12px; border-top: 1px dashed #1e3a5f;
+    }
     .z6-bs-group-title .z6-bs-grp-count {
       background: #060d18; border: 1px solid #1e3a5f; border-radius: 9px;
       padding: 1px 8px; font-size: 10.5px; color: #8fa8c4; font-weight: 600;
@@ -2734,33 +2739,39 @@
       if (!filtered.length) {
         listEl.innerHTML = '<div class="z6-empty">'
           + (qaCurrentSource === 'all'
-              ? 'No open issues with label=mobai.'
+              ? 'No open QA issues (bug / AI-learning) in GitLab.'
               : 'No open ' + qaEscape(qaCurrentSource) + ' issues.')
           + '</div>';
         return;
       }
-      listEl.innerHTML = filtered.map(i => {
-        const sev = (i.severity || 'unset').toLowerCase();
-        const sevClass = ['high','medium','low'].includes(sev) ? 'sev-' + sev : 'sev-unset';
-        const labels = (i.labels || [])
-          .filter(l => l !== 'mobai' && !l.startsWith('priority::'))
-          .slice(0, 4);
-        const labelHtml = labels.map(l =>
-          '<span class="z6-label">' + qaEscape(l) + '</span>'
-        ).join(' ');
-        return '<a class="z6-issue-card ' + sevClass + '" href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener">'
-          + '<div class="z6-issue-head">'
-            + '<span class="z6-issue-iid">#' + qaEscape(i.iid) + '</span>'
-            + '<span class="z6-issue-title">' + qaEscape(i.title) + '</span>'
-            + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(i.severity || 'unset') + '</span>'
-          + '</div>'
-          + '<div class="z6-issue-meta">'
-            + (i.assignee ? '<span>@' + qaEscape(i.assignee) + '</span>' : '<span>unassigned</span>')
-            + '<span>' + qaAgo(i.created_at) + ' ago</span>'
-            + (labelHtml ? '<span style="display:inline-flex;gap:4px;flex-wrap:wrap">' + labelHtml + '</span>' : '')
-          + '</div>'
-        + '</a>';
-      }).join('');
+      listEl.innerHTML = filtered.map(qaIssueCardHtml).join('');
+    }
+
+    // Single GitLab-issue card. Reused by the Overview "Open Issues" list and
+    // the per-screen "In GitLab" lane in By-Screen mode.
+    function qaIssueCardHtml(i) {
+      const sev = (i.severity || 'unset').toLowerCase();
+      const sevClass = ['high','medium','low'].includes(sev) ? 'sev-' + sev : 'sev-unset';
+      const labels = (i.labels || [])
+        .filter(l => l !== 'mobai' && l !== 'video' && !l.startsWith('priority::') && !l.startsWith('screen::'))
+        .slice(0, 4);
+      const labelHtml = labels.map(l =>
+        '<span class="z6-label">' + qaEscape(l) + '</span>'
+      ).join(' ');
+      const kind = i.finding_type === 'ai-learning' ? '\u{1F9E0}' : '\u{1F534}';
+      return '<a class="z6-issue-card ' + sevClass + '" href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener">'
+        + '<div class="z6-issue-head">'
+          + '<span class="z6-issue-iid">#' + qaEscape(i.iid) + '</span>'
+          + '<span class="z6-issue-title">' + kind + ' ' + qaEscape(i.title) + '</span>'
+          + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(i.severity || 'unset') + '</span>'
+        + '</div>'
+        + '<div class="z6-issue-meta">'
+          + (i.assignee ? '<span>@' + qaEscape(i.assignee) + '</span>' : '<span>unassigned</span>')
+          + (i.author ? '<span>by @' + qaEscape(i.author) + '</span>' : '')
+          + '<span>' + qaAgo(i.created_at) + ' ago</span>'
+          + (labelHtml ? '<span style="display:inline-flex;gap:4px;flex-wrap:wrap">' + labelHtml + '</span>' : '')
+        + '</div>'
+      + '</a>';
     }
 
     function setQASource(source) {
@@ -3249,6 +3260,11 @@
         if (data.error) throw new Error(data.error);
         _qaIssues = Array.isArray(data) ? data : [];
         renderIssues();
+        // By-Screen mode folds issues into the per-screen view + sidebar badges.
+        if (qaCurrentMode === 'byscreen') {
+          renderScreensSidebar();
+          renderByScreenPanel();
+        }
       } catch (e) {
         if (countEl) countEl.textContent = '!';
         if (listEl) listEl.innerHTML = '<div class="z6-error">Error: ' + qaEscape(e.message) + '</div>';
@@ -3285,6 +3301,14 @@
     // and the literal "null" all collapse into the cross-screen bucket.
     function qaScreenKey(f) {
       const s = (f && f.screen ? String(f.screen) : '').trim();
+      if (!s || s.toLowerCase() === 'global' || s.toLowerCase() === 'null') return 'Global / cross-screen';
+      return s;
+    }
+
+    // GitLab issues arrive pre-canonicalized by the worker (screen field), so the
+    // key is the same shape as qaScreenKey's output.
+    function qaIssueScreenKey(i) {
+      const s = (i && i.screen ? String(i.screen) : '').trim();
       if (!s || s.toLowerCase() === 'global' || s.toLowerCase() === 'null') return 'Global / cross-screen';
       return s;
     }
@@ -3353,16 +3377,26 @@
       // of them, even ones with no findings yet (rendered greyed via .zero).
       if (typeof QA_FLOW_ORDER !== 'undefined' && Array.isArray(QA_FLOW_ORDER)) {
         for (const s of QA_FLOW_ORDER) {
-          map.set(s, { screen: s, total: 0, high: 0, items: [] });
+          map.set(s, { screen: s, total: 0, high: 0, items: [], issues: [] });
         }
       }
+      const ensure = (key) => {
+        if (!map.has(key)) map.set(key, { screen: key, total: 0, high: 0, items: [], issues: [] });
+        return map.get(key);
+      };
       for (const f of _qaProposed) {
-        const key = qaScreenKey(f);
-        if (!map.has(key)) map.set(key, { screen: key, total: 0, high: 0, items: [] });
-        const e = map.get(key);
+        const e = ensure(qaScreenKey(f));
         e.total++;
         e.items.push(f);
         if ((f.severity || '').toLowerCase() === 'high') e.high++;
+      }
+      // GitLab issues (source of truth) also count toward a screen's badge so
+      // screens that only have filed issues (no open findings) still surface.
+      for (const i of _qaIssues) {
+        const e = ensure(qaIssueScreenKey(i));
+        e.total++;
+        e.issues.push(i);
+        if ((i.severity || '').toLowerCase() === 'high') e.high++;
       }
       return [...map.values()];
     }
@@ -3428,17 +3462,15 @@
     function renderByScreenPanel() {
       const el = document.getElementById('z6-byscreen-content');
       if (!el) return;
-      if (!_qaProposed.length) {
-        el.innerHTML = '<div class="z6-empty">No proposed findings — review queue is clear.</div>';
-        return;
-      }
       if (!qaSelectedScreen) {
         el.innerHTML = '<div class="z6-empty">Select a screen from the left to see its findings.</div>';
         return;
       }
       const items = _qaProposed.filter(f => qaScreenKey(f) === qaSelectedScreen);
-      if (!items.length) {
-        el.innerHTML = '<div class="z6-empty">No findings on ' + qaEscape(qaSelectedScreen) + '.</div>';
+      const screenIssues = _qaIssues.filter(i => qaIssueScreenKey(i) === qaSelectedScreen);
+      if (!items.length && !screenIssues.length) {
+        el.innerHTML = '<div class="z6-empty">Nothing on ' + qaEscape(qaSelectedScreen)
+          + ' — no GitLab issues and no findings in the review queue.</div>';
         return;
       }
 
@@ -3461,10 +3493,39 @@
 
       let html = '<div id="z6-byscreen-header">'
         + '<span class="z6-bs-screen">' + qaEscape(qaSelectedScreen) + '</span>'
-        + '<span class="z6-bs-count">' + items.length + ' finding' + (items.length === 1 ? '' : 's') + '</span>'
+        + '<span class="z6-bs-count">' + screenIssues.length + ' in GitLab &middot; '
+          + items.length + ' to review</span>'
       + '</div>';
-      html += '<div id="z6-byscreen-subnote">' + bugs.length + ' bug' + (bugs.length === 1 ? '' : 's')
+      html += '<div id="z6-byscreen-subnote">' + bugs.length + ' proposed bug' + (bugs.length === 1 ? '' : 's')
         + ' &middot; ' + learnings.length + ' AI Learning' + (learnings.length === 1 ? '' : 's') + '</div>';
+
+      // --- In GitLab (source of truth) ---
+      // Issues already filed for this screen. This is the authoritative list;
+      // proposed findings below are candidates Timothy still has to triage.
+      if (screenIssues.length) {
+        const glBugs = screenIssues.filter(i => i.finding_type !== 'ai-learning');
+        const glLearn = screenIssues.filter(i => i.finding_type === 'ai-learning');
+        html += '<div class="z6-bs-group">';
+        html += '<div class="z6-bs-group-title" style="color:#7c9cff">&#x1F4CC; In GitLab (source of truth) <span class="z6-bs-grp-count">' + screenIssues.length + '</span></div>';
+        if (glBugs.length) {
+          html += '<div class="z6-bs-subgroup">'
+            + '<div class="z6-bs-subgroup-title">&#x1F534; Bugs &middot; ' + glBugs.length + '</div>'
+            + glBugs.map(qaIssueCardHtml).join('')
+          + '</div>';
+        }
+        if (glLearn.length) {
+          html += '<div class="z6-bs-subgroup">'
+            + '<div class="z6-bs-subgroup-title">&#x1F9E0; AI Learnings &middot; ' + glLearn.length + '</div>'
+            + glLearn.map(qaIssueCardHtml).join('')
+          + '</div>';
+        }
+        html += '</div>';
+      }
+
+      // --- Proposed findings (review queue) ---
+      if (items.length) {
+        html += '<div class="z6-bs-reviewhead">Review queue (propose &rarr; file / merge / reject)</div>';
+      }
 
       // --- Bugs group, sub-split Frontend / Backend (/ Unknown) ---
       if (bugs.length) {
