@@ -1303,29 +1303,37 @@
     .z7-comment-box textarea:focus { border-color: var(--z7-accent); }
     .z7-comment-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
-    /* New Issue form */
-    #z7-newissue {
+    /* New Issue / New MR form (shared styling) */
+    #z7-newissue, #z7-newmr {
       background: var(--z7-panel); border: 1px solid var(--z7-border); border-radius: 10px;
       padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 4px var(--z7-shadow);
     }
-    #z7-newissue .z7-ni-title { font-size: 15px; font-weight: 700; color: var(--z7-text); margin: 0 0 16px; }
-    #z7-newissue .z7-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-    #z7-newissue .z7-field label {
+    #z7-newissue .z7-ni-title, #z7-newmr .z7-ni-title { font-size: 15px; font-weight: 700; color: var(--z7-text); margin: 0 0 16px; }
+    #z7-newissue .z7-field, #z7-newmr .z7-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    #z7-newissue .z7-field label, #z7-newmr .z7-field label {
       font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--z7-text-2); font-weight: 700;
     }
     #z7-newissue .z7-field input,
     #z7-newissue .z7-field textarea,
-    #z7-newissue .z7-field select {
+    #z7-newissue .z7-field select,
+    #z7-newmr .z7-field input,
+    #z7-newmr .z7-field textarea,
+    #z7-newmr .z7-field select {
       background: var(--z7-input-bg); color: var(--z7-text); border: 1px solid var(--z7-border); border-radius: 6px;
       padding: 9px 11px; font: inherit; font-size: 13px; outline: none;
     }
     #z7-newissue .z7-field input:focus,
     #z7-newissue .z7-field textarea:focus,
-    #z7-newissue .z7-field select:focus { border-color: var(--z7-accent); }
-    #z7-newissue .z7-field textarea { min-height: 110px; resize: vertical; }
-    #z7-newissue .z7-ni-row { display: flex; gap: 14px; }
-    #z7-newissue .z7-ni-row .z7-field { flex: 1; }
-    #z7-newissue .z7-ni-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+    #z7-newissue .z7-field select:focus,
+    #z7-newmr .z7-field input:focus,
+    #z7-newmr .z7-field textarea:focus,
+    #z7-newmr .z7-field select:focus { border-color: var(--z7-accent); }
+    #z7-newissue .z7-field textarea, #z7-newmr .z7-field textarea { min-height: 110px; resize: vertical; }
+    #z7-newissue .z7-ni-row, #z7-newmr .z7-ni-row { display: flex; gap: 14px; }
+    #z7-newissue .z7-ni-row .z7-field, #z7-newmr .z7-ni-row .z7-field { flex: 1; }
+    #z7-newissue .z7-ni-actions, #z7-newmr .z7-ni-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+    #z7-newmr .z7-ni-checks { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
+    #z7-newmr .z7-mr-opt { font-size: 12.5px; color: var(--z7-text); }
     .z7-form-err { color: var(--z7-danger); font-size: 12px; margin-top: 8px; text-align: right; }
 
     /* Docs sub-view: helper line + two-pane tree + reader */
@@ -1489,6 +1497,85 @@
     #z7-doc-editstatus a:hover { text-decoration: underline; }
     #z7-doc-editstatus.ok { color: var(--z7-open); }
     #z7-doc-editstatus.err { color: var(--z7-danger); }
+
+    /* MR lifecycle actions (approve / merge) inside the MR detail view */
+    .z7-mr-actions {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      background: var(--z7-panel-2); border: 1px solid var(--z7-border); border-radius: 8px;
+      padding: 12px 14px; margin: 14px 0;
+    }
+    .z7-mr-actions .z7-mr-opts { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-wrap: wrap; }
+    .z7-mr-opt { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--z7-text-2); cursor: pointer; }
+    .z7-mr-opt input { accent-color: var(--z7-accent); }
+    .z7-btn-merge {
+      background: var(--z7-open); color: #fff; border: none; font: inherit; font-weight: 700;
+      font-size: 12.5px; padding: 8px 16px; border-radius: 7px; cursor: pointer;
+    }
+    .z7-btn-merge:hover { filter: brightness(1.07); }
+    .z7-btn-merge:disabled { opacity: 0.5; cursor: default; filter: none; }
+    .z7-mr-actstatus { font-size: 12px; margin: 2px 0 6px; line-height: 1.5; }
+    .z7-mr-actstatus a { color: var(--z7-accent); text-decoration: none; }
+    .z7-mr-actstatus a:hover { text-decoration: underline; }
+    .z7-mr-actstatus.ok { color: var(--z7-open); }
+    .z7-mr-actstatus.err { color: var(--z7-danger); }
+    .z7-mr-actstatus.info { color: var(--z7-text-2); }
+
+    /* Repository file browser sub-view (full repo, not just docs) */
+    #z7-repo-note { font-size: 11.5px; color: var(--z7-text-2); margin: 0 0 12px; line-height: 1.5; }
+    #z7-repo-toolbar { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+    #z7-repo-toolbar .z7-filter-group { display: flex; flex-direction: column; gap: 4px; }
+    #z7-repo-toolbar label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--z7-text-2); font-weight: 700; }
+    #z7-repo-crumbs {
+      display: flex; align-items: center; gap: 3px; flex-wrap: wrap; flex: 1; min-width: 0;
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; padding-bottom: 9px;
+    }
+    #z7-repo-crumbs .z7-crumb { background: none; border: none; color: var(--z7-accent); cursor: pointer; font: inherit; padding: 2px 3px; border-radius: 4px; }
+    #z7-repo-crumbs .z7-crumb:hover { text-decoration: underline; }
+    #z7-repo-crumbs .z7-crumb.current { color: var(--z7-text); cursor: default; font-weight: 600; }
+    #z7-repo-crumbs .z7-crumb.current:hover { text-decoration: none; }
+    #z7-repo-crumbs .z7-crumb-sep { color: var(--z7-text-3); }
+    #z7-repo-wrap { display: flex; gap: 20px; align-items: flex-start; }
+    #z7-repo-tree {
+      width: 300px; min-width: 250px; flex-shrink: 0; background: var(--z7-panel-2); border: 1px solid var(--z7-border);
+      border-radius: 10px; padding: 8px; position: sticky; top: 0; max-height: calc(100vh - 240px); overflow-y: auto;
+    }
+    .z7-repo-entry {
+      display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; border: none;
+      color: var(--z7-text); font: inherit; font-size: 12.5px; padding: 6px 9px; border-radius: 6px; cursor: pointer;
+      font-family: ui-monospace, Menlo, Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .z7-repo-entry:hover { background: var(--z7-panel-3); }
+    .z7-repo-entry.active { background: var(--z7-accent-weak-bg); color: var(--z7-accent); box-shadow: inset 0 0 0 1px var(--z7-accent); }
+    .z7-repo-entry .z7-repo-ico { flex-shrink: 0; width: 15px; text-align: center; color: var(--z7-text-3); }
+    .z7-repo-entry.dir .z7-repo-ico { color: var(--z7-accent); }
+    .z7-repo-entry.up { color: var(--z7-text-2); }
+    #z7-repo-viewer {
+      flex: 1; min-width: 0; background: var(--z7-panel); border: 1px solid var(--z7-border);
+      border-radius: 10px; padding: 20px 24px; max-height: calc(100vh - 240px); overflow: auto;
+      box-shadow: 0 1px 4px var(--z7-shadow);
+    }
+    #z7-repo-viewer .z7-reader-path {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
+      color: var(--z7-text-2); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--z7-border);
+    }
+    #z7-repo-viewer .z7-reader-pathtext { flex: 1; min-width: 0; word-break: break-all; }
+    #z7-repo-viewer .z7-reader-actions { display: inline-flex; gap: 8px; flex-shrink: 0; align-items: center; }
+    #z7-repo-viewer .z7-md { font-size: 14.5px; line-height: 1.7; max-width: 860px; }
+    .z7-code {
+      margin: 0; background: var(--z7-code-bg); border: 1px solid var(--z7-border); border-radius: 8px;
+      padding: 14px 16px; overflow-x: auto; font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 12.5px; line-height: 1.6; color: var(--z7-text); white-space: pre; tab-size: 2;
+    }
+    .z7-repo-img { max-width: 100%; height: auto; border: 1px solid var(--z7-border); border-radius: 6px; background: var(--z7-panel-2); }
+    .z7-repo-notice {
+      background: var(--z7-panel-2); border: 1px dashed var(--z7-border-strong); border-radius: 8px;
+      padding: 22px; text-align: center; color: var(--z7-text-2); font-size: 13px; line-height: 1.6;
+    }
+    .z7-meta-pill {
+      font-size: 11px; color: var(--z7-text-2); background: var(--z7-panel-3);
+      border: 1px solid var(--z7-border); border-radius: 5px; padding: 1px 7px;
+    }
 
     /* === Mode toggle (Overview | By Screen) — segmented control at top of main === */
     #z6-mode-toggle {
@@ -3266,6 +3353,7 @@
     </div>
     <div id="z7-subnav" role="group" aria-label="GitLab sub-view" style="display:none">
       <button type="button" class="z7-subnav-btn active" data-view="docs" onclick="setGitLabView('docs')">Docs</button>
+      <button type="button" class="z7-subnav-btn" data-view="repo" onclick="setGitLabView('repo')">Repository</button>
       <button type="button" class="z7-subnav-btn" data-view="issues" onclick="setGitLabView('issues')">Issues</button>
       <button type="button" class="z7-subnav-btn" data-view="mrs" onclick="setGitLabView('mrs')">Merge Requests</button>
     </div>
@@ -3341,6 +3429,11 @@
               <option value="all">All</option>
             </select>
           </div>
+          <div class="z7-filters-spacer"></div>
+          <div class="z7-filter-group">
+            <label>&nbsp;</label>
+            <button type="button" class="z7-btn-primary" onclick="openNewMrForm()">+ New merge request</button>
+          </div>
         </div>
         <div id="z7-mrs-detail"></div>
         <div id="z7-mrs-list"></div>
@@ -3352,6 +3445,31 @@
         <div id="z7-docs-wrap">
           <div id="z7-docs-tree"><div class="z7-loading">Loading…</div></div>
           <div id="z7-docs-reader"><div class="z7-empty">Select a markdown file from the tree to read it.</div></div>
+        </div>
+      </section>
+
+      <!-- REPOSITORY sub-view (full file browser) -->
+      <section id="z7-view-repo" style="display:none">
+        <div id="z7-repo-note">Browse every file in the repository at the chosen branch. Reading only here; edits to markdown specs happen in the Docs tab, everything else in GitLab.</div>
+        <div id="z7-repo-toolbar">
+          <div class="z7-filter-group">
+            <label for="z7-repo-project">Project</label>
+            <select class="z7-select" id="z7-repo-project" onchange="glRepoChangeProject()">
+              <option value="gg-mvp">gg-mvp</option>
+              <option value="gg-spec">gg-spec</option>
+            </select>
+          </div>
+          <div class="z7-filter-group">
+            <label for="z7-repo-ref">Branch</label>
+            <select class="z7-select" id="z7-repo-ref" onchange="glRepoChangeRef()">
+              <option value="main">main</option>
+            </select>
+          </div>
+          <div id="z7-repo-crumbs"></div>
+        </div>
+        <div id="z7-repo-wrap">
+          <div id="z7-repo-tree"><div class="z7-loading">Loading…</div></div>
+          <div id="z7-repo-viewer"><div class="z7-empty">Select a file from the tree to view it.</div></div>
         </div>
       </section>
     </div>
@@ -8159,7 +8277,7 @@
     function showGitLabDisconnected() {
       const subnav = document.getElementById('z7-subnav');
       if (subnav) subnav.style.display = 'none';
-      ['issues', 'mrs', 'docs'].forEach(v => {
+      ['issues', 'mrs', 'docs', 'repo'].forEach(v => {
         const s = document.getElementById('z7-view-' + v); if (s) s.style.display = 'none';
       });
       const prompt = document.getElementById('z7-connect-prompt');
@@ -8179,23 +8297,24 @@
     // ---- sub-view switching ------------------------------------------------
 
     function restoreGitLabView() {
-      try { const v = localStorage.getItem(GL_VIEW_KEY); if (['issues','mrs','docs'].includes(v)) _glView = v; } catch (_e) {}
+      try { const v = localStorage.getItem(GL_VIEW_KEY); if (['issues','mrs','docs','repo'].includes(v)) _glView = v; } catch (_e) {}
     }
 
     function setGitLabView(view, force) {
-      if (!['issues', 'mrs', 'docs'].includes(view)) return;
+      if (!['issues', 'mrs', 'docs', 'repo'].includes(view)) return;
       if (view === _glView && !force) return;
       _glView = view;
       try { localStorage.setItem(GL_VIEW_KEY, view); } catch (_e) {}
       document.querySelectorAll('#z7-subnav .z7-subnav-btn').forEach(b =>
         b.classList.toggle('active', b.dataset.view === view));
-      ['issues', 'mrs', 'docs'].forEach(v => {
+      ['issues', 'mrs', 'docs', 'repo'].forEach(v => {
         const s = document.getElementById('z7-view-' + v);
         if (s) s.style.display = v === view ? '' : 'none';
       });
       if (view === 'issues') loadGitLabIssues();
       else if (view === 'mrs') loadGitLabMRs();
       else if (view === 'docs') loadGitLabDocs();
+      else if (view === 'repo') loadGitLabRepo();
     }
 
     // Populate the New Issue + filter screen dropdowns from QA_FLOW_ORDER once.
@@ -8615,15 +8734,171 @@
         + '<span>&#x1F4C4; <strong>' + qaEscape(String(changeCount)) + '</strong> changed file' + (changeCount === 1 ? '' : 's') + '</span>'
         + (mergeStatus ? '<span>&middot; ' + qaEscape(mergeStatus) + '</span>' : '')
         + '<span class="z7-mr-changes-spacer"></span>'
-        + '<a class="z7-btn-primary" href="' + qaEscape(mr.web_url || '#') + '" target="_blank" rel="noopener">Open in GitLab to review &amp; merge &#x2197;</a>'
+        + '<a class="z7-btn-ghost" href="' + qaEscape(mr.web_url || '#') + '" target="_blank" rel="noopener">Review diffs in GitLab &#x2197;</a>'
         + '</div>'
-        + '<div class="z7-helper">Diffs, approvals, and merging happen in GitLab. This view is read &amp; comment only.</div>'
+        + glRenderMrActions(project, mr)
         + '<div class="z7-section-label">Description</div>'
         + '<div class="z7-md' + (mr.description ? '' : ' empty') + '">' + (mr.description ? ggMd(mr.description) : 'No description.') + '</div>'
         + glRenderNotes(notes)
         + glRenderCommentBox('mr', project, mr.iid)
         + '</div>'
         + '</div>';
+    }
+
+    // Action bar shown in the MR detail. Approve + Merge act on the live GitLab
+    // MR, attributed to the connected user. Hidden once the MR is merged/closed.
+    function glRenderMrActions(project, mr) {
+      if (mr.state !== 'opened') {
+        const verb = mr.state === 'merged' ? 'merged' : 'closed';
+        return '<div class="z7-helper">This merge request is ' + verb + '. Approvals and merging are only available while it is open.</div>';
+      }
+      const draftNote = mr.draft
+        ? '<div class="z7-mr-actstatus info">This is a draft. Mark it ready in GitLab before it can be merged.</div>'
+        : '';
+      const removeChecked = (mr.source_branch && mr.source_branch !== mr.target_branch) ? ' checked' : '';
+      return '<div id="z7-mr-actstatus-' + mr.iid + '" class="z7-mr-actstatus info"></div>'
+        + draftNote
+        + '<div class="z7-mr-actions">'
+        + '<button type="button" class="z7-btn-ghost" id="z7-mr-approve-' + mr.iid + '" '
+        +   'onclick="glApproveMr(' + glAttr(project) + ',' + mr.iid + ', this)">&#x1F44D; Approve</button>'
+        + '<button type="button" class="z7-btn-merge" id="z7-mr-merge-' + mr.iid + '"'
+        +   (mr.draft ? ' disabled' : '')
+        +   ' onclick="glMergeMr(' + glAttr(project) + ',' + mr.iid + ', this)">Merge</button>'
+        + '<div class="z7-mr-opts">'
+        + '<label class="z7-mr-opt"><input type="checkbox" id="z7-mr-removesrc-' + mr.iid + '"' + removeChecked + '> Delete source branch</label>'
+        + '<label class="z7-mr-opt"><input type="checkbox" id="z7-mr-squash-' + mr.iid + '"> Squash commits</label>'
+        + '</div>'
+        + '</div>'
+        + '<div class="z7-helper">Approve and merge act on the live GitLab MR, attributed to you. Diffs are reviewed in GitLab.</div>';
+    }
+
+    async function glApproveMr(project, iid, btn) {
+      const status = document.getElementById('z7-mr-actstatus-' + iid);
+      if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+      try {
+        const res = await glFetch('/api/mr/approve', { method: 'POST', body: { project, iid } });
+        if (res && res.approved) {
+          if (status) {
+            status.className = 'z7-mr-actstatus ok';
+            const cnt = (res.approvals_received != null && res.approvals_required != null)
+              ? ' (' + res.approvals_received + '/' + res.approvals_required + ' approvals)' : '';
+            status.textContent = 'You approved this merge request' + cnt + '.';
+          }
+          if (btn) { btn.textContent = '✔ Approved'; btn.disabled = true; }
+        } else {
+          // Approvals unavailable (paid feature) or not allowed — informational, not an error.
+          if (status) { status.className = 'z7-mr-actstatus info'; status.textContent = (res && res.message) || 'Approvals are not enabled on this project.'; }
+          if (btn) { btn.innerHTML = '&#x1F44D; Approve'; btn.disabled = false; }
+        }
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (status) { status.className = 'z7-mr-actstatus err'; status.textContent = 'Could not approve: ' + e.message; }
+        if (btn) { btn.innerHTML = '&#x1F44D; Approve'; btn.disabled = false; }
+      }
+    }
+
+    async function glMergeMr(project, iid, btn) {
+      const status = document.getElementById('z7-mr-actstatus-' + iid);
+      const removeSrc = !!(document.getElementById('z7-mr-removesrc-' + iid) || {}).checked;
+      const squash = !!(document.getElementById('z7-mr-squash-' + iid) || {}).checked;
+      if (!window.confirm('Merge !' + iid + ' into its target branch? This acts on the live GitLab repository.')) return;
+      if (btn) { btn.disabled = true; btn.textContent = 'Merging…'; }
+      if (status) { status.className = 'z7-mr-actstatus info'; status.textContent = 'Merging…'; }
+      try {
+        await glFetch('/api/mr/merge', { method: 'PUT', body: { project, iid, remove_source_branch: removeSrc, squash } });
+        if (status) { status.className = 'z7-mr-actstatus ok'; status.textContent = 'Merged. \u{1F389}'; }
+        await openGitLabMR(project, iid);  // refresh detail to merged state
+        loadGitLabMRs();                    // refresh list
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (status) { status.className = 'z7-mr-actstatus err'; status.textContent = 'Could not merge: ' + e.message; }
+        if (btn) { btn.disabled = false; btn.textContent = 'Merge'; }
+      }
+    }
+
+    // ---- New Merge Request form -------------------------------------------
+
+    function openNewMrForm() {
+      const detail = document.getElementById('z7-mrs-detail');
+      if (!detail) return;
+      const curProject = document.getElementById('z7-mrs-project').value;
+      const projDefault = (curProject === 'gg-spec') ? 'gg-spec' : 'gg-mvp';
+      detail.innerHTML =
+        '<div id="z7-newmr">'
+        + '<div class="z7-ni-title">New merge request</div>'
+        + '<div class="z7-ni-row">'
+        + '<div class="z7-field"><label for="z7-nmr-project">Project</label><select id="z7-nmr-project" onchange="glNewMrLoadBranches()">'
+        + '<option value="gg-mvp"' + (projDefault === 'gg-mvp' ? ' selected' : '') + '>gg-mvp</option>'
+        + '<option value="gg-spec"' + (projDefault === 'gg-spec' ? ' selected' : '') + '>gg-spec</option>'
+        + '</select></div>'
+        + '<div class="z7-field"><label for="z7-nmr-source">Source branch</label><select id="z7-nmr-source"><option>Loading…</option></select></div>'
+        + '<div class="z7-field"><label for="z7-nmr-target">Target branch</label><select id="z7-nmr-target"><option>Loading…</option></select></div>'
+        + '</div>'
+        + '<div class="z7-field"><label for="z7-nmr-title">Title</label><input id="z7-nmr-title" type="text" placeholder="What does this change do?"></div>'
+        + '<div class="z7-field"><label for="z7-nmr-desc">Description</label><textarea id="z7-nmr-desc" placeholder="Context, what changed, how to test… (markdown supported)"></textarea></div>'
+        + '<div class="z7-ni-checks">'
+        + '<label class="z7-mr-opt"><input type="checkbox" id="z7-nmr-draft"> Mark as draft</label>'
+        + '<label class="z7-mr-opt"><input type="checkbox" id="z7-nmr-removesrc" checked> Delete source branch when merged</label>'
+        + '</div>'
+        + '<div class="z7-ni-actions">'
+        + '<button type="button" class="z7-btn-ghost" onclick="closeGitLabDetail(\'mrs\')">Cancel</button>'
+        + '<button type="button" class="z7-btn-primary" onclick="glSubmitNewMr(this)">Create merge request</button>'
+        + '</div>'
+        + '<div class="z7-form-err" id="z7-nmr-err" style="display:none"></div>'
+        + '</div>';
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      glNewMrLoadBranches();
+    }
+
+    async function glNewMrLoadBranches() {
+      const projSel = document.getElementById('z7-nmr-project');
+      const src = document.getElementById('z7-nmr-source');
+      const tgt = document.getElementById('z7-nmr-target');
+      if (!projSel || !src || !tgt) return;
+      src.innerHTML = '<option>Loading…</option>';
+      tgt.innerHTML = '<option>Loading…</option>';
+      try {
+        const data = await glFetch('/api/branches?project=' + encodeURIComponent(projSel.value));
+        const branches = (data && data.branches) || [];
+        const def = (branches.find(b => b.default) || {}).name || 'main';
+        const firstNonDefault = (branches.find(b => !b.default) || {}).name || def;
+        const opt = (b, selName) => '<option value="' + qaEscape(b.name) + '"' + (b.name === selName ? ' selected' : '') + '>'
+          + qaEscape(b.name) + (b.default ? ' (default)' : '') + '</option>';
+        src.innerHTML = branches.length ? branches.map(b => opt(b, firstNonDefault)).join('') : '<option value="">No branches</option>';
+        tgt.innerHTML = branches.length ? branches.map(b => opt(b, def)).join('') : '<option value="main">main</option>';
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        src.innerHTML = '<option value="">Could not load branches</option>';
+        tgt.innerHTML = '<option value="main">main</option>';
+      }
+    }
+
+    async function glSubmitNewMr(btn) {
+      const project = document.getElementById('z7-nmr-project').value;
+      const source_branch = document.getElementById('z7-nmr-source').value;
+      const target_branch = document.getElementById('z7-nmr-target').value;
+      const title = (document.getElementById('z7-nmr-title').value || '').trim();
+      const description = document.getElementById('z7-nmr-desc').value || '';
+      const draft = !!document.getElementById('z7-nmr-draft').checked;
+      const remove_source_branch = !!document.getElementById('z7-nmr-removesrc').checked;
+      const errEl = document.getElementById('z7-nmr-err');
+      const fail = (m) => { if (errEl) { errEl.style.display = ''; errEl.textContent = m; } };
+      if (errEl) errEl.style.display = 'none';
+      if (!source_branch) return fail('Pick a source branch.');
+      if (!title) return fail('A title is required.');
+      if (source_branch === target_branch) return fail('Source and target branches must differ.');
+      if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+      try {
+        const res = await glFetch('/api/mr', { method: 'POST', body: { project, source_branch, target_branch, title, description, draft, remove_source_branch } });
+        closeGitLabDetail('mrs');
+        const stateSel = document.getElementById('z7-mrs-state'); if (stateSel) stateSel.value = 'opened';
+        loadGitLabMRs();
+        if (res && res.mr && res.mr.iid) openGitLabMR(project, res.mr.iid);
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (btn) { btn.disabled = false; btn.textContent = 'Create merge request'; }
+        fail('Could not create merge request: ' + e.message);
+      }
     }
 
     // ---- DOCS --------------------------------------------------------------
@@ -8825,6 +9100,220 @@
       glRenderDocReadMode();
       const reader = document.getElementById('z7-docs-reader');
       if (reader) reader.scrollTop = 0;
+    }
+
+    // ---- REPOSITORY (full file browser) -----------------------------------
+
+    // GitLab web bases for "Open in GitLab" links (browser can't know these from
+    // the worker's tree/file responses, so keep them in sync with the projects).
+    const GL_REPO_WEB = {
+      'gg-mvp': 'https://gitlab.com/guidedgrowth-group/guided-growth-mvp',
+      'gg-spec': 'https://gitlab.com/guidedgrowth-group/gg-spec'
+    };
+    let _glRepoProject = 'gg-mvp';
+    let _glRepoRef = 'main';
+    let _glRepoPath = '';
+    let _glRepoBranchesLoaded = '';   // project whose branch dropdown is populated
+    let _glRepoFileRaw = '';           // raw text of the open file (for md source toggle)
+    let _glRepoFileMeta = null;
+    let _glRepoMdShowSource = false;
+
+    function glRepoEncPath(path) { return String(path || '').split('/').map(encodeURIComponent).join('/'); }
+    function glRepoWebBlob(project, ref, path) {
+      const base = GL_REPO_WEB[project]; if (!base) return '';
+      return base + '/-/blob/' + encodeURIComponent(ref) + '/' + glRepoEncPath(path);
+    }
+    function glRepoWebRaw(project, ref, path) {
+      const base = GL_REPO_WEB[project]; if (!base) return '';
+      return base + '/-/raw/' + encodeURIComponent(ref) + '/' + glRepoEncPath(path);
+    }
+    function glRepoFmtBytes(n) {
+      if (n == null) return '';
+      if (n < 1024) return n + ' B';
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+      return (n / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function loadGitLabRepo() {
+      const projSel = document.getElementById('z7-repo-project');
+      if (projSel) _glRepoProject = projSel.value || 'gg-mvp';
+      glRepoLoadBranches();
+      glRepoLoadTree();
+    }
+
+    function glRepoChangeProject() {
+      const projSel = document.getElementById('z7-repo-project');
+      _glRepoProject = (projSel && projSel.value) || 'gg-mvp';
+      _glRepoRef = 'main';
+      _glRepoPath = '';
+      _glRepoBranchesLoaded = '';
+      const refSel = document.getElementById('z7-repo-ref');
+      if (refSel) refSel.innerHTML = '<option value="main">main</option>';
+      const viewer = document.getElementById('z7-repo-viewer');
+      if (viewer) viewer.innerHTML = '<div class="z7-empty">Select a file from the tree to view it.</div>';
+      glRepoLoadBranches();
+      glRepoLoadTree();
+    }
+
+    function glRepoChangeRef() {
+      const refSel = document.getElementById('z7-repo-ref');
+      _glRepoRef = (refSel && refSel.value) || 'main';
+      _glRepoPath = '';
+      const viewer = document.getElementById('z7-repo-viewer');
+      if (viewer) viewer.innerHTML = '<div class="z7-empty">Select a file from the tree to view it.</div>';
+      glRepoLoadTree();
+    }
+
+    async function glRepoLoadBranches() {
+      if (_glRepoBranchesLoaded === _glRepoProject) return;
+      const refSel = document.getElementById('z7-repo-ref');
+      try {
+        const data = await glFetch('/api/branches?project=' + encodeURIComponent(_glRepoProject));
+        const branches = (data && data.branches) || [];
+        if (refSel && branches.length) {
+          if (!branches.some(b => b.name === _glRepoRef)) {
+            _glRepoRef = (branches.find(b => b.default) || branches[0]).name;
+          }
+          refSel.innerHTML = branches.map(b =>
+            '<option value="' + qaEscape(b.name) + '"' + (b.name === _glRepoRef ? ' selected' : '') + '>'
+            + qaEscape(b.name) + (b.default ? ' (default)' : '') + '</option>').join('');
+        }
+        _glRepoBranchesLoaded = _glRepoProject;
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        // leave the static "main" option in place
+      }
+    }
+
+    function glRepoLoadTree() {
+      const tree = document.getElementById('z7-repo-tree');
+      glRenderRepoCrumbs();
+      if (tree) tree.innerHTML = '<div class="z7-loading">Loading…</div>';
+      glFetch('/api/tree?project=' + encodeURIComponent(_glRepoProject)
+          + '&ref=' + encodeURIComponent(_glRepoRef)
+          + '&path=' + encodeURIComponent(_glRepoPath))
+        .then(data => renderGitLabRepoTree(data))
+        .catch(e => {
+          if (e.unauthorized) return glCheckConnection();
+          if (tree) tree.innerHTML = '<div class="z7-error">Could not load tree: ' + qaEscape(e.message) + '</div>';
+        });
+    }
+
+    function renderGitLabRepoTree(data) {
+      const tree = document.getElementById('z7-repo-tree');
+      if (!tree) return;
+      const entries = (data && data.entries) || [];
+      let html = '';
+      if (_glRepoPath) {
+        const parent = _glRepoPath.indexOf('/') > -1 ? _glRepoPath.slice(0, _glRepoPath.lastIndexOf('/')) : '';
+        html += '<button type="button" class="z7-repo-entry up" onclick="glRepoOpenDir(' + glAttr(parent) + ')">'
+          + '<span class="z7-repo-ico">&#x2191;</span><span>..</span></button>';
+      }
+      if (!entries.length) {
+        tree.innerHTML = html + '<div class="z7-empty">Empty folder.</div>';
+        return;
+      }
+      html += entries.map(en => {
+        if (en.type === 'tree') {
+          return '<button type="button" class="z7-repo-entry dir" onclick="glRepoOpenDir(' + glAttr(en.path) + ')" title="' + qaEscape(en.path) + '">'
+            + '<span class="z7-repo-ico">&#x1F4C1;</span><span>' + qaEscape(en.name) + '</span></button>';
+        }
+        return '<button type="button" class="z7-repo-entry file" data-path="' + qaEscape(en.path) + '" onclick="glRepoOpenFile(' + glAttr(en.path) + ', this)" title="' + qaEscape(en.path) + '">'
+          + '<span class="z7-repo-ico">&#x1F4C4;</span><span>' + qaEscape(en.name) + '</span></button>';
+      }).join('');
+      tree.innerHTML = html;
+    }
+
+    function glRepoOpenDir(path) {
+      _glRepoPath = path || '';
+      glRepoLoadTree();
+    }
+
+    function glRenderRepoCrumbs() {
+      const el = document.getElementById('z7-repo-crumbs');
+      if (!el) return;
+      const parts = _glRepoPath ? _glRepoPath.split('/') : [];
+      let html = '<button type="button" class="z7-crumb' + (parts.length ? '' : ' current') + '" onclick="glRepoOpenDir(' + glAttr('') + ')">' + qaEscape(_glRepoProject) + '</button>';
+      let acc = '';
+      parts.forEach((p, i) => {
+        acc = acc ? acc + '/' + p : p;
+        const isLast = i === parts.length - 1;
+        html += '<span class="z7-crumb-sep">/</span>'
+          + '<button type="button" class="z7-crumb' + (isLast ? ' current' : '') + '" onclick="glRepoOpenDir(' + glAttr(acc) + ')">' + qaEscape(p) + '</button>';
+      });
+      el.innerHTML = html;
+    }
+
+    async function glRepoOpenFile(path, btn) {
+      const viewer = document.getElementById('z7-repo-viewer');
+      document.querySelectorAll('#z7-repo-tree .z7-repo-entry.file').forEach(b =>
+        b.classList.toggle('active', btn ? b === btn : b.getAttribute('data-path') === path));
+      if (viewer) viewer.innerHTML = '<div class="z7-loading">Loading…</div>';
+      try {
+        const data = await glFetch('/api/file?project=' + encodeURIComponent(_glRepoProject)
+          + '&ref=' + encodeURIComponent(_glRepoRef)
+          + '&path=' + encodeURIComponent(path));
+        glRenderRepoFile(data);
+        if (viewer) viewer.scrollTop = 0;
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (viewer) viewer.innerHTML = '<div class="z7-error">Could not load file: ' + qaEscape(e.message) + '</div>';
+      }
+    }
+
+    function glRepoToggleMdSource() {
+      _glRepoMdShowSource = !_glRepoMdShowSource;
+      const body = document.getElementById('z7-repo-filebody');
+      const btn = document.getElementById('z7-repo-srcbtn');
+      if (!body) return;
+      if (_glRepoMdShowSource) {
+        body.innerHTML = '<pre class="z7-code">' + qaEscape(_glRepoFileRaw) + '</pre>';
+        if (btn) btn.textContent = 'View rendered';
+      } else {
+        body.innerHTML = '<div class="z7-md">' + ggMd(_glRepoFileRaw) + '</div>';
+        if (btn) btn.textContent = 'View source';
+      }
+    }
+
+    function glRenderRepoFile(data) {
+      const viewer = document.getElementById('z7-repo-viewer');
+      if (!viewer) return;
+      const path = data.path || '';
+      const blobUrl = glRepoWebBlob(_glRepoProject, _glRepoRef, path);
+      const rawUrl = glRepoWebRaw(_glRepoProject, _glRepoRef, path);
+      const isMd = (data.lang === 'md' || data.lang === 'markdown' || /\.(md|markdown)$/i.test(path));
+      _glRepoFileRaw = (data.kind === 'text') ? (data.content || '') : '';
+      _glRepoFileMeta = { path: path, lang: data.lang || '', kind: data.kind };
+      _glRepoMdShowSource = false;
+
+      let body = '';
+      let extraAction = '';
+      if (data.kind === 'text') {
+        if (isMd) {
+          extraAction = '<button type="button" class="z7-btn-ghost" id="z7-repo-srcbtn" onclick="glRepoToggleMdSource()">View source</button>';
+          body = '<div id="z7-repo-filebody"><div class="z7-md">' + ggMd(_glRepoFileRaw) + '</div></div>';
+        } else {
+          body = '<div id="z7-repo-filebody"><pre class="z7-code">' + qaEscape(_glRepoFileRaw) + '</pre></div>';
+        }
+      } else if (data.kind === 'image') {
+        body = '<div id="z7-repo-filebody"><img class="z7-repo-img" alt="' + qaEscape(path) + '" src="data:'
+          + qaEscape(data.mime || 'image/png') + ';base64,' + (data.content_base64 || '') + '"></div>';
+      } else if (data.kind === 'too_large') {
+        body = '<div class="z7-repo-notice">This file is ' + glRepoFmtBytes(data.size) + ' — too large to preview here.<br>'
+          + (rawUrl ? '<a href="' + qaEscape(rawUrl) + '" target="_blank" rel="noopener" style="color:var(--z7-accent)">Open raw in GitLab &#x2197;</a>' : '') + '</div>';
+      } else {
+        body = '<div class="z7-repo-notice">Binary file (' + glRepoFmtBytes(data.size) + ') — not previewable.<br>'
+          + (rawUrl ? '<a href="' + qaEscape(rawUrl) + '" target="_blank" rel="noopener" style="color:var(--z7-accent)">Download / open raw &#x2197;</a>' : '') + '</div>';
+      }
+
+      viewer.innerHTML = '<div class="z7-reader-path">'
+        + '<span class="z7-reader-pathtext">' + qaEscape(path) + '</span>'
+        + (data.size != null ? '<span class="z7-meta-pill">' + glRepoFmtBytes(data.size) + '</span>' : '')
+        + '<span class="z7-reader-actions">'
+        + extraAction
+        + (blobUrl ? '<a class="z7-btn-ghost" href="' + qaEscape(blobUrl) + '" target="_blank" rel="noopener">Open in GitLab &#x2197;</a>' : '')
+        + '</span></div>'
+        + body;
     }
 
     // ---- cross-link to QA By-Screen view ----------------------------------
