@@ -912,6 +912,23 @@
       display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap;
       align-items: center;
     }
+    /* Category filter (Frontend / Backend / AI Learning) */
+    #z6-category-filter {
+      display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;
+    }
+    .z6-cat-btn {
+      padding: 5px 12px; font-size: 12px; font-weight: 600;
+      background: #0a1626; color: #8fa8c4; border: 1px solid #1e3a5f; border-radius: 14px;
+      cursor: pointer; font-family: inherit; transition: all 0.12s;
+    }
+    .z6-cat-btn:hover:not(.active) { color: #fff; }
+    .z6-cat-btn.active { background: #16273f; color: #fff; border-color: #2e5180; }
+    /* Per-card recommendation chip — neutral on purpose (color = severity, not type) */
+    .z6-cat-chip {
+      flex-shrink: 0; font-size: 10px; font-weight: 600; white-space: nowrap;
+      border-radius: 9px; padding: 1px 7px;
+      background: #0a1626; color: #9db2c9; border: 1px solid #24405f;
+    }
     /* Bucket toggle: Needs review vs Already in GitLab */
     #z6-list-toggle {
       display: flex; gap: 8px; margin-bottom: 20px;
@@ -1136,20 +1153,24 @@
     .z6-screen-row .z6-screen-badge.needs {
       background: rgba(243,89,111,0.14); color: #f3a9b4; border-color: #5c2533;
     }
-    /* Triaged screens (queue clear, tracked in GitLab) get a green check. */
-    .z6-screen-row .z6-screen-check {
-      flex-shrink: 0; min-width: 20px; text-align: center; color: #4ade80;
-      font-size: 13px; font-weight: 700;
+    /* Reviewed screens (human-triaged, tracked in GitLab — NOT necessarily fixed):
+       a muted neutral tag, deliberately not a green check (which reads as 'done'). */
+    .z6-screen-row .z6-screen-reviewed {
+      flex-shrink: 0; text-align: center; color: #7e93ad;
+      background: rgba(126,147,173,0.12); border: 1px solid #2b3f5a; border-radius: 9px;
+      padding: 1px 7px; font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
-    .z6-screen-row.st-triaged .z6-screen-name { color: #8fb9a0; }
+    .z6-screen-row.st-triaged .z6-screen-name { color: #9fb0c4; }
 
     /* === By Screen: main panel === */
     .z6-status-chip {
       font-size: 11px; font-weight: 700; border-radius: 11px; padding: 2px 9px;
       align-self: center; white-space: nowrap;
     }
-    .z6-status-chip.needs    { background: rgba(243,89,111,0.14); color: #f3a9b4; border: 1px solid #5c2533; }
-    .z6-status-chip.triaged  { background: rgba(74,222,128,0.12); color: #86efac; border: 1px solid #245c37; }
+    /* Status chips kept neutral — color is reserved for severity, not review-state. */
+    .z6-status-chip.needs    { background: rgba(124,156,255,0.12); color: #9db8ee; border: 1px solid #25406b; }
+    .z6-status-chip.triaged  { background: rgba(126,147,173,0.12); color: #9fb0c4; border: 1px solid #2b3f5a; }
     .z6-status-chip.clean    { background: rgba(148,163,184,0.10); color: #94a3b8; border: 1px solid #334155; }
     #z6-byscreen-header {
       display: flex; align-items: baseline; gap: 12px; margin: 0 0 4px;
@@ -2592,8 +2613,8 @@
           </div>
           <div id="z6-screen-statusfilter" role="group" aria-label="Review status filter">
             <button type="button" class="z6-order-btn active" data-status="all" onclick="setScreenStatusFilter('all')">All</button>
-            <button type="button" class="z6-order-btn" data-status="needs-review" onclick="setScreenStatusFilter('needs-review')">&#x1F50D; Needs review</button>
-            <button type="button" class="z6-order-btn" data-status="triaged" onclick="setScreenStatusFilter('triaged')">&#x2705; Reviewed</button>
+            <button type="button" class="z6-order-btn" data-status="needs-review" onclick="setScreenStatusFilter('needs-review')">Needs review</button>
+            <button type="button" class="z6-order-btn" data-status="triaged" onclick="setScreenStatusFilter('triaged')">Reviewed</button>
           </div>
           <button type="button" id="z6-showempty-toggle" onclick="toggleShowEmptyScreens()">Show all screens</button>
         </div>
@@ -2697,6 +2718,14 @@
       <div id="z6-list-toggle">
         <button type="button" class="z6-list-btn active" data-list="needs" onclick="setQAListView('needs')">&#x1F50D; Needs review <span class="z6-list-btn-count" id="z6-toggle-needs">…</span></button>
         <button type="button" class="z6-list-btn" data-list="gitlab" onclick="setQAListView('gitlab')">&#x2705; Already in GitLab <span class="z6-list-btn-count" id="z6-toggle-gitlab">…</span></button>
+      </div>
+
+      <div id="z6-category-filter" role="group" aria-label="Category filter">
+        <span class="z6-filter-label">Type:</span>
+        <button type="button" class="z6-cat-btn active" data-cat="all" onclick="setQACategory('all')">All</button>
+        <button type="button" class="z6-cat-btn" data-cat="frontend" onclick="setQACategory('frontend')">&#x1F5A5;&#xFE0F; Frontend</button>
+        <button type="button" class="z6-cat-btn" data-cat="backend" onclick="setQACategory('backend')">&#x2699;&#xFE0F; Backend</button>
+        <button type="button" class="z6-cat-btn" data-cat="ai-learning" onclick="setQACategory('ai-learning')">&#x1F9E0; AI Learning</button>
       </div>
 
       <div id="z6-needs-group">
@@ -2809,6 +2838,32 @@
     let _qaProposedError = new Map();      // finding id → last error string
     let qaCurrentSource = 'all';  // 'all' | 'human' | 'mobai' | 'video' (AI Quality chip is a disabled stub)
     let _qaListView = 'needs';    // 'needs' (proposed) | 'gitlab' (already filed) — Overview list toggle
+    let _qaCategoryFilter = 'all'; // 'all' | 'frontend' | 'backend' | 'ai-learning'
+
+    // The AI's recommended destination for an item: Frontend bug / Backend bug /
+    // AI Learning. Works for both proposed findings and GitLab issues (both carry
+    // finding_type + layer). 'unspecified' = a bug whose layer isn't tagged yet.
+    function qaCategoryOf(item) {
+      if (!item) return 'unspecified';
+      if ((item.finding_type || 'bug') === 'ai-learning') return 'ai-learning';
+      const l = item.layer;
+      return (l === 'frontend' || l === 'backend') ? l : 'unspecified';
+    }
+    function qaCategoryMeta(cat) {
+      return ({
+        frontend:     { label: 'Frontend bug', icon: '\u{1F5A5}️' },
+        backend:      { label: 'Backend bug',  icon: '⚙️' },
+        'ai-learning':{ label: 'AI Learning',  icon: '\u{1F9E0}' },
+        unspecified:  { label: 'Bug (layer?)', icon: '❓' },
+      })[cat] || { label: cat, icon: '' };
+    }
+    function qaCategoryChipHtml(item) {
+      const c = qaCategoryOf(item); const m = qaCategoryMeta(c);
+      return '<span class="z6-cat-chip cat-' + c + '" title="AI recommendation: ' + m.label + '">' + m.icon + ' ' + m.label + '</span>';
+    }
+    function qaPassesCategory(item) {
+      return _qaCategoryFilter === 'all' || qaCategoryOf(item) === _qaCategoryFilter;
+    }
 
     function qaEscape(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -2884,6 +2939,7 @@
       if (!listEl || !countEl) return;
 
       const filtered = _qaIssues.filter(i => {
+        if (!qaPassesCategory(i)) return false;
         if (qaCurrentSource === 'all') return true;
         return qaInferSource(i) === qaCurrentSource;
       });
@@ -2931,7 +2987,8 @@
       return '<a class="z6-issue-card ' + sevClass + '" data-issue-iid="' + qaEscape(i.iid) + '" href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener">'
         + '<div class="z6-issue-head">'
           + '<span class="z6-issue-iid">#' + qaEscape(i.iid) + '</span>'
-          + '<span class="z6-issue-title">' + kind + ' ' + qaEscape(i.title) + '</span>'
+          + qaCategoryChipHtml(i)
+          + '<span class="z6-issue-title">' + qaEscape(i.title) + '</span>'
           + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(i.severity || 'unset') + '</span>'
         + '</div>'
         + '<div class="z6-issue-meta">'
@@ -2978,13 +3035,31 @@
       setQAListView(v);
     }
 
+    // Category filter (Frontend / Backend / AI Learning) — applies to BOTH the
+    // Needs-review list and the Already-in-GitLab list.
+    function setQACategory(cat) {
+      if (!['all', 'frontend', 'backend', 'ai-learning'].includes(cat)) return;
+      _qaCategoryFilter = cat;
+      try { localStorage.setItem('gg_qa_category_v1', cat); } catch (_e) {}
+      document.querySelectorAll('#z6-category-filter .z6-cat-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.cat === cat));
+      renderProposed();
+      renderIssues();
+    }
+
+    function restoreQACategory() {
+      try { const s = localStorage.getItem('gg_qa_category_v1'); if (['all','frontend','backend','ai-learning'].includes(s)) _qaCategoryFilter = s; } catch (_e) {}
+      document.querySelectorAll('#z6-category-filter .z6-cat-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.cat === _qaCategoryFilter));
+    }
+
     // Keep the toggle button counts in sync with the source-filtered lists.
     function updateListToggleCounts() {
       const needsEl = document.getElementById('z6-toggle-needs');
       const glEl = document.getElementById('z6-toggle-gitlab');
       const inSrc = (s) => qaCurrentSource === 'all' || s === qaCurrentSource;
-      if (needsEl) needsEl.textContent = _qaProposed.filter(f => inSrc((f.source || 'human').toLowerCase())).length;
-      if (glEl) glEl.textContent = _qaIssues.filter(i => inSrc(qaInferSource(i))).length;
+      if (needsEl) needsEl.textContent = _qaProposed.filter(f => qaPassesCategory(f) && inSrc((f.source || 'human').toLowerCase())).length;
+      if (glEl) glEl.textContent = _qaIssues.filter(i => qaPassesCategory(i) && inSrc(qaInferSource(i))).length;
     }
 
     function updateChipCounts() {
@@ -3039,6 +3114,7 @@
       if (!listEl || !countEl) return;
 
       const filtered = _qaProposed.filter(f => {
+        if (!qaPassesCategory(f)) return false;
         if (qaCurrentSource === 'all') return true;
         return (f.source || 'human').toLowerCase() === qaCurrentSource;
       });
@@ -3183,6 +3259,7 @@
         + '<div class="z6-proposed-head">'
           + '<span class="z6-proposed-source">' + emoji + '</span>'
           + '<span class="z6-src-chip ' + srcClass + '">' + qaEscape(srcLabel) + '</span>'
+          + qaCategoryChipHtml(f)
           + '<span class="z6-proposed-title-text" onclick="qaToggleProposedExpand(\'' + qaEscape(f.id) + '\')">' + qaEscape(f.title || '(untitled)') + '</span>'
           + thumb
           + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(f.severity || 'unset') + '</span>'
@@ -3660,6 +3737,7 @@
       }
       restoreQASummaryState();
       restoreQAListView();
+      restoreQACategory();
       restoreShowEmptyScreens();
       qaLoadSummary();
       qaLoadRuns();
@@ -3875,9 +3953,9 @@
         const hot = a.high > 0 ? '<span class="z6-screen-hotdot" title="' + a.high + ' high-severity"></span>' : '';
         let marker;
         if (st === 'needs-review') {
-          marker = '<span class="z6-screen-badge needs" title="' + pending + ' to review">' + pending + '</span>';
+          marker = '<span class="z6-screen-badge" title="' + pending + ' to review">' + pending + '</span>';
         } else if (st === 'triaged') {
-          marker = '<span class="z6-screen-check" title="Queue clear — ' + gl + ' tracked in GitLab">&#x2713;</span>';
+          marker = '<span class="z6-screen-reviewed" title="Reviewed — ' + gl + ' tracked in GitLab, not necessarily fixed">reviewed</span>';
         } else {
           marker = '';
         }
@@ -3943,7 +4021,7 @@
       const _stChip = _st === 'needs-review'
         ? '<span class="z6-status-chip needs">Needs review &middot; ' + items.length + '</span>'
         : _st === 'triaged'
-          ? '<span class="z6-status-chip triaged">&#x2713; Triaged &middot; all in GitLab</span>'
+          ? '<span class="z6-status-chip triaged">Reviewed &middot; ' + screenIssues.length + ' in GitLab</span>'
           : '<span class="z6-status-chip clean">No findings yet</span>';
       let html = '<div id="z6-byscreen-header">'
         + '<span class="z6-bs-screen">' + qaEscape(qaSelectedScreen) + '</span>'
