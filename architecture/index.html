@@ -1119,6 +1119,16 @@
       letter-spacing: 0.08em; color: #64748b; margin: 4px 0 12px;
       padding-top: 12px; border-top: 1px dashed #1e3a5f;
     }
+    .z6-dup-hint {
+      font-size: 11.5px; line-height: 1.45; border-radius: 6px;
+      padding: 7px 10px; margin: 8px 0 4px;
+    }
+    .z6-dup-hint.merge    { background: rgba(243,89,111,0.10); border: 1px solid #5c2533; color: #f3a9b4; }
+    .z6-dup-hint.related  { background: rgba(124,156,255,0.08); border: 1px solid #25406b; color: #9db8ee; }
+    .z6-dup-hint.internal { background: rgba(148,163,184,0.08); border: 1px solid #334155; color: #a8b6c8; }
+    .z6-dup-hint a { color: inherit; font-weight: 700; text-decoration: underline; }
+    .z6-dup-hint code { background: #060d18; border: 1px solid #1e3a5f; border-radius: 4px; padding: 0 5px; font-size: 10.5px; }
+    .z6-dup-note { display: block; opacity: 0.82; margin-top: 3px; font-style: italic; }
     .z6-bs-group-title .z6-bs-grp-count {
       background: #060d18; border: 1px solid #1e3a5f; border-radius: 9px;
       padding: 1px 8px; font-size: 10.5px; color: #8fa8c4; font-weight: 600;
@@ -2635,6 +2645,45 @@
     // authoritative full list (true) or we fell back to count order.
     const QA_FLOW_AVAILABLE = QA_FLOW_ORDER.length > 0;
 
+    // Reconciliation map (gg-spec/docs/qa-reconciliation-2026-05-28.md). Read-only
+    // dedup hints: which proposed findings already correspond to an existing GitLab
+    // issue (merge/related) or another finding in this queue (internal). Keyed by
+    // finding id. Lets Timothy avoid re-filing duplicates. No GitLab writes here —
+    // the merge-write action is a separate (held) step.
+    const QA_GL_ISSUE_URL = (iid) => 'https://gitlab.com/guidedgrowth-group/guided-growth-mvp/-/issues/' + iid;
+    const QA_DUP_MAP = {
+      'MOBAI-2026-05-27-F24': { kind: 'related',  issue: 88 },
+      'VID-850a247c-001':     { kind: 'related',  issue: 88 },
+      'VID-b2da2002-001':     { kind: 'related',  issue: 88 },
+      'VID-aeab7224-001':     { kind: 'related',  issue: 88 },
+      'VID-aeab7224-007':     { kind: 'merge',    issue: 169 },
+      'VID-aeab7224-009':     { kind: 'related',  issue: 164 },
+      'VID-aeab7224-010':     { kind: 'merge',    issue: 167 },
+      'VID-b2da2002-003':     { kind: 'related',  issue: 167 },
+      'VID-aeab7224-005':     { kind: 'merge',    issue: 168 },
+      'VID-aeab7224-011':     { kind: 'related',  issue: 175 },
+      'VID-aeab7224-003':     { kind: 'related',  issue: 168 },
+      'MOBAI-2026-05-27-F20': { kind: 'internal', finding: 'MOBAI-2026-05-27-F19' },
+      'VID-b2da2002-002':     { kind: 'internal', finding: 'MOBAI-2026-05-27-F19' },
+      'MOBAI-2026-05-27-F27': { kind: 'related',  issue: 88, note: 'Vapi-reset symptom; kept as its own AI Learning per the reconciliation.' },
+    };
+
+    function qaDupHintHtml(f) {
+      const d = QA_DUP_MAP[f && f.id];
+      if (!d) return '';
+      if (d.kind === 'internal') {
+        return '<div class="z6-dup-hint internal">&#x21BB; Duplicate of finding <code>' + qaEscape(d.finding)
+          + '</code> already in this queue — archive this one, keep the other.</div>';
+      }
+      const link = '<a href="' + QA_GL_ISSUE_URL(d.issue) + '" target="_blank" rel="noopener">#' + d.issue + '</a>';
+      const note = d.note ? '<span class="z6-dup-note">' + qaEscape(d.note) + '</span>' : '';
+      if (d.kind === 'merge') {
+        return '<div class="z6-dup-hint merge">&#x1F4CC; Likely already tracked in ' + link
+          + '. Review before filing — merge this evidence into ' + link + ' rather than opening a duplicate.' + note + '</div>';
+      }
+      return '<div class="z6-dup-hint related">&#x1F517; Related to ' + link + ' (same root cause).' + note + '</div>';
+    }
+
     let qaCurrentMode = 'overview';      // 'overview' | 'byscreen'
     let qaScreenOrder = 'flow';          // 'flow' | 'hot'
     let qaSelectedScreen = null;         // currently selected screen in By Screen mode
@@ -2963,6 +3012,7 @@
           + '<span class="z6-conf-pill' + confClass + '">confidence: ' + qaEscape(conf) + '</span>'
           + '<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px">' + qaEscape(f.id) + '</span>'
         + '</div>'
+        + qaDupHintHtml(f)
         + '<div class="z6-actions">' + btn + aiBtn + rejectBtn + '</div>'
         + bucketPicker
         + detail
