@@ -1191,9 +1191,14 @@
     .z6-bs-group-title.bugs { color: #f3596f; }
     .z6-bs-group-title.learnings { color: #a78bfa; }
     .z6-bs-reviewhead {
-      font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: #64748b; margin: 4px 0 12px;
-      padding-top: 12px; border-top: 1px dashed #1e3a5f;
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #cdd8e8; margin: 18px 0 12px;
+      padding-top: 14px; border-top: 1px solid #2b3f5a;
+      display: flex; align-items: baseline; gap: 8px;
+    }
+    .z6-bs-reviewhead-sub {
+      text-transform: none; letter-spacing: 0; font-weight: 500;
+      font-size: 11px; color: #8fa8c4;
     }
     .z6-dup-hint {
       font-size: 11.5px; line-height: 1.45; border-radius: 6px;
@@ -2614,7 +2619,7 @@
           <div id="z6-screen-statusfilter" role="group" aria-label="Review status filter">
             <button type="button" class="z6-order-btn active" data-status="all" onclick="setScreenStatusFilter('all')">All</button>
             <button type="button" class="z6-order-btn" data-status="needs-review" onclick="setScreenStatusFilter('needs-review')">Needs review</button>
-            <button type="button" class="z6-order-btn" data-status="triaged" onclick="setScreenStatusFilter('triaged')">Reviewed</button>
+            <button type="button" class="z6-order-btn" data-status="triaged" onclick="setScreenStatusFilter('triaged')">Human reviewed</button>
           </div>
           <button type="button" id="z6-showempty-toggle" onclick="toggleShowEmptyScreens()">Show all screens</button>
         </div>
@@ -3955,7 +3960,7 @@
         if (st === 'needs-review') {
           marker = '<span class="z6-screen-badge" title="' + pending + ' to review">' + pending + '</span>';
         } else if (st === 'triaged') {
-          marker = '<span class="z6-screen-reviewed" title="Reviewed — ' + gl + ' tracked in GitLab, not necessarily fixed">reviewed</span>';
+          marker = '<span class="z6-screen-reviewed" title="Human reviewed — ' + gl + ' tracked in GitLab, not necessarily fixed">human reviewed</span>';
         } else {
           marker = '';
         }
@@ -4021,7 +4026,7 @@
       const _stChip = _st === 'needs-review'
         ? '<span class="z6-status-chip needs">Needs review &middot; ' + items.length + '</span>'
         : _st === 'triaged'
-          ? '<span class="z6-status-chip triaged">Reviewed &middot; ' + screenIssues.length + ' in GitLab</span>'
+          ? '<span class="z6-status-chip triaged">Human reviewed &middot; ' + screenIssues.length + ' in GitLab</span>'
           : '<span class="z6-status-chip clean">No findings yet</span>';
       let html = '<div id="z6-byscreen-header">'
         + '<span class="z6-bs-screen">' + qaEscape(qaSelectedScreen) + '</span>'
@@ -4057,7 +4062,7 @@
 
       // --- Proposed findings (review queue) ---
       if (items.length) {
-        html += '<div class="z6-bs-reviewhead">Review queue (propose &rarr; file / merge / reject)</div>';
+        html += '<div class="z6-bs-reviewhead">&#x1F50D; Review queue <span class="z6-bs-reviewhead-sub">triage each finding below: file, merge, or not-a-bug</span></div>';
       }
 
       // --- Bugs group, sub-split Frontend / Backend (/ Unknown) ---
