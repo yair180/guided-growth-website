@@ -1145,9 +1145,9 @@
     #z7-connect-prompt .z7-cp-title { font-size: 20px; font-weight: 700; color: var(--z7-text); margin: 0 0 8px; }
     #z7-connect-prompt .z7-cp-sub { font-size: 13px; color: var(--z7-text-2); margin: 0 0 24px; line-height: 1.6; }
     .z7-btn-primary {
-      background: var(--z7-accent-strong); color: var(--z7-on-accent); border: none; font: inherit; font-weight: 700;
-      font-size: 14px; padding: 11px 22px; border-radius: 8px; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 9px; transition: background 0.12s;
+      background: var(--z7-accent-strong); color: var(--z7-on-accent); border: none; font: inherit; font-weight: 500;
+      font-size: 14px; padding: 8px 16px; border-radius: 6px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px; transition: background 0.12s;
     }
     .z7-btn-primary:hover { background: var(--z7-accent-hover); }
     .z7-btn-primary:disabled { opacity: 0.5; cursor: default; }
@@ -1260,8 +1260,8 @@
     .z7-detail-head .z7-dh-meta { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; font-size: 11.5px; color: var(--z7-text-2); }
     .z7-detail-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
     .z7-btn-ghost {
-      background: transparent; border: 1px solid var(--z7-border); color: var(--z7-text-2);
-      font: inherit; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 7px; cursor: pointer;
+      background: var(--z7-panel); border: 1px solid var(--z7-border); color: var(--z7-text);
+      font: inherit; font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 6px; cursor: pointer;
       text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.12s;
     }
     .z7-btn-ghost:hover { border-color: var(--z7-accent); color: var(--z7-accent); }
@@ -1278,6 +1278,8 @@
     .z7-md.empty { color: var(--z7-text-2); font-style: italic; }
     .z7-md h1, .z7-md h2, .z7-md h3, .z7-md h4 { color: var(--z7-text); line-height: 1.3; margin: 1.1em 0 0.5em; }
     .z7-md h1 { font-size: 1.5em; } .z7-md h2 { font-size: 1.3em; } .z7-md h3 { font-size: 1.12em; }
+    .z7-md h1, .z7-md h2 { padding-bottom: 0.3em; border-bottom: 1px solid var(--z7-border); }
+    .z7-md h1:first-child, .z7-md h2:first-child, .z7-md h3:first-child { margin-top: 0; }
     .z7-md p { margin: 0.6em 0; }
     .z7-md a { color: var(--z7-accent); text-decoration: none; } .z7-md a:hover { text-decoration: underline; }
     .z7-md code {
@@ -1366,28 +1368,79 @@
       color: var(--z7-text-2); font-weight: 700; padding: 8px 8px 4px;
     }
     .z7-tree-file {
-      display: block; width: 100%; text-align: left; background: transparent; border: none;
-      color: var(--z7-text); font: inherit; font-size: 12.5px; padding: 6px 9px; border-radius: 6px;
-      cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      font-family: ui-monospace, Menlo, Consolas, monospace;
+      display: flex; align-items: center; gap: 7px; width: 100%; text-align: left; background: transparent; border: none;
+      color: var(--z7-text); font: inherit; font-size: 13px; padding: 5px 9px; border-radius: 6px;
+      cursor: pointer;
     }
+    .z7-tree-file .z7-tree-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .z7-tree-ico { flex-shrink: 0; width: 14px; height: 14px; color: var(--z7-text-3); display: inline-flex; align-items: center; justify-content: center; }
+    .z7-tree-ico svg { width: 14px; height: 14px; display: block; }
     .z7-tree-file:hover { background: var(--z7-panel-3); color: var(--z7-text); }
+    .z7-tree-file:hover .z7-tree-ico { color: var(--z7-text-2); }
     .z7-tree-file.active { background: var(--z7-accent-weak-bg); color: var(--z7-accent); box-shadow: inset 0 0 0 1px var(--z7-accent); }
+    .z7-tree-file.active .z7-tree-ico { color: var(--z7-accent); }
     #z7-docs-reader {
       flex: 1; min-width: 0; background: var(--z7-panel); border: 1px solid var(--z7-border);
       border-radius: 10px; padding: 28px 34px; max-height: calc(100vh - 200px); overflow-y: auto;
       box-shadow: 0 1px 4px var(--z7-shadow);
     }
     /* Comfortable reading column inside the reader, GitLab blob style */
-    #z7-docs-reader .z7-reader-inner { max-width: 860px; margin: 0 auto; }
+    #z7-docs-reader .z7-reader-inner { max-width: 780px; margin: 0 auto; }
     #z7-docs-reader .z7-md { font-size: 14.5px; line-height: 1.7; }
     #z7-docs-reader .z7-reader-path {
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
-      color: var(--z7-text-2); margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--z7-border);
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px;
+      color: var(--z7-text-2);
+      background: var(--z7-panel-2); border: 1px solid var(--z7-border); border-radius: 8px;
+      padding: 9px 14px; margin-bottom: 20px;
     }
     #z7-docs-reader .z7-reader-path .z7-reader-pathtext { flex: 1; min-width: 0; word-break: break-all; }
     #z7-docs-reader .z7-reader-path .z7-reader-actions { display: inline-flex; gap: 8px; flex-shrink: 0; }
+
+    /* Blob-path breadcrumb (filename emphasized like GitLab) */
+    .z7-reader-pathtext .z7-path-file { color: var(--z7-text); font-weight: 700; }
+    .z7-reader-pathtext .z7-path-seg { color: var(--z7-text-2); }
+    .z7-reader-pathtext .z7-path-sep { color: var(--z7-text-3); margin: 0 3px; }
+
+    /* Frontmatter metadata panel (GitLab-style collapsible key/value table) */
+    .z7-fm {
+      border: 1px solid var(--z7-border); border-radius: 8px; margin: 0 0 22px;
+      background: var(--z7-panel-2); overflow: hidden;
+    }
+    .z7-fm-summary {
+      list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+      padding: 9px 14px; font-size: 11.5px; font-weight: 700; color: var(--z7-text-2);
+      text-transform: uppercase; letter-spacing: 0.05em; user-select: none;
+    }
+    .z7-fm-summary::-webkit-details-marker { display: none; }
+    .z7-fm-summary::after {
+      content: '\25B6'; margin-left: auto; font-size: 9px; color: var(--z7-text-3); transition: transform 0.12s;
+    }
+    .z7-fm[open] .z7-fm-summary::after { transform: rotate(90deg); }
+    .z7-fm-summary:hover { color: var(--z7-text); }
+    .z7-fm-ico { font-size: 12px; color: var(--z7-text-3); }
+    .z7-fm-count {
+      font-size: 10.5px; font-weight: 700; color: var(--z7-text-2); background: var(--z7-panel-3);
+      border-radius: 8px; padding: 0 7px; text-transform: none; letter-spacing: 0; margin-left: 2px;
+    }
+    .z7-fm-table {
+      width: 100%; border-collapse: collapse; border-top: 1px solid var(--z7-border);
+      background: var(--z7-panel); font-size: 13px; margin: 0;
+    }
+    .z7-fm-table th, .z7-fm-table td {
+      text-align: left; padding: 7px 14px; border-bottom: 1px solid var(--z7-border); vertical-align: top;
+    }
+    .z7-fm-table tr:last-child th, .z7-fm-table tr:last-child td { border-bottom: none; }
+    .z7-fm-table th {
+      width: 180px; min-width: 120px; color: var(--z7-text-2); font-weight: 600;
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; white-space: nowrap;
+    }
+    .z7-fm-table td { color: var(--z7-text); word-break: break-word; }
+    .z7-fm-chip {
+      display: inline-block; background: var(--z7-panel-3); border: 1px solid var(--z7-border);
+      border-radius: 4px; padding: 1px 8px; margin: 1px 4px 1px 0; font-size: 12px; color: var(--z7-text);
+    }
+    .z7-fm-empty { color: var(--z7-text-3); font-style: italic; }
 
     /* ============================================================
        ZOOM 7: GitLab rich experience (avatars, labels, reactions,
@@ -1472,19 +1525,24 @@
       padding: 11px 14px; margin: 14px 0; font-size: 12.5px; color: var(--z7-text);
     }
     .z7-mr-changes .z7-mr-changes-spacer { margin-left: auto; }
+    .z7-mr-changes .z7-inline-ico { display: inline-flex; width: 14px; height: 14px; color: var(--z7-text-2); vertical-align: -2px; }
+    .z7-mr-changes .z7-inline-ico svg { width: 14px; height: 14px; display: block; }
     .z7-helper { font-size: 11px; color: var(--z7-text-2); font-style: italic; margin-top: 6px; }
 
     /* Docs tree folders (expandable) */
     .z7-tree-folder {
       display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
-      background: transparent; border: none; color: var(--z7-text); font: inherit; font-size: 12px;
-      font-weight: 700; padding: 7px 8px 5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em;
+      background: transparent; border: none; color: var(--z7-text); font: inherit; font-size: 13px;
+      font-weight: 600; padding: 6px 8px; border-radius: 6px; cursor: pointer;
     }
-    .z7-tree-folder:hover { color: var(--z7-accent); }
-    .z7-tree-folder .z7-tree-caret { font-size: 9px; transition: transform 0.12s; display: inline-block; color: var(--z7-text-2); }
+    .z7-tree-folder:hover { background: var(--z7-panel-3); }
+    .z7-tree-folder .z7-tree-caret { font-size: 9px; transition: transform 0.12s; display: inline-flex; width: 10px; color: var(--z7-text-3); flex-shrink: 0; }
     .z7-tree-folder.open .z7-tree-caret { transform: rotate(90deg); }
-    .z7-tree-folder .z7-tree-count { color: var(--z7-text-3); font-weight: 600; text-transform: none; }
-    .z7-tree-children { display: none; padding-left: 6px; }
+    .z7-tree-folder .z7-tree-foldico { flex-shrink: 0; width: 14px; height: 14px; color: var(--z7-accent); display: inline-flex; }
+    .z7-tree-folder .z7-tree-foldico svg { width: 14px; height: 14px; display: block; }
+    .z7-tree-folder .z7-tree-foldname { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .z7-tree-folder .z7-tree-count { color: var(--z7-text-3); font-weight: 400; font-size: 11.5px; flex-shrink: 0; }
+    .z7-tree-children { display: none; padding-left: 14px; }
     .z7-tree-children.open { display: block; }
 
     /* Doc editor (full human editing, GitLab web-editor style) */
@@ -1556,13 +1614,15 @@
     }
     .z7-repo-entry {
       display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; border: none;
-      color: var(--z7-text); font: inherit; font-size: 12.5px; padding: 6px 9px; border-radius: 6px; cursor: pointer;
-      font-family: ui-monospace, Menlo, Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--z7-text); font: inherit; font-size: 13px; padding: 5px 9px; border-radius: 6px; cursor: pointer;
     }
+    .z7-repo-entry .z7-repo-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .z7-repo-entry:hover { background: var(--z7-panel-3); }
     .z7-repo-entry.active { background: var(--z7-accent-weak-bg); color: var(--z7-accent); box-shadow: inset 0 0 0 1px var(--z7-accent); }
-    .z7-repo-entry .z7-repo-ico { flex-shrink: 0; width: 15px; text-align: center; color: var(--z7-text-3); }
+    .z7-repo-entry .z7-repo-ico { flex-shrink: 0; width: 14px; height: 14px; color: var(--z7-text-3); display: inline-flex; align-items: center; justify-content: center; }
+    .z7-repo-entry .z7-repo-ico svg { width: 14px; height: 14px; display: block; }
     .z7-repo-entry.dir .z7-repo-ico { color: var(--z7-accent); }
+    .z7-repo-entry.active .z7-repo-ico { color: var(--z7-accent); }
     .z7-repo-entry.up { color: var(--z7-text-2); }
     #z7-repo-viewer {
       flex: 1; min-width: 0; background: var(--z7-panel); border: 1px solid var(--z7-border);
@@ -1571,12 +1631,14 @@
     }
     #z7-repo-viewer .z7-reader-path {
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
-      color: var(--z7-text-2); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--z7-border);
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px;
+      color: var(--z7-text-2);
+      background: var(--z7-panel-2); border: 1px solid var(--z7-border); border-radius: 8px;
+      padding: 9px 14px; margin-bottom: 18px;
     }
     #z7-repo-viewer .z7-reader-pathtext { flex: 1; min-width: 0; word-break: break-all; }
     #z7-repo-viewer .z7-reader-actions { display: inline-flex; gap: 8px; flex-shrink: 0; align-items: center; }
-    #z7-repo-viewer .z7-md { font-size: 14.5px; line-height: 1.7; max-width: 860px; }
+    #z7-repo-viewer .z7-md { font-size: 14.5px; line-height: 1.7; max-width: 780px; }
     .z7-code {
       margin: 0; background: var(--z7-code-bg); border: 1px solid var(--z7-border); border-radius: 8px;
       padding: 14px 16px; overflow-x: auto; font-family: ui-monospace, Menlo, Consolas, monospace;
@@ -8138,6 +8200,74 @@
       return '<p>' + qaEscape(src).replace(/\n/g, '<br>') + '</p>';
     }
 
+    // --- YAML frontmatter -------------------------------------------------
+    // gg-spec docs lead with a `---` ... `---` frontmatter block. Rendering it
+    // raw through marked dumped ugly bold key:value lines, so split it out and
+    // present it as a GitLab-style metadata panel, with the body markdown below.
+    function glStripYamlScalar(v) {
+      let s = String(v == null ? '' : v).trim();
+      if (s.length >= 2 && ((s[0] === '"' && s[s.length - 1] === '"') || (s[0] === "'" && s[s.length - 1] === "'"))) {
+        s = s.slice(1, -1);
+      }
+      return s;
+    }
+    function glParseSimpleYaml(yaml) {
+      const lines = String(yaml).split(/\r?\n/);
+      const out = [];
+      let cur = null;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.trim() || /^\s*#/.test(line)) continue;
+        const listItem = line.match(/^\s*-\s+(.*)$/);
+        if (listItem && cur) { cur.items.push(glStripYamlScalar(listItem[1])); continue; }
+        const kv = line.match(/^([A-Za-z0-9_.\- ]+?):\s*(.*)$/);
+        if (kv) { cur = { key: kv[1].trim(), value: glStripYamlScalar(kv[2]), items: [] }; out.push(cur); }
+      }
+      return out.map(e => (e.items && e.items.length) ? { key: e.key, value: e.items } : { key: e.key, value: e.value });
+    }
+    // Returns { meta:[{key,value}], body }. Frontmatter must open on line 1.
+    function glSplitFrontmatter(raw) {
+      const src = (raw == null ? '' : String(raw));
+      const m = src.match(/^﻿?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n([\s\S]*)|$)/);
+      if (!m) return { meta: [], body: src };
+      return { meta: glParseSimpleYaml(m[1]), body: m[2] || '' };
+    }
+    // GitLab-style collapsible metadata table from parsed frontmatter entries.
+    function glRenderFrontmatter(meta) {
+      if (!meta || !meta.length) return '';
+      const rows = meta.map(e => {
+        let valHtml;
+        if (Array.isArray(e.value)) {
+          valHtml = e.value.length
+            ? e.value.map(v => '<span class="z7-fm-chip">' + qaEscape(v) + '</span>').join(' ')
+            : '<span class="z7-fm-empty">empty</span>';
+        } else if (e.value === '' || e.value == null) {
+          valHtml = '<span class="z7-fm-empty">empty</span>';
+        } else {
+          valHtml = qaEscape(e.value);
+        }
+        return '<tr><th>' + qaEscape(e.key) + '</th><td>' + valHtml + '</td></tr>';
+      }).join('');
+      return '<details class="z7-fm" open><summary class="z7-fm-summary">'
+        + '<span class="z7-fm-ico">&#9776;</span> Metadata'
+        + '<span class="z7-fm-count">' + meta.length + '</span></summary>'
+        + '<table class="z7-fm-table"><tbody>' + rows + '</tbody></table></details>';
+    }
+    // Render a doc/file path as a GitLab blob breadcrumb (filename in bold).
+    function glRenderBlobPath(path) {
+      const parts = String(path || '').split('/').filter(Boolean);
+      if (!parts.length) return qaEscape(path || '');
+      return parts.map((p, i) => i === parts.length - 1
+        ? '<strong class="z7-path-file">' + qaEscape(p) + '</strong>'
+        : '<span class="z7-path-seg">' + qaEscape(p) + '</span>'
+      ).join('<span class="z7-path-sep">/</span>');
+    }
+    // Render markdown that may carry a frontmatter block (metadata panel + body).
+    function glRenderDoc(raw) {
+      const fm = glSplitFrontmatter(raw);
+      return glRenderFrontmatter(fm.meta) + '<div class="z7-md">' + ggMd(fm.body) + '</div>';
+    }
+
     function glAgo(iso) { return qaAgo(iso); }
 
     // Fetch wrapper: always credentialed, JSON, and surfaces a 401 distinctly so
@@ -8165,6 +8295,11 @@
       const map = { opened: 'Open', closed: 'Closed', merged: 'Merged', locked: 'Locked' };
       return map[s] || (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
     }
+
+    // GitLab-style file-tree glyphs (outline, inherit currentColor).
+    const GL_ICON_FILE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" aria-hidden="true"><path d="M9 1.75H4.5A1 1 0 0 0 3.5 2.75v10.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5.5L9 1.75Z"/><path d="M8.75 2v3.5h3.5"/></svg>';
+    const GL_ICON_FOLDER = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 4.25c0-.69.56-1.25 1.25-1.25h2.84c.33 0 .65.13.88.37l.91.88h5.12c.69 0 1.25.56 1.25 1.25v6.13c0 .69-.56 1.25-1.25 1.25H2.75c-.69 0-1.25-.56-1.25-1.25V4.25Z"/></svg>';
+    const GL_ICON_UP = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12.5V4M4.25 7.75 8 4l3.75 3.75"/></svg>';
 
     // ---- rich render helpers (avatars, labels, reactions, time) -----------
 
@@ -8767,7 +8902,7 @@
         + '<div class="z7-detail-body">'
         + glRenderMetaGrid(mr)
         + '<div class="z7-mr-changes">'
-        + '<span>&#x1F4C4; <strong>' + qaEscape(String(changeCount)) + '</strong> changed file' + (changeCount === 1 ? '' : 's') + '</span>'
+        + '<span class="z7-mr-changes-files"><span class="z7-inline-ico">' + GL_ICON_FILE + '</span> <strong>' + qaEscape(String(changeCount)) + '</strong> changed file' + (changeCount === 1 ? '' : 's') + '</span>'
         + (mergeStatus ? '<span>&middot; ' + qaEscape(mergeStatus) + '</span>' : '')
         + '<span class="z7-mr-changes-spacer"></span>'
         + '<a class="z7-btn-ghost" href="' + qaEscape(mr.web_url || '#') + '" target="_blank" rel="noopener">Review diffs in GitLab &#x2197;</a>'
@@ -8980,12 +9115,16 @@
           const path = f.path || f.name || '';
           const label = f.name || path.split('/').pop();
           return '<button type="button" class="z7-tree-file" data-path="' + qaEscape(path) + '" '
-            + 'onclick="openGitLabDoc(' + glAttr(path) + ', this)" title="' + qaEscape(path) + '">' + qaEscape(label) + '</button>';
+            + 'onclick="openGitLabDoc(' + glAttr(path) + ', this)" title="' + qaEscape(path) + '">'
+            + '<span class="z7-tree-ico">' + GL_ICON_FILE + '</span>'
+            + '<span class="z7-tree-label">' + qaEscape(label) + '</span></button>';
         }).join('');
         const cnt = groups[g].length;
         return '<button type="button" class="z7-tree-folder' + open + '" onclick="glToggleDocFolder(this)">'
-          + '<span class="z7-tree-caret">&#x25B6;</span>' + qaEscape(g.replace(/\/$/, '') + '/')
-          + ' <span class="z7-tree-count">(' + cnt + ')</span></button>'
+          + '<span class="z7-tree-caret">&#x25B6;</span>'
+          + '<span class="z7-tree-foldico">' + GL_ICON_FOLDER + '</span>'
+          + '<span class="z7-tree-foldname">' + qaEscape(g.replace(/\/$/, '')) + '</span>'
+          + '<span class="z7-tree-count">' + cnt + '</span></button>'
           + '<div class="z7-tree-children' + open + '">' + items + '</div>';
       }).join('');
     }
@@ -9035,12 +9174,12 @@
         : '';
       reader.innerHTML = '<div class="z7-reader-inner">'
         + '<div class="z7-reader-path">'
-        + '<span class="z7-reader-pathtext">' + qaEscape(_glDocPathCur) + '</span>'
+        + '<span class="z7-reader-pathtext">' + glRenderBlobPath(_glDocPathCur) + '</span>'
         + '<span class="z7-reader-actions">'
         + gitlabLink
         + '<button type="button" class="z7-btn-ghost" onclick="glEditDoc()">&#x270E; Edit</button>'
         + '</span></div>'
-        + '<div class="z7-md">' + ggMd(_glDocRaw) + '</div>'
+        + glRenderDoc(_glDocRaw)
         + '</div>';
     }
 
@@ -9079,7 +9218,7 @@
         panel.style.display = 'none';
         if (btn) btn.textContent = 'Preview';
       } else {
-        panel.innerHTML = '<div class="z7-md">' + ggMd(ta.value) + '</div>';
+        panel.innerHTML = glRenderDoc(ta.value);
         panel.style.display = '';
         if (btn) btn.textContent = 'Hide preview';
       }
@@ -9243,7 +9382,7 @@
       if (_glRepoPath) {
         const parent = _glRepoPath.indexOf('/') > -1 ? _glRepoPath.slice(0, _glRepoPath.lastIndexOf('/')) : '';
         html += '<button type="button" class="z7-repo-entry up" onclick="glRepoOpenDir(' + glAttr(parent) + ')">'
-          + '<span class="z7-repo-ico">&#x2191;</span><span>..</span></button>';
+          + '<span class="z7-repo-ico">' + GL_ICON_UP + '</span><span class="z7-repo-name">..</span></button>';
       }
       if (!entries.length) {
         tree.innerHTML = html + '<div class="z7-empty">Empty folder.</div>';
@@ -9252,10 +9391,10 @@
       html += entries.map(en => {
         if (en.type === 'tree') {
           return '<button type="button" class="z7-repo-entry dir" onclick="glRepoOpenDir(' + glAttr(en.path) + ')" title="' + qaEscape(en.path) + '">'
-            + '<span class="z7-repo-ico">&#x1F4C1;</span><span>' + qaEscape(en.name) + '</span></button>';
+            + '<span class="z7-repo-ico">' + GL_ICON_FOLDER + '</span><span class="z7-repo-name">' + qaEscape(en.name) + '</span></button>';
         }
         return '<button type="button" class="z7-repo-entry file" data-path="' + qaEscape(en.path) + '" onclick="glRepoOpenFile(' + glAttr(en.path) + ', this)" title="' + qaEscape(en.path) + '">'
-          + '<span class="z7-repo-ico">&#x1F4C4;</span><span>' + qaEscape(en.name) + '</span></button>';
+          + '<span class="z7-repo-ico">' + GL_ICON_FILE + '</span><span class="z7-repo-name">' + qaEscape(en.name) + '</span></button>';
       }).join('');
       tree.innerHTML = html;
     }
@@ -9306,7 +9445,7 @@
         body.innerHTML = '<pre class="z7-code">' + qaEscape(_glRepoFileRaw) + '</pre>';
         if (btn) btn.textContent = 'View rendered';
       } else {
-        body.innerHTML = '<div class="z7-md">' + ggMd(_glRepoFileRaw) + '</div>';
+        body.innerHTML = glRenderDoc(_glRepoFileRaw);
         if (btn) btn.textContent = 'View source';
       }
     }
@@ -9327,7 +9466,7 @@
       if (data.kind === 'text') {
         if (isMd) {
           extraAction = '<button type="button" class="z7-btn-ghost" id="z7-repo-srcbtn" onclick="glRepoToggleMdSource()">View source</button>';
-          body = '<div id="z7-repo-filebody"><div class="z7-md">' + ggMd(_glRepoFileRaw) + '</div></div>';
+          body = '<div id="z7-repo-filebody">' + glRenderDoc(_glRepoFileRaw) + '</div>';
         } else {
           body = '<div id="z7-repo-filebody"><pre class="z7-code">' + qaEscape(_glRepoFileRaw) + '</pre></div>';
         }
@@ -9343,7 +9482,7 @@
       }
 
       viewer.innerHTML = '<div class="z7-reader-path">'
-        + '<span class="z7-reader-pathtext">' + qaEscape(path) + '</span>'
+        + '<span class="z7-reader-pathtext">' + glRenderBlobPath(path) + '</span>'
         + (data.size != null ? '<span class="z7-meta-pill">' + glRepoFmtBytes(data.size) + '</span>' : '')
         + '<span class="z7-reader-actions">'
         + extraAction
