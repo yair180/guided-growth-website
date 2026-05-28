@@ -3316,6 +3316,9 @@
       }
 
       if (isBs) {
+        // The sidebar IS the navigation in By-Screen mode — make sure it's
+        // expanded so the screen picker is visible, even if it was collapsed.
+        toggleZoom6Sidebar(false);
         renderScreensSidebar();
         renderByScreenPanel();
       }
@@ -3345,6 +3348,14 @@
     // Returns [{ screen, total, high, bugsFront, bugsBack, bugsUnknown, learnings }]
     function qaBuildScreenAgg() {
       const map = new Map();
+      // Seed EVERY known screen (full flow order) with a zero count so the
+      // By-Screen sidebar always lists ALL screens and you can navigate to any
+      // of them, even ones with no findings yet (rendered greyed via .zero).
+      if (typeof QA_FLOW_ORDER !== 'undefined' && Array.isArray(QA_FLOW_ORDER)) {
+        for (const s of QA_FLOW_ORDER) {
+          map.set(s, { screen: s, total: 0, high: 0, items: [] });
+        }
+      }
       for (const f of _qaProposed) {
         const key = qaScreenKey(f);
         if (!map.has(key)) map.set(key, { screen: key, total: 0, high: 0, items: [] });
@@ -3389,9 +3400,11 @@
         });
       }
 
-      // Auto-select the first screen if nothing is selected (or selection vanished).
+      // Auto-select the first screen WITH findings (so the panel opens on real
+      // content, not an empty SPLASH). Fall back to the first screen overall.
       if (!qaSelectedScreen || !agg.some(a => a.screen === qaSelectedScreen)) {
-        qaSelectedScreen = agg[0].screen;
+        const firstWithFindings = agg.find(a => a.total > 0);
+        qaSelectedScreen = (firstWithFindings || agg[0]).screen;
       }
 
       listEl.innerHTML = agg.map(a => {
