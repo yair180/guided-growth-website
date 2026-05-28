@@ -3539,6 +3539,17 @@
       'MOBAI-2026-05-27-F27': { kind: 'related',  issue: 88, note: 'Vapi-reset symptom; kept as its own AI Learning per the reconciliation.' },
     };
 
+    // gg-spec is a PRIVATE repo, so the absolute gitlab.com /-/raw/ screenshot
+    // URLs in findings 302 to sign-in (403) for a logged-out dashboard viewer.
+    // Route them through the worker image proxy, which streams the bytes with
+    // the worker's PAT (no viewer auth). Non-gg-spec URLs pass through untouched.
+    function qaProxyImg(url) {
+      if (typeof url !== 'string' || !url) return url;
+      var m = url.match(/^https?:\/\/gitlab\.com\/guidedgrowth-group\/gg-spec\/-\/raw\/[^/]+\/(.+)$/);
+      if (!m) return url;
+      return '/internal/mobai/img?p=' + encodeURIComponent(m[1]);
+    }
+
     // Normalize a finding's screenshots into a list. Prefers the new
     // screenshots[] array (2-3 candidate frames around the moment); falls back
     // to the single legacy screenshot_url. Each entry: {url, label, isContext}.
@@ -3548,10 +3559,10 @@
       if (Array.isArray(f.screenshots) && f.screenshots.length) {
         return f.screenshots
           .filter(s => s && s.url)
-          .map(s => ({ url: s.url, label: s.label || '', isContext: s.is_exact === false }));
+          .map(s => ({ url: qaProxyImg(s.url), label: s.label || '', isContext: s.is_exact === false }));
       }
       if (f.screenshot_url) {
-        return [{ url: f.screenshot_url, label: '', isContext: f.screenshot_is_exact === false }];
+        return [{ url: qaProxyImg(f.screenshot_url), label: '', isContext: f.screenshot_is_exact === false }];
       }
       return [];
     }
@@ -3739,10 +3750,15 @@
             + ' onclick="qaRevertIssue(' + i.iid + ', event)">Revert</button>'
           : '<button class="z6-remove-btn" title="Close this issue (reversible in GitLab)"'
             + ' onclick="qaCloseIssue(' + i.iid + ', event)">Remove</button>';
+      // Global detection: the API sends globals as either an empty string OR the
+      // literal "Global / cross-screen", so truthiness alone never catches them.
+      var iScreen = i.screen || '';
+      var iIsGlobal = !iScreen || /^global/i.test(iScreen);
+      var iScreenLabel = iScreen || 'no screen';
       return '<a class="z6-issue-card ' + sevClass + '" data-issue-iid="' + qaEscape(i.iid) + '" href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener">'
         + '<div class="z6-issue-head">'
+          + '<span class="z6-screen-badge' + (iIsGlobal ? ' is-global' : '') + '" title="Screen: ' + qaEscape(iScreenLabel) + '">' + qaEscape(iScreenLabel) + '</span>'
           + '<span class="z6-issue-iid">#' + qaEscape(i.iid) + '</span>'
-          + '<span class="z6-screen-badge' + (i.screen ? '' : ' is-global') + '" title="Screen: ' + qaEscape(i.screen || 'no screen label') + '">' + qaEscape(i.screen || 'no screen') + '</span>'
           + qaCategoryChipHtml(i)
           + '<span class="z6-issue-title">' + qaEscape(i.title) + '</span>'
           + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(i.severity || 'unset') + '</span>'
@@ -4022,7 +4038,7 @@
       // doesn't toggle the expand).
       // Collapsed thumbnail shows the primary frame; a "+N" badge signals that
       // expanding reveals more candidate frames.
-      const thumbUrl = f.screenshot_url || (shots.length ? shots[0].url : '');
+      const thumbUrl = qaProxyImg(f.screenshot_url || (shots.length ? shots[0].url : ''));
       const thumbCount = shots.length > 1
         ? '<span class="z6-thumb-count">+' + (shots.length - 1) + '</span>'
         : '';
