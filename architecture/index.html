@@ -591,12 +591,13 @@
     #zoom-toggle-bar .zoom-btn.active .zoom-num { color: #5bc0de; }
 
     /* Zoom view containers */
-    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view, #zoom-7-view { display: none; }
+    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view, #zoom-7-view, #zoom-8-view { display: none; }
     #zoom-1-view.active, #zoom-2-view.active { display: block; }
     #zoom-3-view.active { display: block; }
     #zoom-4-view.active, #zoom-5-view.active { display: flex; flex-direction: column; }
     #zoom-6-view.active { display: flex; flex-direction: row; }
     #zoom-7-view.active { display: flex; flex-direction: column; }
+    #zoom-8-view.active { display: flex; flex-direction: column; }
     #zoom-4-view {
       position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
       background: #0a1929; font-family: -apple-system, sans-serif;
@@ -2274,8 +2275,11 @@
     <button type="button" class="zoom-btn" data-zoom="7" onclick="setZoomLevel(7)">
       <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-1px"><circle cx="4" cy="3" r="1.8"/><circle cx="4" cy="13" r="1.8"/><circle cx="12" cy="6" r="1.8"/><path d="M4 4.8v6.4"/><path d="M12 7.8c0 2.2-1.8 3.4-4 3.4"/></svg><span class="zoom-num">7</span>GitLab
     </button>
+    <button type="button" class="zoom-btn" data-zoom="8" onclick="setZoomLevel(8)">
+      <span class="zoom-num">8</span>MobAI
+    </button>
     <span style="flex: 1"></span>
-    <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.3</span>
+    <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.4</span>
   </div>
 
 <!-- ZOOM 1: HIGH-LEVEL SYSTEM VIEW (countries) -->
@@ -3350,6 +3354,19 @@
           <div id="z7-docs-reader"><div class="z7-empty">Select a markdown file from the tree to read it.</div></div>
         </div>
       </section>
+    </div>
+  </div>
+
+  <!-- ZOOM 8: MOBAI TAB -->
+  <div id="zoom-8-view">
+    <div class="zoom-title">MobAI</div>
+    <div class="zoom-subtitle">Autonomous QA on Yair's test iPhone. Left panel: audit runs from gg-spec. Right panel: open issues labeled mobai in gg-mvp.</div>
+    <div style="flex:1; min-height:0; padding: 0 24px 24px 24px;">
+      <iframe
+        title="MobAI QA Dashboard"
+        src="/internal/mobai/"
+        style="width:100%; height:100%; min-height: calc(100vh - 140px); border:1px solid #2f3d4f; border-radius:12px; background:#0f172a;"
+      ></iframe>
     </div>
   </div>
 
@@ -5068,6 +5085,8 @@
       if (qaView) qaView.classList.toggle('active', level === 6);
       const glView = document.getElementById('zoom-7-view');
       if (glView) glView.classList.toggle('active', level === 7);
+      const mobaiView = document.getElementById('zoom-8-view');
+      if (mobaiView) mobaiView.classList.toggle('active', level === 8);
 
       // Update active state on buttons
       document.querySelectorAll('#zoom-toggle-bar .zoom-btn').forEach(btn => {
@@ -5082,6 +5101,11 @@
       // GitLab tab: check connection + render the active sub-view.
       if (level === 7 && typeof loadGitLabTab === 'function') {
         loadGitLabTab();
+      }
+
+      if (level === 8) {
+        const frame = document.querySelector('#zoom-8-view iframe');
+        if (frame && !frame.src) frame.src = '/internal/mobai/';
       }
 
       // Re-render zoom-3 if it just became visible (the SVG may have layout dependencies)
