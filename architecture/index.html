@@ -1819,6 +1819,27 @@
     .z6-proposed-card .z6-src-chip.src-video  { background: rgba(167,139,250,0.10); color: #a78bfa; border-color: rgba(167,139,250,0.35); }
     .z6-proposed-card .z6-src-chip.src-human  { background: rgba(52,211,153,0.10);  color: #34d399; border-color: rgba(52,211,153,0.35); }
     .z6-proposed-card .z6-src-chip.src-ai-quality { background: rgba(251,146,60,0.10); color: #fb923c; border-color: rgba(251,146,60,0.35); }
+    /* screen badge — leftmost, prominent, so every card states its screen even
+       in the flat Overview queue where there is no per-screen grouping header */
+    .z6-proposed-card .z6-screen-badge,
+    .z6-issue-card .z6-screen-badge {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; border-radius: 5px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+      background: rgba(91,192,222,0.16); color: #8fd3ec;
+      border: 1px solid rgba(91,192,222,0.5);
+      max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .z6-proposed-card .z6-screen-badge::before,
+    .z6-issue-card .z6-screen-badge::before {
+      content: "\25A2"; font-size: 10px; opacity: 0.75; font-weight: 400;
+    }
+    .z6-proposed-card .z6-screen-badge.is-global,
+    .z6-issue-card .z6-screen-badge.is-global {
+      background: rgba(148,163,184,0.14); color: #94a3b8; border-color: rgba(148,163,184,0.4);
+    }
     .z6-proposed-card .z6-proposed-title-text {
       font-weight: 600; font-size: 13.5px; color: #e0e6ed;
       flex: 1; min-width: 0; cursor: pointer;
@@ -3586,6 +3607,7 @@
       return '<a class="z6-issue-card ' + sevClass + '" data-issue-iid="' + qaEscape(i.iid) + '" href="' + qaEscape(i.web_url) + '" target="_blank" rel="noopener">'
         + '<div class="z6-issue-head">'
           + '<span class="z6-issue-iid">#' + qaEscape(i.iid) + '</span>'
+          + '<span class="z6-screen-badge' + (i.screen ? '' : ' is-global') + '" title="Screen: ' + qaEscape(i.screen || 'no screen label') + '">' + qaEscape(i.screen || 'no screen') + '</span>'
           + qaCategoryChipHtml(i)
           + '<span class="z6-issue-title">' + qaEscape(i.title) + '</span>'
           + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(i.severity || 'unset') + '</span>'
@@ -3877,6 +3899,7 @@
 
       return '<div class="z6-proposed-card ' + sevClass + (expanded ? ' expanded' : '') + '" data-finding-id="' + qaEscape(f.id) + '">'
         + '<div class="z6-proposed-head">'
+          + '<span class="z6-screen-badge' + (screen === 'global' ? ' is-global' : '') + '" title="Screen: ' + qaEscape(screen) + '">' + qaEscape(screen) + '</span>'
           + '<span class="z6-proposed-source">' + emoji + '</span>'
           + '<span class="z6-src-chip ' + srcClass + '">' + qaEscape(srcLabel) + '</span>'
           + qaCategoryChipHtml(f)
@@ -3885,7 +3908,6 @@
           + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(f.severity || 'unset') + '</span>'
         + '</div>'
         + '<div class="z6-proposed-meta">'
-          + '<code>' + qaEscape(screen) + '</code>'
           + (f.run ? '<span>' + qaEscape(f.run) + '</span>' : '')
           + '<span class="z6-conf-pill' + confClass + '">confidence: ' + qaEscape(conf) + '</span>'
           + '<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px">' + qaEscape(f.id) + '</span>'
