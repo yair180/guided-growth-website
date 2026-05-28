@@ -7664,5 +7664,542 @@
       checkVersion();
     })();
   </script>
+
+  <script>
+    // ============================================================
+    // ZOOM 7: GITLAB TAB
+    // Per-user GitLab proxy (worker holds the OAuth session; the cookie
+    // is sent because every fetch passes credentials:'include').
+    // ============================================================
+    const GL_BASE = '/internal/gitlab';
+    let _glConnected = null;           // null = unknown, true/false once /api/me resolves
+    let _glView = 'issues';            // issues | mrs | docs
+    let _glSearchDebounce = null;
+    let _glDocsLoaded = false;         // docs tree fetched once per session
+    const GL_VIEW_KEY = 'gg_arch_z7_view';
+
+    // ---- shared helpers ----------------------------------------------------
+
+    // Single point for sanitized markdown. Falls back to escaped plain text if
+    // the CDN libs failed to load, so a body never renders raw HTML.
+    function ggMd(md) {
+      const src = (md == null ? '' : String(md));
+      if (!src.trim()) return '';
+      try {
+        if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+          return DOMPurify.sanitize(marked.parse(src, { breaks: true, gfm: true }));
+        }
+      } catch (_e) { /* fall through to escaped text */ }
+      return '<p>' + qaEscape(src).replace(/\n/g, '<br>') + '</p>';
+    }
+
+    function glAgo(iso) { return qaAgo(iso); }
+
+    // Fetch wrapper: always credentialed, JSON, and surfaces a 401 distinctly so
+    // callers can drop back to the Connect prompt.
+    async function glFetch(path, opts) {
+      const o = Object.assign({ credentials: 'include', cache: 'no-cache' }, opts || {});
+      if (o.body && typeof o.body !== 'string') {
+        o.headers = Object.assign({ 'Content-Type': 'application/json' }, o.headers || {});
+        o.body = JSON.stringify(o.body);
+      }
+      const r = await fetch(GL_BASE + path, o);
+      if (r.status === 401) { const e = new Error('Not connected'); e.unauthorized = true; throw e; }
+      let data = null;
+      try { data = await r.json(); } catch (_e) { /* non-JSON */ }
+      if (!r.ok) { const e = new Error((data && data.error) || ('HTTP ' + r.status)); e.status = r.status; throw e; }
+      return data;
+    }
+
+    function glSkeleton(n) {
+      let h = ''; for (let i = 0; i < (n || 4); i++) h += '<div class="z7-skel"></div>'; return h;
+    }
+    function glStateClass(s) { return 'state-' + (s || 'opened'); }
+
+    // ---- connection lifecycle ---------------------------------------------
+
+    function loadGitLabTab() {
+      restoreGitLabView();
+      glCheckConnection();
+    }
+
+    async function glCheckConnection() {
+      const connEl = document.getElementById('z7-conn');
+      if (connEl) connEl.innerHTML = '<span style="color:#6b8aaf">Checking…</span>';
+      try {
+        const me = await glFetch('/api/me');
+        _glConnected = !!(me && me.connected);
+        if (_glConnected) { renderGitLabConn(me.user || {}); showGitLabConnected(); }
+        else { renderGitLabConn(null); showGitLabDisconnected(); }
+      } catch (e) {
+        _glConnected = false;
+        renderGitLabConn(null);
+        showGitLabDisconnected();
+      }
+    }
+
+    function renderGitLabConn(user) {
+      const el = document.getElementById('z7-conn');
+      if (!el) return;
+      if (!user) { el.innerHTML = ''; return; }
+      const avatar = user.avatar_url
+        ? '<img class="z7-avatar" src="' + qaEscape(user.avatar_url) + '" alt="" referrerpolicy="no-referrer">'
+        : '<span class="z7-avatar"></span>';
+      el.innerHTML = avatar
+        + '<span class="z7-user-name">' + qaEscape(user.name || user.username || 'Connected') + '</span>'
+        + '<button type="button" class="z7-disconnect" onclick="gitlabDisconnect()">Disconnect</button>';
+    }
+
+    function showGitLabConnected() {
+      const prompt = document.getElementById('z7-connect-prompt');
+      const subnav = document.getElementById('z7-subnav');
+      if (prompt) prompt.style.display = 'none';
+      if (subnav) subnav.style.display = '';
+      populateScreenFilterOnce();
+      setGitLabView(_glView, true);
+    }
+
+    function showGitLabDisconnected() {
+      const subnav = document.getElementById('z7-subnav');
+      if (subnav) subnav.style.display = 'none';
+      ['issues', 'mrs', 'docs'].forEach(v => {
+        const s = document.getElementById('z7-view-' + v); if (s) s.style.display = 'none';
+      });
+      const prompt = document.getElementById('z7-connect-prompt');
+      if (prompt) prompt.style.display = '';
+    }
+
+    function gitlabConnect() {
+      window.location = GL_BASE + '/oauth/start?return=' + encodeURIComponent(window.location.href);
+    }
+
+    async function gitlabDisconnect() {
+      try { await glFetch('/oauth/logout', { method: 'POST' }); } catch (_e) {}
+      _glConnected = false; _glDocsLoaded = false;
+      glCheckConnection();
+    }
+
+    // ---- sub-view switching ------------------------------------------------
+
+    function restoreGitLabView() {
+      try { const v = localStorage.getItem(GL_VIEW_KEY); if (['issues','mrs','docs'].includes(v)) _glView = v; } catch (_e) {}
+    }
+
+    function setGitLabView(view, force) {
+      if (!['issues', 'mrs', 'docs'].includes(view)) return;
+      if (view === _glView && !force) return;
+      _glView = view;
+      try { localStorage.setItem(GL_VIEW_KEY, view); } catch (_e) {}
+      document.querySelectorAll('#z7-subnav .z7-subnav-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.view === view));
+      ['issues', 'mrs', 'docs'].forEach(v => {
+        const s = document.getElementById('z7-view-' + v);
+        if (s) s.style.display = v === view ? '' : 'none';
+      });
+      if (view === 'issues') loadGitLabIssues();
+      else if (view === 'mrs') loadGitLabMRs();
+      else if (view === 'docs') loadGitLabDocs();
+    }
+
+    // Populate the New Issue + filter screen dropdowns from QA_FLOW_ORDER once.
+    function populateScreenFilterOnce() {
+      const sel = document.getElementById('z7-issues-screen');
+      if (sel && sel.options.length <= 1) {
+        const frag = document.createDocumentFragment();
+        QA_FLOW_ORDER.forEach(name => {
+          const o = document.createElement('option'); o.value = name; o.textContent = name; frag.appendChild(o);
+        });
+        sel.appendChild(frag);
+      }
+    }
+
+    // ---- ISSUES ------------------------------------------------------------
+
+    function loadGitLabIssues() {
+      const listEl = document.getElementById('z7-issues-list');
+      const project = document.getElementById('z7-issues-project').value;
+      const state = document.getElementById('z7-issues-state').value;
+      const screen = document.getElementById('z7-issues-screen').value;
+      const search = document.getElementById('z7-issues-search').value.trim();
+      if (listEl) listEl.innerHTML = glSkeleton(5);
+      const qs = new URLSearchParams({ project, state });
+      if (screen) qs.set('screen', screen);
+      if (search) qs.set('search', search);
+      glFetch('/api/issues?' + qs.toString())
+        .then(data => renderGitLabIssues((data && data.issues) || []))
+        .catch(e => glHandleListError(listEl, e));
+    }
+
+    function renderGitLabIssues(issues) {
+      const listEl = document.getElementById('z7-issues-list');
+      if (!listEl) return;
+      if (!issues.length) { listEl.innerHTML = '<div class="z7-empty">No issues match these filters.</div>'; return; }
+      listEl.innerHTML = issues.map(iss => {
+        const labels = (iss.labels || []).filter(l => !/^screen::/i.test(l))
+          .map(l => '<span class="z7-label-chip">' + qaEscape(l) + '</span>').join('');
+        const goBtn = iss.screen
+          ? '<button type="button" class="z7-goscreen" onclick="glGoToScreen(' + glAttr(iss.screen) + ', event)">Go to screen &rarr;</button>'
+          : '';
+        return '<button type="button" class="z7-row ' + glStateClass(iss.state) + '" '
+          + 'onclick="openGitLabIssue(' + glAttr(iss.project) + ', ' + iss.iid + ')">'
+          + '<div class="z7-row-head">'
+          + '<span class="z7-row-iid">' + qaEscape(iss.project) + ' #' + iss.iid + '</span>'
+          + '<span class="z7-row-title">' + qaEscape(iss.title) + '</span>'
+          + '<span class="z7-badge ' + glStateClass(iss.state) + '">' + qaEscape(iss.state || '') + '</span>'
+          + '</div>'
+          + '<div class="z7-row-meta">'
+          + (iss.screen ? '<span class="z7-label-chip">' + qaEscape(iss.screen) + '</span>' : '')
+          + labels
+          + (iss.user_notes_count ? '<span>&#x1F4AC; ' + iss.user_notes_count + '</span>' : '')
+          + (iss.author ? '<span>by ' + qaEscape(iss.author.name || iss.author.username) + '</span>' : '')
+          + (iss.updated_at ? '<span>updated ' + glAgo(iss.updated_at) + ' ago</span>' : '')
+          + goBtn
+          + '</div>'
+          + '</button>';
+      }).join('');
+    }
+
+    async function openGitLabIssue(project, iid) {
+      const detail = document.getElementById('z7-issues-detail');
+      if (!detail) return;
+      detail.innerHTML = '<div id="z7-detail"><div class="z7-detail-body"><div class="z7-loading">Loading issue…</div></div></div>';
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      try {
+        const data = await glFetch('/api/issue?project=' + encodeURIComponent(project) + '&iid=' + encodeURIComponent(iid));
+        renderGitLabIssueDetail(project, data.issue || {}, data.notes || []);
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        detail.innerHTML = '<div id="z7-detail"><div class="z7-detail-body"><div class="z7-error">Could not load issue: ' + qaEscape(e.message) + '</div></div></div>';
+      }
+    }
+
+    function renderGitLabIssueDetail(project, iss, notes) {
+      const detail = document.getElementById('z7-issues-detail');
+      if (!detail) return;
+      const isOpen = iss.state === 'opened';
+      const toggleBtn = isOpen
+        ? '<button type="button" class="z7-btn-ghost danger" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'close\', this)">Close issue</button>'
+        : '<button type="button" class="z7-btn-ghost reopen" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'reopen\', this)">Reopen</button>';
+      const goBtn = iss.screen
+        ? '<button type="button" class="z7-btn-ghost" onclick="glGoToScreen(' + glAttr(iss.screen) + ', event)">Go to screen &rarr;</button>'
+        : '';
+      detail.innerHTML =
+        '<div id="z7-detail">'
+        + '<div class="z7-detail-head">'
+        + '<div class="z7-dh-main">'
+        + '<div class="z7-dh-title">' + qaEscape(iss.title) + '</div>'
+        + '<div class="z7-dh-meta">'
+        + '<span class="z7-badge ' + glStateClass(iss.state) + '">' + qaEscape(iss.state || '') + '</span>'
+        + '<span class="z7-row-iid">' + qaEscape(project) + ' #' + iss.iid + '</span>'
+        + (iss.screen ? '<span class="z7-label-chip">' + qaEscape(iss.screen) + '</span>' : '')
+        + (iss.author ? '<span>by ' + qaEscape(iss.author.name || iss.author.username) + '</span>' : '')
+        + (iss.created_at ? '<span>opened ' + glAgo(iss.created_at) + ' ago</span>' : '')
+        + '</div></div>'
+        + '<div class="z7-detail-actions">'
+        + goBtn + toggleBtn
+        + '<a class="z7-btn-ghost" href="' + qaEscape(iss.web_url || '#') + '" target="_blank" rel="noopener">Open in GitLab &#x2197;</a>'
+        + '<button type="button" class="z7-btn-ghost" onclick="closeGitLabDetail(\'issues\')">Close &#x2715;</button>'
+        + '</div></div>'
+        + '<div class="z7-detail-body">'
+        + '<div class="z7-section-label">Description</div>'
+        + '<div class="z7-md' + (iss.description ? '' : ' empty') + '">' + (iss.description ? ggMd(iss.description) : 'No description.') + '</div>'
+        + glRenderNotes(notes)
+        + glRenderCommentBox('issue', project, iss.iid)
+        + '</div>'
+        + '</div>';
+    }
+
+    async function glSetIssueState(project, iid, ev, btn) {
+      if (btn) { btn.disabled = true; btn.textContent = '…'; }
+      try {
+        await glFetch('/api/issue/state', { method: 'PUT', body: { project, iid, state_event: ev } });
+        await openGitLabIssue(project, iid);
+        loadGitLabIssues();
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (btn) { btn.disabled = false; btn.textContent = 'Retry'; }
+        alert('Could not update issue state: ' + e.message);
+      }
+    }
+
+    function closeGitLabDetail(view) {
+      const detail = document.getElementById('z7-' + view + '-detail');
+      if (detail) detail.innerHTML = '';
+    }
+
+    // ---- comments (issues + MRs share the markup) --------------------------
+
+    function glRenderNotes(notes) {
+      if (!notes || !notes.length) return '<div class="z7-notes"><div class="z7-section-label">Comments</div><div class="z7-empty">No comments yet.</div></div>';
+      const rows = notes.map(n => {
+        if (n.system) {
+          return '<div class="z7-note system"><span class="z7-note-body">'
+            + qaEscape((n.author && (n.author.name || n.author.username)) || 'system') + ' ' + qaEscape(n.body || '')
+            + ' &middot; ' + glAgo(n.created_at) + ' ago</span></div>';
+        }
+        return '<div class="z7-note">'
+          + '<div class="z7-note-head"><span class="z7-note-author">'
+          + qaEscape((n.author && (n.author.name || n.author.username)) || 'unknown')
+          + '</span><span class="z7-note-time">' + glAgo(n.created_at) + ' ago</span></div>'
+          + '<div class="z7-md">' + ggMd(n.body) + '</div>'
+          + '</div>';
+      }).join('');
+      return '<div class="z7-notes"><div class="z7-section-label">Comments</div>' + rows + '</div>';
+    }
+
+    function glRenderCommentBox(kind, project, iid) {
+      const fnId = 'z7-comment-' + kind + '-' + iid;
+      return '<div class="z7-comment-box">'
+        + '<textarea id="' + fnId + '" placeholder="Add a comment… (markdown supported)"></textarea>'
+        + '<div class="z7-comment-actions">'
+        + '<button type="button" class="z7-btn-primary" onclick="glPostComment(\'' + kind + '\',' + glAttr(project) + ',' + iid + ',\'' + fnId + '\', this)">Comment</button>'
+        + '</div></div>';
+    }
+
+    async function glPostComment(kind, project, iid, fieldId, btn) {
+      const ta = document.getElementById(fieldId);
+      const body = ta ? ta.value.trim() : '';
+      if (!body) { if (ta) ta.focus(); return; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Posting…'; }
+      const path = kind === 'mr' ? '/api/mr/note' : '/api/issue/note';
+      try {
+        await glFetch(path, { method: 'POST', body: { project, iid, body } });
+        if (kind === 'mr') await openGitLabMR(project, iid);
+        else await openGitLabIssue(project, iid);
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (btn) { btn.disabled = false; btn.textContent = 'Retry'; }
+        alert('Could not post comment: ' + e.message);
+      }
+    }
+
+    // ---- New Issue form ----------------------------------------------------
+
+    function openNewIssueForm() {
+      const detail = document.getElementById('z7-issues-detail');
+      if (!detail) return;
+      const curProject = document.getElementById('z7-issues-project').value;
+      const projDefault = (curProject === 'gg-spec') ? 'gg-spec' : 'gg-mvp';
+      const screenOpts = '<option value="">No specific screen</option>'
+        + QA_FLOW_ORDER.map(n => '<option value="' + qaEscape(n) + '">' + qaEscape(n) + '</option>').join('');
+      detail.innerHTML =
+        '<div id="z7-newissue">'
+        + '<div class="z7-ni-title">New Issue</div>'
+        + '<div class="z7-field"><label for="z7-ni-title-in">Title</label>'
+        + '<input id="z7-ni-title-in" type="text" placeholder="Short, specific summary"></div>'
+        + '<div class="z7-ni-row">'
+        + '<div class="z7-field"><label for="z7-ni-project">Project</label><select id="z7-ni-project">'
+        + '<option value="gg-mvp"' + (projDefault === 'gg-mvp' ? ' selected' : '') + '>gg-mvp</option>'
+        + '<option value="gg-spec"' + (projDefault === 'gg-spec' ? ' selected' : '') + '>gg-spec</option>'
+        + '</select></div>'
+        + '<div class="z7-field"><label for="z7-ni-screen">Screen (optional)</label><select id="z7-ni-screen">' + screenOpts + '</select></div>'
+        + '</div>'
+        + '<div class="z7-field"><label for="z7-ni-desc">Description</label>'
+        + '<textarea id="z7-ni-desc" placeholder="Steps, expected vs actual, links… (markdown supported)"></textarea></div>'
+        + '<div class="z7-ni-actions">'
+        + '<button type="button" class="z7-btn-ghost" onclick="closeGitLabDetail(\'issues\')">Cancel</button>'
+        + '<button type="button" class="z7-btn-primary" onclick="glSubmitNewIssue(this)">Create issue</button>'
+        + '</div>'
+        + '<div class="z7-form-err" id="z7-ni-err" style="display:none"></div>'
+        + '</div>';
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const t = document.getElementById('z7-ni-title-in'); if (t) t.focus();
+    }
+
+    async function glSubmitNewIssue(btn) {
+      const title = (document.getElementById('z7-ni-title-in').value || '').trim();
+      const project = document.getElementById('z7-ni-project').value;
+      const screen = document.getElementById('z7-ni-screen').value;
+      const description = document.getElementById('z7-ni-desc').value || '';
+      const errEl = document.getElementById('z7-ni-err');
+      if (!title) {
+        if (errEl) { errEl.style.display = ''; errEl.textContent = 'A title is required.'; }
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+      try {
+        const body = { project, title, description };
+        if (screen) body.screen = screen;
+        const res = await glFetch('/api/issue', { method: 'POST', body });
+        closeGitLabDetail('issues');
+        loadGitLabIssues();
+        if (res && res.iid) openGitLabIssue(project, res.iid);
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (btn) { btn.disabled = false; btn.textContent = 'Create issue'; }
+        if (errEl) { errEl.style.display = ''; errEl.textContent = 'Could not create issue: ' + e.message; }
+      }
+    }
+
+    // ---- MERGE REQUESTS ----------------------------------------------------
+
+    function loadGitLabMRs() {
+      const listEl = document.getElementById('z7-mrs-list');
+      const project = document.getElementById('z7-mrs-project').value;
+      const state = document.getElementById('z7-mrs-state').value;
+      if (listEl) listEl.innerHTML = glSkeleton(4);
+      glFetch('/api/mrs?project=' + encodeURIComponent(project) + '&state=' + encodeURIComponent(state))
+        .then(data => renderGitLabMRs((data && data.mrs) || []))
+        .catch(e => glHandleListError(listEl, e));
+    }
+
+    function renderGitLabMRs(mrs) {
+      const listEl = document.getElementById('z7-mrs-list');
+      if (!listEl) return;
+      if (!mrs.length) { listEl.innerHTML = '<div class="z7-empty">No merge requests match these filters.</div>'; return; }
+      listEl.innerHTML = mrs.map(mr => {
+        return '<button type="button" class="z7-row ' + glStateClass(mr.state) + '" '
+          + 'onclick="openGitLabMR(' + glAttr(mr.project) + ', ' + mr.iid + ')">'
+          + '<div class="z7-row-head">'
+          + '<span class="z7-row-iid">' + qaEscape(mr.project) + ' !' + mr.iid + '</span>'
+          + '<span class="z7-row-title">' + qaEscape(mr.title) + '</span>'
+          + (mr.draft ? '<span class="z7-badge draft">Draft</span>' : '')
+          + '<span class="z7-badge ' + glStateClass(mr.state) + '">' + qaEscape(mr.state || '') + '</span>'
+          + '</div>'
+          + '<div class="z7-row-meta">'
+          + '<span class="z7-branch">' + qaEscape(mr.source_branch || '?') + ' &rarr; ' + qaEscape(mr.target_branch || '?') + '</span>'
+          + (mr.author ? '<span>by ' + qaEscape(mr.author.name || mr.author.username) + '</span>' : '')
+          + (mr.updated_at ? '<span>updated ' + glAgo(mr.updated_at) + ' ago</span>' : '')
+          + '</div>'
+          + '</button>';
+      }).join('');
+    }
+
+    async function openGitLabMR(project, iid) {
+      const detail = document.getElementById('z7-mrs-detail');
+      if (!detail) return;
+      detail.innerHTML = '<div id="z7-detail"><div class="z7-detail-body"><div class="z7-loading">Loading merge request…</div></div></div>';
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      try {
+        const data = await glFetch('/api/mr?project=' + encodeURIComponent(project) + '&iid=' + encodeURIComponent(iid));
+        renderGitLabMRDetail(project, data.mr || {}, data.notes || []);
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        detail.innerHTML = '<div id="z7-detail"><div class="z7-detail-body"><div class="z7-error">Could not load MR: ' + qaEscape(e.message) + '</div></div></div>';
+      }
+    }
+
+    function renderGitLabMRDetail(project, mr, notes) {
+      const detail = document.getElementById('z7-mrs-detail');
+      if (!detail) return;
+      detail.innerHTML =
+        '<div id="z7-detail">'
+        + '<div class="z7-detail-head">'
+        + '<div class="z7-dh-main">'
+        + '<div class="z7-dh-title">' + qaEscape(mr.title) + '</div>'
+        + '<div class="z7-dh-meta">'
+        + (mr.draft ? '<span class="z7-badge draft">Draft</span>' : '')
+        + '<span class="z7-badge ' + glStateClass(mr.state) + '">' + qaEscape(mr.state || '') + '</span>'
+        + '<span class="z7-row-iid">' + qaEscape(project) + ' !' + mr.iid + '</span>'
+        + '<span class="z7-branch">' + qaEscape(mr.source_branch || '?') + ' &rarr; ' + qaEscape(mr.target_branch || '?') + '</span>'
+        + (mr.author ? '<span>by ' + qaEscape(mr.author.name || mr.author.username) + '</span>' : '')
+        + '</div></div>'
+        + '<div class="z7-detail-actions">'
+        + '<a class="z7-btn-ghost" href="' + qaEscape(mr.web_url || '#') + '" target="_blank" rel="noopener">Open in GitLab &#x2197;</a>'
+        + '<button type="button" class="z7-btn-ghost" onclick="closeGitLabDetail(\'mrs\')">Close &#x2715;</button>'
+        + '</div></div>'
+        + '<div class="z7-detail-body">'
+        + '<div class="z7-section-label">Description</div>'
+        + '<div class="z7-md' + (mr.description ? '' : ' empty') + '">' + (mr.description ? ggMd(mr.description) : 'No description.') + '</div>'
+        + glRenderNotes(notes)
+        + glRenderCommentBox('mr', project, mr.iid)
+        + '</div>'
+        + '</div>';
+    }
+
+    // ---- DOCS --------------------------------------------------------------
+
+    function loadGitLabDocs() {
+      const tree = document.getElementById('z7-docs-tree');
+      if (_glDocsLoaded && tree && tree.querySelector('.z7-tree-file')) return; // keep tree across switches
+      if (tree) tree.innerHTML = '<div class="z7-loading">Loading…</div>';
+      glFetch('/api/docs?project=gg-spec')
+        .then(data => { _glDocsLoaded = true; renderGitLabDocsTree((data && data.tree) || []); })
+        .catch(e => {
+          if (e.unauthorized) return glCheckConnection();
+          if (tree) tree.innerHTML = '<div class="z7-error">Could not load docs: ' + qaEscape(e.message) + '</div>';
+        });
+    }
+
+    function renderGitLabDocsTree(tree) {
+      const el = document.getElementById('z7-docs-tree');
+      if (!el) return;
+      const files = tree.filter(t => t.type === 'blob' || t.type === 'file' || !t.type);
+      if (!files.length) { el.innerHTML = '<div class="z7-empty">No markdown files found.</div>'; return; }
+      // Group by top-level folder (docs/ vs screens/ vs other).
+      const groups = {};
+      files.forEach(f => {
+        const path = f.path || f.name || '';
+        const top = path.indexOf('/') > -1 ? path.split('/')[0] + '/' : 'root';
+        (groups[top] = groups[top] || []).push(f);
+      });
+      const order = Object.keys(groups).sort((a, b) => {
+        const rank = s => s === 'screens/' ? 0 : s === 'docs/' ? 1 : 2;
+        return rank(a) - rank(b) || a.localeCompare(b);
+      });
+      el.innerHTML = order.map(g => {
+        const items = groups[g].sort((a, b) => (a.path || a.name).localeCompare(b.path || b.name)).map(f => {
+          const path = f.path || f.name || '';
+          const label = f.name || path.split('/').pop();
+          return '<button type="button" class="z7-tree-file" data-path="' + qaEscape(path) + '" '
+            + 'onclick="openGitLabDoc(' + glAttr(path) + ', this)" title="' + qaEscape(path) + '">' + qaEscape(label) + '</button>';
+        }).join('');
+        return '<div class="z7-tree-group-label">' + qaEscape(g) + '</div>' + items;
+      }).join('');
+    }
+
+    async function openGitLabDoc(path, btn) {
+      const reader = document.getElementById('z7-docs-reader');
+      document.querySelectorAll('#z7-docs-tree .z7-tree-file').forEach(b => b.classList.toggle('active', b === btn));
+      if (reader) reader.innerHTML = '<div class="z7-loading">Loading…</div>';
+      try {
+        const data = await glFetch('/api/doc?project=gg-spec&path=' + encodeURIComponent(path));
+        if (reader) {
+          reader.innerHTML = '<div class="z7-reader-path">' + qaEscape(data.path || path) + '</div>'
+            + '<div class="z7-md">' + ggMd(data.content_markdown || '') + '</div>';
+          reader.scrollTop = 0;
+        }
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        if (reader) reader.innerHTML = '<div class="z7-error">Could not load file: ' + qaEscape(e.message) + '</div>';
+      }
+    }
+
+    // ---- cross-link to QA By-Screen view ----------------------------------
+
+    // Reuse the exact QA wiring: select the screen, then jump to zoom 6.
+    function glGoToScreen(name, ev) {
+      if (ev) ev.stopPropagation();
+      if (typeof setQAMode === 'function') setQAMode('byscreen');
+      if (typeof selectQAScreen === 'function') selectQAScreen(name);
+      setZoomLevel(6);
+    }
+
+    // ---- shared list error + small utilities ------------------------------
+
+    function glHandleListError(listEl, e) {
+      if (e && e.unauthorized) { glCheckConnection(); return; }
+      if (listEl) listEl.innerHTML = '<div class="z7-error">Error loading: ' + qaEscape(e.message) + '</div>';
+    }
+
+    // Build a JS string literal safe to drop into an inline onclick attribute.
+    function glAttr(s) {
+      return "'" + String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') + "'";
+    }
+
+    // Debounced free-text search on the Issues list.
+    (function wireGitLabSearch() {
+      function attach() {
+        const s = document.getElementById('z7-issues-search');
+        if (!s) return;
+        s.addEventListener('input', () => {
+          if (_glSearchDebounce) clearTimeout(_glSearchDebounce);
+          _glSearchDebounce = setTimeout(loadGitLabIssues, 350);
+        });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+      else attach();
+    })();
+  </script>
 </body>
 </html>
