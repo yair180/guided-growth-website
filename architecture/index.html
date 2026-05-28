@@ -1192,6 +1192,74 @@
     }
     .z6-reject-btn:hover { background: rgba(71, 85, 105, 0.22); border-color: #6b8aaf; color: #c2cee0; }
     .z6-reject-btn:disabled { opacity: 0.55; cursor: progress; }
+    /* "File as AI Learning" — purple, the coach-tuning lane (assignee Yair) */
+    .z6-ai-btn {
+      flex-shrink: 0; margin-left: 6px;
+      padding: 4px 10px; font-size: 11px; font-weight: 600;
+      background: transparent; color: #a78bfa;
+      border: 1px solid #a78bfa; border-radius: 14px;
+      cursor: pointer; user-select: none;
+      transition: all 0.12s; font-family: inherit;
+    }
+    .z6-ai-btn:hover { background: rgba(167, 139, 250, 0.16); color: #fff; }
+    .z6-ai-btn:disabled { opacity: 0.55; cursor: progress; }
+    /* Triage actions get their own row under the meta so the head never crowds */
+    .z6-proposed-card .z6-actions {
+      display: flex; flex-wrap: wrap; gap: 0; align-items: center;
+      margin-top: 8px;
+    }
+    .z6-proposed-card .z6-actions .z6-file-btn,
+    .z6-proposed-card .z6-actions .z6-ai-btn,
+    .z6-proposed-card .z6-actions .z6-reject-btn { margin-left: 0; margin-right: 6px; }
+    /* Bucket picker — revealed when "File as AI Learning" is clicked */
+    .z6-bucket-picker {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      margin-top: 8px; padding: 8px 10px;
+      background: rgba(167, 139, 250, 0.07);
+      border: 1px solid rgba(167, 139, 250, 0.30); border-radius: 8px;
+    }
+    .z6-bucket-picker .z6-bucket-prompt {
+      font-size: 11px; color: #c4b5fd; font-weight: 600; margin-right: 4px;
+    }
+    .z6-bucket-btn {
+      padding: 3px 10px; font-size: 11px; font-weight: 600;
+      background: transparent; color: #c4b5fd;
+      border: 1px solid rgba(167, 139, 250, 0.45); border-radius: 12px;
+      cursor: pointer; font-family: inherit; transition: all 0.12s;
+    }
+    .z6-bucket-btn:hover { background: rgba(167, 139, 250, 0.20); color: #fff; }
+    .z6-bucket-btn:disabled { opacity: 0.55; cursor: progress; }
+    .z6-bucket-btn small { display: block; font-size: 9.5px; font-weight: 400; color: #8b7fc4; }
+    .z6-bucket-cancel {
+      background: transparent; color: #6b8aaf; border: none;
+      font-size: 11px; cursor: pointer; font-family: inherit; padding: 3px 6px;
+      margin-left: auto;
+    }
+    .z6-bucket-cancel:hover { color: #c2cee0; }
+    /* Confidence pill (collapsed-card meta) */
+    .z6-proposed-card .z6-conf-pill {
+      background: #060d18; border: 1px solid #1e3a5f; border-radius: 10px;
+      padding: 1px 7px; font-size: 10.5px; color: #8fa8c4;
+    }
+    .z6-proposed-card .z6-conf-pill.conf-low { color: #f59e0b; border-color: rgba(245,158,11,0.35); }
+    /* Suggested-fix block in expanded detail — distinct from grey evidence */
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix {
+      background: rgba(167, 139, 250, 0.07);
+      border-left: 2px solid rgba(167, 139, 250, 0.5);
+      border-radius: 4px; padding: 6px 10px; margin: 4px 0 8px;
+    }
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix .z6-detail-label { color: #c4b5fd; margin-top: 0; }
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix p { margin-bottom: 0; }
+    /* AI-Learning filed-success — purple instead of bug-green */
+    .z6-proposed-card.ai-filed-success {
+      border-left-color: #a78bfa;
+      background: rgba(167, 139, 250, 0.08);
+    }
+    .z6-proposed-card.ai-filed-success .z6-filed-msg { color: #c4b5fd; font-size: 12.5px; font-weight: 600; padding: 4px 0; }
+    .z6-proposed-card.ai-filed-success .z6-filed-msg a { color: #c4b5fd; text-decoration: underline; }
+    /* AI Learnings summary tile (purple) */
+    .z6-tile-ai { border-left-color: #a78bfa; }
+    .z6-tile-ai .z6-tile-num { color: #a78bfa; }
     .z6-proposed-card .z6-proposed-detail {
       display: none; margin-top: 8px;
       border-top: 1px solid #142a44; padding-top: 8px;
@@ -2300,6 +2368,10 @@
               <span class="z6-tile-num" id="z6-tile-bugs">–</span>
               <span class="z6-tile-label">&#x1F6E0;&#xFE0F; Open bugs</span>
             </div>
+            <div class="z6-tile z6-tile-ai" title="Open AI Learnings in gg-mvp (label=ai-learning, assignee Yair)">
+              <span class="z6-tile-num" id="z6-tile-ai">–</span>
+              <span class="z6-tile-label">&#x1F9E0; AI Learnings</span>
+            </div>
           </div>
           <!-- Row 2: breakdowns -->
           <div class="z6-breakdowns">
@@ -2330,6 +2402,11 @@
                 <span class="z6-person-name">Mint</span>
                 <span class="z6-person-stat" id="z6-person-mint">&#x1F6E0; – assigned</span>
                 <span class="z6-person-hint">context + tool-calling</span>
+              </div>
+              <div class="z6-person">
+                <span class="z6-person-name">Yair</span>
+                <span class="z6-person-stat" id="z6-person-yair" style="color:#a78bfa">&#x1F9E0; – AI Learnings</span>
+                <span class="z6-person-hint">tunes prompt / context / screen scripts</span>
               </div>
             </div>
           </div>
@@ -2369,6 +2446,7 @@
     const QA_API_ISSUES = '/internal/mobai/api/issues';
     const QA_API_PROPOSED = '/internal/mobai/api/proposed-findings';
     const QA_API_FILE_FINDING = '/internal/mobai/api/file-finding';
+    const QA_API_FILE_AI_LEARNING = '/internal/mobai/api/file-ai-learning';
     const QA_API_REJECT_FINDING = '/internal/mobai/api/reject-finding';
     const QA_API_SUMMARY = '/internal/mobai/api/qa-summary';
     const QA_SUMMARY_COLLAPSE_KEY = 'gg_arch_z6_summary_collapsed';
@@ -2381,6 +2459,8 @@
     let _qaProposedExpanded = new Set();   // finding ids currently expanded
     let _qaProposedFiling = new Set();     // finding ids currently in-flight file POSTs
     let _qaProposedRejecting = new Set();  // finding ids currently in-flight reject POSTs
+    let _qaProposedFilingAi = new Set();   // finding ids currently in-flight file-ai-learning POSTs
+    let _qaProposedBucketOpen = new Set(); // finding ids with the AI Learning bucket picker open
     let _qaProposedError = new Map();      // finding id → last error string
     let qaCurrentSource = 'all';  // 'all' | 'human' | 'mobai' | 'video' (AI Quality chip is a disabled stub)
 
@@ -2581,15 +2661,28 @@
       const expanded = _qaProposedExpanded.has(f.id);
       const filing = _qaProposedFiling.has(f.id);
       const rejecting = _qaProposedRejecting.has(f.id);
-      const busy = filing || rejecting;
+      const filingAi = _qaProposedFilingAi.has(f.id);
+      const bucketOpen = _qaProposedBucketOpen.has(f.id);
+      const busy = filing || rejecting || filingAi;
       const errorMsg = _qaProposedError.get(f.id);
       const screen = f.screen || 'global';
-      const conf = f.confidence || 'unset';
+      const conf = (f.confidence || 'unset');
+      const confClass = conf.toLowerCase() === 'low' ? ' conf-low' : '';
+
+      // Screenshot honesty: when screenshot_is_exact === false the image is a
+      // context view of the screen, not the exact moment. Legacy / true / absent
+      // findings keep the plain "Screenshot" label.
+      const shotIsContext = (f.screenshot_is_exact === false);
+      const shotLabel = shotIsContext ? 'Screen view (context)' : 'Screenshot';
+      const suggestedFix = (f.suggested_fix && String(f.suggested_fix).trim()) ? String(f.suggested_fix).trim() : '';
 
       // Detail block
       const detail = expanded
         ? '<div class="z6-proposed-detail">'
           + (f.evidence ? '<div class="z6-detail-label">Evidence</div><p>' + qaEscape(f.evidence) + '</p>' : '')
+          + (suggestedFix
+              ? '<div class="z6-suggested-fix"><div class="z6-detail-label">Suggested fix</div><p>' + qaEscape(suggestedFix) + '</p></div>'
+              : '')
           + (f.ai_block && f.ai_block.repro_steps
               ? '<div class="z6-detail-label">Repro steps</div><p>' + qaEscape(f.ai_block.repro_steps) + '</p>'
               : '')
@@ -2598,7 +2691,7 @@
                 + qaEscape(f.ai_block.file_hypothesis) + '</code></p>'
               : '')
           + (f.screenshot_url
-              ? '<div class="z6-detail-label">Screenshot</div><a href="' + qaEscape(f.screenshot_url) + '" target="_blank" rel="noopener"><img loading="lazy" src="' + qaEscape(f.screenshot_url) + '" alt="screenshot"></a>'
+              ? '<div class="z6-detail-label">' + shotLabel + '</div><a href="' + qaEscape(f.screenshot_url) + '" target="_blank" rel="noopener"><img loading="lazy" src="' + qaEscape(f.screenshot_url) + '" alt="' + shotLabel.toLowerCase() + '"></a>'
               : '')
           + (f.video_url
               // Drive doesn't reliably honor deep-seek via URL, so we surface the
@@ -2614,9 +2707,24 @@
         ? '<button class="z6-file-btn" disabled>Filing…</button>'
         : '<button class="z6-file-btn"' + (busy ? ' disabled' : '') + ' onclick="qaFileFinding(\'' + qaEscape(f.id) + '\', event)">File as bug</button>';
 
+      const aiBtn = filingAi
+        ? '<button class="z6-ai-btn" disabled>Filing…</button>'
+        : '<button class="z6-ai-btn"' + (busy ? ' disabled' : '') + ' onclick="qaToggleBucketPicker(\'' + qaEscape(f.id) + '\', event)">File as AI Learning</button>';
+
       const rejectBtn = rejecting
         ? '<button class="z6-reject-btn" disabled>Archiving…</button>'
         : '<button class="z6-reject-btn"' + (busy ? ' disabled' : '') + ' onclick="qaRejectFinding(\'' + qaEscape(f.id) + '\', event)">Not a bug</button>';
+
+      // Compact 3-button bucket picker, revealed by "File as AI Learning".
+      const bucketPicker = (bucketOpen && !busy)
+        ? '<div class="z6-bucket-picker">'
+          + '<span class="z6-bucket-prompt">AI Learning — where does the fix land?</span>'
+          + '<button class="z6-bucket-btn" onclick="qaFileAiLearning(\'' + qaEscape(f.id) + '\', \'screen\', event)">Screen<small>this screen\'s script</small></button>'
+          + '<button class="z6-bucket-btn" onclick="qaFileAiLearning(\'' + qaEscape(f.id) + '\', \'behavior\', event)">Global behavior<small>system prompt</small></button>'
+          + '<button class="z6-bucket-btn" onclick="qaFileAiLearning(\'' + qaEscape(f.id) + '\', \'knowledge\', event)">Knowledge<small>global context</small></button>'
+          + '<button class="z6-bucket-cancel" onclick="qaToggleBucketPicker(\'' + qaEscape(f.id) + '\', event)">cancel</button>'
+        + '</div>'
+        : '';
 
       const errorBlock = errorMsg
         ? '<div class="z6-file-error"><span>' + qaEscape(errorMsg) + '</span>'
@@ -2641,15 +2749,15 @@
           + '<span class="z6-proposed-title-text" onclick="qaToggleProposedExpand(\'' + qaEscape(f.id) + '\')">' + qaEscape(f.title || '(untitled)') + '</span>'
           + thumb
           + '<span class="z6-sev-badge ' + sevClass + '">' + qaEscape(f.severity || 'unset') + '</span>'
-          + btn
-          + rejectBtn
         + '</div>'
         + '<div class="z6-proposed-meta">'
           + '<code>' + qaEscape(screen) + '</code>'
           + (f.run ? '<span>' + qaEscape(f.run) + '</span>' : '')
-          + '<span>confidence: ' + qaEscape(conf) + '</span>'
+          + '<span class="z6-conf-pill' + confClass + '">confidence: ' + qaEscape(conf) + '</span>'
           + '<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px">' + qaEscape(f.id) + '</span>'
         + '</div>'
+        + '<div class="z6-actions">' + btn + aiBtn + rejectBtn + '</div>'
+        + bucketPicker
         + detail
         + errorBlock
         + '</div>';
@@ -2706,6 +2814,71 @@
         _qaProposed = _qaProposed.filter(f => f.id !== findingId);
         renderProposed();
         qaLoadIssues();
+      }
+    }
+
+    // Toggle the compact 3-button bucket picker on a card. Opening it is just a
+    // UI reveal — no POST happens until a bucket is chosen.
+    function qaToggleBucketPicker(findingId, ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      if (_qaProposedFilingAi.has(findingId) || _qaProposedFiling.has(findingId) || _qaProposedRejecting.has(findingId)) return;
+      if (_qaProposedBucketOpen.has(findingId)) _qaProposedBucketOpen.delete(findingId);
+      else _qaProposedBucketOpen.add(findingId);
+      _qaProposedError.delete(findingId);
+      renderProposed();
+    }
+
+    // File a proposed finding as an AI Learning. Mirrors qaFileFinding, but POSTs
+    // to file-ai-learning with the chosen bucket (screen|behavior|knowledge).
+    // Success → purple "Filed as AI Learning #N", fade, drop from cache.
+    async function qaFileAiLearning(findingId, bucket, ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      if (_qaProposedFilingAi.has(findingId) || _qaProposedFiling.has(findingId) || _qaProposedRejecting.has(findingId)) return;
+      _qaProposedFilingAi.add(findingId);
+      _qaProposedBucketOpen.delete(findingId);
+      _qaProposedError.delete(findingId);
+      renderProposed();
+      let result;
+      try {
+        const res = await fetch(QA_API_FILE_AI_LEARNING, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ finding_id: findingId, bucket: bucket }),
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (_e) {}
+        if (!res.ok) {
+          throw new Error((data && data.error) || ('HTTP ' + res.status));
+        }
+        if (!data || !data.issue_iid) throw new Error('worker returned no issue_iid');
+        result = data;
+      } catch (e) {
+        _qaProposedFilingAi.delete(findingId);
+        // Re-open the picker so the chosen bucket is one click away on retry.
+        _qaProposedBucketOpen.add(findingId);
+        _qaProposedError.set(findingId, 'AI Learning filing failed: ' + (e.message || String(e)));
+        renderProposed();
+        return;
+      }
+      _qaProposedFilingAi.delete(findingId);
+
+      const card = document.querySelector('.z6-proposed-card[data-finding-id="' + cssEscape(findingId) + '"]');
+      if (card) {
+        card.classList.add('ai-filed-success');
+        card.innerHTML = '<div class="z6-filed-msg">Filed as AI Learning <a href="' + qaEscape(result.issue_url) + '" target="_blank" rel="noopener">#' + result.issue_iid + '</a> &middot; ' + qaEscape(result.bucket || bucket) + '. Will appear in Open issues on the next poll.</div>';
+        setTimeout(() => { card.classList.add('fading'); }, 2500);
+        setTimeout(() => {
+          _qaProposed = _qaProposed.filter(f => f.id !== findingId);
+          renderProposed();
+          qaLoadIssues();
+          qaLoadSummary();
+        }, 3200);
+      } else {
+        _qaProposed = _qaProposed.filter(f => f.id !== findingId);
+        renderProposed();
+        qaLoadIssues();
+        qaLoadSummary();
       }
     }
 
@@ -2775,6 +2948,7 @@
       const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
       const p = s.proposed || {};
       const ob = s.open_bugs || {};
+      const al = s.ai_learnings || {};
       const pp = s.per_person || {};
       const bySrc = p.by_source || {};
       const byLayer = ob.by_layer || {};
@@ -2783,6 +2957,7 @@
       setText('z6-tile-blockers', ob.blockers != null ? ob.blockers : 0);
       setText('z6-tile-review', p.total != null ? p.total : 0);
       setText('z6-tile-bugs', ob.total != null ? ob.total : 0);
+      setText('z6-tile-ai', al.total != null ? al.total : 0);
 
       // Row 2 breakdowns
       setText('z6-bd-source',
@@ -2795,9 +2970,11 @@
       const tim = pp.timothy || {};
       const yon = pp.yonas || {};
       const min = pp.mint || {};
+      const yai = pp.yair || {};
       setText('z6-person-timothy', '\u{1F4CB} ' + (tim.review_queue || 0) + ' to review');
       setText('z6-person-yonas', '\u{1F6E0} ' + (yon.assigned || 0) + ' assigned · ' + (yon.high || 0) + ' high');
       setText('z6-person-mint', '\u{1F6E0} ' + (min.assigned || 0) + ' assigned · ' + (min.high || 0) + ' high');
+      setText('z6-person-yair', '\u{1F9E0} ' + (yai.ai_learning_queue || 0) + ' AI Learnings · ' + (yai.high || 0) + ' high');
 
       setText('z6-summary-generated', s.generated_at ? qaFmtClock(s.generated_at) : '');
     }
