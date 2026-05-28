@@ -1348,11 +1348,22 @@
     }
     .z6-ai-btn:hover { background: rgba(167, 139, 250, 0.16); color: #fff; }
     .z6-ai-btn:disabled { opacity: 0.55; cursor: progress; }
+    .z6-merge-btn {
+      flex-shrink: 0;
+      padding: 4px 10px; font-size: 11px; font-weight: 700;
+      background: rgba(243, 89, 111, 0.14); color: #f3a9b4;
+      border: 1px solid #5c2533; border-radius: 14px;
+      cursor: pointer; user-select: none;
+      transition: all 0.12s; font-family: inherit;
+    }
+    .z6-merge-btn:hover { background: rgba(243, 89, 111, 0.24); color: #fff; }
+    .z6-merge-btn:disabled { opacity: 0.55; cursor: progress; }
     /* Triage actions get their own row under the meta so the head never crowds */
     .z6-proposed-card .z6-actions {
       display: flex; flex-wrap: wrap; gap: 0; align-items: center;
       margin-top: 8px;
     }
+    .z6-proposed-card .z6-actions .z6-merge-btn,
     .z6-proposed-card .z6-actions .z6-file-btn,
     .z6-proposed-card .z6-actions .z6-ai-btn,
     .z6-proposed-card .z6-actions .z6-reject-btn { margin-left: 0; margin-right: 6px; }
@@ -2630,6 +2641,7 @@
     const QA_API_FILE_FINDING = '/internal/mobai/api/file-finding';
     const QA_API_FILE_AI_LEARNING = '/internal/mobai/api/file-ai-learning';
     const QA_API_REJECT_FINDING = '/internal/mobai/api/reject-finding';
+    const QA_API_MERGE_FINDING = '/internal/mobai/api/merge-finding';
     const QA_API_SUMMARY = '/internal/mobai/api/qa-summary';
     const QA_SUMMARY_COLLAPSE_KEY = 'gg_arch_z6_summary_collapsed';
     const QA_MODE_KEY = 'gg_arch_z6_mode';
@@ -2697,6 +2709,7 @@
     let _qaProposedFiling = new Set();     // finding ids currently in-flight file POSTs
     let _qaProposedRejecting = new Set();  // finding ids currently in-flight reject POSTs
     let _qaProposedFilingAi = new Set();   // finding ids currently in-flight file-ai-learning POSTs
+    let _qaProposedMerging = new Set();    // finding ids currently in-flight merge POSTs
     let _qaProposedBucketOpen = new Set(); // finding ids with the AI Learning bucket picker open
     let _qaProposedError = new Map();      // finding id → last error string
     let qaCurrentSource = 'all';  // 'all' | 'human' | 'mobai' | 'video' (AI Quality chip is a disabled stub)
@@ -2918,8 +2931,9 @@
       const filing = _qaProposedFiling.has(f.id);
       const rejecting = _qaProposedRejecting.has(f.id);
       const filingAi = _qaProposedFilingAi.has(f.id);
+      const merging = _qaProposedMerging.has(f.id);
       const bucketOpen = _qaProposedBucketOpen.has(f.id);
-      const busy = filing || rejecting || filingAi;
+      const busy = filing || rejecting || filingAi || merging;
       const errorMsg = _qaProposedError.get(f.id);
       const screen = f.screen || 'global';
       const conf = (f.confidence || 'unset');
@@ -2971,6 +2985,16 @@
         ? '<button class="z6-reject-btn" disabled>Archiving…</button>'
         : '<button class="z6-reject-btn"' + (busy ? ' disabled' : '') + ' onclick="qaRejectFinding(\'' + qaEscape(f.id) + '\', event)">Not a bug</button>';
 
+      // Merge button — only when the reconciliation map points this finding at an
+      // existing GitLab issue. Enriches that issue rather than filing a duplicate.
+      const dup = QA_DUP_MAP[f.id];
+      const mergeBtn = (dup && dup.issue)
+        ? (merging
+            ? '<button class="z6-merge-btn" disabled>Merging…</button>'
+            : '<button class="z6-merge-btn"' + (busy ? ' disabled' : '')
+              + ' onclick="qaMergeFinding(\'' + qaEscape(f.id) + '\', ' + dup.issue + ', event)">Merge into #' + dup.issue + '</button>')
+        : '';
+
       // Compact 3-button bucket picker, revealed by "File as AI Learning".
       const bucketPicker = (bucketOpen && !busy)
         ? '<div class="z6-bucket-picker">'
@@ -3013,7 +3037,7 @@
           + '<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px">' + qaEscape(f.id) + '</span>'
         + '</div>'
         + qaDupHintHtml(f)
-        + '<div class="z6-actions">' + btn + aiBtn + rejectBtn + '</div>'
+        + '<div class="z6-actions">' + mergeBtn + btn + aiBtn + rejectBtn + '</div>'
         + bucketPicker
         + detail
         + errorBlock
@@ -3183,6 +3207,52 @@
       } else {
         _qaProposed = _qaProposed.filter(f => f.id !== findingId);
         renderProposed();
+      }
+    }
+
+    // Merge a finding's evidence INTO an existing GitLab issue (enrich, not
+    // duplicate). Writes a comment to the issue, so it asks for confirmation.
+    async function qaMergeFinding(findingId, issueIid, ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      if (_qaProposedMerging.has(findingId) || _qaProposedFiling.has(findingId) || _qaProposedRejecting.has(findingId)) return;
+      if (!window.confirm('Merge this finding into #' + issueIid + '?\n\nIt posts the screenshot + evidence as a comment on GitLab issue #' + issueIid + ' and removes the finding from the review queue. The issue\'s own description is left unchanged.')) return;
+      _qaProposedMerging.add(findingId);
+      _qaProposedError.delete(findingId);
+      renderProposed();
+      try {
+        const res = await fetch(QA_API_MERGE_FINDING, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ finding_id: findingId, issue_iid: issueIid }),
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (_e) {}
+        if (!res.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
+        if (!data || data.filing_status !== 'ok') throw new Error('worker did not confirm merge');
+      } catch (e) {
+        _qaProposedMerging.delete(findingId);
+        _qaProposedError.set(findingId, 'Merge failed: ' + (e.message || String(e)));
+        renderProposed();
+        return;
+      }
+      _qaProposedMerging.delete(findingId);
+      const card = document.querySelector('.z6-proposed-card[data-finding-id="' + cssEscape(findingId) + '"]');
+      if (card) {
+        card.classList.add('archived-success');
+        card.innerHTML = '<div class="z6-archived-msg">Merged into #' + issueIid + '. Evidence added to the issue; removed from the review queue.</div>';
+        setTimeout(() => { card.classList.add('fading'); }, 2000);
+        setTimeout(() => {
+          _qaProposed = _qaProposed.filter(f => f.id !== findingId);
+          renderProposed();
+          qaLoadIssues();
+          qaLoadSummary();
+        }, 2700);
+      } else {
+        _qaProposed = _qaProposed.filter(f => f.id !== findingId);
+        renderProposed();
+        qaLoadIssues();
+        qaLoadSummary();
       }
     }
 
