@@ -1094,6 +1094,13 @@
     }
     #z6-screen-statusfilter .z6-order-btn:hover:not(.active) { color: #fff; }
     #z6-screen-statusfilter .z6-order-btn.active { background: rgba(91,192,222,0.18); color: #fff; }
+    #z6-showempty-toggle {
+      margin-top: 6px; width: 100%; padding: 5px 8px; font-size: 10.5px; font-weight: 600;
+      background: transparent; color: #6b8aaf; border: 1px dashed #1e3a5f; border-radius: 8px;
+      cursor: pointer; font-family: inherit; transition: all 0.12s;
+    }
+    #z6-showempty-toggle:hover { color: #c2cee0; border-color: #2e5180; }
+    #z6-showempty-toggle.active { color: #8fa8c4; border-style: solid; background: rgba(91,192,222,0.08); }
     #z6-screens-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 8px 14px; }
     #z6-sidebar.collapsed #z6-screens-controls,
     #z6-sidebar.collapsed #z6-screens-list { display: none; }
@@ -2588,6 +2595,7 @@
             <button type="button" class="z6-order-btn" data-status="needs-review" onclick="setScreenStatusFilter('needs-review')">&#x1F50D; Needs review</button>
             <button type="button" class="z6-order-btn" data-status="triaged" onclick="setScreenStatusFilter('triaged')">&#x2705; Reviewed</button>
           </div>
+          <button type="button" id="z6-showempty-toggle" onclick="toggleShowEmptyScreens()">Show all screens</button>
         </div>
         <div id="z6-screens-list" role="list"><div class="z6-empty">Loading…</div></div>
       </div>
@@ -2782,6 +2790,7 @@
     let qaCurrentMode = 'overview';      // 'overview' | 'byscreen'
     let qaScreenOrder = 'flow';          // 'flow' | 'hot'
     let _qaScreenStatusFilter = 'all';   // 'all' | 'needs-review' | 'triaged'
+    let _qaShowEmptyScreens = false;     // include screens with no findings AND no issues
     let qaSelectedScreen = null;         // currently selected screen in By Screen mode
     let _qaScreenSearch = '';
 
@@ -3651,6 +3660,7 @@
       }
       restoreQASummaryState();
       restoreQAListView();
+      restoreShowEmptyScreens();
       qaLoadSummary();
       qaLoadRuns();
       qaLoadIssues();
@@ -3747,6 +3757,19 @@
       renderScreensSidebar();
     }
 
+    // Independent of the status filter: whether to list screens that have NO QA
+    // items at all (no findings, no issues). Off by default so the list shows
+    // only screens with something to look at. Searching always reaches any screen.
+    function toggleShowEmptyScreens() {
+      _qaShowEmptyScreens = !_qaShowEmptyScreens;
+      try { localStorage.setItem('gg_qa_showempty_v1', _qaShowEmptyScreens ? '1' : '0'); } catch (_e) {}
+      renderScreensSidebar();
+    }
+
+    function restoreShowEmptyScreens() {
+      try { _qaShowEmptyScreens = localStorage.getItem('gg_qa_showempty_v1') === '1'; } catch (_e) {}
+    }
+
     // Collapsible Audit Runs section (Overview sidebar). Collapsed by default.
     function toggleRunsSection() {
       const sec = document.getElementById('z6-runs-section');
@@ -3802,6 +3825,17 @@
       if (needle) agg = agg.filter(a => a.screen.toLowerCase().includes(needle));
       if (_qaScreenStatusFilter !== 'all') {
         agg = agg.filter(a => qaScreenStatus(a) === _qaScreenStatusFilter);
+      }
+      // Hide screens with no QA items unless the user opted to show them — but a
+      // search needle always reaches any screen so navigation still works.
+      if (!_qaShowEmptyScreens && !needle) {
+        agg = agg.filter(a => qaScreenStatus(a) !== 'clean');
+      }
+      // Keep the toggle label in sync with state.
+      const _emptyBtn = document.getElementById('z6-showempty-toggle');
+      if (_emptyBtn) {
+        _emptyBtn.textContent = _qaShowEmptyScreens ? 'Hide empty screens' : 'Show all screens';
+        _emptyBtn.classList.toggle('active', _qaShowEmptyScreens);
       }
 
       if (!agg.length) {
