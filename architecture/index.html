@@ -1909,9 +1909,14 @@
     .z6-dup-hint.merge    { background: rgba(243,89,111,0.10); border: 1px solid #5c2533; color: #f3a9b4; }
     .z6-dup-hint.related  { background: rgba(124,156,255,0.08); border: 1px solid #25406b; color: #9db8ee; }
     .z6-dup-hint.internal { background: rgba(148,163,184,0.08); border: 1px solid #334155; color: #a8b6c8; }
+    /* Live, auto-computed title/screen match against open issues (heuristic, amber). */
+    .z6-dup-hint.maybe    { background: rgba(234,179,8,0.10); border: 1px solid #5c4a1f; color: #e6cd7a; }
     .z6-dup-hint a { color: inherit; font-weight: 700; text-decoration: underline; }
     .z6-dup-hint code { background: #060d18; border: 1px solid #1e3a5f; border-radius: 4px; padding: 0 5px; font-size: 10.5px; }
     .z6-dup-note { display: block; opacity: 0.82; margin-top: 3px; font-style: italic; }
+    .z6-dup-match { display: block; margin-top: 3px; }
+    .z6-dup-mtitle { opacity: 0.92; }
+    .z6-dup-tag { font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; background: rgba(234,179,8,0.18); border-radius: 4px; padding: 0 5px; margin-left: 4px; vertical-align: 1px; }
     .z6-bs-group-title .z6-bs-grp-count {
       background: #060d18; border: 1px solid #1e3a5f; border-radius: 9px;
       padding: 1px 8px; font-size: 10.5px; color: #8fa8c4; font-weight: 600;
@@ -2278,6 +2283,22 @@
     }
     .z6-shot.is-context figcaption { color: #c9a24a; }
     .z6-shot a, .z6-shot img { cursor: zoom-in; }
+    /* Graceful empty / broken frame states (fix #4). */
+    .z6-shot-broken {
+      width: 150px; height: 96px; display: flex; align-items: center; justify-content: center;
+      border: 1px dashed #5c2533; border-radius: 4px; color: #c98b97; font-size: 10.5px; font-style: italic;
+      background: rgba(243,89,111,0.06);
+    }
+    .z6-shot-empty {
+      border: 1px dashed #334155; border-radius: 6px; padding: 8px 10px; margin-top: 4px;
+      color: #8fa8c4; font-size: 11px; font-style: italic; background: rgba(148,163,184,0.05);
+    }
+    /* Frame provenance tag (fix #3): which QA run these shots came from. */
+    .z6-shot-run {
+      font-size: 9.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;
+      color: #c9a24a; background: rgba(201,162,74,0.12); border: 1px solid #5c4a1f;
+      border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; cursor: help;
+    }
     .z6-thumb { cursor: zoom-in; }
     /* Screenshot lightbox: click a frame to view it large, floating over the page. */
     #qa-lightbox {
@@ -3782,6 +3803,17 @@
       return [];
     }
 
+    // Replace a frame whose proxy fetch failed with a small labeled placeholder,
+    // so a missing screenshot reads as "frame unavailable" rather than a broken
+    // image glyph (fix #4: handle the empty/broken case gracefully).
+    function qaShotError(imgEl) {
+      try {
+        const fig = imgEl.closest('.z6-shot');
+        if (fig) fig.innerHTML = '<div class="z6-shot-broken">frame unavailable</div>';
+        else { imgEl.style.display = 'none'; }
+      } catch (_e) { imgEl.style.display = 'none'; }
+    }
+
     // Floating screenshot viewer. Click a frame to open it large over the page;
     // click the backdrop, the X, or press Esc to close. Cmd/Ctrl/middle-click on
     // a frame still falls through to the href and opens the raw image in a tab.
@@ -3840,20 +3872,83 @@
     applyTextScale(getTextScale());
     document.addEventListener('DOMContentLoaded', function () { applyTextScale(getTextScale()); });
 
+    // Function words + a few generic UI nouns that carry no disambiguating signal
+    // for title matching. Kept conservative so domain words (coach, voice, habit,
+    // mic, onboarding…) still count toward a match.
+    const QA_STOPWORDS = new Set(('the a an and or but is are was were be been being to of in on at for with from by as it its '
+      + 'this that these those not no does do did has have had will would should can could may might if then else when while '
+      + 'after before during not yet still also too very more most some any all each into out up down off over under again '
+      + 'screen page view').split(/\s+/).filter(Boolean));
+
+    // Significant lowercase word tokens from a title (len >= 3, non-stopword).
+    function qaTitleTokens(s) {
+      const set = new Set();
+      String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).forEach(w => {
+        if (w.length >= 3 && !QA_STOPWORDS.has(w)) set.add(w);
+      });
+      return set;
+    }
+
+    // Live duplicate detection: scan the open GitLab issues already in memory
+    // (_qaIssues) for ones whose title (and ideally screen) overlap this finding.
+    // Returns up to 3 ranked candidates. This is the dynamic replacement for the
+    // hand-curated QA_DUP_MAP. It catches NEW findings (the gap Yonas hit live,
+    // where "Coach Login" had to be searched in GitLab by hand). Heuristic only,
+    // so the hint is framed as "possible" and never auto-files anything.
+    function qaDynamicDupMatches(f) {
+      if (!f || !Array.isArray(_qaIssues) || !_qaIssues.length) return [];
+      const fTokens = qaTitleTokens(f.title);
+      if (!fTokens.size) return [];
+      const fScreen = qaScreenKey(f);
+      const fGlobal = fScreen === 'Global / cross-screen';
+      const out = [];
+      for (const i of _qaIssues) {
+        const iTokens = qaTitleTokens(i.title);
+        if (!iTokens.size) continue;
+        let shared = 0;
+        fTokens.forEach(t => { if (iTokens.has(t)) shared++; });
+        if (!shared) continue;
+        const overlap = shared / Math.min(fTokens.size, iTokens.size); // 0..1
+        const sameScreen = !fGlobal && qaIssueScreenKey(i) === fScreen;
+        // Surface only confident matches: strong title overlap on its own, or a
+        // same-screen issue sharing at least two significant words.
+        const strong = overlap >= 0.5 || (sameScreen && (shared >= 2 || overlap >= 0.34));
+        if (!strong) continue;
+        out.push({ iid: i.iid, title: i.title, sameScreen, shared, score: overlap + (sameScreen ? 0.34 : 0) });
+      }
+      out.sort((a, b) => b.score - a.score);
+      return out.slice(0, 3);
+    }
+
     function qaDupHintHtml(f) {
       const d = QA_DUP_MAP[f && f.id];
-      if (!d) return '';
-      if (d.kind === 'internal') {
-        return '<div class="z6-dup-hint internal">&#x21BB; Duplicate of finding <code>' + qaEscape(d.finding)
-          + '</code> already in this queue — archive this one, keep the other.</div>';
+      if (d) {
+        if (d.kind === 'internal') {
+          return '<div class="z6-dup-hint internal">&#x21BB; Duplicate of finding <code>' + qaEscape(d.finding)
+            + '</code> already in this queue. Archive this one, keep the other.</div>';
+        }
+        const link = '<a href="' + QA_GL_ISSUE_URL(d.issue) + '" target="_blank" rel="noopener" onclick="return qaOpenIssue(' + d.issue + ', event)">#' + d.issue + '</a>';
+        const note = d.note ? '<span class="z6-dup-note">' + qaEscape(d.note) + '</span>' : '';
+        if (d.kind === 'merge') {
+          return '<div class="z6-dup-hint merge">&#x1F4CC; Likely already tracked in ' + link
+            + '. Review before filing, then merge this evidence into ' + link + ' rather than opening a duplicate.' + note + '</div>';
+        }
+        return '<div class="z6-dup-hint related">&#x1F517; Related to ' + link + ' (same root cause).' + note + '</div>';
       }
-      const link = '<a href="' + QA_GL_ISSUE_URL(d.issue) + '" target="_blank" rel="noopener" onclick="return qaOpenIssue(' + d.issue + ', event)">#' + d.issue + '</a>';
-      const note = d.note ? '<span class="z6-dup-note">' + qaEscape(d.note) + '</span>' : '';
-      if (d.kind === 'merge') {
-        return '<div class="z6-dup-hint merge">&#x1F4CC; Likely already tracked in ' + link
-          + '. Review before filing — merge this evidence into ' + link + ' rather than opening a duplicate.' + note + '</div>';
-      }
-      return '<div class="z6-dup-hint related">&#x1F517; Related to ' + link + ' (same root cause).' + note + '</div>';
+      // No curated entry: fall back to a live match against open GitLab issues.
+      const matches = qaDynamicDupMatches(f);
+      if (!matches.length) return '';
+      const rows = matches.map(m =>
+        '<span class="z6-dup-match">'
+        + '<a href="' + QA_GL_ISSUE_URL(m.iid) + '" target="_blank" rel="noopener" onclick="return qaOpenIssue(' + m.iid + ', event)">#' + m.iid + '</a> '
+        + '<span class="z6-dup-mtitle">' + qaEscape(m.title || '(untitled)') + '</span>'
+        + (m.sameScreen ? '<span class="z6-dup-tag">same screen</span>' : '')
+        + '</span>'
+      ).join('');
+      const lead = matches.length === 1 ? '&#x1F50D; Possible duplicate already in GitLab:' : '&#x1F50D; Possible duplicates already in GitLab:';
+      return '<div class="z6-dup-hint maybe">' + lead + rows
+        + '<span class="z6-dup-note">Auto-matched on title' + (matches.some(m => m.sameScreen) ? ' + screen' : '')
+        + '. Check before filing, then attach this evidence to the existing issue instead of opening a duplicate.</span></div>';
     }
 
     let qaCurrentMode = 'overview';      // 'overview' | 'byscreen'
@@ -4223,16 +4318,25 @@
       // Screenshot honesty + multi-frame support. screenshots[] (2-3 candidate
       // frames) is preferred; otherwise the single legacy screenshot_url is used.
       const shots = qaScreenshotList(f);
-      const shotsHeader = shots.length > 1
+      // Provenance label (fix #3): frames are captured during a specific run, so a
+      // frame can show an OLD build. Tag the header with the run so a stale frame is
+      // obviously from an earlier capture, not the current app.
+      const runLabel = (f.run && String(f.run).trim())
+        ? ' <span class="z6-shot-run" title="Captured during this QA run, may show an earlier build than is live now">from run ' + qaEscape(String(f.run).trim()) + '</span>'
+        : '';
+      const shotsHeader = (shots.length > 1
         ? ('Screenshots (' + shots.length + ' frames around the moment)')
-        : (shots.length === 1 && shots[0].isContext ? 'Screen view (context)' : 'Screenshot');
+        : (shots.length === 1 && shots[0].isContext ? 'Screen view (context)' : 'Screenshot')) + runLabel;
+      // Frames render only inside the expanded detail, so load them eagerly (the
+      // user explicitly opened the card). onerror swaps a broken proxy frame for a
+      // labeled placeholder instead of a browser broken-image glyph.
       const shotsStrip = shots.length
         ? '<div class="z6-shot-strip">' + shots.map(s =>
             '<figure class="z6-shot' + (s.isContext ? ' is-context' : '') + '">'
             + '<a href="' + qaEscape(s.url) + '" target="_blank" rel="noopener"'
             + ' data-cap="' + qaEscape([f.title, s.label, s.isContext ? 'context frame' : ''].filter(Boolean).join(' · ')) + '"'
             + ' onclick="return qaOpenLightbox(this.href, this.dataset.cap, event)">'
-            + '<img loading="lazy" src="' + qaEscape(s.url) + '" alt="screenshot"></a>'
+            + '<img loading="eager" src="' + qaEscape(s.url) + '" alt="screenshot" onerror="qaShotError(this)"></a>'
             + (s.label || s.isContext
                 ? '<figcaption>' + qaEscape([s.label, s.isContext ? 'context' : ''].filter(Boolean).join(' · ')) + '</figcaption>'
                 : '')
@@ -4256,7 +4360,9 @@
               : '')
           + (shots.length
               ? '<div class="z6-detail-label">' + shotsHeader + '</div>' + shotsStrip
-              : '')
+              : (f.video_url
+                  ? '<div class="z6-detail-label">Screenshots</div><div class="z6-shot-empty">No frames were captured for this finding. Open the video below to see the moment.</div>'
+                  : ''))
           + (f.video_url
               // Drive doesn't reliably honor deep-seek via URL, so we surface the
               // timestamp as text in the link label ("jump to M:SS") rather than a #t= anchor.
@@ -4378,6 +4484,26 @@
     async function qaFileFinding(findingId, ev) {
       if (ev) { ev.preventDefault(); ev.stopPropagation(); }
       if (_qaProposedFiling.has(findingId)) return;
+      // Dedup guard: before creating a NEW GitLab issue, warn if this finding
+      // looks like one that already exists (curated map OR live title/screen
+      // match). This is the safety net for the gap Yonas hit, where the reviewer gets
+      // one chance to attach instead of opening a duplicate.
+      const _f = (_qaProposed || []).find(x => x && x.id === findingId);
+      if (_f) {
+        const curated = QA_DUP_MAP[findingId];
+        const matches = qaDynamicDupMatches(_f);
+        if ((curated && curated.issue) || matches.length) {
+          const lines = matches.length
+            ? matches.map(m => '  #' + m.iid + '  ' + (m.title || '(untitled)') + (m.sameScreen ? '  [same screen]' : ''))
+            : ['  #' + curated.issue];
+          const ok = window.confirm(
+            'This finding may already be tracked in GitLab:\n\n'
+            + lines.join('\n')
+            + '\n\nFile a NEW issue anyway?\n\nCancel, then use "Or attach to an existing issue…" to add this evidence to the existing one instead.'
+          );
+          if (!ok) return;
+        }
+      }
       _qaProposedFiling.add(findingId);
       _qaProposedError.delete(findingId);
       renderProposed();
@@ -4633,8 +4759,8 @@
       }
     }
 
-    // Remove an issue from the active QA list by closing it in GitLab (reversible
-    // — reopen in GitLab to undo). Closed issues drop out of the dashboard.
+    // Remove an issue from the active QA list by closing it in GitLab (reversible,
+    // reopen in GitLab to undo). Closed issues drop out of the dashboard.
     async function qaCloseIssue(issueIid, ev) {
       if (ev) { ev.preventDefault(); ev.stopPropagation(); }
       issueIid = parseInt(issueIid, 10);
@@ -5051,7 +5177,7 @@
         if (st === 'needs-review') {
           marker = '<span class="z6-screen-badge" title="' + pending + ' to review">' + pending + '</span>';
         } else if (st === 'triaged') {
-          marker = '<span class="z6-screen-reviewed" title="Human reviewed — ' + gl + ' tracked in GitLab, not necessarily fixed">human reviewed</span>';
+          marker = '<span class="z6-screen-reviewed" title="' + gl + ' issue' + (gl === 1 ? '' : 's') + ' filed in GitLab and still OPEN (not fixed). Closed/fixed issues drop off this dashboard.">' + gl + ' open in GitLab</span>';
         } else {
           marker = '';
         }
@@ -5117,7 +5243,7 @@
       const _stChip = _st === 'needs-review'
         ? '<span class="z6-status-chip needs">Needs review &middot; ' + items.length + '</span>'
         : _st === 'triaged'
-          ? '<span class="z6-status-chip triaged">Human reviewed &middot; ' + screenIssues.length + ' in GitLab</span>'
+          ? '<span class="z6-status-chip triaged" title="Filed and still OPEN in GitLab (not fixed). Closed/fixed issues drop off this dashboard.">' + screenIssues.length + ' open in GitLab &middot; not fixed</span>'
           : '<span class="z6-status-chip clean">No findings yet</span>';
       let html = '<div id="z6-byscreen-header">'
         + '<span class="z6-bs-screen">' + qaEscape(qaSelectedScreen) + '</span>'
@@ -5135,7 +5261,7 @@
         const glBugs = screenIssues.filter(i => i.finding_type !== 'ai-learning');
         const glLearn = screenIssues.filter(i => i.finding_type === 'ai-learning');
         html += '<div class="z6-bs-group">';
-        html += '<div class="z6-bs-group-title" style="color:#7c9cff">&#x1F4CC; In GitLab (source of truth) <span class="z6-bs-grp-count">' + screenIssues.length + '</span></div>';
+        html += '<div class="z6-bs-group-title" style="color:#7c9cff" title="Filed and still open in GitLab. When closed/fixed they drop off this dashboard.">&#x1F4CC; Open in GitLab (source of truth) <span class="z6-bs-grp-count">' + screenIssues.length + '</span></div>';
         if (glBugs.length) {
           html += '<div class="z6-bs-subgroup">'
             + '<div class="z6-bs-subgroup-title">&#x1F534; Bugs &middot; ' + glBugs.length + '</div>'
