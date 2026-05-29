@@ -3437,7 +3437,7 @@
       <!-- OVERVIEW main content (status panel, chips, proposed, open issues) -->
       <div id="z6-overview-panel">
 
-      <!-- QA STATUS — glance panel rolling up proposed findings + open bugs -->
+      <!-- QA STATUS — glance panel rolling up review queue + GitLab issues -->
       <section id="z6-summary" aria-label="QA status summary">
         <div id="z6-summary-bar">
           <span class="z6-summary-heading">QA Status</span>
@@ -3455,9 +3455,9 @@
               <span class="z6-tile-num" id="z6-tile-review">–</span>
               <span class="z6-tile-label">&#x1F4CB; Awaiting review</span>
             </button>
-            <div class="z6-tile z6-tile-bugs" title="All open bugs in gg-mvp">
+            <div class="z6-tile z6-tile-bugs" title="Open GitLab issues with type=bug">
               <span class="z6-tile-num" id="z6-tile-bugs">–</span>
-              <span class="z6-tile-label">&#x1F6E0;&#xFE0F; Open bugs</span>
+              <span class="z6-tile-label">&#x1F6E0;&#xFE0F; GitLab bugs</span>
             </div>
             <div class="z6-tile z6-tile-ai" title="Open AI Learnings in gg-mvp (label=ai-learning, assignee Yair)">
               <span class="z6-tile-num" id="z6-tile-ai">–</span>
@@ -3467,8 +3467,12 @@
           <!-- Row 2: breakdowns -->
           <div class="z6-breakdowns">
             <div class="z6-breakdown">
-              <span class="z6-breakdown-label">Proposed by source</span>
+              <span class="z6-breakdown-label">Review queue by source</span>
               <span class="z6-breakdown-val" id="z6-bd-source">&middot;</span>
+            </div>
+            <div class="z6-breakdown">
+              <span class="z6-breakdown-label">GitLab by source</span>
+              <span class="z6-breakdown-val" id="z6-bd-gitlab-source">&middot;</span>
             </div>
             <div class="z6-breakdown">
               <span class="z6-breakdown-label">Open bugs by layer <span class="z6-heuristic" title="Coarse heuristic: area labels map to backend (ai, ci-cd, deployment, infrastructure, analytics, data) or frontend (prototype, testing, voice). Items with no area but a named screen count as frontend; everything else is unknown.">&#9432;</span></span>
@@ -3482,7 +3486,7 @@
               <div class="z6-person">
                 <span class="z6-person-name">Timothy</span>
                 <span class="z6-person-stat" id="z6-person-timothy">&#x1F4CB; – to review</span>
-                <span class="z6-person-hint">scan, File real bugs, Not-a-bug the noise</span>
+                <span class="z6-person-hint">reviews machine findings; also filed human issues</span>
               </div>
               <div class="z6-person">
                 <span class="z6-person-name">Yonas</span>
@@ -3921,10 +3925,8 @@
       if (hr < 24) return hr + 'h';
       return Math.floor(hr / 24) + 'd';
     }
-    // The worker only fetches with label=mobai today, so every issue we receive
-    // is MobAI-sourced. The classifier is wired now so when the worker adds a
-    // wider feed, swapping the rule is a one-liner.
     function qaInferSource(issue) {
+      if (issue.source === 'mobai' || issue.source === 'video' || issue.source === 'human') return issue.source;
       const labels = issue.labels || [];
       if (labels.includes('mobai')) return 'mobai';
       if (labels.includes('video')) return 'video';
@@ -4726,6 +4728,8 @@
       const al = s.ai_learnings || {};
       const pp = s.per_person || {};
       const bySrc = p.by_source || {};
+      const gl = s.gitlab || {};
+      const glBySrc = gl.by_source || {};
       const byLayer = ob.by_layer || {};
 
       // Row 1 tiles
@@ -4737,6 +4741,8 @@
       // Row 2 breakdowns
       setText('z6-bd-source',
         'Human ' + (bySrc.human || 0) + ' · MobAI ' + (bySrc.mobai || 0) + ' · Video ' + (bySrc.video || 0));
+      setText('z6-bd-gitlab-source',
+        'Human ' + (glBySrc.human || 0) + ' · MobAI ' + (glBySrc.mobai || 0) + ' · Video ' + (glBySrc.video || 0));
       let layerStr = 'Frontend ' + (byLayer.frontend || 0) + ' · Backend ' + (byLayer.backend || 0);
       if ((byLayer.unknown || 0) > 0) layerStr += ' · Unknown ' + byLayer.unknown;
       setText('z6-bd-layer', layerStr);
@@ -4746,7 +4752,7 @@
       const yon = pp.yonas || {};
       const min = pp.mint || {};
       const yai = pp.yair || {};
-      setText('z6-person-timothy', '\u{1F4CB} ' + (tim.review_queue || 0) + ' to review');
+      setText('z6-person-timothy', '\u{1F4CB} ' + (tim.review_queue || 0) + ' to review · ' + (tim.gitlab_bugs || 0) + ' filed');
       setText('z6-person-yonas', '\u{1F6E0} ' + (yon.assigned || 0) + ' assigned · ' + (yon.high || 0) + ' high');
       setText('z6-person-mint', '\u{1F6E0} ' + (min.assigned || 0) + ' assigned · ' + (min.high || 0) + ' high');
       setText('z6-person-yair', '\u{1F9E0} ' + (yai.ai_learning_queue || 0) + ' AI Learnings · ' + (yai.high || 0) + ' high');
