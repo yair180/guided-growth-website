@@ -3996,16 +3996,18 @@
       ).join(' ');
       const kind = i.finding_type === 'ai-learning' ? '\u{1F9E0}' : '\u{1F534}';
       const closing = _qaIssuesClosing.has(i.iid);
-      // Issues the dashboard created from a finding get "Revert" (close + send the
-      // finding back to the queue). Pre-existing issues get "Remove" (close only).
-      const isRevert = !!i.from_finding;
-      const removeBtn = closing
-        ? '<button class="z6-remove-btn" disabled>' + (isRevert ? 'Reverting…' : 'Removing…') + '</button>'
-        : isRevert
-          ? '<button class="z6-remove-btn z6-revert-btn" title="Close the issue and send finding ' + qaEscape(i.finding_id || '') + ' back to the review queue"'
-            + ' onclick="qaRevertIssue(' + i.iid + ', event)">Revert</button>'
-          : '<button class="z6-remove-btn" title="Close this issue (reversible in GitLab)"'
-            + ' onclick="qaCloseIssue(' + i.iid + ', event)">Remove</button>';
+      // Every In-GitLab card gets two actions:
+      //  - Re-triage: close the issue and send it back to the review queue, where
+      //    it can be matched to another issue or filed fresh. Works for both
+      //    dashboard-filed findings and pre-existing hand-filed issues (the worker
+      //    synthesizes a finding from the issue when there is no source finding).
+      //  - Remove: close the issue in GitLab (reopenable there).
+      const actionBtns = closing
+        ? '<button class="z6-remove-btn" disabled>Working…</button>'
+        : '<button class="z6-remove-btn z6-revert-btn" title="Close this issue and send it back to the review queue, where you can match it to another issue or file it fresh"'
+          + ' onclick="qaRevertIssue(' + i.iid + ', event)">↩ Re-triage</button>'
+          + '<button class="z6-remove-btn" title="Close this issue in GitLab (reopenable there)"'
+          + ' onclick="qaCloseIssue(' + i.iid + ', event)">Remove</button>';
       // Global detection: the API sends globals as either an empty string OR the
       // literal "Global / cross-screen", so truthiness alone never catches them.
       var iScreen = i.screen || '';
@@ -4025,7 +4027,7 @@
           + '<span>' + qaAgo(i.created_at) + ' ago</span>'
           + (labelHtml ? '<span style="display:inline-flex;gap:4px;flex-wrap:wrap">' + labelHtml + '</span>' : '')
           + '<span class="z6-issue-meta-spacer"></span>'
-          + removeBtn
+          + actionBtns
         + '</div>'
       + '</a>';
     }
@@ -4635,14 +4637,15 @@
       if (qaCurrentMode === 'byscreen') { renderScreensSidebar(); renderByScreenPanel(); }
     }
 
-    // Revert a finding-created issue: closes the issue AND restores the finding
-    // to the review queue (so it "goes back"). Only shown on issues the dashboard
-    // filed; pre-existing issues use qaCloseIssue instead.
+    // Re-triage an issue: closes it AND puts a finding back in the review queue, so
+    // it can be matched to another issue or filed fresh. Works for both
+    // dashboard-filed findings (the original finding is restored) and pre-existing
+    // hand-filed issues (the worker synthesizes a finding from the issue).
     async function qaRevertIssue(issueIid, ev) {
       if (ev) { ev.preventDefault(); ev.stopPropagation(); }
       issueIid = parseInt(issueIid, 10);
       if (!issueIid || _qaIssuesClosing.has(issueIid)) return;
-      if (!window.confirm('Revert #' + issueIid + '?\n\nThis closes the issue and sends its finding back to the review queue (Needs review). Use this to undo a filing.')) return;
+      if (!window.confirm('Re-triage #' + issueIid + '?\n\nThis closes the issue and sends it back to the review queue (Needs review), where you can match it to another issue or file it fresh.')) return;
       _qaIssuesClosing.add(issueIid);
       renderIssues();
       if (qaCurrentMode === 'byscreen') renderByScreenPanel();
@@ -4659,7 +4662,7 @@
         if (!data || data.status !== 'ok') throw new Error('worker did not confirm revert');
       } catch (e) {
         _qaIssuesClosing.delete(issueIid);
-        window.alert('Could not revert #' + issueIid + ': ' + (e.message || String(e)));
+        window.alert('Could not re-triage #' + issueIid + ': ' + (e.message || String(e)));
         renderIssues();
         if (qaCurrentMode === 'byscreen') renderByScreenPanel();
         return;
