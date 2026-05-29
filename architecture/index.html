@@ -1246,10 +1246,14 @@
     .z7-board-cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
     .z7-board-card {
       text-align: left; width: 100%; background: var(--z7-panel); border: 1px solid var(--z7-border);
-      border-radius: 7px; padding: 10px 11px; cursor: pointer; font-family: inherit;
-      transition: border-color .12s ease, box-shadow .12s ease;
+      border-radius: 7px; padding: 10px 11px; cursor: grab; font-family: inherit;
+      transition: border-color .12s ease, box-shadow .12s ease, opacity .12s ease;
     }
     .z7-board-card:hover { border-color: var(--z7-border-strong); box-shadow: 0 1px 4px var(--z7-shadow); }
+    .z7-board-card:active { cursor: grabbing; }
+    .z7-board-card.dragging { opacity: .4; }
+    .z7-board-col.drag-over { border-color: var(--z7-accent); }
+    .z7-board-col.drag-over .z7-board-cards { background: var(--z7-panel-3); border-radius: 0 0 8px 8px; }
     .z7-board-card-title { font-size: 13px; color: var(--z7-text); line-height: 1.45; margin-bottom: 8px; }
     .z7-board-card:hover .z7-board-card-title { color: var(--z7-accent); }
     .z7-board-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
