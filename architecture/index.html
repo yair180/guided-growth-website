@@ -1898,6 +1898,17 @@
     #z6-byscreen-header .z6-bs-count {
       color: #5bc0de; font-size: 13px; font-weight: 600;
     }
+    #z6-byscreen-header .z6-bs-jump { display: inline-flex; gap: 6px; margin-left: auto; align-self: center; }
+    .z6-bs-jump-btn {
+      font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 6px;
+      cursor: pointer; white-space: nowrap; border: 1px solid #2b3f5a;
+      background: rgba(124,156,255,0.10); color: #9db8ee;
+    }
+    .z6-bs-jump-btn:hover { background: rgba(124,156,255,0.22); color: #c9d8f6; }
+    .z6-bs-jump-btn.figma { border-color: #3a4a63; background: rgba(162,140,255,0.10); color: #b9a8f6; }
+    .z6-bs-jump-btn.figma:hover { background: rgba(162,140,255,0.22); color: #d6caff; }
+    .z6-bs-jump-btn.gl { border-color: #5a3a26; background: rgba(226,110,60,0.10); color: #e9a07f; }
+    .z6-bs-jump-btn.gl:hover { background: rgba(226,110,60,0.22); color: #f4c3aa; }
     #z6-byscreen-subnote { color: #6b8aaf; font-size: 12px; margin: 0 0 20px; }
     .z6-bs-group { margin-bottom: 22px; }
     .z6-bs-group-title {
@@ -5221,6 +5232,28 @@
       renderByScreenPanel();
     }
 
+    // The cross-link cluster shown in the By-Screen header: jump from a QA
+    // screen out to its Figma frame (the app design) and to the GitLab issues
+    // filtered to this screen. Figma is offered only when a frame exists so we
+    // never show a jump that no-ops. Globals (no real screen) get no buttons.
+    function qaScreenJumpBtns(screen) {
+      if (!screen || /^global/i.test(screen)) return '';
+      const safe = String(screen).replace(/'/g, "\\'");
+      let figma = '';
+      try {
+        const e = (typeof SCREEN_INDEX !== 'undefined') && SCREEN_INDEX.find(s => s.i === screen);
+        if (e && e.f) {
+          figma = '<button type="button" class="z6-bs-jump-btn figma" '
+            + 'onclick="event.stopPropagation(); if (typeof jumpToFigma===\'function\') jumpToFigma(\'' + safe + '\')" '
+            + 'title="Open this screen\'s design frame in the Figma viewer">See in Figma &rarr;</button>';
+        }
+      } catch (_e) {}
+      const gl = '<button type="button" class="z6-bs-jump-btn gl" '
+        + 'onclick="event.stopPropagation(); glOpenIssuesForScreen(\'' + safe + '\')" '
+        + 'title="Open the GitLab issues filtered to this screen">GitLab issues &rarr;</button>';
+      return '<span class="z6-bs-jump">' + figma + gl + '</span>';
+    }
+
     function renderByScreenPanel() {
       const el = document.getElementById('z6-byscreen-content');
       if (!el) return;
@@ -5264,6 +5297,7 @@
         + _stChip
         + '<span class="z6-bs-count">' + screenIssues.length + ' in GitLab &middot; '
           + items.length + ' to review</span>'
+        + qaScreenJumpBtns(qaSelectedScreen)
       + '</div>';
       html += '<div id="z6-byscreen-subnote">' + bugs.length + ' proposed bug' + (bugs.length === 1 ? '' : 's')
         + ' &middot; ' + learnings.length + ' AI Learning' + (learnings.length === 1 ? '' : 's') + '</div>';
