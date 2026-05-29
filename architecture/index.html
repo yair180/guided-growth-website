@@ -796,6 +796,7 @@
     #z5-sidebar.collapsed #z5-search,
     #z5-sidebar.collapsed #z5-open-figma,
     #z5-sidebar.collapsed .z5-screen-name,
+    #z5-sidebar.collapsed .z5-issues-btn,
     #z5-sidebar.collapsed .z5-screen-phase { display: none; }
     #z5-sidebar.collapsed .z5-screen-row {
       padding: 7px 6px; gap: 4px; justify-content: center;
@@ -846,6 +847,18 @@
     .z5-screen-row .z5-screen-phase.p1 { background: rgba(91, 192, 222, 0.18); color: #a8d6e8; }
     .z5-screen-row .z5-screen-phase.p2 { background: rgba(167, 139, 250, 0.18); color: #c4b5fd; }
     .z5-screen-row .z5-screen-phase.p3 { background: rgba(251, 191, 36, 0.16); color: #fbbf24; }
+    .z5-screen-row .z5-issues-btn {
+      flex-shrink: 0; padding: 3px 8px; border-radius: 6px;
+      background: rgba(31, 117, 203, 0.16); color: #8ec5ff;
+      border: 1px solid rgba(31, 117, 203, 0.45);
+      font: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer;
+      opacity: 0; transition: opacity 80ms;
+    }
+    .z5-screen-row:hover .z5-issues-btn,
+    .z5-screen-row.active .z5-issues-btn { opacity: 1; }
+    .z5-screen-row .z5-issues-btn:hover {
+      background: rgba(31, 117, 203, 0.3); border-color: rgba(31, 117, 203, 0.75);
+    }
 
     #zoom-5-iframe-wrap { flex: 1; min-width: 0; }
     #zoom-5-iframe { width: 100%; height: 100%; border: 0; display: block; background: #1e1e1e; }
@@ -5418,9 +5431,11 @@
           const nameEsc   = (s.n || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
           const click     = s.f ? `onclick="jumpToFigma('${s.i.replace(/'/g, "\\'")}')"` : "";
           const titleAttr = s.f ? `title="Open in Figma viewer"` : `title="No Figma frame mapped — set the Figma Link column in the Screens tab"`;
+          const sidEsc    = (s.i || "").replace(/'/g, "\\'");
           html += `<div class="z5-screen-row${activeCls}${noFigma}" ${click} ${titleAttr}>
             <span class="z5-screen-id">${idEsc}</span>
             <span class="z5-screen-name">${nameEsc}</span>
+            <button type="button" class="z5-issues-btn" onclick="event.stopPropagation(); glOpenIssuesForScreen('${sidEsc}')" title="View GitLab issues for this screen">Issues →</button>
             <span class="z5-screen-phase ${phaseCls}">${ph.replace(/^Phase /, "P")}</span>
           </div>`;
         });
@@ -8329,6 +8344,9 @@
     // once the issues sub-view is live and the connection check has resolved.
     let _glReturnFromQA = false;
     let _glPendingIssueIid = null;
+    // Queued screen filter when another tab (Figma / QA) deep-links into the
+    // Issues list filtered to one screen; consumed by setGitLabView('issues').
+    let _glPendingScreenFilter = null;
 
     // ---- theme (light default + dark, GitLab-faithful) --------------------
     const GL_THEME_KEY = 'gg_arch_z7_theme';
@@ -8654,6 +8672,13 @@
         if (s) s.style.display = v === view ? '' : 'none';
       });
       if (view === 'issues') {
+        // Honour a Figma/QA deep-link that pre-selects a screen filter.
+        if (_glPendingScreenFilter != null) {
+          populateScreenFilterOnce();
+          const _sf = document.getElementById('z7-issues-screen');
+          if (_sf) _sf.value = _glPendingScreenFilter;
+          _glPendingScreenFilter = null;
+        }
         loadGitLabIssues();
         // Honour a QA deep-link: open the requested issue in-page (the list and
         // the detail render into separate nodes, so both can run together).
@@ -8796,9 +8821,7 @@
     function glRenderIssuesList(listEl) {
       if (!_glIssues.length) { listEl.innerHTML = '<div class="z7-empty">No issues match these filters.</div>'; return; }
       listEl.innerHTML = _glIssues.map(iss => {
-        const goBtn = iss.screen
-          ? '<button type="button" class="z7-goscreen" onclick="glGoToScreen(' + glAttr(iss.screen) + ', event)">Go to screen &rarr;</button>'
-          : '';
+        const goBtn = iss.screen ? glScreenJumpBtns(iss.screen) : '';
         return '<button type="button" class="z7-row ' + glStateClass(iss.state) + '" '
           + 'onclick="openGitLabIssue(' + glAttr(iss.project) + ', ' + iss.iid + ')">'
           + '<div class="z7-row-head">'
@@ -8840,9 +8863,7 @@
       const toggleBtn = isOpen
         ? '<button type="button" class="z7-btn-ghost danger" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'close\', this)">Close issue</button>'
         : '<button type="button" class="z7-btn-ghost reopen" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'reopen\', this)">Reopen issue</button>';
-      const goBtn = iss.screen
-        ? '<button type="button" class="z7-btn-ghost" onclick="glGoToScreen(' + glAttr(iss.screen) + ', event)">Go to screen &rarr;</button>'
-        : '';
+      const goBtn = iss.screen ? glScreenJumpBtns(iss.screen, 'z7-btn-ghost') : '';
       detail.innerHTML =
         '<div id="z7-detail">'
         + '<div class="z7-detail-head">'
@@ -9764,6 +9785,40 @@
       if (typeof setQAMode === 'function') setQAMode('byscreen');
       if (typeof selectQAScreen === 'function') selectQAScreen(name);
       setZoomLevel(6);
+    }
+
+    // GitLab issue -> Figma (zoom 5): open the screen's design frame.
+    function glGoToFigma(name, ev) {
+      if (ev) ev.stopPropagation();
+      if (typeof jumpToFigma === 'function') jumpToFigma(name);
+    }
+
+    // True only when this screen id has a Figma node mapped in SCREEN_INDEX,
+    // so we don't offer a "Figma" jump that would no-op.
+    function glScreenHasFigma(name) {
+      try {
+        const e = (typeof SCREEN_INDEX !== 'undefined') && SCREEN_INDEX.find(s => s.i === name);
+        return !!(e && e.f);
+      } catch (_e) { return false; }
+    }
+
+    // The cluster of "jump to this screen" buttons shown on issue rows/detail.
+    // Figma is offered only when a frame exists; QA is always available.
+    function glScreenJumpBtns(screen, cls) {
+      cls = cls || 'z7-goscreen';
+      const figma = glScreenHasFigma(screen)
+        ? '<button type="button" class="' + cls + '" onclick="glGoToFigma(' + glAttr(screen) + ', event)">Figma &rarr;</button>'
+        : '';
+      const qa = '<button type="button" class="' + cls + '" onclick="glGoToScreen(' + glAttr(screen) + ', event)">QA &rarr;</button>';
+      return figma + qa;
+    }
+
+    // Figma / QA -> GitLab (zoom 7): open the Issues list filtered to one screen.
+    function glOpenIssuesForScreen(name, ev) {
+      if (ev) ev.stopPropagation();
+      _glPendingScreenFilter = name || '';
+      setZoomLevel(7);          // runs loadGitLabTab -> connection check -> forced setGitLabView
+      _glView = 'issues';       // set AFTER setZoomLevel so restoreGitLabView can't clobber it
     }
 
     // QA (zoom 6) -> GitLab (zoom 7): open an issue in the in-page GitLab view
