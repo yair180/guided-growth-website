@@ -1348,6 +1348,7 @@
     .z7-jump:active { transform: translateY(1px); }
     .z7-jump-figma { background: #7b61ff; }
     .z7-jump-qa { background: #12a150; }
+    .z7-jump-sheet { background: #e26e3c; }
 
     /* Detail panel (slides over the list area, in-flow) */
     #z7-detail {
@@ -9087,7 +9088,7 @@
       if (!_glIssues.length) { listEl.innerHTML = '<div class="z7-empty">No issues match these filters.</div>'; return; }
       listEl.innerHTML = _glIssues.map(iss => {
         const _scr = glScreenForIssue(iss);
-        const goBtn = _scr ? glScreenJumpBtns(_scr) : '';
+        const goBtn = glIssueJumpBtns(iss);
         return '<button type="button" class="z7-row ' + glStateClass(iss.state) + '" '
           + 'onclick="openGitLabIssue(' + glAttr(iss.project) + ', ' + iss.iid + ')">'
           + '<div class="z7-row-head">'
@@ -9129,8 +9130,7 @@
       const toggleBtn = isOpen
         ? '<button type="button" class="z7-btn-ghost danger" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'close\', this)">Close issue</button>'
         : '<button type="button" class="z7-btn-ghost reopen" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'reopen\', this)">Reopen issue</button>';
-      const _scr = glScreenForIssue(iss);
-      const goBtn = _scr ? glScreenJumpBtns(_scr) : '';
+      const goBtn = glIssueJumpBtns(iss);
       detail.innerHTML =
         '<div id="z7-detail">'
         + '<div class="z7-detail-head">'
@@ -9191,6 +9191,12 @@
         blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Screen</div>'
           + '<div class="z7-meta-row"><span class="z7-screen-chip">' + qaEscape(_gridScreen) + '</span>'
           + glScreenJumpBtns(_gridScreen) + '</div></div>');
+      }
+      const _gridTask = glTaskForIssue(item);
+      if (_gridTask) {
+        blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Master Sheet task</div>'
+          + '<div class="z7-meta-row"><span class="z7-screen-chip">' + qaEscape(_gridTask) + '</span>'
+          + '<span class="z7-jump-grp">' + glSheetJumpInner(_gridTask) + '</span></div></div>');
       }
       if (item.due_date) {
         blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Due</div>'
@@ -10074,30 +10080,77 @@
     // Resolve the screen for an issue. Prefer the explicit screen field the
     // worker derives from labels; fall back to the issue title prefix, since
     // our issue titles follow the "SCREEN-ID: description" convention (e.g.
-    // "AUTH-LOGIN: Go back arrow visible..."). Only trust a derived id when it
-    // is a real screen in SCREEN_INDEX, so task-id prefixes (P1-01:) and other
-    // noise never produce a dead "See in QA" jump.
+    // "AUTH-LOGIN: Go back arrow visible..."). Split on the FIRST colon so
+    // double-dash screen ids (ONBOARD-01--FORM) survive intact. Only trust a
+    // derived id when it is a real screen in SCREEN_INDEX, so task-id prefixes
+    // (P1-01:) and other noise never produce a dead "See in QA" jump.
     function glScreenForIssue(iss) {
       if (!iss) return '';
       if (iss.screen) return iss.screen;
       const title = iss.title || '';
-      const m = title.match(/^\s*([A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+)\s*[:–—-]/);
-      if (!m) return '';
-      const cand = m[1];
+      const colon = title.indexOf(':');
+      if (colon < 1) return '';
+      const cand = title.slice(0, colon).trim();
+      if (!/^[A-Z][A-Z0-9-]+$/.test(cand)) return '';
       try {
         if (typeof SCREEN_INDEX !== 'undefined' && SCREEN_INDEX.some(s => s.i === cand)) return cand;
       } catch (_e) {}
       return '';
     }
 
-    // The cluster of "jump to this screen" buttons shown on issue rows/detail.
-    // Figma is offered only when a frame exists; QA is always available.
-    function glScreenJumpBtns(screen) {
+    // Resolve the Master Sheet task for an issue. The Sheet->GitLab sync stamps
+    // the task id into the issue title as "[P1-XX] ..." or "P1-XX: ...", so a
+    // synced dev task can jump back into the Sheet. Validated against
+    // TASK_INDEX so screen prefixes (AUTH-LOGIN:) never resolve to a task.
+    function glTaskForIssue(iss) {
+      if (!iss) return '';
+      const title = iss.title || '';
+      let cand = '';
+      const br = title.match(/^\s*\[([^\]]+)\]/);
+      if (br) { cand = br[1].trim(); }
+      else { const colon = title.indexOf(':'); if (colon > 0) cand = title.slice(0, colon).trim(); }
+      if (!cand || !/^[A-Z][A-Z0-9]*-[0-9A-Z]+$/.test(cand)) return '';
+      try {
+        if (typeof TASK_INDEX !== 'undefined' && TASK_INDEX.some(t => t.i === cand)) return cand;
+      } catch (_e) {}
+      return '';
+    }
+
+    // The raw screen jump buttons (no wrapper). Figma is offered only when a
+    // frame exists; QA is always available for a real screen.
+    function glScreenJumpInner(screen) {
       const figma = glScreenHasFigma(screen)
         ? '<button type="button" class="z7-jump z7-jump-figma" onclick="glGoToFigma(' + glAttr(screen) + ', event)" title="Open this screen in the Figma viewer">See in Figma &rarr;</button>'
         : '';
       const qa = '<button type="button" class="z7-jump z7-jump-qa" onclick="glGoToScreen(' + glAttr(screen) + ', event)" title="Open this screen in the QA dashboard">See in QA &rarr;</button>';
-      return '<span class="z7-jump-grp">' + figma + qa + '</span>';
+      return figma + qa;
+    }
+
+    // The Master Sheet jump button (no wrapper). Opens the task row in zoom 4.
+    function glSheetJumpInner(taskId) {
+      return '<button type="button" class="z7-jump z7-jump-sheet" onclick="glGoToSheetTask(' + glAttr(taskId) + ', event)" title="Open this task row in the App Master Sheet">See in Master Sheet &rarr;</button>';
+    }
+
+    // Screen-only cluster (used by the meta grid Screen block).
+    function glScreenJumpBtns(screen) {
+      return '<span class="z7-jump-grp">' + glScreenJumpInner(screen) + '</span>';
+    }
+
+    // Full cross-link cluster for an issue: screen jumps (QA/Figma) when it maps
+    // to a screen, plus a Master Sheet jump when it maps to a synced task. This
+    // closes the loop so every GitLab issue can reach the app + the task.
+    function glIssueJumpBtns(iss) {
+      const screen = glScreenForIssue(iss);
+      const task = glTaskForIssue(iss);
+      let inner = (screen ? glScreenJumpInner(screen) : '') + (task ? glSheetJumpInner(task) : '');
+      return inner ? '<span class="z7-jump-grp">' + inner + '</span>' : '';
+    }
+
+    // GitLab (zoom 7) -> App Master Sheet (zoom 4): scroll the Sheet to the
+    // task row. jumpToSheetRow already switches the zoom level and highlights.
+    function glGoToSheetTask(taskId, ev) {
+      if (ev) ev.stopPropagation();
+      if (typeof jumpToSheetRow === 'function') jumpToSheetRow(taskId);
     }
 
     // Figma / QA -> GitLab (zoom 7): open the Issues list filtered to one screen.
