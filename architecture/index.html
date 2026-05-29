@@ -1254,6 +1254,10 @@
     .z7-board-card.dragging { opacity: .4; }
     .z7-board-col.drag-over { border-color: var(--z7-accent); }
     .z7-board-col.drag-over .z7-board-cards { background: var(--z7-panel-3); border-radius: 0 0 8px 8px; }
+    .z7-board-card-thumb {
+      display: block; width: 100%; height: 88px; object-fit: cover; object-position: top;
+      border-radius: 6px; margin-bottom: 8px; background: var(--z7-panel-3);
+    }
     .z7-board-card-title { font-size: 13px; color: var(--z7-text); line-height: 1.45; margin-bottom: 8px; }
     .z7-board-card:hover .z7-board-card-title { color: var(--z7-accent); }
     .z7-board-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -9136,6 +9140,9 @@
         + ' data-iid="' + iss.iid + '" data-project="' + qaEscape(iss.project) + '"'
         + ' ondragstart="glBoardDragStart(event)" ondragend="glBoardDragEnd(event)"'
         + ' onclick="glBoardCardClick(event, ' + glAttr(iss.project) + ', ' + iss.iid + ')">'
+        + (iss.screenshot ? '<img class="z7-board-card-thumb" loading="lazy" alt=""'
+            + ' src="' + qaEscape(qaProxyImg(iss.screenshot)) + '"'
+            + ' onerror="this.style.display=\'none\'">' : '')
         + '<div class="z7-board-card-title">' + qaEscape(iss.title) + '</div>'
         + '<div class="z7-board-card-meta">'
         + '<span class="z7-board-card-iid">' + qaEscape(iss.project) + ' #' + iss.iid + '</span>'
