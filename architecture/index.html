@@ -2185,6 +2185,13 @@
       border-right: none; border-radius: 8px 0 0 8px; outline: none;
     }
     .z6-attach-input:focus { border-color: #5bc0de; }
+    .z6-attach-select {
+      max-width: 340px; padding: 4px 8px; font-size: 11.5px; font-family: inherit;
+      background: #060d18; color: #e0e6ed; border: 1px solid #1e3a5f;
+      border-right: none; border-radius: 8px 0 0 8px; outline: none; cursor: pointer;
+    }
+    .z6-attach-select:focus { border-color: #5bc0de; }
+    .z6-attach-empty { font-size: 11px; color: #6b8aaf; font-style: italic; }
     .z6-attach-wrap .z6-bucket-btn { border-radius: 0 8px 8px 0; }
     /* Confidence pill (collapsed-card meta) */
     .z6-proposed-card .z6-conf-pill {
@@ -4263,15 +4270,20 @@
       // File-as-bug target picker: create a NEW issue, or attach this evidence to
       // an EXISTING issue by number (reuses the merge endpoint). Revealed by "File as bug".
       const fileInputId = 'z6-attach-' + String(f.id).replace(/[^A-Za-z0-9_-]/g, '');
+      const attachOpts = qaAttachOptionsHtml(screen);
       const filePicker = (filePickerOpen && !busy)
         ? '<div class="z6-bucket-picker">'
           + '<span class="z6-bucket-prompt">File as bug — where to?</span>'
           + '<button class="z6-bucket-btn" onclick="qaFileFinding(\'' + qaEscape(f.id) + '\', event)">Create new issue<small>assigned to Yonas</small></button>'
-          + '<span class="z6-attach-wrap">'
-            + '<input type="number" min="1" class="z6-attach-input" id="' + fileInputId + '" placeholder="#" '
-            + 'onkeydown="if(event.key===\'Enter\'){qaAttachToExisting(\'' + qaEscape(f.id) + '\', event)}" onclick="event.stopPropagation()">'
-            + '<button class="z6-bucket-btn" onclick="qaAttachToExisting(\'' + qaEscape(f.id) + '\', event)">Attach to existing<small>comment on that issue</small></button>'
-          + '</span>'
+          + (attachOpts
+              ? '<span class="z6-attach-wrap">'
+                + '<select class="z6-attach-select" id="' + fileInputId + '" onclick="event.stopPropagation()">'
+                + '<option value="">Or attach to an existing issue…</option>'
+                + attachOpts
+                + '</select>'
+                + '<button class="z6-bucket-btn" onclick="qaAttachToExisting(\'' + qaEscape(f.id) + '\', event)">Attach<small>comment on it</small></button>'
+              + '</span>'
+              : '<span class="z6-attach-empty">No open issues yet to attach to</span>')
           + '<button class="z6-bucket-cancel" onclick="qaToggleFilePicker(\'' + qaEscape(f.id) + '\', event)">cancel</button>'
         + '</div>'
         : '';
@@ -4390,6 +4402,26 @@
       renderProposed();
     }
 
+    // Build <option>s for the "attach to existing" dropdown from the open issues
+    // already in memory (_qaIssues). Same-screen issues are listed first so the
+    // likely duplicate sits at the top; the rest follow, newest issue first and
+    // tagged with their screen. Returns '' when there are no open issues.
+    function qaAttachOptionsHtml(screenName) {
+      if (!_qaIssues || !_qaIssues.length) return '';
+      const target = qaScreenKey({ screen: screenName });
+      const sorted = _qaIssues.slice().sort((a, b) => {
+        const am = qaIssueScreenKey(a) === target ? 0 : 1;
+        const bm = qaIssueScreenKey(b) === target ? 0 : 1;
+        if (am !== bm) return am - bm;
+        return (b.iid || 0) - (a.iid || 0);
+      });
+      return sorted.map(i => {
+        const here = qaIssueScreenKey(i) === target;
+        const label = '#' + i.iid + ' · ' + (here ? '' : '[' + qaIssueScreenKey(i) + '] ') + (i.title || '(untitled)');
+        return '<option value="' + qaEscape(i.iid) + '">' + qaEscape(label) + '</option>';
+      }).join('');
+    }
+
     // Toggle the File-as-bug target picker (create new vs attach to existing).
     // No POST until a target is chosen — opening it is just a UI reveal.
     function qaToggleFilePicker(findingId, ev) {
@@ -4412,7 +4444,7 @@
       const el = document.getElementById(inputId);
       const iid = el ? parseInt(el.value, 10) : NaN;
       if (!Number.isInteger(iid) || iid <= 0) {
-        _qaProposedError.set(findingId, 'Enter a valid issue number to attach to.');
+        _qaProposedError.set(findingId, 'Pick an existing issue from the list to attach to.');
         renderProposed();
         return;
       }
