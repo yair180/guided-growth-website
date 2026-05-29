@@ -8978,8 +8978,12 @@
     const GL_BOARD_COLS = [
       { key: 'open',        name: 'Open',        color: 'var(--z7-open)' },
       { key: 'in progress', name: 'In progress', color: 'var(--z7-accent)' },
-      { key: 'testing',     name: 'Testing',     color: '#0fb5ba' }
+      { key: 'testing',     name: 'Testing',     color: '#0fb5ba' },
+      { key: 'done',        name: 'Done',        color: '#3fb950' }
     ];
+    // Workflow labels the board manages (Open carries none; Done = closed issue).
+    const GL_WORKFLOW_LABELS = ['in progress', 'testing'];
+    const GL_COL_LABEL = { 'open': null, 'in progress': 'in progress', 'testing': 'testing', 'done': null };
 
     async function loadGitLabBoard() {
       const el = document.getElementById('z7-board');
@@ -8997,6 +9001,16 @@
           if (!data || !data.has_more) break;
           page++;
         }
+        // Recently-closed issues feed the Done column (capped to the most recent).
+        let cpage = 1; const CLOSED_PAGES = 2;
+        while (cpage <= CLOSED_PAGES) {
+          const qs = new URLSearchParams({ project, state: 'closed', page: String(cpage) });
+          const data = await glFetch('/api/issues?' + qs.toString());
+          const batch = (data && data.issues) || [];
+          all.push(...batch);
+          if (!data || !data.has_more) break;
+          cpage++;
+        }
         _glBoardIssues = all;
         renderGitLabBoard();
       } catch (e) {
@@ -9009,24 +9023,28 @@
       const el = document.getElementById('z7-board');
       if (!el) return;
       const issues = _glBoardIssues || [];
-      const cntEl = document.getElementById('z7-board-count');
-      if (cntEl) cntEl.textContent = issues.length
-        ? (issues.length + ' open issue' + (issues.length === 1 ? '' : 's')) : '';
-      if (!issues.length) { el.innerHTML = '<div class="z7-empty">No open issues.</div>'; return; }
-      const buckets = { open: [], 'in progress': [], testing: [] };
+      const buckets = { open: [], 'in progress': [], testing: [], done: [] };
       issues.forEach(iss => {
+        if (iss.state === 'closed') { buckets.done.push(iss); return; }
         const names = glLabelNames(iss.labels);
         if (names.indexOf('testing') !== -1) buckets.testing.push(iss);
         else if (names.some(n => n === 'in progress' || n === 'in-progress' || n === 'doing' || n === 'wip'))
           buckets['in progress'].push(iss);
         else buckets.open.push(iss);
       });
+      const openCount = buckets.open.length + buckets['in progress'].length + buckets.testing.length;
+      const cntEl = document.getElementById('z7-board-count');
+      if (cntEl) cntEl.textContent = openCount
+        ? (openCount + ' open issue' + (openCount === 1 ? '' : 's')) : '';
+      if (!issues.length) { el.innerHTML = '<div class="z7-empty">No issues.</div>'; return; }
       el.innerHTML = GL_BOARD_COLS.map(c => {
         const list = buckets[c.key] || [];
         const cards = list.length
           ? list.map(glBoardCard).join('')
           : '<div class="z7-board-empty">Nothing here.</div>';
-        return '<div class="z7-board-col">'
+        return '<div class="z7-board-col" data-col="' + c.key + '"'
+          + ' ondragover="glBoardDragOver(event)" ondragleave="glBoardDragLeave(event)"'
+          + ' ondrop="glBoardDrop(event, \'' + c.key + '\')">'
           + '<div class="z7-board-col-h">'
           + '<span class="z7-bc-name"><span class="z7-bc-dot" style="background:' + c.color + '"></span>' + c.name + '</span>'
           + '<span class="z7-bc-count">' + list.length + '</span>'
@@ -9037,8 +9055,10 @@
     }
 
     function glBoardCard(iss) {
-      return '<button type="button" class="z7-board-card" '
-        + 'onclick="glBoardOpenIssue(' + glAttr(iss.project) + ', ' + iss.iid + ')">'
+      return '<div class="z7-board-card" role="button" tabindex="0" draggable="true"'
+        + ' data-iid="' + iss.iid + '" data-project="' + qaEscape(iss.project) + '"'
+        + ' ondragstart="glBoardDragStart(event)" ondragend="glBoardDragEnd(event)"'
+        + ' onclick="glBoardCardClick(event, ' + glAttr(iss.project) + ', ' + iss.iid + ')">'
         + '<div class="z7-board-card-title">' + qaEscape(iss.title) + '</div>'
         + '<div class="z7-board-card-meta">'
         + '<span class="z7-board-card-iid">' + qaEscape(iss.project) + ' #' + iss.iid + '</span>'
@@ -9046,7 +9066,7 @@
         + (glLabelPills(iss.labels) || '')
         + (iss.assignees && iss.assignees.length ? glAvatarStack(iss.assignees, 'sm') : '')
         + '</div>'
-        + '</button>';
+        + '</div>';
     }
 
     // Drill into a card: jump to the Issues view and open the full detail there
@@ -9054,6 +9074,96 @@
     function glBoardOpenIssue(project, iid) {
       setGitLabView('issues');
       openGitLabIssue(project, iid);
+    }
+
+    // ---- BOARD drag-and-drop ----------------------------------------------
+    // Drag a card between columns to change its workflow status. Open/In
+    // progress/Testing are GitLab labels; Done = closed issue. Updates are
+    // optimistic (re-render immediately) and revert if the write fails.
+    let _glDragIid = null, _glDragProject = null, _glDragFrom = null, _glDragMoved = false;
+
+    function glBoardDragStart(ev) {
+      const card = ev.currentTarget;
+      _glDragIid = card.getAttribute('data-iid');
+      _glDragProject = card.getAttribute('data-project');
+      const col = card.closest('.z7-board-col');
+      _glDragFrom = col ? col.getAttribute('data-col') : null;
+      _glDragMoved = true;
+      card.classList.add('dragging');
+      try { ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', _glDragIid || ''); } catch (_e) {}
+    }
+    function glBoardDragEnd(ev) {
+      ev.currentTarget.classList.remove('dragging');
+      document.querySelectorAll('.z7-board-col.drag-over').forEach(c => c.classList.remove('drag-over'));
+      setTimeout(() => { _glDragMoved = false; }, 0);
+    }
+    function glBoardDragOver(ev) {
+      ev.preventDefault();
+      try { ev.dataTransfer.dropEffect = 'move'; } catch (_e) {}
+      ev.currentTarget.classList.add('drag-over');
+    }
+    function glBoardDragLeave(ev) {
+      const col = ev.currentTarget;
+      if (!col.contains(ev.relatedTarget)) col.classList.remove('drag-over');
+    }
+    function glBoardDrop(ev, toCol) {
+      ev.preventDefault();
+      ev.currentTarget.classList.remove('drag-over');
+      const iid = _glDragIid, project = _glDragProject, from = _glDragFrom;
+      _glDragIid = _glDragProject = _glDragFrom = null;
+      if (!iid || from === toCol) return;
+      glMoveBoardCard(project, parseInt(iid, 10), from, toCol);
+    }
+    // A real click (no drag) opens the issue; a click synthesised after a drag is swallowed.
+    function glBoardCardClick(ev, project, iid) {
+      if (_glDragMoved) { ev.preventDefault(); return; }
+      glBoardOpenIssue(project, iid);
+    }
+
+    // Mutate the in-memory issue so it buckets into `toCol`, ready for re-render.
+    function glApplyBoardColLocally(iss, toCol) {
+      if (toCol === 'done') { iss.state = 'closed'; return; }
+      iss.state = 'opened';
+      iss.labels = (iss.labels || []).filter(l => {
+        const n = ((l && typeof l === 'object') ? (l.name || '') : String(l || '')).toLowerCase();
+        return ['in progress', 'in-progress', 'doing', 'wip', 'testing'].indexOf(n) === -1;
+      });
+      const want = GL_COL_LABEL[toCol];
+      if (want) iss.labels.push(want);
+    }
+
+    async function glMoveBoardCard(project, iid, from, toCol) {
+      const iss = (_glBoardIssues || []).find(i => i.iid === iid && i.project === project);
+      if (!iss) return;
+      const prevLabels = (iss.labels || []).slice();
+      const prevState = iss.state;
+      glApplyBoardColLocally(iss, toCol);
+      renderGitLabBoard();
+      try {
+        if (toCol === 'done') {
+          if (prevState !== 'closed') {
+            await glFetch('/api/issue/state', { method: 'PUT', body: { project, iid, state: 'close' } });
+          }
+        } else {
+          if (prevState === 'closed') {
+            await glFetch('/api/issue/state', { method: 'PUT', body: { project, iid, state: 'reopen' } });
+          }
+          const want = GL_COL_LABEL[toCol];
+          const remove = GL_WORKFLOW_LABELS.filter(l => l !== want);
+          const add = want ? [want] : [];
+          if (add.length || remove.length) {
+            await glFetch('/api/issue/labels', {
+              method: 'PUT',
+              body: { project, iid, add_labels: add.join(','), remove_labels: remove.join(',') }
+            });
+          }
+        }
+      } catch (e) {
+        iss.labels = prevLabels; iss.state = prevState;
+        renderGitLabBoard();
+        if (e.unauthorized) return glCheckConnection();
+        alert('Could not move issue: ' + e.message);
+      }
     }
 
     // ---- ISSUES ------------------------------------------------------------
