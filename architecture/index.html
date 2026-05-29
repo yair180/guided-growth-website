@@ -9052,7 +9052,8 @@
     function glRenderIssuesList(listEl) {
       if (!_glIssues.length) { listEl.innerHTML = '<div class="z7-empty">No issues match these filters.</div>'; return; }
       listEl.innerHTML = _glIssues.map(iss => {
-        const goBtn = iss.screen ? glScreenJumpBtns(iss.screen) : '';
+        const _scr = glScreenForIssue(iss);
+        const goBtn = _scr ? glScreenJumpBtns(_scr) : '';
         return '<button type="button" class="z7-row ' + glStateClass(iss.state) + '" '
           + 'onclick="openGitLabIssue(' + glAttr(iss.project) + ', ' + iss.iid + ')">'
           + '<div class="z7-row-head">'
@@ -9061,7 +9062,7 @@
           + '<span class="z7-badge ' + glStateClass(iss.state) + '">' + qaEscape(glStateLabel(iss.state)) + '</span>'
           + '</div>'
           + '<div class="z7-row-meta">'
-          + (iss.screen ? '<span class="z7-screen-chip">' + qaEscape(iss.screen) + '</span>' : '')
+          + (_scr ? '<span class="z7-screen-chip">' + qaEscape(_scr) + '</span>' : '')
           + (glLabelPills(iss.labels) || '')
           + (iss.user_notes_count ? '<span>&#x1F4AC; ' + iss.user_notes_count + '</span>' : '')
           + (iss.assignees && iss.assignees.length ? glAvatarStack(iss.assignees, 'sm') : '')
@@ -9094,7 +9095,8 @@
       const toggleBtn = isOpen
         ? '<button type="button" class="z7-btn-ghost danger" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'close\', this)">Close issue</button>'
         : '<button type="button" class="z7-btn-ghost reopen" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'reopen\', this)">Reopen issue</button>';
-      const goBtn = iss.screen ? glScreenJumpBtns(iss.screen) : '';
+      const _scr = glScreenForIssue(iss);
+      const goBtn = _scr ? glScreenJumpBtns(_scr) : '';
       detail.innerHTML =
         '<div id="z7-detail">'
         + '<div class="z7-detail-head">'
@@ -9150,9 +9152,11 @@
                 + '" target="_blank" rel="noopener" style="color:var(--z7-accent);text-decoration:none">'
                 + qaEscape(item.milestone.title) + '</a></div>'
             : '<div class="z7-meta-none">None</div>') + '</div>');
-      if (item.screen) {
+      const _gridScreen = item.screen || glScreenForIssue(item);
+      if (_gridScreen) {
         blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Screen</div>'
-          + '<div class="z7-meta-row"><span class="z7-screen-chip">' + qaEscape(item.screen) + '</span></div></div>');
+          + '<div class="z7-meta-row"><span class="z7-screen-chip">' + qaEscape(_gridScreen) + '</span>'
+          + glScreenJumpBtns(_gridScreen) + '</div></div>');
       }
       if (item.due_date) {
         blocks.push('<div class="z7-meta-blk"><div class="z7-meta-h">Due</div>'
@@ -10031,6 +10035,25 @@
         const e = (typeof SCREEN_INDEX !== 'undefined') && SCREEN_INDEX.find(s => s.i === name);
         return !!(e && e.f);
       } catch (_e) { return false; }
+    }
+
+    // Resolve the screen for an issue. Prefer the explicit screen field the
+    // worker derives from labels; fall back to the issue title prefix, since
+    // our issue titles follow the "SCREEN-ID: description" convention (e.g.
+    // "AUTH-LOGIN: Go back arrow visible..."). Only trust a derived id when it
+    // is a real screen in SCREEN_INDEX, so task-id prefixes (P1-01:) and other
+    // noise never produce a dead "See in QA" jump.
+    function glScreenForIssue(iss) {
+      if (!iss) return '';
+      if (iss.screen) return iss.screen;
+      const title = iss.title || '';
+      const m = title.match(/^\s*([A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+)\s*[:–—-]/);
+      if (!m) return '';
+      const cand = m[1];
+      try {
+        if (typeof SCREEN_INDEX !== 'undefined' && SCREEN_INDEX.some(s => s.i === cand)) return cand;
+      } catch (_e) {}
+      return '';
     }
 
     // The cluster of "jump to this screen" buttons shown on issue rows/detail.
