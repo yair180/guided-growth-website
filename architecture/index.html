@@ -5527,12 +5527,14 @@
         const estBadge = t.est
           ? `<span class="z4-task-est" title="Estimated hours">Estimated: ${t.est}h</span>`
           : "";
+        const taskIdJs = t.i.replace(/'/g, "\\'");
         html += `<div class="z4-task-row${activeCls}${priorityCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row${t.pr ? ` · Priority: ${t.pr}` : ""}">
           <span class="z4-task-status z4-${statusCls}">${dot}</span>
           <span class="z4-task-id">${t.i}</span>
           <span class="z4-task-title">${titleEsc}</span>
           ${wtBadge}
           ${estBadge}
+          <button type="button" class="z4-gl-btn" onclick="event.stopPropagation(); glOpenIssuesForTask('${taskIdJs}')" title="Find this task's GitLab issue (matched by ${t.i} in the issue title)">GitLab →</button>
           ${hasWalk ? `<button type="button" class="z4-walk-btn" onclick="event.stopPropagation(); jumpToWalkthrough('${t.i}')" title="Open walkthrough in Engineering view">Walkthrough →</button>` : `<span class="z4-walk-placeholder" title="No walkthrough — sheet only">—</span>`}
         </div>`;
       });
@@ -8900,6 +8902,8 @@
           if (_se) _se.value = _glPendingSearchFilter;
           const _st = document.getElementById('z7-issues-state');
           if (_st) _st.value = 'all';
+          const _pr = document.getElementById('z7-issues-project');
+          if (_pr) _pr.value = 'gg-mvp';
           const _sf2 = document.getElementById('z7-issues-screen');
           if (_sf2) _sf2.value = '';
           _glPendingSearchFilter = null;
@@ -10041,6 +10045,17 @@
     function glOpenIssuesForScreen(name, ev) {
       if (ev) ev.stopPropagation();
       _glPendingScreenFilter = name || '';
+      setZoomLevel(7);          // runs loadGitLabTab -> connection check -> forced setGitLabView
+      _glView = 'issues';       // set AFTER setZoomLevel so restoreGitLabView can't clobber it
+    }
+
+    // Tasks / Master Sheet (zoom 4) -> GitLab (zoom 7): open the Issues list
+    // searched by task id. The Sheet->GitLab sync writes the task id into the
+    // issue title as [P1-XX] or P1-XX:, so a title search lands on the synced
+    // issue (or shows "no issues" when the task was never filed to GitLab).
+    function glOpenIssuesForTask(taskId, ev) {
+      if (ev) ev.stopPropagation();
+      _glPendingSearchFilter = taskId || '';
       setZoomLevel(7);          // runs loadGitLabTab -> connection check -> forced setGitLabView
       _glView = 'issues';       // set AFTER setZoomLevel so restoreGitLabView can't clobber it
     }
