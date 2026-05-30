@@ -3263,7 +3263,7 @@
         </g>
         <g>
           <rect x="500" y="315" width="160" height="44" rx="6" fill="#dc2626" stroke="#f87171" stroke-width="1" />
-          <text x="580" y="332" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="-apple-system, sans-serif">Cartesia Ink</text>
+          <text x="580" y="332" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="-apple-system, sans-serif">Soniox / Gladia</text>
           <text x="580" y="349" text-anchor="middle" fill="#fff" font-size="9" font-family="-apple-system, sans-serif">speech-to-text</text>
         </g>
         <g>
@@ -3546,7 +3546,7 @@
       <strong>How to read this view:</strong> Same five regions as the System view, opened up to show the actual vendors and components.
       <br><br>
       The <strong>Frontend</strong> is React + Vite hosted on Vercel, with three React hooks (<code>useRealtimeVoice</code> for Path 1, <code>useAsync</code> for Path 2, <code>useLLM</code> for Path 3).
-      The <strong>Voice Layer</strong> is Vapi (orchestrator) plus Cartesia (Ink for STT, Sonic-3 for TTS, Sonic API for direct TTS).
+      The <strong>Voice Layer</strong> is Vapi (orchestrator), Soniox / Gladia for STT, and Cartesia (Sonic 3.5) for TTS.
       The <strong>Backend</strong> centers on <code>callLLM()</code> with the /api/context endpoint, tool execution, rate limiting and anonymization.
       The <strong>LLM</strong> is GPT-4o mini via OpenAI's API (swappable to Gemini, Groq, or Claude).
       <strong>Memory</strong> is Supabase: Auth (used by Frontend), Database (used by Backend), Storage (used by Frontend for MP3s).
