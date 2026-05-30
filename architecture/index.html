@@ -597,25 +597,23 @@
        sign out is reachable from every zoom level, not buried in the GitLab tab.
        Only shown when the board is gated by GitLab login (GL_REQUIRE_LOGIN). */
     #gl-userchip {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 4px 6px 4px 10px; border: 1px solid #1e3a5f;
-      border-radius: 14px; background: rgba(13, 148, 136, 0.12);
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0; border: 0; border-radius: 0; background: transparent;
     }
     #gl-userchip .gl-uc-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: #34d399; flex: none;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: #34d399; flex: none; opacity: 0.7;
     }
-    #gl-userchip .gl-uc-name {
-      font-size: 11px; color: #cfe0f2; font-weight: 600;
-      max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
+    /* Name is hidden to keep the top bar clean; the dot + Sign out are enough. */
+    #gl-userchip .gl-uc-name { display: none; }
     #gl-userchip .gl-uc-out {
-      font-size: 11px; font-family: inherit; cursor: pointer;
-      background: transparent; color: #8fa8c4;
-      border: 1px solid #1e3a5f; border-radius: 10px; padding: 2px 9px;
-      transition: border-color 0.12s, color 0.12s;
+      font-size: 10.5px; font-family: inherit; cursor: pointer;
+      background: transparent; color: #5f7691;
+      border: 0; border-radius: 8px; padding: 2px 4px;
+      transition: color 0.12s;
     }
-    #gl-userchip .gl-uc-out:hover { border-color: #e06c75; color: #e06c75; }
+    #gl-userchip .gl-uc-out:hover { color: #e06c75; }
+    .hub-ver { font-size: 10px; color: #46586f; font-weight: 600; letter-spacing: 0.3px; margin-left: 2px; }
 
     /* Sub-nav for the merged Architecture tab. A single fixed strip under the
        main tab bar, revealed only on the three architecture zooms (1 System /
@@ -3035,12 +3033,8 @@
     <button type="button" class="zoom-btn" data-zoom="6" onclick="setZoomLevel(6)">
       <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#34d399;margin-right:6px;vertical-align:middle"></span><span class="zoom-num">5</span>QA
     </button>
-    <button type="button" class="zoom-btn" data-zoom="8" onclick="setZoomLevel(8)" title="Product and Engineering roadmap: Now / Next / Later / Vision">
-      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-1px"><path d="M2 4h7"/><path d="M2 8h12"/><path d="M2 12h5"/><circle cx="12" cy="4" r="1.4"/><circle cx="9" cy="12" r="1.4"/></svg><span class="zoom-num">6</span>Roadmap
-    </button>
     <span style="flex: 1"></span>
     <div id="text-size-ctl" title="Make all text and UI bigger or smaller. Click the percentage to reset to 100%.">
-      <span class="ts-label">Text</span>
       <button type="button" class="ts-btn" onclick="adjustTextSize(-1)" title="Smaller">A&minus;</button>
       <span class="ts-val" id="ts-val" onclick="resetTextSize()" title="Reset to 100%">100%</span>
       <button type="button" class="ts-btn" onclick="adjustTextSize(1)" title="Bigger">A+</button>
@@ -3050,7 +3044,7 @@
       <span class="gl-uc-name" id="gl-uc-name"></span>
       <button type="button" class="gl-uc-out" onclick="glSignOut()" title="Sign out of the board">Sign out</button>
     </div>
-    <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.5</span>
+    <span class="hub-ver" title="Hub version">v5.5</span>
   </div>
 
   <!-- Sub-nav for the merged Architecture tab. Shown only on zooms 1/2/3 (toggled
@@ -11118,16 +11112,33 @@
       } catch (_e) { return false; }
     }
 
+    // A screen id is "jumpable" only if the UI can actually act on it: the QA
+    // dashboard knows it (QA_FLOW_ORDER) or it has a Figma frame (SCREEN_INDEX).
+    // Validating against this union means the worker can hand us a best-effort
+    // screen (incl. freeform-resolved ids) without us ever rendering a dead jump
+    // button. The catch-all "Global / cross-screen" bucket is in neither list,
+    // so it's correctly treated as not-a-screen here.
+    function glScreenIsJumpable(name) {
+      if (!name) return false;
+      try {
+        if (typeof QA_FLOW_ORDER !== 'undefined' && QA_FLOW_ORDER.indexOf(name) !== -1) return true;
+        if (typeof SCREEN_INDEX !== 'undefined' && SCREEN_INDEX.some(s => s.i === name)) return true;
+      } catch (_e) {}
+      return false;
+    }
+
     // Resolve the screen for an issue. Prefer the explicit screen field the
-    // worker derives from labels; fall back to the issue title prefix, since
-    // our issue titles follow the "SCREEN-ID: description" convention (e.g.
-    // "AUTH-LOGIN: Go back arrow visible..."). Split on the FIRST colon so
-    // double-dash screen ids (ONBOARD-01--FORM) survive intact. Only trust a
-    // derived id when it is a real screen in SCREEN_INDEX, so task-id prefixes
-    // (P1-01:) and other noise never produce a dead "See in QA" jump.
+    // worker resolves (label -> legacy iid map -> freeform "Screen:" body line),
+    // but only trust it when it's a jumpable screen so skill-filed bugs light up
+    // the cross-links without ever yielding a dead jump. Fall back to the issue
+    // title prefix, since our issue titles follow the "SCREEN-ID: description"
+    // convention (e.g. "AUTH-LOGIN: Go back arrow visible..."). Split on the
+    // FIRST colon so double-dash screen ids (ONBOARD-01--FORM) survive intact.
+    // Only trust a derived id when it is a real screen in SCREEN_INDEX, so
+    // task-id prefixes (P1-01:) and other noise never produce a dead jump.
     function glScreenForIssue(iss) {
       if (!iss) return '';
-      if (iss.screen) return iss.screen;
+      if (iss.screen && glScreenIsJumpable(iss.screen)) return iss.screen;
       const title = iss.title || '';
       const colon = title.indexOf(':');
       if (colon < 1) return '';
