@@ -1314,6 +1314,12 @@
       font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 7px; cursor: pointer;
     }
     #rm-refresh:hover { background: #eef1f5; }
+    #rm-topbar .rm-assignee-select {
+      border: 1px solid var(--rm-border); background: var(--rm-bg); color: var(--rm-text-2);
+      font-size: 12.5px; font-weight: 600; padding: 6px 11px; border-radius: 7px; cursor: pointer;
+      font-family: inherit; outline: none; max-width: 200px;
+    }
+    #rm-topbar .rm-assignee-select:focus { border-color: var(--rm-accent); }
     #rm-meta { margin-left: auto; font-size: 12px; color: var(--rm-text-3); }
     #rm-board {
       flex: 1; min-height: 0; display: flex; gap: 14px; padding: 16px 18px;
@@ -1454,6 +1460,24 @@
     .z7-select:focus, .z7-input:focus { border-color: var(--z7-accent); }
     .z7-input.z7-search { min-width: 220px; }
     .z7-filters-spacer { margin-left: auto; }
+
+    /* Segmented control for the Product / Engineering squad split.
+       Mirrors GitLab's gl-segmented-control, themed via the z7 palette. */
+    .z7-seg {
+      display: inline-flex; align-items: stretch;
+      border: 1px solid var(--z7-border); border-radius: 6px; overflow: hidden;
+      background: var(--z7-input-bg); height: 34px;
+    }
+    .z7-seg button {
+      appearance: none; border: 0; background: transparent; cursor: pointer;
+      font: inherit; font-size: 13px; color: var(--z7-text-2);
+      padding: 0 13px; border-right: 1px solid var(--z7-border);
+      line-height: 1; white-space: nowrap; transition: background .12s ease, color .12s ease;
+    }
+    .z7-seg button:last-child { border-right: 0; }
+    .z7-seg button:hover:not(.active) { background: var(--z7-panel-3); color: var(--z7-text); }
+    .z7-seg button.active { background: var(--z7-accent); color: #fff; font-weight: 600; }
+    .z7-seg button:focus-visible { outline: 2px solid var(--z7-accent); outline-offset: -2px; }
 
     /* Board: status columns (Open / In progress / Testing) */
     #z7-board { display: flex; gap: 14px; align-items: flex-start; overflow-x: auto; padding-bottom: 8px; }
@@ -4091,6 +4115,32 @@
             </select>
           </div>
           <div class="z7-filter-group">
+            <label>Squad</label>
+            <div class="z7-seg" id="z7-issues-squad" role="group" aria-label="Squad filter">
+              <button type="button" class="active" data-squad="all" onclick="glIssuesSetSquad('all')">All</button>
+              <button type="button" data-squad="product" onclick="glIssuesSetSquad('product')">Product</button>
+              <button type="button" data-squad="eng" onclick="glIssuesSetSquad('eng')">Engineering</button>
+            </div>
+          </div>
+          <div class="z7-filter-group">
+            <label for="z7-issues-assignee">Assignee</label>
+            <select class="z7-select" id="z7-issues-assignee" onchange="glApplyIssueFilters()">
+              <option value="">Anyone</option>
+            </select>
+          </div>
+          <div class="z7-filter-group">
+            <label for="z7-issues-sort">Sort</label>
+            <select class="z7-select" id="z7-issues-sort" onchange="glApplyIssueFilters()">
+              <option value="updated_desc">Updated, newest</option>
+              <option value="updated_asc">Updated, oldest</option>
+              <option value="created_desc">Created, newest</option>
+              <option value="created_asc">Created, oldest</option>
+              <option value="iid_desc">Issue number, high to low</option>
+              <option value="iid_asc">Issue number, low to high</option>
+              <option value="title_asc">Title, A to Z</option>
+            </select>
+          </div>
+          <div class="z7-filter-group">
             <label for="z7-issues-search">Search</label>
             <input class="z7-input z7-search" id="z7-issues-search" type="search" placeholder="Filter by title…" autocomplete="off" />
           </div>
@@ -4114,6 +4164,32 @@
               <option value="gg-mvp" selected>gg-mvp</option>
               <option value="gg-spec">gg-spec</option>
               <option value="all">All projects</option>
+            </select>
+          </div>
+          <div class="z7-filter-group">
+            <label>Squad</label>
+            <div class="z7-seg" id="z7-board-squad" role="group" aria-label="Squad filter">
+              <button type="button" class="active" data-squad="all" onclick="glBoardSetSquad('all')">All</button>
+              <button type="button" data-squad="product" onclick="glBoardSetSquad('product')">Product</button>
+              <button type="button" data-squad="eng" onclick="glBoardSetSquad('eng')">Engineering</button>
+            </div>
+          </div>
+          <div class="z7-filter-group">
+            <label for="z7-board-assignee">Assignee</label>
+            <select class="z7-select" id="z7-board-assignee" onchange="renderGitLabBoard()">
+              <option value="">Anyone</option>
+            </select>
+          </div>
+          <div class="z7-filter-group">
+            <label for="z7-board-sort">Sort</label>
+            <select class="z7-select" id="z7-board-sort" onchange="renderGitLabBoard()">
+              <option value="updated_desc">Updated, newest</option>
+              <option value="updated_asc">Updated, oldest</option>
+              <option value="created_desc">Created, newest</option>
+              <option value="created_asc">Created, oldest</option>
+              <option value="iid_desc">Issue number, high to low</option>
+              <option value="iid_asc">Issue number, low to high</option>
+              <option value="title_asc">Title, A to Z</option>
             </select>
           </div>
           <div class="z7-filters-spacer"></div>
@@ -4190,14 +4266,14 @@
       <section id="z7-view-roadmap" style="display:none">
         <div id="rm-topbar">
           <div><span class="rm-title">Roadmap</span> <span class="rm-sub">Now &middot; Next &middot; Later &middot; Vision &middot; backed by gg-mvp issues</span></div>
-          <div class="rm-seg" id="rm-squad-seg" role="group" aria-label="Lane filter">
+          <div class="rm-seg" id="rm-squad-seg" role="group" aria-label="Squad filter">
             <button type="button" class="active" data-squad="all" onclick="rmSetSquad('all')">All</button>
             <button type="button" data-squad="product" onclick="rmSetSquad('product')">Product</button>
             <button type="button" data-squad="eng" onclick="rmSetSquad('eng')">Engineering</button>
           </div>
-          <label class="rm-toggle" id="rm-timothy-toggle" title="Show only items assigned to Timothy">
-            <input type="checkbox" onchange="rmToggleTimothy(this.checked)"> Timothy view
-          </label>
+          <select class="z7-select rm-assignee-select" id="rm-assignee" onchange="rmSetAssignee(this.value)" title="Filter by assignee" aria-label="Assignee filter">
+            <option value="">Anyone</option>
+          </select>
           <button type="button" id="rm-refresh" onclick="loadRoadmap(true)" title="Reload from GitLab">&#8635; Refresh</button>
           <span id="rm-meta"></span>
         </div>
@@ -9361,8 +9437,11 @@
     let _glSearchDebounce = null;
     let _glDocsLoaded = false;         // docs tree fetched once per session
     const GL_VIEW_KEY = 'gg_arch_z7_view';
-    let _glIssues = [];                 // last fetched issues (single clean list, no kanban)
-    let _glBoardIssues = [];            // last fetched open issues for the Board status columns
+    let _glIssues = [];                 // issues after client-side squad/assignee/sort (what renders)
+    let _glIssuesRaw = [];              // last fetched issues, before client-side filtering
+    let _glIssueSquad = 'all';          // Issues squad filter: all | product | eng
+    let _glBoardIssues = [];            // last fetched open + recently-closed issues for the Board
+    let _glBoardSquad = 'all';          // Board squad filter: all | product | eng
     let _glAwardSupported = true;       // flips false on first 404 from /issue/award
     // Cross-zoom round-trip: when QA (zoom 6) deep-links into an issue here, we
     // remember to show a "Back to QA" affordance and queue the issue to open
@@ -9611,6 +9690,65 @@
     // Plain lowercase names of labels (objects or strings), for grouping logic.
     function glLabelNames(labels) {
       return (labels || []).map(l => ((l && typeof l === 'object') ? (l.name || '') : String(l || '')).toLowerCase());
+    }
+
+    // ---- Shared squad / assignee / sort logic (Issues + Board) -------------
+    // Squad reads the same roadmap::squad::<product|eng> scoped label the
+    // Sheet->GitLab sync stamps, so the split here matches the Roadmap exactly.
+    function glSquadOf(iss) {
+      for (const l of ((iss && iss.labels) || [])) {
+        const nm = (l && typeof l === 'object') ? (l.name || '') : String(l || '');
+        const m = nm.match(/^roadmap::squad::(product|eng)$/i);
+        if (m) return m[1].toLowerCase();
+      }
+      return '';
+    }
+    function glMatchSquad(iss, squad) {
+      return (!squad || squad === 'all') ? true : glSquadOf(iss) === squad;
+    }
+    // Assignee match. '' = anyone; '__none__' = unassigned; else username.
+    function glMatchAssignee(iss, username) {
+      if (!username) return true;
+      const arr = (iss && iss.assignees) || [];
+      if (username === '__none__') return arr.length === 0;
+      return arr.some(a => a && a.username === username);
+    }
+    // Build a stable, de-duplicated assignee <option> list from a set of issues.
+    function glAssigneeOptions(issues) {
+      const seen = new Map(); // username -> display name
+      let anyUnassigned = false;
+      (issues || []).forEach(iss => {
+        const arr = (iss.assignees || []);
+        if (!arr.length) anyUnassigned = true;
+        arr.forEach(a => { if (a && a.username && !seen.has(a.username)) seen.set(a.username, a.name || a.username); });
+      });
+      const opts = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+        .map(([u, n]) => ({ value: u, label: n }));
+      if (anyUnassigned) opts.push({ value: '__none__', label: 'Unassigned' });
+      return opts;
+    }
+    // Repopulate an assignee <select>, preserving the current choice if it still exists.
+    function glFillAssigneeSelect(selectEl, issues) {
+      if (!selectEl) return;
+      const cur = selectEl.value;
+      const opts = glAssigneeOptions(issues);
+      selectEl.innerHTML = '<option value="">Anyone</option>'
+        + opts.map(o => '<option value="' + qaEscape(o.value) + '">' + qaEscape(o.label) + '</option>').join('');
+      if (cur && [...selectEl.options].some(o => o.value === cur)) selectEl.value = cur;
+    }
+    function glTime(s) { const t = s ? Date.parse(s) : 0; return isNaN(t) ? 0 : t; }
+    const GL_SORT_FNS = {
+      updated_desc: (a, b) => glTime(b.updated_at) - glTime(a.updated_at),
+      updated_asc:  (a, b) => glTime(a.updated_at) - glTime(b.updated_at),
+      created_desc: (a, b) => glTime(b.created_at) - glTime(a.created_at),
+      created_asc:  (a, b) => glTime(a.created_at) - glTime(b.created_at),
+      iid_desc:     (a, b) => (b.iid || 0) - (a.iid || 0),
+      iid_asc:      (a, b) => (a.iid || 0) - (b.iid || 0),
+      title_asc:    (a, b) => String(a.title || '').localeCompare(String(b.title || '')),
+    };
+    function glSortIssues(issues, key) {
+      const fn = GL_SORT_FNS[key];
+      return fn ? issues.slice().sort(fn) : (issues || []).slice();
     }
 
     // Emoji name -> glyph map for reactions.
@@ -9887,10 +10025,24 @@
       }
     }
 
+    // Squad segmented control on the Board (client-side, no refetch).
+    function glBoardSetSquad(sq) {
+      _glBoardSquad = sq;
+      document.querySelectorAll('#z7-board-squad button').forEach(b =>
+        b.classList.toggle('active', b.dataset.squad === sq));
+      renderGitLabBoard();
+    }
+
     function renderGitLabBoard() {
       const el = document.getElementById('z7-board');
       if (!el) return;
-      const issues = _glBoardIssues || [];
+      const raw = _glBoardIssues || [];
+      // Keep the assignee dropdown populated from the full (unfiltered) set so
+      // every person stays selectable regardless of the active filter.
+      glFillAssigneeSelect(document.getElementById('z7-board-assignee'), raw);
+      const assignee = (document.getElementById('z7-board-assignee') || {}).value || '';
+      const sort = (document.getElementById('z7-board-sort') || {}).value || 'updated_desc';
+      const issues = raw.filter(iss => glMatchSquad(iss, _glBoardSquad) && glMatchAssignee(iss, assignee));
       const buckets = { open: [], 'in progress': [], testing: [], done: [] };
       issues.forEach(iss => {
         if (iss.state === 'closed') { buckets.done.push(iss); return; }
@@ -9904,9 +10056,9 @@
       const cntEl = document.getElementById('z7-board-count');
       if (cntEl) cntEl.textContent = openCount
         ? (openCount + ' open issue' + (openCount === 1 ? '' : 's')) : '';
-      if (!issues.length) { el.innerHTML = '<div class="z7-empty">No issues.</div>'; return; }
+      if (!issues.length) { el.innerHTML = '<div class="z7-empty">No issues match these filters.</div>'; return; }
       el.innerHTML = GL_BOARD_COLS.map(c => {
-        const list = buckets[c.key] || [];
+        const list = glSortIssues(buckets[c.key] || [], sort);
         const cards = list.length
           ? list.map(glBoardCard).join('')
           : '<div class="z7-board-empty">Nothing here.</div>';
@@ -10050,8 +10202,31 @@
       if (screen) qs.set('screen', screen);
       if (search) qs.set('search', search);
       glFetch('/api/issues?' + qs.toString())
-        .then(data => { _glIssues = (data && data.issues) || []; renderGitLabIssues(); })
+        .then(data => {
+          _glIssuesRaw = (data && data.issues) || [];
+          glFillAssigneeSelect(document.getElementById('z7-issues-assignee'), _glIssuesRaw);
+          glApplyIssueFilters();
+        })
         .catch(e => glHandleListError(listEl, e));
+    }
+
+    // Squad segmented control on the Issues view (client-side, no refetch).
+    function glIssuesSetSquad(sq) {
+      _glIssueSquad = sq;
+      document.querySelectorAll('#z7-issues-squad button').forEach(b =>
+        b.classList.toggle('active', b.dataset.squad === sq));
+      glApplyIssueFilters();
+    }
+
+    // Apply squad + assignee filters and the chosen sort to the fetched issues,
+    // then paint. Runs entirely client-side over _glIssuesRaw.
+    function glApplyIssueFilters() {
+      const assignee = (document.getElementById('z7-issues-assignee') || {}).value || '';
+      const sort = (document.getElementById('z7-issues-sort') || {}).value || 'updated_desc';
+      let list = (_glIssuesRaw || []).filter(iss =>
+        glMatchSquad(iss, _glIssueSquad) && glMatchAssignee(iss, assignee));
+      _glIssues = glSortIssues(list, sort);
+      renderGitLabIssues();
     }
 
     // Single clean GitLab-style list (no kanban). Sets the count hint, then paints.
@@ -11368,9 +11543,8 @@
       'infra-cost': 'Infra & Cost',
       'branching-ci': 'Branching & CI',
     };
-    const TIMOTHY_USER = 'dionisius.timothyjm';
 
-    let _rmItems = null, _rmSquad = 'all', _rmTimothy = false, _rmLoading = false;
+    let _rmItems = null, _rmSquad = 'all', _rmAssignee = '', _rmLoading = false;
 
     function epicLabel(slug) {
       if (!slug) return null;
@@ -11388,11 +11562,24 @@
         b.classList.toggle('active', b.dataset.squad === sq));
       renderRoadmap();
     };
-    window.rmToggleTimothy = function (on) {
-      _rmTimothy = !!on;
-      document.getElementById('rm-timothy-toggle').classList.toggle('on', _rmTimothy);
+    window.rmSetAssignee = function (val) {
+      _rmAssignee = val || '';
       renderRoadmap();
     };
+    // Repopulate the roadmap assignee dropdown from the loaded items
+    // (Timothy and everyone else show up here automatically).
+    function rmFillAssignee() {
+      const sel = document.getElementById('rm-assignee');
+      if (!sel) return;
+      const cur = sel.value;
+      const set = new Set(); let anyNone = false;
+      (_rmItems || []).forEach(i => { if (i.assignee) set.add(i.assignee); else anyNone = true; });
+      const names = [...set].sort((a, b) => a.localeCompare(b));
+      sel.innerHTML = '<option value="">Anyone</option>'
+        + names.map(u => '<option value="' + esc(u) + '">@' + esc(u) + '</option>').join('')
+        + (anyNone ? '<option value="__none__">Unassigned</option>' : '');
+      if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+    }
 
     window.loadRoadmap = async function (force) {
       if (_rmLoading) return;
@@ -11417,7 +11604,11 @@
     function filtered() {
       let items = _rmItems || [];
       if (_rmSquad !== 'all') items = items.filter(i => i.squad === _rmSquad);
-      if (_rmTimothy) items = items.filter(i => i.assignee === TIMOTHY_USER);
+      if (_rmAssignee) {
+        items = _rmAssignee === '__none__'
+          ? items.filter(i => !i.assignee)
+          : items.filter(i => i.assignee === _rmAssignee);
+      }
       return items;
     }
 
@@ -11461,6 +11652,7 @@
       const board = document.getElementById('rm-board');
       if (!board) return;
       if (!_rmItems) { board.innerHTML = '<div id="rm-loading">Loading roadmap&hellip;</div>'; return; }
+      rmFillAssignee();
       const items = filtered();
       const buckets = { now: [], next: [], later: [], vision: [], unsorted: [] };
       items.forEach(i => { (buckets[i.phase] || buckets.unsorted).push(i); });
