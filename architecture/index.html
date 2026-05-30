@@ -1331,6 +1331,47 @@
     .z7-board-card-iid { font-size: 11px; color: var(--z7-text-3); font-variant-numeric: tabular-nums; }
     .z7-board-empty { color: var(--z7-text-3); font-size: 12px; padding: 16px 4px; text-align: center; }
 
+    /* Team "Live now" strip — live agent sessions across the team, polled every 60s.
+       Separate data source from the Yair OS board; reuses card styling only. */
+    #z7-live-strip {
+      flex: 0 0 auto; padding: 10px 14px 12px; background: var(--z7-panel-2);
+      border-bottom: 1px solid var(--z7-border);
+    }
+    .z7-live-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .z7-live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #2ecc71;
+      box-shadow: 0 0 0 0 rgba(46,204,113,0.6); animation: z7livePulse 2s infinite;
+    }
+    @keyframes z7livePulse {
+      0%   { box-shadow: 0 0 0 0 rgba(46,204,113,0.5); }
+      70%  { box-shadow: 0 0 0 6px rgba(46,204,113,0); }
+      100% { box-shadow: 0 0 0 0 rgba(46,204,113,0); }
+    }
+    .z7-live-title { font-size: 12px; font-weight: 600; color: var(--z7-text); letter-spacing: .02em; }
+    .z7-live-sub { font-size: 11px; color: var(--z7-text-3); font-variant-numeric: tabular-nums; }
+    .z7-live-cards { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+    .z7-live-empty { color: var(--z7-text-3); font-size: 12px; padding: 6px 2px; }
+    .z7-live-card {
+      flex: 0 0 auto; min-width: 180px; max-width: 240px; display: block;
+      padding: 8px 10px; border: 1px solid var(--z7-border); border-radius: 8px;
+      background: var(--z7-panel-3); text-decoration: none; transition: border-color .15s;
+    }
+    a.z7-live-card:hover { border-color: var(--z7-accent); }
+    .z7-live-card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+    .z7-live-person { font-size: 12.5px; font-weight: 600; color: var(--z7-text); flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .z7-live-tool {
+      font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+      color: var(--z7-text-2); background: var(--z7-panel); border: 1px solid var(--z7-border);
+      border-radius: 4px; padding: 1px 5px;
+    }
+    .z7-live-stat { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+    .z7-live-stat.active { background: #2ecc71; }
+    .z7-live-stat.idle { background: var(--z7-text-3); }
+    .z7-live-repo { font-size: 11.5px; color: var(--z7-accent); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .z7-live-ws { font-size: 11px; color: var(--z7-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+    .z7-live-act { font-size: 10.5px; color: var(--z7-text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px; }
+    .z7-live-age { font-size: 10px; color: var(--z7-text-3); font-variant-numeric: tabular-nums; margin-top: 3px; }
+
     /* Results-count line above the issues list */
     .z7-count-hint {
       display: block; font-size: 11.5px; color: var(--z7-text-2);
@@ -3801,6 +3842,19 @@
       <button type="button" class="z7-subnav-btn" data-view="board" onclick="setGitLabView('board')">Board</button>
       <button type="button" class="z7-subnav-btn" data-view="mrs" onclick="setGitLabView('mrs')">Merge Requests</button>
     </div>
+    <!-- Team "Now": live agent sessions (tool-agnostic heartbeats, public read).
+         Persistent across GitLab sub-views and login state so the team and each
+         other's agents can see what is in flight and avoid duplicating work. -->
+    <div id="z7-live-strip" aria-label="Team live now">
+      <div class="z7-live-head">
+        <span class="z7-live-dot"></span>
+        <span class="z7-live-title">Live now</span>
+        <span class="z7-live-sub" id="z7-live-sub"></span>
+      </div>
+      <div id="z7-live-cards" class="z7-live-cards">
+        <div class="z7-live-empty">Loading live sessions&hellip;</div>
+      </div>
+    </div>
     <div id="z7-body">
       <!-- Connect prompt OR one of the three sub-views renders here -->
       <div id="z7-connect-prompt" style="display:none">
@@ -6001,9 +6055,13 @@
         loadQADashboard();
       }
 
-      // GitLab tab: check connection + render the active sub-view.
-      if (level === 7 && typeof loadGitLabTab === 'function') {
-        loadGitLabTab();
+      // GitLab tab: check connection + render the active sub-view, and run the
+      // team "Live now" poller only while the tab is open.
+      if (level === 7) {
+        if (typeof loadGitLabTab === 'function') loadGitLabTab();
+        if (typeof startLiveNow === 'function') startLiveNow();
+      } else if (typeof stopLiveNow === 'function') {
+        stopLiveNow();
       }
 
       // Re-render zoom-3 if it just became visible (the SVG may have layout dependencies)
@@ -6041,6 +6099,103 @@
           ensureFigmaIframeLoaded(node);
         }
       }
+    }
+
+    // ============================================================
+    // TEAM "LIVE NOW" STRIP (GitLab tab)
+    // Public read of /internal/live/api/now: per-machine agent heartbeats with a
+    // 10-min TTL in the worker's KV. Separate data source from the Yair OS board.
+    // ============================================================
+    const LIVE_NOW_API = '/internal/live/api/now';
+    // Map full repo dir -> short display label.
+    const LIVE_REPO_DISPLAY = {
+      'guided-growth-mvp': 'gg-mvp',
+      'gg-figma-plugin': 'gg-figma',
+      'gg-cron-worker': 'gg-cron',
+      'gg-notif-email': 'gg-notif',
+      'gg-spec': 'gg-spec',
+    };
+    // Repos that live under the guidedgrowth-group GitLab namespace (cards deep-link).
+    const LIVE_GITLAB_REPOS = new Set([
+      'guided-growth-mvp', 'gg-spec', 'gg-figma-plugin', 'gg-cron-worker', 'gg-notif-email',
+    ]);
+    let _liveNowTimer = null;
+
+    function liveEsc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+    }
+    function liveAge(ts) {
+      if (!ts) return '';
+      const secs = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+      if (secs < 60) return secs + 's ago';
+      const mins = Math.floor(secs / 60);
+      if (mins < 60) return mins + 'm ago';
+      return Math.floor(mins / 60) + 'h ago';
+    }
+    function liveRepoLink(repo, branch) {
+      if (!repo || !LIVE_GITLAB_REPOS.has(repo)) return null;
+      const base = 'https://gitlab.com/guidedgrowth-group/' + encodeURIComponent(repo);
+      if (branch) return base + '/-/tree/' + encodeURIComponent(branch);
+      return base;
+    }
+    function liveCardHtml(s) {
+      const repo = s.repo || '';
+      const branch = s.branch || '';
+      const display = LIVE_REPO_DISPLAY[repo] || repo;
+      const link = liveRepoLink(repo, branch);
+      const statClass = s.status === 'active' ? 'active' : 'idle';
+      const repoLine = display
+        ? '<div class="z7-live-repo">' + liveEsc(display) + (branch ? ' &middot; ' + liveEsc(branch) : '') + '</div>'
+        : '';
+      const wsLine = s.workstream ? '<div class="z7-live-ws">' + liveEsc(s.workstream) + '</div>' : '';
+      const actLine = s.last_action ? '<div class="z7-live-act">' + liveEsc(s.last_action) + '</div>' : '';
+      const inner =
+        '<div class="z7-live-card-top">' +
+          '<span class="z7-live-stat ' + statClass + '"></span>' +
+          '<span class="z7-live-person">' + liveEsc(s.person || 'unknown') + '</span>' +
+          '<span class="z7-live-tool">' + liveEsc(s.tool || 'agent') + '</span>' +
+        '</div>' +
+        repoLine + wsLine + actLine +
+        '<div class="z7-live-age">' + liveEsc(liveAge(s.ts)) + '</div>';
+      if (link) {
+        return '<a class="z7-live-card" href="' + liveEsc(link) + '" target="_blank" rel="noopener">' + inner + '</a>';
+      }
+      return '<div class="z7-live-card">' + inner + '</div>';
+    }
+    async function loadLiveNow() {
+      const cards = document.getElementById('z7-live-cards');
+      const sub = document.getElementById('z7-live-sub');
+      if (!cards) return;
+      try {
+        const resp = await fetch(LIVE_NOW_API, { cache: 'no-store' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+        if (!sessions.length) {
+          cards.innerHTML = '<div class="z7-live-empty">No agent sessions active in the last 10 minutes.</div>';
+          if (sub) sub.textContent = '';
+          return;
+        }
+        cards.innerHTML = sessions.map(liveCardHtml).join('');
+        if (sub) {
+          const people = new Set(sessions.map(s => s.person).filter(Boolean)).size;
+          sub.textContent = sessions.length + ' session' + (sessions.length === 1 ? '' : 's') +
+            ' · ' + people + ' ' + (people === 1 ? 'person' : 'people');
+        }
+      } catch (e) {
+        cards.innerHTML = '<div class="z7-live-empty">Live board unavailable.</div>';
+        if (sub) sub.textContent = '';
+      }
+    }
+    function startLiveNow() {
+      loadLiveNow();
+      if (_liveNowTimer) clearInterval(_liveNowTimer);
+      _liveNowTimer = setInterval(loadLiveNow, 60000);
+    }
+    function stopLiveNow() {
+      if (_liveNowTimer) { clearInterval(_liveNowTimer); _liveNowTimer = null; }
     }
 
     // Initialize on load (after DOM ready)
