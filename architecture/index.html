@@ -10159,7 +10159,8 @@
         renderGitLabIssueDetail(project, data.issue || {}, data.notes || [], data.emoji || []);
       } catch (e) {
         if (e.unauthorized) return glCheckConnection();
-        detail.innerHTML = '<div id="z7-detail"><div class="z7-detail-body"><div class="z7-error">Could not load issue: ' + qaEscape(e.message) + '</div></div></div>';
+        detail.innerHTML = '<div id="z7-detail"><div class="z7-detail-body"><div class="z7-error">Could not load issue: ' + qaEscape(e.message)
+          + ' <button type="button" class="z7-btn-ghost" onclick="openGitLabIssue(' + glAttr(project) + ',' + iid + ')">Try again</button></div></div></div>';
       }
     }
 
