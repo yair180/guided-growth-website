@@ -11127,12 +11127,31 @@
       return '';
     }
 
-    // Resolve the Master Sheet task for an issue. The Sheet->GitLab sync stamps
-    // the task id into the issue title as "[P1-XX] ..." or "P1-XX: ...", so a
-    // synced dev task can jump back into the Sheet. Validated against
-    // TASK_INDEX so screen prefixes (AUTH-LOGIN:) never resolve to a task.
+    // Resolve the Master Sheet task for an issue. Two paths, in priority order:
+    //   1. Opt-in: a hand-set `task::<ID>` scoped label (mirrors how `screen::`
+    //      anchors a bug to a screen). This is the ONLY way a QA bug links to a
+    //      task; it is never inferred, so a bug shows a task jump only when you
+    //      deliberately tag it.
+    //   2. Synced dev tasks: the Sheet->GitLab sync stamps the task id into the
+    //      title as "[P1-XX] ..." or "P1-XX: ...", so a synced task jumps back
+    //      into the Sheet automatically.
+    // Both are validated against TASK_INDEX so a screen prefix (AUTH-LOGIN:) or a
+    // stray label can never resolve to a non-existent task.
     function glTaskForIssue(iss) {
       if (!iss) return '';
+      // 1. Opt-in explicit link via `task::<ID>` label.
+      try {
+        for (const l of (iss.labels || [])) {
+          const nm = (l && typeof l === 'object') ? (l.name || '') : String(l || '');
+          const m = nm.match(/^task::(.+)$/i);
+          if (m && typeof TASK_INDEX !== 'undefined') {
+            const lc = m[1].trim().toLowerCase();
+            const hit = TASK_INDEX.find(t => t.i.toLowerCase() === lc);
+            if (hit) return hit.i;
+          }
+        }
+      } catch (_e) {}
+      // 2. Fallback: task id stamped into the title by the Sheet->GitLab sync.
       const title = iss.title || '';
       let cand = '';
       const br = title.match(/^\s*\[([^\]]+)\]/);
