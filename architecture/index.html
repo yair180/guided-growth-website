@@ -10355,13 +10355,35 @@
       _glView = 'issues';       // set AFTER setZoomLevel so restoreGitLabView can't clobber it
     }
 
-    // Tasks / Master Sheet (zoom 4) -> GitLab (zoom 7): open the Issues list
-    // searched by task id. The Sheet->GitLab sync writes the task id into the
-    // issue title as [P1-XX] or P1-XX:, so a title search lands on the synced
-    // issue (or shows "no issues" when the task was never filed to GitLab).
+    // Deterministic task -> GitLab issue IID map (gg-mvp). The Sheet->GitLab
+    // sync stamps [TASK-ID] into each issue title; these 68 links are 1:1 and
+    // stable (GitLab IIDs never change once created). Built 2026-05-30 from a
+    // full scan of all 186 gg-mvp issues. Tasks absent from this map (Done/
+    // Obsolete early work, or any future task) fall back to a title search.
+    const TASK_ISSUE_IID = {
+      "P1-06":89, "P1-09":90, "P1-10":91, "P1-11":92, "P1-15":93, "P1-16":94, "P1-17":95, "P1-18":96,
+      "P1-19":97, "P1-20":98, "P1-21":99, "P1-22":100, "P1-23":101, "P1-24":102, "P1-25":103, "P1-26":104,
+      "P1-27":105, "P1-28":106, "P1-29":107, "P1-30":108, "P1-31":109, "P1-32":110, "P1-33":111, "P1-34":112,
+      "P1-35":113, "P2-01":114, "P2-02":115, "P2-03":116, "P2-04":117, "P2-05":118, "P2-06":119, "P2-07":120,
+      "P2-08":121, "P2-09":122, "P2-10":123, "P2-11":124, "P2-12":125, "P2-13":126, "P3-01":127, "OPS-01":128,
+      "P1-36":129, "P1-37":130, "P1-42":131, "P2-29":132, "P2-30":133, "P2-37":134, "P2-38":135, "P2-39":136,
+      "P2-40":137, "P2-41":138, "P2-42":139, "P1-48":140, "P1-49":141, "P1-50":142, "P1-51":143, "P1-52":144,
+      "P1-53":145, "P1-53-A":146, "P1-53-B":147, "P1-53-C":148, "P1-53-D":149, "P1-54":150, "DES-01":151, "PRD-01":152,
+      "OPS-02":153, "OPS-03":154, "OPS-04":155, "CON-01":156
+    };
+
+    // Tasks / Master Sheet (zoom 4) -> GitLab (zoom 7). When the task maps to a
+    // known issue, open that exact issue in-page (a free-text search on the
+    // [P1-XX] prefix tokenizes badly in GitLab and returns an empty list, which
+    // is the "it goes to an empty one" bug this map fixes). Unmapped tasks fall
+    // back to the title search so future synced tasks still resolve.
     function glOpenIssuesForTask(taskId, ev) {
       if (ev) ev.stopPropagation();
-      _glPendingSearchFilter = taskId || '';
+      const iid = TASK_ISSUE_IID[taskId];
+      if (iid) { _glPendingIssueIid = iid; }
+      else { _glPendingSearchFilter = taskId || ''; }
+      _glReturnFromQA = false;  // arrived from the Sheet, not QA: hide "Back to QA"
+      try { glSyncBackToQA(); } catch (_e) {}
       setZoomLevel(7);          // runs loadGitLabTab -> connection check -> forced setGitLabView
       _glView = 'issues';       // set AFTER setZoomLevel so restoreGitLabView can't clobber it
     }
