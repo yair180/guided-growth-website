@@ -669,12 +669,13 @@
     #text-size-ctl .ts-val:hover { color: #fff; }
 
     /* Zoom view containers */
-    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view, #zoom-7-view { display: none; }
+    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view, #zoom-7-view, #zoom-8-view { display: none; }
     #zoom-1-view.active, #zoom-2-view.active { display: block; }
     #zoom-3-view.active { display: block; }
     #zoom-4-view.active, #zoom-5-view.active { display: flex; flex-direction: column; }
     #zoom-6-view.active { display: flex; flex-direction: row; }
     #zoom-7-view.active { display: flex; flex-direction: column; }
+    #zoom-8-view.active { display: flex; flex-direction: column; }
     #zoom-4-view {
       position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
       background: #0a1929; font-family: -apple-system, sans-serif;
@@ -1268,6 +1269,105 @@
       --z7-code-bg:#333238; --z7-input-bg:#1f1f24;
       --z7-shadow:rgba(0,0,0,0.4); --z7-danger:#f15146;
     }
+
+    /* ============================================================
+       ROADMAP VIEW (zoom-8). Light, embeddable board. Two lanes
+       (Product / Engineering) x four horizons (Now/Next/Later/Vision),
+       plus an Unsorted tray for issues not yet placed.
+       ============================================================ */
+    #zoom-8-view {
+      --rm-bg:#f7f8fa; --rm-panel:#ffffff; --rm-border:#e3e6eb;
+      --rm-text:#1f2733; --rm-text-2:#5b6675; --rm-text-3:#8a93a3;
+      --rm-accent:#1f75cb; --rm-now:#dd2b0e; --rm-next:#c9610e;
+      --rm-later:#1f75cb; --rm-vision:#6d49cb; --rm-unsorted:#8a93a3;
+      --rm-product:#1f7e5a; --rm-eng:#4b6cb7;
+      position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
+      background: var(--rm-bg); color: var(--rm-text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      overflow: hidden; -webkit-font-smoothing: antialiased;
+    }
+    #rm-topbar {
+      flex-shrink: 0; display: flex; align-items: center; gap: 14px;
+      padding: 10px 18px; background: var(--rm-panel);
+      border-bottom: 1px solid var(--rm-border);
+    }
+    #rm-topbar .rm-title { font-size: 16px; font-weight: 700; letter-spacing: 0.2px; }
+    #rm-topbar .rm-sub { font-size: 12px; color: var(--rm-text-3); font-weight: 500; margin-left: 2px; }
+    .rm-seg { display: inline-flex; border: 1px solid var(--rm-border); border-radius: 7px; overflow: hidden; background: var(--rm-bg); }
+    .rm-seg button {
+      border: 0; background: transparent; color: var(--rm-text-2);
+      font-size: 12.5px; font-weight: 600; padding: 6px 13px; cursor: pointer;
+      border-right: 1px solid var(--rm-border);
+    }
+    .rm-seg button:last-child { border-right: 0; }
+    .rm-seg button.active { background: var(--rm-accent); color: #fff; }
+    .rm-seg button:not(.active):hover { background: #eef1f5; }
+    .rm-toggle {
+      display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px;
+      color: var(--rm-text-2); font-weight: 600; cursor: pointer; user-select: none;
+      padding: 6px 11px; border: 1px solid var(--rm-border); border-radius: 7px; background: var(--rm-bg);
+    }
+    .rm-toggle.on { background: rgba(31,126,90,0.10); border-color: var(--rm-product); color: var(--rm-product); }
+    .rm-toggle input { display: none; }
+    #rm-refresh {
+      border: 1px solid var(--rm-border); background: var(--rm-bg); color: var(--rm-text-2);
+      font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 7px; cursor: pointer;
+    }
+    #rm-refresh:hover { background: #eef1f5; }
+    #rm-meta { margin-left: auto; font-size: 12px; color: var(--rm-text-3); }
+    #rm-board {
+      flex: 1; min-height: 0; display: flex; gap: 14px; padding: 16px 18px;
+      overflow-x: auto; overflow-y: hidden; align-items: stretch;
+    }
+    .rm-col {
+      flex: 1 1 0; min-width: 250px; display: flex; flex-direction: column;
+      background: var(--rm-panel); border: 1px solid var(--rm-border); border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(16,24,40,0.04); overflow: hidden;
+    }
+    .rm-col-head {
+      flex-shrink: 0; padding: 11px 14px; display: flex; align-items: center; gap: 9px;
+      border-bottom: 1px solid var(--rm-border); border-top: 3px solid var(--rm-text-3);
+    }
+    .rm-col[data-phase="now"] .rm-col-head { border-top-color: var(--rm-now); }
+    .rm-col[data-phase="next"] .rm-col-head { border-top-color: var(--rm-next); }
+    .rm-col[data-phase="later"] .rm-col-head { border-top-color: var(--rm-later); }
+    .rm-col[data-phase="vision"] .rm-col-head { border-top-color: var(--rm-vision); }
+    .rm-col[data-phase="unsorted"] .rm-col-head { border-top-color: var(--rm-unsorted); }
+    .rm-col-name { font-size: 13.5px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; }
+    .rm-col-sub { font-size: 11px; color: var(--rm-text-3); font-weight: 500; }
+    .rm-col-count {
+      margin-left: auto; font-size: 12px; font-weight: 700; color: var(--rm-text-2);
+      background: var(--rm-bg); border: 1px solid var(--rm-border); border-radius: 20px; padding: 1px 9px;
+    }
+    .rm-col-body { flex: 1; min-height: 0; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .rm-epic-head {
+      font-size: 10.5px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
+      color: var(--rm-text-3); padding: 8px 4px 2px; display: flex; align-items: center; gap: 6px;
+    }
+    .rm-epic-head:first-child { padding-top: 2px; }
+    .rm-card {
+      background: var(--rm-panel); border: 1px solid var(--rm-border); border-radius: 9px;
+      padding: 10px 11px; cursor: pointer; transition: box-shadow 120ms ease, border-color 120ms ease;
+      text-decoration: none; color: inherit; display: block;
+    }
+    .rm-card:hover { border-color: var(--rm-accent); box-shadow: 0 2px 8px rgba(16,24,40,0.10); }
+    .rm-card-top { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+    .rm-prio { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--rm-text-3); }
+    .rm-prio.high { background: var(--rm-now); } .rm-prio.medium { background: var(--rm-next); } .rm-prio.low { background: var(--rm-later); }
+    .rm-iid { font-size: 11px; font-weight: 700; color: var(--rm-text-3); }
+    .rm-lane-dot { margin-left: auto; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px; }
+    .rm-lane-dot.product { background: rgba(31,126,90,0.12); color: var(--rm-product); }
+    .rm-lane-dot.eng { background: rgba(75,108,183,0.14); color: var(--rm-eng); }
+    .rm-card-title { font-size: 13px; line-height: 1.35; font-weight: 600; color: var(--rm-text); }
+    .rm-card-foot { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; align-items: center; }
+    .rm-chip {
+      font-size: 10.5px; font-weight: 600; color: var(--rm-text-2);
+      background: var(--rm-bg); border: 1px solid var(--rm-border); border-radius: 5px; padding: 1px 6px;
+    }
+    .rm-assignee { font-size: 11px; color: var(--rm-text-3); font-weight: 600; margin-left: auto; }
+    .rm-col-empty { font-size: 12px; color: var(--rm-text-3); text-align: center; padding: 22px 8px; font-style: italic; }
+    #rm-loading, #rm-error { padding: 40px; text-align: center; color: var(--rm-text-2); font-size: 14px; width: 100%; }
+    #rm-error { color: var(--rm-now); }
     #z7-topbar {
       flex-shrink: 0; display: flex; align-items: center; gap: 16px;
       padding: 14px 28px; border-bottom: 1px solid var(--z7-border);
@@ -2935,6 +3035,9 @@
     <button type="button" class="zoom-btn" data-zoom="6" onclick="setZoomLevel(6)">
       <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#34d399;margin-right:6px;vertical-align:middle"></span><span class="zoom-num">5</span>QA
     </button>
+    <button type="button" class="zoom-btn" data-zoom="8" onclick="setZoomLevel(8)" title="Product and Engineering roadmap: Now / Next / Later / Vision">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-1px"><path d="M2 4h7"/><path d="M2 8h12"/><path d="M2 12h5"/><circle cx="12" cy="4" r="1.4"/><circle cx="9" cy="12" r="1.4"/></svg><span class="zoom-num">6</span>Roadmap
+    </button>
     <span style="flex: 1"></span>
     <div id="text-size-ctl" title="Make all text and UI bigger or smaller. Click the percentage to reset to 100%.">
       <span class="ts-label">Text</span>
@@ -3938,6 +4041,25 @@
   </div>
 
   <!-- ZOOM 7: GITLAB TAB -->
+  <div id="zoom-8-view">
+    <div id="rm-topbar">
+      <div><span class="rm-title">Roadmap</span> <span class="rm-sub">Now &middot; Next &middot; Later &middot; Vision &middot; backed by gg-mvp issues</span></div>
+      <div class="rm-seg" id="rm-squad-seg" role="group" aria-label="Lane filter">
+        <button type="button" class="active" data-squad="all" onclick="rmSetSquad('all')">All</button>
+        <button type="button" data-squad="product" onclick="rmSetSquad('product')">Product</button>
+        <button type="button" data-squad="eng" onclick="rmSetSquad('eng')">Engineering</button>
+      </div>
+      <label class="rm-toggle" id="rm-timothy-toggle" title="Show only items assigned to Timothy">
+        <input type="checkbox" onchange="rmToggleTimothy(this.checked)"> Timothy view
+      </label>
+      <button type="button" id="rm-refresh" onclick="loadRoadmap(true)" title="Reload from GitLab">&#8635; Refresh</button>
+      <span id="rm-meta"></span>
+    </div>
+    <div id="rm-board">
+      <div id="rm-loading">Loading roadmap&hellip;</div>
+    </div>
+  </div>
+
   <div id="zoom-7-view">
     <div id="z7-topbar">
       <button type="button" id="z7-back-to-qa" class="z7-btn-ghost" onclick="glBackToQA()" style="display:none;margin-right:10px" title="Return to the QA dashboard">&larr; Back to QA</button>
@@ -6282,6 +6404,8 @@
       if (qaView) qaView.classList.toggle('active', level === 6);
       const glView = document.getElementById('zoom-7-view');
       if (glView) glView.classList.toggle('active', level === 7);
+      const rmView = document.getElementById('zoom-8-view');
+      if (rmView) rmView.classList.toggle('active', level === 8);
 
       // Cross-zoom round-trip housekeeping: landing back on QA completes the
       // trip (drop the flag); keep the "Back to QA" button in sync otherwise.
@@ -6309,6 +6433,11 @@
       // Lazy-load QA data the first time level 6 is opened, then refresh on every revisit.
       if (level === 6 && typeof loadQADashboard === 'function') {
         loadQADashboard();
+      }
+
+      // Lazy-load the roadmap the first time level 8 is opened, refresh on revisit.
+      if (level === 8 && typeof loadRoadmap === 'function') {
+        loadRoadmap();
       }
 
       // GitLab tab: check connection + render the active sub-view, and run the
@@ -11204,6 +11333,139 @@
       else attach();
     })();
   </script>
+  <script>
+  /* ============================================================
+     ROADMAP VIEW (zoom-8). Read-only board over gg-mvp issues.
+     Data: GET /internal/roadmap/api/items (worker, GitLab-backed).
+     Label edits happen in GitLab; every card links out to its issue.
+     ============================================================ */
+  (function () {
+    const PHASES = [
+      { key: 'now',      name: 'Now',      sub: 'In flight' },
+      { key: 'next',     name: 'Next',     sub: 'Up next' },
+      { key: 'later',    name: 'Later',    sub: 'Planned' },
+      { key: 'vision',   name: 'Vision',   sub: 'Directional' },
+      { key: 'unsorted', name: 'Unsorted', sub: 'Needs triage' },
+    ];
+    // Epic slug to display name. Unknown slugs render title-cased.
+    const EPIC_NAMES = {
+      'design-polish': 'Design Polish & Final Tweaks',
+      'product-features': 'Product Features',
+      'notifications-email': 'Notifications & Email',
+      'user-feedback': 'User Feedback Loop',
+      'launch-readiness': 'Launch Readiness',
+      'qa-stability': 'QA & Stability',
+      'voice-toolcalling': 'Voice & Tool-calling',
+      'security-credentials': 'Security & Credentials',
+      'infra-cost': 'Infra & Cost',
+      'branching-ci': 'Branching & CI',
+    };
+    const TIMOTHY_USER = 'dionisius.timothyjm';
+
+    let _rmItems = null, _rmSquad = 'all', _rmTimothy = false, _rmLoading = false;
+
+    function epicLabel(slug) {
+      if (!slug) return null;
+      if (EPIC_NAMES[slug]) return EPIC_NAMES[slug];
+      return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g,
+        c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    window.rmSetSquad = function (sq) {
+      _rmSquad = sq;
+      document.querySelectorAll('#rm-squad-seg button').forEach(b =>
+        b.classList.toggle('active', b.dataset.squad === sq));
+      renderRoadmap();
+    };
+    window.rmToggleTimothy = function (on) {
+      _rmTimothy = !!on;
+      document.getElementById('rm-timothy-toggle').classList.toggle('on', _rmTimothy);
+      renderRoadmap();
+    };
+
+    window.loadRoadmap = async function (force) {
+      if (_rmLoading) return;
+      if (_rmItems && !force) { renderRoadmap(); return; }
+      _rmLoading = true;
+      const board = document.getElementById('rm-board');
+      if (!_rmItems) board.innerHTML = '<div id="rm-loading">Loading roadmap&hellip;</div>';
+      try {
+        const res = await fetch('/internal/roadmap/api/items', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data && data.error) throw new Error(data.error);
+        _rmItems = Array.isArray(data) ? data : [];
+        renderRoadmap();
+      } catch (e) {
+        board.innerHTML = '<div id="rm-error">Could not load roadmap: ' + esc(e.message) + '</div>';
+      } finally {
+        _rmLoading = false;
+      }
+    };
+
+    function filtered() {
+      let items = _rmItems || [];
+      if (_rmSquad !== 'all') items = items.filter(i => i.squad === _rmSquad);
+      if (_rmTimothy) items = items.filter(i => i.assignee === TIMOTHY_USER);
+      return items;
+    }
+
+    function cardHtml(i) {
+      const prio = ['high','medium','low'].includes(i.priority) ? i.priority : '';
+      const lane = i.squad === 'product' ? '<span class="rm-lane-dot product">Product</span>'
+                 : i.squad === 'eng' ? '<span class="rm-lane-dot eng">Eng</span>' : '';
+      const chips = [];
+      if (i.screen) chips.push('<span class="rm-chip">' + esc(i.screen) + '</span>');
+      (i.labels || []).filter(l => ['bug','ai-learning','frontend','backend'].includes(l))
+        .forEach(l => chips.push('<span class="rm-chip">' + esc(l) + '</span>'));
+      const assignee = i.assignee ? '<span class="rm-assignee">@' + esc(i.assignee) + '</span>' : '';
+      return '<a class="rm-card" href="' + esc(i.web_url) + '" target="_blank" rel="noopener">'
+        + '<div class="rm-card-top"><span class="rm-prio ' + prio + '"></span>'
+        + '<span class="rm-iid">#' + esc(i.iid) + '</span>' + lane + '</div>'
+        + '<div class="rm-card-title">' + esc(i.title) + '</div>'
+        + '<div class="rm-card-foot">' + chips.join('') + assignee + '</div></a>';
+    }
+
+    function colHtml(phase, items) {
+      const byEpic = new Map(), noEpic = [];
+      items.forEach(i => {
+        if (i.epic) { if (!byEpic.has(i.epic)) byEpic.set(i.epic, []); byEpic.get(i.epic).push(i); }
+        else noEpic.push(i);
+      });
+      let body = '';
+      noEpic.forEach(i => body += cardHtml(i));
+      [...byEpic.keys()].sort().forEach(slug => {
+        body += '<div class="rm-epic-head">' + esc(epicLabel(slug)) + '</div>';
+        byEpic.get(slug).forEach(i => body += cardHtml(i));
+      });
+      if (!items.length) body = '<div class="rm-col-empty">Nothing here yet</div>';
+      return '<div class="rm-col" data-phase="' + phase.key + '">'
+        + '<div class="rm-col-head"><span class="rm-col-name">' + esc(phase.name) + '</span>'
+        + '<span class="rm-col-sub">' + esc(phase.sub) + '</span>'
+        + '<span class="rm-col-count">' + items.length + '</span></div>'
+        + '<div class="rm-col-body">' + body + '</div></div>';
+    }
+
+    function renderRoadmap() {
+      const board = document.getElementById('rm-board');
+      if (!board) return;
+      if (!_rmItems) { board.innerHTML = '<div id="rm-loading">Loading roadmap&hellip;</div>'; return; }
+      const items = filtered();
+      const buckets = { now: [], next: [], later: [], vision: [], unsorted: [] };
+      items.forEach(i => { (buckets[i.phase] || buckets.unsorted).push(i); });
+      board.innerHTML = PHASES.map(p => colHtml(p, buckets[p.key])).join('');
+      const meta = document.getElementById('rm-meta');
+      if (meta) {
+        const placed = items.length - buckets.unsorted.length;
+        meta.textContent = items.length + ' issues, ' + placed + ' placed, ' + buckets.unsorted.length + ' unsorted';
+      }
+    }
+  })();
+  </script>
+
   <div id="qa-lightbox" onclick="qaCloseLightbox()" role="dialog" aria-modal="true" aria-label="Screenshot preview">
     <div class="qa-lightbox-inner" onclick="event.stopPropagation()">
       <button type="button" class="qa-lightbox-close" onclick="qaCloseLightbox()" title="Close (Esc)" aria-label="Close">&times;</button>
