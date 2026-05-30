@@ -3464,7 +3464,7 @@
             <!-- STT sub-box -->
             <rect x="280" y="92" width="195" height="38" rx="5" fill="rgba(0,0,0,0.30)" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
             <text x="290" y="108" fill="#fff" font-size="11" font-weight="700">STT</text>
-            <text x="465" y="108" text-anchor="end" fill="rgba(255,255,255,0.85)" font-size="10" font-weight="600">Deepgram Flux</text>
+            <text x="465" y="108" text-anchor="end" fill="rgba(255,255,255,0.85)" font-size="10" font-weight="600">Soniox / Gladia</text>
             <text x="290" y="122" fill="rgba(255,255,255,0.7)" font-size="9">streaming transcription</text>
             <!-- LLM sub-box -->
             <rect x="488" y="92" width="195" height="38" rx="5" fill="rgba(0,0,0,0.30)" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
@@ -3495,25 +3495,24 @@
           <line x1="120" y1="219" x2="148" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
           <g><rect x="148" y="200" width="120" height="38" rx="6" fill="#2563eb" stroke="#60a5fa" stroke-width="1.5" />
              <text x="208" y="223" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Frontend</text></g>
-          <line x1="268" y1="219" x2="296" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
-          <g><rect x="296" y="200" width="120" height="38" rx="6" fill="#047857" stroke="#34d399" stroke-width="1.5" />
-             <text x="356" y="218" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">MP3 prompt</text>
-             <text x="356" y="231" text-anchor="middle" fill="#a7f3d0" font-size="9">(plays to user)</text></g>
-          <line x1="416" y1="219" x2="444" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
-          <g><rect x="444" y="200" width="120" height="38" rx="6" fill="#dc2626" stroke="#f87171" stroke-width="1.5" />
-             <text x="504" y="223" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Cartesia Ink</text></g>
-          <line x1="564" y1="219" x2="592" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
-          <g><rect x="592" y="200" width="120" height="38" rx="6" fill="#7c3aed" stroke="#a78bfa" stroke-width="1.5" />
-             <text x="652" y="223" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">callLLM()</text></g>
-          <line x1="712" y1="219" x2="740" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
-          <g><rect x="740" y="200" width="120" height="38" rx="6" fill="#b91c1c" stroke="#ef4444" stroke-width="1.5" />
-             <text x="800" y="223" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">LLM</text></g>
-          <line x1="860" y1="219" x2="888" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
-          <g><rect x="888" y="200" width="140" height="38" rx="6" fill="#dc2626" stroke="#f87171" stroke-width="1.5" />
-             <text x="958" y="223" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Sonic API (TTS)</text></g>
-          <line x1="1028" y1="219" x2="1056" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
-          <g><rect x="1056" y="200" width="100" height="38" rx="6" fill="#1e3a5f" stroke="#5bc0de" stroke-width="1.5" />
-             <text x="1106" y="223" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">User</text></g>
+          <line x1="268" y1="219" x2="300" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
+          <g><rect x="300" y="200" width="150" height="38" rx="6" fill="#047857" stroke="#34d399" stroke-width="1.5" />
+             <text x="375" y="218" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Soniox STT</text>
+             <text x="375" y="231" text-anchor="middle" fill="#a7f3d0" font-size="9">mic half (voice in)</text></g>
+          <line x1="450" y1="219" x2="478" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
+          <g><rect x="478" y="200" width="120" height="38" rx="6" fill="#7c3aed" stroke="#a78bfa" stroke-width="1.5" />
+             <text x="538" y="223" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">callLLM()</text></g>
+          <line x1="598" y1="219" x2="626" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
+          <g><rect x="626" y="200" width="100" height="38" rx="6" fill="#b91c1c" stroke="#ef4444" stroke-width="1.5" />
+             <text x="676" y="223" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">LLM</text></g>
+          <line x1="726" y1="219" x2="754" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
+          <g><rect x="754" y="200" width="160" height="38" rx="6" fill="#dc2626" stroke="#f87171" stroke-width="1.5" />
+             <text x="834" y="218" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Cartesia TTS (Sonic)</text>
+             <text x="834" y="231" text-anchor="middle" fill="#fecaca" font-size="9">AI half (voice out)</text></g>
+          <line x1="914" y1="219" x2="942" y2="219" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
+          <g><rect x="942" y="200" width="100" height="38" rx="6" fill="#1e3a5f" stroke="#5bc0de" stroke-width="1.5" />
+             <text x="992" y="223" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">User</text></g>
+          <text x="300" y="254" fill="#8fa8c4" font-size="9" font-style="italic">Either half runs alone: AI half on = one-way TTS (State 2); mic half on = voice in, text reply (State 3). Check-ins are one pattern here. Not the Vapi loop.</text>
         </g>
 
         <!-- PATH 3: Text Only (both buttons off, zero voice) -->
@@ -3535,7 +3534,7 @@
           <line x1="564" y1="339" x2="592" y2="339" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
           <g><rect x="592" y="320" width="200" height="38" rx="6" fill="#2563eb" stroke="#60a5fa" stroke-width="1.5" />
              <text x="692" y="338" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">Frontend renders text</text>
-             <text x="692" y="352" text-anchor="middle" fill="#bfdbfe" font-size="9">(or Sonic API for voice)</text></g>
+             <text x="692" y="352" text-anchor="middle" fill="#bfdbfe" font-size="9">text only, no TTS</text></g>
           <line x1="792" y1="339" x2="820" y2="339" stroke="#8fa8c4" stroke-width="1.5" marker-end="url(#arrow-paths)" />
           <g><rect x="820" y="320" width="100" height="38" rx="6" fill="#1e3a5f" stroke="#5bc0de" stroke-width="1.5" />
              <text x="870" y="343" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">User</text></g>
