@@ -593,6 +593,30 @@
     }
     #zoom-toggle-bar .zoom-btn.active .zoom-num { color: #5bc0de; }
 
+    /* Global signed-in chip + sign out. Lives in the always-visible top bar so
+       sign out is reachable from every zoom level, not buried in the GitLab tab.
+       Only shown when the board is gated by GitLab login (GL_REQUIRE_LOGIN). */
+    #gl-userchip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 6px 4px 10px; border: 1px solid #1e3a5f;
+      border-radius: 14px; background: rgba(13, 148, 136, 0.12);
+    }
+    #gl-userchip .gl-uc-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #34d399; flex: none;
+    }
+    #gl-userchip .gl-uc-name {
+      font-size: 11px; color: #cfe0f2; font-weight: 600;
+      max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    #gl-userchip .gl-uc-out {
+      font-size: 11px; font-family: inherit; cursor: pointer;
+      background: transparent; color: #8fa8c4;
+      border: 1px solid #1e3a5f; border-radius: 10px; padding: 2px 9px;
+      transition: border-color 0.12s, color 0.12s;
+    }
+    #gl-userchip .gl-uc-out:hover { border-color: #e06c75; color: #e06c75; }
+
     /* Sub-nav for the merged Architecture tab. A single fixed strip under the
        main tab bar, revealed only on the three architecture zooms (1 System /
        2 Components / 3 Engineering) via body.arch-subnav-on. GitLab-style
@@ -2833,6 +2857,11 @@
       <button type="button" class="ts-btn" onclick="adjustTextSize(-1)" title="Smaller">A&minus;</button>
       <span class="ts-val" id="ts-val" onclick="resetTextSize()" title="Reset to 100%">100%</span>
       <button type="button" class="ts-btn" onclick="adjustTextSize(1)" title="Bigger">A+</button>
+    </div>
+    <div id="gl-userchip" style="display:none" title="Signed in via GitLab">
+      <span class="gl-uc-dot"></span>
+      <span class="gl-uc-name" id="gl-uc-name"></span>
+      <button type="button" class="gl-uc-out" onclick="glSignOut()" title="Sign out of the board">Sign out</button>
     </div>
     <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.5</span>
   </div>
