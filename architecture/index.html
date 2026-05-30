@@ -591,6 +591,39 @@
       color: #6b8aaf; font-size: 9px; margin-right: 2px; font-weight: 700;
     }
     #zoom-toggle-bar .zoom-btn.active .zoom-num { color: #5bc0de; }
+
+    /* Sub-nav for the merged Architecture tab. A single fixed strip under the
+       main tab bar, revealed only on the three architecture zooms (1 System /
+       2 Components / 3 Engineering) via body.arch-subnav-on. GitLab-style
+       underline tabs, matched to the dashboard's dark palette. */
+    #arch-subnav {
+      position: fixed; top: 41px; left: 0; right: 0; height: 37px; z-index: 199;
+      background: #060d18; border-bottom: 1px solid #1a2942;
+      display: none; align-items: center; gap: 2px; padding: 0 20px;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body.arch-subnav-on #arch-subnav { display: flex; }
+    #arch-subnav .arch-sn-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px;
+      color: #5b7799; font-weight: 700; margin-right: 14px;
+    }
+    #arch-subnav .arch-sn-btn {
+      padding: 0 14px; height: 37px; line-height: 37px;
+      font-size: 12.5px; font-weight: 600; font-family: inherit;
+      background: transparent; color: #8fa8c4; border: 0;
+      border-bottom: 2px solid transparent; cursor: pointer;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    #arch-subnav .arch-sn-btn:hover { color: #fff; }
+    #arch-subnav .arch-sn-btn.active { color: #fff; border-bottom-color: #5bc0de; }
+
+    /* When the Architecture sub-nav shows, push the three architecture views
+       down by its height (37px) so nothing hides behind it. */
+    body.arch-subnav-on #zoom-1-view,
+    body.arch-subnav-on #zoom-2-view { top: 78px; }
+    body.has-zoom-bar.arch-subnav-on #zoom-3-view { padding-top: 78px; }
+    body.has-zoom-bar.arch-subnav-on #zoom-3-view #container { height: calc(100vh - 78px - 76px); }
     /* Global text/UI size control (drives CSS zoom on <body>, persists per browser). */
     #text-size-ctl { display: inline-flex; align-items: center; gap: 6px; margin-right: 4px; }
     #text-size-ctl .ts-label {
@@ -2647,26 +2680,20 @@
   <!-- ZOOM LEVEL TOGGLE BAR (visible after password unlock) -->
   <div id="zoom-toggle-bar">
     <span class="zoom-label">View:</span>
-    <button type="button" class="zoom-btn active" data-zoom="1" onclick="setZoomLevel(1)">
-      <span class="zoom-num">1</span>System
-    </button>
-    <button type="button" class="zoom-btn" data-zoom="2" onclick="setZoomLevel(2)">
-      <span class="zoom-num">2</span>Components
-    </button>
-    <button type="button" class="zoom-btn" data-zoom="3" onclick="setZoomLevel(3)">
-      <span class="zoom-num">3</span>Engineering
-    </button>
-    <button type="button" class="zoom-btn" data-zoom="4" onclick="setZoomLevel(4)">
-      <span class="zoom-num">4</span>AppMaster Sheet
+    <button type="button" class="zoom-btn active" id="arch-tab-btn" data-zoom="arch" onclick="openArchTab()" title="System, Components and Engineering architecture views">
+      <span class="zoom-num">1</span>Architecture
     </button>
     <button type="button" class="zoom-btn" data-zoom="5" onclick="setZoomLevel(5)">
-      <span class="zoom-num">5</span>Figma
+      <span class="zoom-num">2</span>Figma
+    </button>
+    <button type="button" class="zoom-btn" data-zoom="4" onclick="setZoomLevel(4)">
+      <span class="zoom-num">3</span>App Master Sheet
     </button>
     <button type="button" class="zoom-btn" data-zoom="7" onclick="setZoomLevel(7)">
-      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-1px"><circle cx="4" cy="3" r="1.8"/><circle cx="4" cy="13" r="1.8"/><circle cx="12" cy="6" r="1.8"/><path d="M4 4.8v6.4"/><path d="M12 7.8c0 2.2-1.8 3.4-4 3.4"/></svg><span class="zoom-num">6</span>GitLab
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-1px"><circle cx="4" cy="3" r="1.8"/><circle cx="4" cy="13" r="1.8"/><circle cx="12" cy="6" r="1.8"/><path d="M4 4.8v6.4"/><path d="M12 7.8c0 2.2-1.8 3.4-4 3.4"/></svg><span class="zoom-num">4</span>GitLab
     </button>
     <button type="button" class="zoom-btn" data-zoom="6" onclick="setZoomLevel(6)">
-      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#34d399;margin-right:6px;vertical-align:middle"></span><span class="zoom-num">7</span>QA
+      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#34d399;margin-right:6px;vertical-align:middle"></span><span class="zoom-num">5</span>QA
     </button>
     <span style="flex: 1"></span>
     <div id="text-size-ctl" title="Make all text and UI bigger or smaller. Click the percentage to reset to 100%.">
@@ -2676,6 +2703,16 @@
       <button type="button" class="ts-btn" onclick="adjustTextSize(1)" title="Bigger">A+</button>
     </div>
     <span style="font-size: 11px; color: #6b8aaf;">Guided Growth - Architecture Map v5.5</span>
+  </div>
+
+  <!-- Sub-nav for the merged Architecture tab. Shown only on zooms 1/2/3 (toggled
+       by body.arch-subnav-on from setZoomLevel). One shared strip, no per-view
+       duplication. -->
+  <div id="arch-subnav" role="group" aria-label="Architecture sub-view">
+    <span class="arch-sn-label">Architecture</span>
+    <button type="button" class="arch-sn-btn" data-arch="1" onclick="setZoomLevel(1)">System</button>
+    <button type="button" class="arch-sn-btn" data-arch="2" onclick="setZoomLevel(2)">Components</button>
+    <button type="button" class="arch-sn-btn" data-arch="3" onclick="setZoomLevel(3)">Engineering</button>
   </div>
 
 <!-- ZOOM 1: HIGH-LEVEL SYSTEM VIEW (countries) -->
@@ -5770,6 +5807,25 @@
       } catch (e) {}
     }
 
+    // The merged Architecture tab remembers its last sub-view (1 System /
+    // 2 Components / 3 Engineering) so reopening the tab returns where the user
+    // left off rather than always snapping back to System.
+    let _archSubView = 1;
+    try {
+      const _sv = parseInt(localStorage.getItem('gg_arch_sub_view_v1'), 10);
+      if (_sv === 1 || _sv === 2 || _sv === 3) _archSubView = _sv;
+    } catch (_e) {}
+
+    // Open the Architecture tab on its last-used sub-view.
+    function openArchTab() { setZoomLevel(_archSubView || 1); }
+
+    // Mirror the active architecture sub-view in the shared sub-nav strip.
+    function syncArchSubnav() {
+      document.querySelectorAll('#arch-subnav .arch-sn-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.arch, 10) === currentZoomLevel);
+      });
+    }
+
     function setZoomLevel(level) {
       currentZoomLevel = level;
       try { localStorage.setItem('gg_arch_zoom_level_v1', String(level)); } catch (e) {}
@@ -5791,10 +5847,22 @@
       if (level === 4) _glReturnFromSheet = false;
       if (typeof glSyncBackToQA === 'function') glSyncBackToQA();
 
-      // Update active state on buttons
+      // Update active state on buttons. The merged "Architecture" tab fronts
+      // three zooms (1 System / 2 Components / 3 Engineering): it stays active
+      // for any of them, while the others match their own data-zoom.
+      const _archLevels = (level === 1 || level === 2 || level === 3);
       document.querySelectorAll('#zoom-toggle-bar .zoom-btn').forEach(btn => {
-        btn.classList.toggle('active', parseInt(btn.dataset.zoom) === level);
+        if (btn.dataset.zoom === 'arch') btn.classList.toggle('active', _archLevels);
+        else btn.classList.toggle('active', parseInt(btn.dataset.zoom) === level);
       });
+      // Reveal the Architecture sub-nav only on the three architecture zooms,
+      // remember which one is active, and reflect it in the sub-nav.
+      document.body.classList.toggle('arch-subnav-on', _archLevels);
+      if (_archLevels) {
+        _archSubView = level;
+        try { localStorage.setItem('gg_arch_sub_view_v1', String(level)); } catch (_e) {}
+        syncArchSubnav();
+      }
 
       // Lazy-load QA data the first time level 6 is opened, then refresh on every revisit.
       if (level === 6 && typeof loadQADashboard === 'function') {
