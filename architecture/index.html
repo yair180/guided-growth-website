@@ -2412,6 +2412,31 @@
     .z6-remove-btn:disabled { opacity: 0.55; cursor: progress; }
     .z6-revert-btn { color: #86efac; border-color: #245c37; }
     .z6-revert-btn:hover { background: rgba(74,222,128,0.14); color: #bbf7d0; border-color: #2e7d4a; }
+    /* "+ AI Learning" / "+ Bug" dual-classify control (purple, matches AI-Learning) */
+    .z6-classify-btn {
+      flex-shrink: 0; padding: 2px 9px; font-size: 10.5px; font-weight: 600;
+      background: transparent; color: #b8a6e8;
+      border: 1px solid rgba(167,139,250,0.4); border-radius: 12px;
+      cursor: pointer; user-select: none; font-family: inherit; transition: all 0.12s;
+    }
+    .z6-classify-btn:hover { background: rgba(167,139,250,0.14); color: #d6c8f5; border-color: rgba(167,139,250,0.7); }
+    .z6-classify-btn:disabled { opacity: 0.55; cursor: progress; }
+    .z6-classify-picker {
+      display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap;
+      padding: 3px 7px; border: 1px solid rgba(167,139,250,0.32);
+      background: rgba(167,139,250,0.07); border-radius: 12px;
+    }
+    .z6-classify-prompt { font-size: 10px; color: #b8a6e8; }
+    .z6-classify-opt {
+      padding: 2px 8px; font-size: 10.5px; font-weight: 600; font-family: inherit;
+      background: rgba(167,139,250,0.12); color: #d6c8f5;
+      border: 1px solid rgba(167,139,250,0.4); border-radius: 10px; cursor: pointer; transition: all 0.12s;
+    }
+    .z6-classify-opt:hover { background: rgba(167,139,250,0.24); color: #fff; }
+    .z6-classify-cancel {
+      padding: 2px 6px; font-size: 10px; font-family: inherit; background: transparent;
+      color: #6b8aaf; border: none; cursor: pointer; text-decoration: underline;
+    }
     /* Triage actions get their own row under the meta so the head never crowds */
     .z6-proposed-card .z6-actions {
       display: flex; flex-wrap: wrap; gap: 0; align-items: center;
@@ -2467,14 +2492,27 @@
       padding: 1px 7px; font-size: 10.5px; color: #8fa8c4;
     }
     .z6-proposed-card .z6-conf-pill.conf-low { color: #f59e0b; border-color: rgba(245,158,11,0.35); }
-    /* Suggested-fix block in expanded detail — distinct from grey evidence */
+    /* Suggested-fix block: collapsed by default so the AI's guess does not bias
+       a dev's own investigation. Full border, no side-stripe. */
     .z6-proposed-card .z6-proposed-detail .z6-suggested-fix {
       background: rgba(167, 139, 250, 0.07);
-      border-left: 2px solid rgba(167, 139, 250, 0.5);
-      border-radius: 4px; padding: 6px 10px; margin: 4px 0 8px;
+      border: 1px solid rgba(167, 139, 250, 0.28);
+      border-radius: 6px; padding: 0; margin: 4px 0 8px;
     }
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix .z6-detail-label { color: #c4b5fd; margin-top: 0; }
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix p { margin-bottom: 0; }
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix > summary {
+      list-style: none; cursor: pointer; padding: 6px 10px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix > summary::-webkit-details-marker { display: none; }
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix > summary::before {
+      content: '\25B8'; color: #a78bfa; font-size: 11px; transition: transform 0.15s ease;
+    }
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix[open] > summary::before { transform: rotate(90deg); }
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix .z6-detail-label { color: #c4b5fd; margin: 0; }
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix-flag {
+      font-size: 10px; color: #8b7bb8; font-style: italic;
+    }
+    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix p { margin: 0; padding: 0 10px 8px; }
     /* AI-Learning filed-success — purple instead of bug-green */
     .z6-proposed-card.ai-filed-success {
       border-left-color: #a78bfa;
@@ -3860,7 +3898,7 @@
 
       <div id="z6-list-toggle">
         <button type="button" class="z6-list-btn active" data-list="needs" onclick="setQAListView('needs')">&#x1F50D; Needs review <span class="z6-list-btn-count" id="z6-toggle-needs">…</span></button>
-        <button type="button" class="z6-list-btn" data-list="gitlab" onclick="setQAListView('gitlab')">&#x2705; Already in GitLab <span class="z6-list-btn-count" id="z6-toggle-gitlab">…</span></button>
+        <button type="button" class="z6-list-btn" data-list="gitlab" onclick="setQAListView('gitlab')">&#x1F4CC; Filed in GitLab <span class="z6-list-btn-count" id="z6-toggle-gitlab">…</span></button>
       </div>
 
       <div id="z6-category-filter" role="group" aria-label="Category filter">
@@ -3881,7 +3919,7 @@
 
       <div id="z6-gitlab-group" style="display:none">
       <div id="z6-issues-header">
-        <div class="z6-issues-title">&#x2705; Already in GitLab <span class="z6-proposed-sublabel">source of truth — file/merge moves findings here; Remove closes</span></div>
+        <div class="z6-issues-title">&#x1F4CC; Filed in GitLab <span class="z6-proposed-sublabel">open issues, not yet fixed. File/merge moves findings here; Remove closes</span></div>
         <span id="z6-issues-count">…</span>
       </div>
       <div id="z6-issues-list"><div class="z6-empty">Loading…</div></div>
@@ -4071,6 +4109,7 @@
     const QA_API_MERGE_FINDING = '/internal/mobai/api/merge-finding';
     const QA_API_CLOSE_ISSUE = '/internal/mobai/api/close-issue';
     const QA_API_REVERT_ISSUE = '/internal/mobai/api/revert-issue';
+    const QA_API_TOGGLE_LABEL = '/internal/mobai/api/toggle-issue-label';
     const QA_API_SUMMARY = '/internal/mobai/api/qa-summary';
     const QA_SUMMARY_COLLAPSE_KEY = 'gg_arch_z6_summary_collapsed';
     const QA_MODE_KEY = 'gg_arch_z6_mode';
@@ -4311,19 +4350,35 @@
     let _qaIssuesClosing = new Set();      // issue iids currently in-flight close POSTs
     let _qaProposedBucketOpen = new Set(); // finding ids with the AI Learning bucket picker open
     let _qaProposedFilePickerOpen = new Set(); // finding ids with the File-as-bug target picker open
+    let _qaIssueClassToggling = new Set(); // issue iids currently in-flight label-toggle POSTs
+    let _qaIssueClassOpen = new Set();      // issue iids with the "add AI Learning" bucket picker open
     let _qaProposedError = new Map();      // finding id → last error string
     let qaCurrentSource = 'all';  // 'all' | 'human' | 'mobai' | 'video' (AI Quality chip is a disabled stub)
     let _qaListView = 'needs';    // 'needs' (proposed) | 'gitlab' (already filed) — Overview list toggle
     let _qaCategoryFilter = 'all'; // 'all' | 'frontend' | 'backend' | 'ai-learning'
 
-    // The AI's recommended destination for an item: Frontend bug / Backend bug /
-    // AI Learning. Works for both proposed findings and GitLab issues (both carry
-    // finding_type + layer). 'unspecified' = a bug whose layer isn't tagged yet.
+    // An item's classifications. Bug and AI-learning are NOT mutually exclusive:
+    // one issue can carry both labels, so this returns an ARRAY. A bug contributes
+    // its layer (frontend / backend / unspecified); an AI learning contributes
+    // 'ai-learning'. Works for proposed findings (finding_type, no labels yet) and
+    // filed GitLab issues (raw labels, where dual classification lives).
+    function qaCategoriesOf(item) {
+      if (!item) return ['unspecified'];
+      const labels = item.labels || [];
+      const isAi  = labels.includes('ai-learning') || (item.finding_type || 'bug') === 'ai-learning';
+      const isBug = labels.includes('bug') || !isAi;
+      const cats = [];
+      if (isBug) {
+        const l = item.layer;
+        cats.push((l === 'frontend' || l === 'backend') ? l : 'unspecified');
+      }
+      if (isAi) cats.push('ai-learning');
+      return cats.length ? cats : ['unspecified'];
+    }
+    // Back-compat single-value view (first category), still used where a lone
+    // category is needed.
     function qaCategoryOf(item) {
-      if (!item) return 'unspecified';
-      if ((item.finding_type || 'bug') === 'ai-learning') return 'ai-learning';
-      const l = item.layer;
-      return (l === 'frontend' || l === 'backend') ? l : 'unspecified';
+      return qaCategoriesOf(item)[0];
     }
     function qaCategoryMeta(cat) {
       return ({
@@ -4334,11 +4389,15 @@
       })[cat] || { label: cat, icon: '' };
     }
     function qaCategoryChipHtml(item) {
-      const c = qaCategoryOf(item); const m = qaCategoryMeta(c);
-      return '<span class="z6-cat-chip cat-' + c + '" title="AI recommendation: ' + m.label + '">' + m.icon + ' ' + m.label + '</span>';
+      // One chip per classification. A dual-labeled issue shows both a bug chip
+      // and an AI-Learning chip rather than collapsing to one.
+      return qaCategoriesOf(item).map(c => {
+        const m = qaCategoryMeta(c);
+        return '<span class="z6-cat-chip cat-' + c + '" title="AI recommendation: ' + m.label + '">' + m.icon + ' ' + m.label + '</span>';
+      }).join('');
     }
     function qaPassesCategory(item) {
-      return _qaCategoryFilter === 'all' || qaCategoryOf(item) === _qaCategoryFilter;
+      return _qaCategoryFilter === 'all' || qaCategoriesOf(item).includes(_qaCategoryFilter);
     }
 
     function qaEscape(s) {
@@ -4468,6 +4527,30 @@
           + ' onclick="qaRevertIssue(' + i.iid + ', event)">↩ Re-triage</button>'
           + '<button class="z6-remove-btn" title="Close this issue in GitLab (reopenable there)"'
           + ' onclick="qaCloseIssue(' + i.iid + ', event)">Remove</button>';
+      // Bug and AI-learning are not mutually exclusive: a filed issue can be
+      // BOTH. Offer the missing classification (for AI Learning, which bucket the
+      // fix lands in). Hidden once the issue already carries both.
+      const _cats = qaCategoriesOf(i);
+      const _isAi = _cats.includes('ai-learning');
+      const _isBug = _cats.some(c => c !== 'ai-learning');
+      const _classBusy = _qaIssueClassToggling.has(i.iid);
+      const _classPickerOpen = _qaIssueClassOpen.has(i.iid);
+      let classBtns = '';
+      if (_classBusy) {
+        classBtns = '<button class="z6-classify-btn" disabled>Updating…</button>';
+      } else if (!_isAi) {
+        classBtns = _classPickerOpen
+          ? '<span class="z6-classify-picker" onclick="event.stopPropagation()">'
+            + '<span class="z6-classify-prompt">Also an AI Learning, where does the fix land?</span>'
+            + '<button class="z6-classify-opt" onclick="qaAddAiClass(' + i.iid + ', \'screen\', event)">Screen</button>'
+            + '<button class="z6-classify-opt" onclick="qaAddAiClass(' + i.iid + ', \'behavior\', event)">Global behavior</button>'
+            + '<button class="z6-classify-opt" onclick="qaAddAiClass(' + i.iid + ', \'knowledge\', event)">Knowledge</button>'
+            + '<button class="z6-classify-cancel" onclick="qaToggleIssueClassPicker(' + i.iid + ', event)">cancel</button>'
+          + '</span>'
+          : '<button class="z6-classify-btn" title="Also tag this as an AI Learning (it stays a bug too)" onclick="qaToggleIssueClassPicker(' + i.iid + ', event)">+ AI Learning</button>';
+      } else if (!_isBug) {
+        classBtns = '<button class="z6-classify-btn" title="Also tag this as a bug (it stays an AI Learning too)" onclick="qaAddBugClass(' + i.iid + ', event)">+ Bug</button>';
+      }
       // Global detection: the API sends globals as either an empty string OR the
       // literal "Global / cross-screen", so truthiness alone never catches them.
       var iScreen = i.screen || '';
@@ -4487,6 +4570,7 @@
           + '<span>' + qaAgo(i.created_at) + ' ago</span>'
           + (labelHtml ? '<span style="display:inline-flex;gap:4px;flex-wrap:wrap">' + labelHtml + '</span>' : '')
           + '<span class="z6-issue-meta-spacer"></span>'
+          + classBtns
           + actionBtns
         + '</div>'
       + '</a>';
@@ -4683,7 +4767,9 @@
         ? '<div class="z6-proposed-detail">'
           + (f.evidence ? '<div class="z6-detail-label">Evidence</div><p>' + qaEscape(f.evidence) + '</p>' : '')
           + (suggestedFix
-              ? '<div class="z6-suggested-fix"><div class="z6-detail-label">Suggested fix</div><p>' + qaEscape(suggestedFix) + '</p></div>'
+              ? '<details class="z6-suggested-fix"><summary><span class="z6-detail-label">Suggested fix</span>'
+                + '<span class="z6-suggested-fix-flag">AI guess, open after forming your own read</span></summary>'
+                + '<p>' + qaEscape(suggestedFix) + '</p></details>'
               : '')
           + (f.ai_block && f.ai_block.repro_steps
               ? '<div class="z6-detail-label">Repro steps</div><p>' + qaEscape(f.ai_block.repro_steps) + '</p>'
@@ -5164,6 +5250,60 @@
       qaLoadProposed();   // the restored finding reappears in the queue
       qaLoadSummary();
       if (qaCurrentMode === 'byscreen') { renderScreensSidebar(); renderByScreenPanel(); }
+    }
+
+    // --- Dual classification: make a filed issue BOTH a bug and an AI learning ---
+    // Toggle the inline "which bucket?" picker shown by the "+ AI Learning" button.
+    function qaToggleIssueClassPicker(issueIid, ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      issueIid = parseInt(issueIid, 10);
+      if (!issueIid) return;
+      if (_qaIssueClassOpen.has(issueIid)) _qaIssueClassOpen.delete(issueIid);
+      else _qaIssueClassOpen.add(issueIid);
+      renderIssues();
+    }
+    // POST a label toggle, then patch the in-memory issue's labels and re-render.
+    async function qaToggleIssueLabel(issueIid, label, on, bucket) {
+      issueIid = parseInt(issueIid, 10);
+      if (!issueIid || _qaIssueClassToggling.has(issueIid)) return;
+      _qaIssueClassToggling.add(issueIid);
+      _qaIssueClassOpen.delete(issueIid);
+      renderIssues();
+      if (qaCurrentMode === 'byscreen') renderByScreenPanel();
+      try {
+        const res = await fetch(QA_API_TOGGLE_LABEL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ issue_iid: issueIid, label: label, on: on, bucket: bucket || undefined }),
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (_e) {}
+        if (!res.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
+        if (!data || data.status !== 'ok') throw new Error('worker did not confirm label change');
+        // Reflect the new label set locally so the chips/filters update at once,
+        // then let the next poll reconcile with GitLab.
+        const it = _qaIssues.find(i => i.iid === issueIid);
+        if (it && Array.isArray(data.labels)) {
+          it.labels = data.labels;
+          it.finding_type = data.labels.includes('ai-learning') ? 'ai-learning' : 'bug';
+        }
+      } catch (e) {
+        window.alert('Could not update #' + issueIid + ': ' + (e.message || String(e)));
+      } finally {
+        _qaIssueClassToggling.delete(issueIid);
+        renderIssues();
+        qaLoadSummary();
+        if (qaCurrentMode === 'byscreen') { renderScreensSidebar(); renderByScreenPanel(); }
+      }
+    }
+    function qaAddAiClass(issueIid, bucket, ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      qaToggleIssueLabel(issueIid, 'ai-learning', true, bucket);
+    }
+    function qaAddBugClass(issueIid, ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      qaToggleIssueLabel(issueIid, 'bug', true);
     }
 
     // Escape an id for use inside a CSS attribute-selector value.
@@ -6212,8 +6352,10 @@
 
     // ============================================================
     // TEAM "LIVE NOW" STRIP (GitLab tab)
-    // Public read of /internal/live/api/now: per-machine agent heartbeats with a
-    // 10-min TTL in the worker's KV. Separate data source from the Yair OS board.
+    // Gated read of /internal/live/api/now: per-machine agent heartbeats with a
+    // 10-min TTL in the worker's KV. Requires a signed-in GitLab session (the
+    // cookie rides along on this same-origin fetch) or the shared secret for
+    // agents. Separate data source from the Yair OS board.
     // ============================================================
     const LIVE_NOW_API = '/internal/live/api/now';
     // Map full repo dir -> short display label.
