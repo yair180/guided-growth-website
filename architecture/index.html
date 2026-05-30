@@ -763,6 +763,39 @@
     .z4-task-row .z4-blocked    { color: #f87171; }
     .z4-task-row .z4-done       { color: #34d399; }
     .z4-task-row .z4-obsolete   { color: #6b7280; }
+    /* Completed (Done + Obsolete) section: hidden by default behind a toggle */
+    .z4-completed-toggle {
+      display: flex; align-items: center; gap: 7px;
+      width: calc(100% - 16px); margin: 8px 8px 4px;
+      padding: 7px 10px; border-radius: 7px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      color: #8fa8c4; font: inherit; font-size: 11.5px; font-weight: 600;
+      letter-spacing: 0.2px; cursor: pointer; user-select: none;
+      transition: background 100ms, border-color 100ms, color 100ms;
+    }
+    .z4-completed-toggle:hover {
+      background: rgba(91, 192, 222, 0.07);
+      border-color: rgba(91, 192, 222, 0.35); color: #c2cee0;
+    }
+    .z4-completed-toggle .z4-ct-caret {
+      flex-shrink: 0; width: 12px; text-align: center;
+      font-size: 10px; color: #6b8aaf;
+    }
+    .z4-completed-toggle .z4-ct-count {
+      margin-left: auto; flex-shrink: 0;
+      min-width: 20px; text-align: center;
+      padding: 1px 7px; border-radius: 9px;
+      background: rgba(148, 163, 184, 0.16);
+      color: #b3c2d6; font-size: 10.5px; font-weight: 700;
+    }
+    .z4-completed-group .z4-task-row { opacity: 0.62; }
+    .z4-completed-group .z4-task-row:hover { opacity: 1; }
+    .z4-completed-label {
+      margin: 10px 10px 2px; padding: 0;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
+      text-transform: uppercase; color: #6b8aaf;
+    }
     .z4-task-row .z4-task-id {
       font-family: ui-monospace, "SF Mono", Menlo, monospace;
       font-size: 11.5px; font-weight: 700; color: #fff; letter-spacing: 0.3px;
@@ -2541,30 +2574,38 @@
       <h2 style="margin: 0 0 6px; font-size: 18px; color: #fff; font-weight: 600;">
         Guided Growth - Architecture Map
       </h2>
-      <div style="font-size: 12px; color: #6b8aaf; margin-bottom: 22px;">
-        Internal team only. Enter password to continue.
+      <!-- Neutral cover shown by default. The password form (below) is revealed
+           only in password mode; in GitLab-login mode this stays a loading
+           cover and is replaced by the GitLab login screen. -->
+      <div id="auth-loading" style="font-size: 12px; color: #6b8aaf; margin-top: 6px;">
+        Loading...
       </div>
-      <input type="password" id="auth-input" autocomplete="current-password"
-        placeholder="Password"
-        style="
-          width: 100%; box-sizing: border-box;
-          background: #060d18; color: #fff;
-          border: 1px solid #1e3a5f; border-radius: 4px;
-          padding: 10px 12px; font-size: 14px; font-family: inherit;
-          outline: none; margin-bottom: 8px;
-        " />
-      <div id="auth-error" style="
-        color: #f87171; font-size: 12px; min-height: 18px; margin-bottom: 8px;
-      "></div>
-      <button id="auth-submit" style="
-        width: 100%; background: #0d9488; color: #fff;
-        border: 1px solid #2dd4bf; border-radius: 4px;
-        padding: 10px; font-size: 13px; font-weight: 600;
-        cursor: pointer; font-family: inherit;
-        transition: background 0.15s;
-      ">Unlock</button>
-      <div style="font-size: 10px; color: #475569; margin-top: 16px; text-align: center;">
-        Password is remembered on this browser after first unlock.
+      <div id="auth-pw" style="display: none;">
+        <div style="font-size: 12px; color: #6b8aaf; margin: 8px 0 22px;">
+          Internal team only. Enter password to continue.
+        </div>
+        <input type="password" id="auth-input" autocomplete="current-password"
+          placeholder="Password"
+          style="
+            width: 100%; box-sizing: border-box;
+            background: #060d18; color: #fff;
+            border: 1px solid #1e3a5f; border-radius: 4px;
+            padding: 10px 12px; font-size: 14px; font-family: inherit;
+            outline: none; margin-bottom: 8px;
+          " />
+        <div id="auth-error" style="
+          color: #f87171; font-size: 12px; min-height: 18px; margin-bottom: 8px;
+        "></div>
+        <button id="auth-submit" style="
+          width: 100%; background: #0d9488; color: #fff;
+          border: 1px solid #2dd4bf; border-radius: 4px;
+          padding: 10px; font-size: 13px; font-weight: 600;
+          cursor: pointer; font-family: inherit;
+          transition: background 0.15s;
+        ">Unlock</button>
+        <div style="font-size: 10px; color: #475569; margin-top: 16px; text-align: center;">
+          Password is remembered on this browser after first unlock.
+        </div>
       </div>
     </div>
   </div>
@@ -2624,22 +2665,39 @@
         gatedPaint();
       }
 
-      // Already unlocked on this browser?
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        // Accept either the legacy format (hash) OR the stable token "authed"
-        if (stored === "authed" || stored === PASSWORD_HASH) {
-          // Defer unlock until DOM is ready so #auth-gate exists to remove
-          if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", unlock);
-          } else {
-            unlock();
+      // Original shared-password flow, retained as a fallback. Runs only when
+      // GL_REQUIRE_LOGIN is false (see bootGate below), so flipping that flag
+      // back restores password-only access with no further changes.
+      function runPasswordGate() {
+        // Already unlocked on this browser?
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          // Accept either the legacy format (hash) OR the stable token "authed"
+          if (stored === "authed" || stored === PASSWORD_HASH) {
+            // Defer unlock until DOM is ready so #auth-gate exists to remove
+            if (document.readyState === "loading") {
+              document.addEventListener("DOMContentLoaded", unlock);
+            } else {
+              unlock();
+            }
+            return;
           }
-          return;
+        } catch (e) { /* localStorage blocked, fall through to prompt */ }
+        // No stored unlock: show the password prompt.
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", setupGate);
+        } else {
+          setupGate();
         }
-      } catch (e) { /* localStorage blocked, fall through to prompt */ }
+      }
 
       function setupGate() {
+        // Reveal the password form (hidden by default so it never flashes in
+        // GitLab-login mode).
+        const pw = document.getElementById("auth-pw");
+        const loading = document.getElementById("auth-loading");
+        if (pw) pw.style.display = "";
+        if (loading) loading.style.display = "none";
         const input = document.getElementById("auth-input");
         const errorEl = document.getElementById("auth-error");
         const btn = document.getElementById("auth-submit");
@@ -2668,11 +2726,43 @@
         setTimeout(() => input.focus(), 50);
       }
 
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", setupGate);
-      } else {
-        setupGate();
+      // GL_REQUIRE_LOGIN (defined in the second script block) is the single
+      // switch for how the board is gated:
+      //   true  -> group-restricted GitLab login is the only door; the shared
+      //            password card is never shown.
+      //   false -> fall back to the shared-password prompt.
+      function bootGate() {
+        if (typeof GL_REQUIRE_LOGIN === "undefined"
+            || typeof glIsLoggedIn !== "function"
+            || typeof glRenderLoginGate !== "function") {
+          setTimeout(bootGate, 30); return;
+        }
+        if (!GL_REQUIRE_LOGIN) { runPasswordGate(); return; }
+        function runGitlabGate() {
+          // Keep the neutral cover up (overflow stays hidden, password form
+          // stays hidden) while we check the GitLab session, so neither the
+          // password card nor the board flashes before the login screen.
+          const loading = document.getElementById("auth-loading");
+          if (loading) loading.textContent = "Checking access...";
+          glIsLoggedIn().then(function (ok) {
+            const gate = document.getElementById("auth-gate");
+            if (ok) {
+              if (gate) gate.remove();
+              document.documentElement.style.overflow = "";
+              paintBoard();
+            } else {
+              if (gate) gate.remove();
+              glRenderLoginGate();
+            }
+          });
+        }
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", runGitlabGate);
+        } else {
+          runGitlabGate();
+        }
       }
+      bootGate();
     })();
   </script>
 
@@ -5616,6 +5706,17 @@
       }, 60);
     }
 
+    // Done + Obsolete tasks are hidden by default so active work stays in focus.
+    // The toggle state persists across reloads.
+    let _z4ShowCompleted = false;
+    try { _z4ShowCompleted = localStorage.getItem("gg_arch_z4_show_completed") === "1"; } catch (e) {}
+    function toggleZ4Completed() {
+      _z4ShowCompleted = !_z4ShowCompleted;
+      try { localStorage.setItem("gg_arch_z4_show_completed", _z4ShowCompleted ? "1" : "0"); } catch (e) {}
+      const s = document.getElementById("z4-search");
+      renderTaskSidebar(s ? s.value : "");
+    }
+
     // Sidebar rendering (lazy)
     function renderTaskSidebar(filter) {
       const list = document.getElementById("z4-task-list");
@@ -5636,18 +5737,15 @@
         "Done": "●", "Obsolete": "✕"
       };
 
-      let html = "";
-      let visibleCount = 0;
       const PRIORITY_ROW_CLASS = {
         "Critical": "priority-critical",
         "High":     "priority-high",
         "Medium":   "priority-medium",
         "Low":      "priority-low"
       };
-      TASK_INDEX.forEach(t => {
-        const matches = !f || t.i.toLowerCase().includes(f) || (t.t || "").toLowerCase().includes(f);
-        if (!matches) return;
-        visibleCount++;
+      const COMPLETED_STATUS = new Set(["Done", "Obsolete"]);
+
+      function z4RowHtml(t) {
         const statusCls = STATUS_CLASS[t.s] || "notstarted";
         const dot       = STATUS_DOT[t.s] || "○";
         const hasWalk   = tutorialIds.has(t.i);
@@ -5655,24 +5753,57 @@
         const priorityCls = (t.pr && PRIORITY_ROW_CLASS[t.pr]) ? " " + PRIORITY_ROW_CLASS[t.pr] : "";
         const titleEsc  = (t.t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
         const wtBadge = t.wt
-          ? `<span class="z4-task-weight weight-w-${t.wt}" title="Weight (story points) — relative effort">Weight: ${t.wt}</span>`
+          ? `<span class="z4-task-weight weight-w-${t.wt}" title="Weight (story points), relative effort">Weight: ${t.wt}</span>`
           : "";
         const estBadge = t.est
           ? `<span class="z4-task-est" title="Estimated hours">Estimated: ${t.est}h</span>`
           : "";
         const taskIdJs = t.i.replace(/'/g, "\\'");
-        html += `<div class="z4-task-row${activeCls}${priorityCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row${t.pr ? ` · Priority: ${t.pr}` : ""}">
+        return `<div class="z4-task-row${activeCls}${priorityCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row${t.pr ? ` · Priority: ${t.pr}` : ""}">
           <span class="z4-task-status z4-${statusCls}">${dot}</span>
           <span class="z4-task-id">${t.i}</span>
           <span class="z4-task-title">${titleEsc}</span>
           ${wtBadge}
           ${estBadge}
           <button type="button" class="z4-gl-btn" onclick="event.stopPropagation(); glOpenIssuesForTask('${taskIdJs}')" title="Find this task's GitLab issue (matched by ${t.i} in the issue title)">GitLab →</button>
-          ${hasWalk ? `<button type="button" class="z4-walk-btn" onclick="event.stopPropagation(); jumpToWalkthrough('${t.i}')" title="Open walkthrough in Engineering view">Walkthrough →</button>` : `<span class="z4-walk-placeholder" title="No walkthrough — sheet only">—</span>`}
+          ${hasWalk ? `<button type="button" class="z4-walk-btn" onclick="event.stopPropagation(); jumpToWalkthrough('${t.i}')" title="Open walkthrough in Engineering view">Walkthrough →</button>` : `<span class="z4-walk-placeholder" title="No walkthrough, sheet only">—</span>`}
         </div>`;
+      }
+
+      const activeRows = [];
+      const completedRows = [];
+      TASK_INDEX.forEach(t => {
+        const matches = !f || t.i.toLowerCase().includes(f) || (t.t || "").toLowerCase().includes(f);
+        if (!matches) return;
+        if (COMPLETED_STATUS.has(t.s)) completedRows.push(z4RowHtml(t));
+        else activeRows.push(z4RowHtml(t));
       });
-      if (visibleCount === 0) {
-        html = `<div class="z4-empty">No tasks match "${(filter || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")}"</div>`;
+
+      let html = "";
+      if (f) {
+        // Search mode: surface every match (active first), no collapsing.
+        if (activeRows.length === 0 && completedRows.length === 0) {
+          html = `<div class="z4-empty">No tasks match "${(filter || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")}"</div>`;
+        } else {
+          html = activeRows.join("");
+          if (completedRows.length) {
+            html += `<div class="z4-completed-label">Completed (${completedRows.length})</div>` + completedRows.join("");
+          }
+        }
+      } else {
+        // Default mode: active work visible, Done + Obsolete tucked behind a toggle.
+        html = activeRows.join("");
+        if (activeRows.length === 0 && completedRows.length === 0) {
+          html += `<div class="z4-empty">No tasks</div>`;
+        }
+        if (completedRows.length) {
+          const caret = _z4ShowCompleted ? "▾" : "▸";
+          const label = _z4ShowCompleted ? "Hide completed" : "Show completed";
+          html += `<button type="button" class="z4-completed-toggle" onclick="toggleZ4Completed()" title="Done and obsolete tasks, hidden by default to keep active work in focus"><span class="z4-ct-caret">${caret}</span><span>${label}</span><span class="z4-ct-count">${completedRows.length}</span></button>`;
+          if (_z4ShowCompleted) {
+            html += `<div class="z4-completed-group">${completedRows.join("")}</div>`;
+          }
+        }
       }
       list.innerHTML = html;
     }
