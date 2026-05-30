@@ -1476,6 +1476,12 @@
       text-align: left; width: 100%; background: var(--z7-panel); border: 1px solid var(--z7-border);
       border-radius: 7px; padding: 10px 11px; cursor: grab; font-family: inherit; overflow: hidden;
       transition: border-color .12s ease, box-shadow .12s ease, opacity .12s ease;
+      /* Never shrink: the cards live in a flex column whose overflow-y:auto is
+         meant to SCROLL. Because the card sets overflow:hidden, its flex
+         min-height:auto resolves to 0, so without this flexbox would crush every
+         card to fit a full column (95 Open / 89 Done) into the max-height,
+         clipping each title to a thin strip. flex-shrink:0 lets the list scroll. */
+      flex: 0 0 auto;
     }
     .z7-board-card:hover { border-color: var(--z7-border-strong); box-shadow: 0 1px 4px var(--z7-shadow); }
     .z7-board-card:active { cursor: grabbing; }
