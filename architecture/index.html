@@ -1358,6 +1358,37 @@
     .z7-jump-qa { background: #12a150; }
     .z7-jump-sheet { background: #e26e3c; }
 
+    /* Task-aware empty state for the issues list (deep-linked task has no issue) */
+    .z7-empty-task {
+      padding: 30px 22px; border: 1px dashed var(--z7-border); border-radius: 8px;
+      background: var(--z7-panel-2); max-width: 560px;
+    }
+    .z7-empty-task .z7-empty-title { font-size: 14px; font-weight: 700; color: var(--z7-text); margin-bottom: 6px; }
+    .z7-empty-task .z7-empty-sub { font-size: 12.5px; line-height: 1.55; color: var(--z7-text-2); margin-bottom: 16px; }
+    .z7-empty-task .z7-empty-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* "Jump to" breadcrumb at the top of an issue detail */
+    .z7-detail-rels {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 11px 14px; margin-bottom: 16px; border-radius: 8px;
+      background: var(--z7-panel-2); border: 1px solid var(--z7-border);
+    }
+    .z7-rels-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em;
+      font-weight: 700; color: var(--z7-text-2); margin-right: 2px;
+    }
+    .z7-rel {
+      border: 0; border-radius: 6px; font: inherit; font-size: 11.5px; font-weight: 600;
+      padding: 6px 12px; cursor: pointer; color: #fff; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: filter 0.12s, transform 0.04s;
+    }
+    .z7-rel:hover { filter: brightness(1.08); }
+    .z7-rel:active { transform: translateY(1px); }
+    .z7-rel-sheet { background: #e26e3c; }
+    .z7-rel-figma { background: #7b61ff; }
+    .z7-rel-qa { background: #12a150; }
+
     /* Detail panel (slides over the list area, in-flow) */
     #z7-detail {
       background: var(--z7-panel); border: 1px solid var(--z7-border); border-radius: 10px;
@@ -3628,6 +3659,7 @@
   <div id="zoom-7-view">
     <div id="z7-topbar">
       <button type="button" id="z7-back-to-qa" class="z7-btn-ghost" onclick="glBackToQA()" style="display:none;margin-right:10px" title="Return to the QA dashboard">&larr; Back to QA</button>
+      <button type="button" id="z7-back-to-sheet" class="z7-btn-ghost" onclick="glBackToSheet()" style="display:none;margin-right:10px" title="Return to this task in the App Master Sheet">&larr; Back to App Master Sheet</button>
       <div class="z7-title">GitLab <span class="z7-subtle">Docs, issues &amp; merge requests</span></div>
       <div id="z7-conn-area">
         <button type="button" id="z7-theme-toggle" onclick="glToggleTheme()" title="Toggle light/dark theme"><!-- label injected by glApplyTheme() --></button>
@@ -5756,6 +5788,7 @@
       // Cross-zoom round-trip housekeeping: landing back on QA completes the
       // trip (drop the flag); keep the "Back to QA" button in sync otherwise.
       if (level === 6) _glReturnFromQA = false;
+      if (level === 4) _glReturnFromSheet = false;
       if (typeof glSyncBackToQA === 'function') glSyncBackToQA();
 
       // Update active state on buttons
@@ -8622,6 +8655,11 @@
     // once the issues sub-view is live and the connection check has resolved.
     let _glReturnFromQA = false;
     let _glPendingIssueIid = null;
+    // Mirror of the QA round-trip for the Tasks tab (zoom 4): when the Master
+    // Sheet deep-links into an issue here, show a "Back to App Master Sheet"
+    // affordance pointing back at the exact task row we came from.
+    let _glReturnFromSheet = false;
+    let _glFromSheetTaskId = null;
     // Queued screen filter when another tab (Figma / QA) deep-links into the
     // Issues list filtered to one screen; consumed by setGitLabView('issues').
     let _glPendingScreenFilter = null;
@@ -9278,8 +9316,38 @@
     }
 
     // --- List ---
+    // Empty-state builder. When the active search is a Task ID with no linked
+    // issue (Done/early work that predates the tracker, or simply not filed),
+    // say so plainly and offer a route back to the Sheet plus a filter reset,
+    // instead of the bare "no matches" dead-end the Tasks deep-link used to hit.
+    function glEmptyIssuesHtml() {
+      let task = '';
+      try {
+        const se = document.getElementById('z7-issues-search');
+        const v = se ? se.value.trim() : '';
+        if (/^[A-Z][A-Z0-9]*-[0-9A-Z]+$/.test(v)) task = v;
+      } catch (_e) {}
+      if (!task) return '<div class="z7-empty">No issues match these filters.</div>';
+      const known = (typeof TASK_INDEX !== 'undefined' && TASK_INDEX.some(t => t.i === task));
+      return '<div class="z7-empty z7-empty-task">'
+        + '<div class="z7-empty-title">No GitLab issue is linked to ' + qaEscape(task) + ' yet</div>'
+        + '<div class="z7-empty-sub">This task predates the issue tracker or has not been filed as an issue. '
+        + 'Early and already-done work often has no GitLab issue.</div>'
+        + '<div class="z7-empty-actions">'
+        + (known ? '<button type="button" class="z7-jump z7-jump-sheet" onclick="glGoToSheetTask(' + glAttr(task) + ', event)">&larr; Back to ' + qaEscape(task) + ' in Master Sheet</button>' : '')
+        + '<button type="button" class="z7-btn-ghost" onclick="glClearIssueSearch()">Show all issues</button>'
+        + '</div></div>';
+    }
+
+    // Clear the task-id search (and screen filter) and reload the full list.
+    function glClearIssueSearch() {
+      const se = document.getElementById('z7-issues-search'); if (se) se.value = '';
+      const sf = document.getElementById('z7-issues-screen'); if (sf) sf.value = '';
+      loadGitLabIssues();
+    }
+
     function glRenderIssuesList(listEl) {
-      if (!_glIssues.length) { listEl.innerHTML = '<div class="z7-empty">No issues match these filters.</div>'; return; }
+      if (!_glIssues.length) { listEl.innerHTML = glEmptyIssuesHtml(); return; }
       listEl.innerHTML = _glIssues.map(iss => {
         const _scr = glScreenForIssue(iss);
         const goBtn = glIssueJumpBtns(iss);
@@ -9324,7 +9392,6 @@
       const toggleBtn = isOpen
         ? '<button type="button" class="z7-btn-ghost danger" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'close\', this)">Close issue</button>'
         : '<button type="button" class="z7-btn-ghost reopen" onclick="glSetIssueState(' + glAttr(project) + ',' + iss.iid + ',\'reopen\', this)">Reopen issue</button>';
-      const goBtn = glIssueJumpBtns(iss);
       detail.innerHTML =
         '<div id="z7-detail">'
         + '<div class="z7-detail-head">'
@@ -9339,11 +9406,12 @@
         + (iss.updated_at ? '<span>&middot; updated ' + glRel(iss.updated_at) + '</span>' : '')
         + '</div></div>'
         + '<div class="z7-detail-actions">'
-        + goBtn + toggleBtn
+        + toggleBtn
         + '<a class="z7-btn-ghost" href="' + qaEscape(iss.web_url || '#') + '" target="_blank" rel="noopener">Open in GitLab &#x2197;</a>'
         + '<button type="button" class="z7-btn-ghost" onclick="closeGitLabDetail(\'issues\')">Close &#x2715;</button>'
         + '</div></div>'
         + '<div class="z7-detail-body">'
+        + glIssueRelsBar(iss)
         + glRenderMetaGrid(iss)
         + '<div class="z7-section-label">Description</div>'
         + '<div class="z7-md' + (iss.description ? '' : ' empty') + '">' + (iss.description ? ggMd(iss.description) : 'No description.') + '</div>'
@@ -10340,6 +10408,30 @@
       return inner ? '<span class="z7-jump-grp">' + inner + '</span>' : '';
     }
 
+    // A labeled "Jump to" breadcrumb at the top of the issue detail. Unlike the
+    // old action-bar cluster (mixed in with Close / Open in GitLab), this is a
+    // dedicated, always-first row so an issue's links back to the App Master
+    // Sheet task, the Figma screen, and the QA dashboard are easy to find.
+    function glIssueRelsBar(iss) {
+      const screen = glScreenForIssue(iss);
+      const task = glTaskForIssue(iss);
+      const hops = [];
+      if (task) {
+        hops.push('<button type="button" class="z7-rel z7-rel-sheet" onclick="glGoToSheetTask(' + glAttr(task)
+          + ', event)" title="Open this task row in the App Master Sheet">App Master Sheet: ' + qaEscape(task) + ' &rarr;</button>');
+      }
+      if (screen) {
+        if (glScreenHasFigma(screen)) {
+          hops.push('<button type="button" class="z7-rel z7-rel-figma" onclick="glGoToFigma(' + glAttr(screen)
+            + ', event)" title="Open this screen in the Figma viewer">Figma: ' + qaEscape(screen) + ' &rarr;</button>');
+        }
+        hops.push('<button type="button" class="z7-rel z7-rel-qa" onclick="glGoToScreen(' + glAttr(screen)
+          + ', event)" title="Open this screen in the QA dashboard">QA: ' + qaEscape(screen) + ' &rarr;</button>');
+      }
+      if (!hops.length) return '';
+      return '<div class="z7-detail-rels"><span class="z7-rels-label">Jump to</span>' + hops.join('') + '</div>';
+    }
+
     // GitLab (zoom 7) -> App Master Sheet (zoom 4): scroll the Sheet to the
     // task row. jumpToSheetRow already switches the zoom level and highlights.
     function glGoToSheetTask(taskId, ev) {
@@ -10383,7 +10475,12 @@
       const iid = TASK_ISSUE_IID[taskId];
       if (iid) { _glPendingIssueIid = iid; }
       else { _glPendingSearchFilter = taskId || ''; }
-      _glReturnFromQA = false;  // arrived from the Sheet, not QA: hide "Back to QA"
+      // Arrived from the Sheet, not QA: hide "Back to QA", show "Back to App
+      // Master Sheet" pointing at this exact task (works even when the task has
+      // no issue and we land on the empty state).
+      _glReturnFromQA = false;
+      _glReturnFromSheet = true;
+      _glFromSheetTaskId = taskId || null;
       try { glSyncBackToQA(); } catch (_e) {}
       setZoomLevel(7);          // runs loadGitLabTab -> connection check -> forced setGitLabView
       _glView = 'issues';       // set AFTER setZoomLevel so restoreGitLabView can't clobber it
@@ -10398,6 +10495,7 @@
       iid = parseInt(iid, 10);
       if (!iid) return false;
       _glReturnFromQA = true;
+      _glReturnFromSheet = false;  // arrived from QA, not the Sheet
       _glPendingIssueIid = iid;
       setZoomLevel(7);          // runs loadGitLabTab -> connection check -> forced setGitLabView
       _glView = 'issues';       // set AFTER setZoomLevel so restoreGitLabView can't clobber it
@@ -10412,10 +10510,23 @@
       setZoomLevel(6);
     }
 
-    // Show the "Back to QA" button only when we arrived here from QA.
+    // GitLab (zoom 7) -> App Master Sheet (zoom 4): the jump back to the exact
+    // task row we deep-linked from.
+    function glBackToSheet() {
+      const tid = _glFromSheetTaskId;
+      _glReturnFromSheet = false;
+      glSyncBackToQA();
+      if (tid && typeof jumpToSheetRow === 'function') jumpToSheetRow(tid);
+      else setZoomLevel(4);
+    }
+
+    // Keep both round-trip "Back to ..." buttons in sync. Only one origin is ever
+    // active at a time (QA or Sheet), so at most one button shows.
     function glSyncBackToQA() {
-      const b = document.getElementById('z7-back-to-qa');
-      if (b) b.style.display = _glReturnFromQA ? '' : 'none';
+      const bq = document.getElementById('z7-back-to-qa');
+      if (bq) bq.style.display = _glReturnFromQA ? '' : 'none';
+      const bs = document.getElementById('z7-back-to-sheet');
+      if (bs) bs.style.display = _glReturnFromSheet ? '' : 'none';
     }
 
     // ---- shared list error + small utilities ------------------------------
