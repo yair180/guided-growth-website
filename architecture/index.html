@@ -858,6 +858,43 @@
     .z4-task-row .z4-gl-btn:hover {
       background: rgba(226, 110, 60, 0.28); border-color: rgba(226, 110, 60, 0.7);
     }
+    /* Linked task: button carries the live issue number, routes to the exact issue. */
+    .z4-task-row .z4-gl-btn.linked {
+      background: rgba(52, 211, 153, 0.13); color: #7fd9b8;
+      border-color: rgba(52, 211, 153, 0.38);
+    }
+    .z4-task-row:hover .z4-gl-btn.linked,
+    .z4-task-row.active .z4-gl-btn.linked { opacity: 1; }
+    .z4-task-row .z4-gl-btn.linked:hover {
+      background: rgba(52, 211, 153, 0.26); border-color: rgba(52, 211, 153, 0.66);
+    }
+    /* Active task with no issue yet: a real coverage gap, flagged amber. */
+    .z4-task-row .z4-gl-btn.missing {
+      background: rgba(224, 108, 117, 0.14); color: #e6a0a6;
+      border-color: rgba(224, 108, 117, 0.45);
+    }
+    .z4-task-row .z4-gl-btn.missing:hover {
+      background: rgba(224, 108, 117, 0.26); border-color: rgba(224, 108, 117, 0.7);
+    }
+    /* Done / Obsolete with no issue: by design, muted and non-interactive. */
+    .z4-task-row .z4-gl-none {
+      flex-shrink: 0; padding: 3px 8px; border-radius: 6px;
+      font-size: 10.5px; font-weight: 600;
+      color: rgba(255,255,255,0.28);
+      border: 1px solid rgba(255,255,255,0.09);
+      background: rgba(255,255,255,0.03);
+      white-space: nowrap;
+    }
+    #z4-recon {
+      margin-top: 8px; padding: 7px 9px; border-radius: 7px;
+      background: rgba(91, 192, 222, 0.08);
+      border: 1px solid rgba(91, 192, 222, 0.18);
+      font-size: 11px; line-height: 1.5; color: #9fc3d8;
+    }
+    #z4-sidebar.collapsed #z4-recon { display: none; }
+    #z4-recon b { color: #d6e6f2; font-weight: 700; }
+    #z4-recon .z4-recon-row { display: flex; flex-wrap: wrap; gap: 2px 10px; }
+    #z4-recon .z4-recon-sub { color: #6b8aaf; margin-top: 3px; display: block; }
 
     #zoom-4-iframe-wrap { flex: 1; min-width: 0; }
     #zoom-4-iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
@@ -3653,6 +3690,7 @@
           <input id="z4-search" type="search" placeholder="Search by ID or title…" oninput="filterTaskSidebar(this.value)" autocomplete="off" />
           <a id="z4-open-new-tab" href="https://docs.google.com/spreadsheets/d/1iNEdUm5vqmjk3YGEF1uMwfurcvgVRHykWUeBGHDBqcw/edit?gid=1687604173" target="_blank" rel="noopener">Open Sheet in new tab ↗</a>
           <button type="button" id="z4-google-signin" onclick="openGoogleSigninPopup()" title="If the embedded sheet shows a Google sign-in card, click here. Signs you in via a popup and refreshes the embed automatically.">Sign in to Google ↗</button>
+          <div id="z4-recon" title="Task to GitLab issue coverage"></div>
         </div>
         <div id="z4-task-list" role="list"></div>
       </aside>
@@ -5843,15 +5881,56 @@
           ? `<span class="z4-task-est" title="Estimated hours">Estimated: ${t.est}h</span>`
           : "";
         const taskIdJs = t.i.replace(/'/g, "\\'");
+        // Issue-link cell. Linked tasks show their live GitLab issue number and
+        // route to the exact issue. Done/Obsolete with no issue are muted "no
+        // issue" by design. An active task with no issue is a real gap (amber).
+        const linkedIid = (typeof TASK_ISSUE_IID !== "undefined") ? TASK_ISSUE_IID[t.i] : undefined;
+        let glCell;
+        if (linkedIid) {
+          glCell = `<button type="button" class="z4-gl-btn linked" onclick="event.stopPropagation(); glOpenIssuesForTask('${taskIdJs}')" title="Open GitLab issue #${linkedIid}, linked 1:1 by ${t.i} in the title">#${linkedIid} →</button>`;
+        } else if (t.s === "Done" || t.s === "Obsolete") {
+          const why = (t.s === "Obsolete")
+            ? "Obsolete task, no GitLab issue by design"
+            : "Done before the issue-mirror convention, no GitLab issue by design";
+          glCell = `<span class="z4-gl-none" title="${why}">no issue</span>`;
+        } else {
+          glCell = `<button type="button" class="z4-gl-btn missing" onclick="event.stopPropagation(); glOpenIssuesForTask('${taskIdJs}')" title="No GitLab issue links to ${t.i} yet, a coverage gap. Opens a title search so you can create one.">no issue ⚠</button>`;
+        }
         return `<div class="z4-task-row${activeCls}${priorityCls}" data-task-id="${t.i}" onclick="jumpToSheetRow('${t.i}')" title="Click to scroll the sheet to this row${t.pr ? ` · Priority: ${t.pr}` : ""}">
           <span class="z4-task-status z4-${statusCls}">${dot}</span>
           <span class="z4-task-id">${t.i}</span>
           <span class="z4-task-title">${titleEsc}</span>
           ${wtBadge}
           ${estBadge}
-          <button type="button" class="z4-gl-btn" onclick="event.stopPropagation(); glOpenIssuesForTask('${taskIdJs}')" title="Find this task's GitLab issue (matched by ${t.i} in the issue title)">GitLab →</button>
+          ${glCell}
           ${hasWalk ? `<button type="button" class="z4-walk-btn" onclick="event.stopPropagation(); jumpToWalkthrough('${t.i}')" title="Open walkthrough in Engineering view">Walkthrough →</button>` : `<span class="z4-walk-placeholder" title="No walkthrough, sheet only">—</span>`}
         </div>`;
+      }
+
+      // Reconciliation summary across the whole task index (ignores the search
+      // filter). Counts every task's issue coverage so the loop status is
+      // visible at a glance, not buried in a one-off script.
+      const recon = document.getElementById("z4-recon");
+      if (recon) {
+        let linked = 0, doneNoIssue = 0, obsoleteNoIssue = 0, gap = 0;
+        TASK_INDEX.forEach(t => {
+          const has = (typeof TASK_ISSUE_IID !== "undefined") && TASK_ISSUE_IID[t.i];
+          if (has) linked++;
+          else if (t.s === "Obsolete") obsoleteNoIssue++;
+          else if (t.s === "Done") doneNoIssue++;
+          else gap++;
+        });
+        const gapHtml = gap
+          ? `<span title="Active tasks with no GitLab issue, a real coverage gap">· <b style="color:#e6a0a6">${gap} unlinked</b></span>`
+          : `<span title="No active task is missing an issue">· <b style="color:#7fd9b8">0 gaps</b></span>`;
+        recon.innerHTML =
+          `<span class="z4-recon-row">` +
+            `<span title="Tasks linked 1:1 to a GitLab issue by their ID">🔗 <b>${linked}</b> linked</span>` +
+            `<span title="Done before the mirror convention, no issue by design">· <b>${doneNoIssue}</b> done</span>` +
+            `<span title="Obsolete, no issue by design"><b>${obsoleteNoIssue}</b> obsolete</span>` +
+            gapHtml +
+          `</span>` +
+          `<span class="z4-recon-sub">Each issue links by its task ID in the title. Done and obsolete rows carry no issue by design.</span>`;
       }
 
       const activeRows = [];
@@ -10869,7 +10948,7 @@
     }
 
     // Deterministic task -> GitLab issue IID map (gg-mvp). The Sheet->GitLab
-    // sync stamps [TASK-ID] into each issue title; these 68 links are 1:1 and
+    // sync stamps [TASK-ID] into each issue title; these 72 links are 1:1 and
     // stable (GitLab IIDs never change once created). Built 2026-05-30 from a
     // full scan of all 186 gg-mvp issues. Tasks absent from this map (Done/
     // Obsolete early work, or any future task) fall back to a title search.
