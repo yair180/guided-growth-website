@@ -667,13 +667,12 @@
     #text-size-ctl .ts-val:hover { color: #fff; }
 
     /* Zoom view containers */
-    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view, #zoom-7-view, #zoom-8-view { display: none; }
+    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view, #zoom-7-view { display: none; }
     #zoom-1-view.active, #zoom-2-view.active { display: block; }
     #zoom-3-view.active { display: block; }
     #zoom-4-view.active, #zoom-5-view.active { display: flex; flex-direction: column; }
     #zoom-6-view.active { display: flex; flex-direction: row; }
     #zoom-7-view.active { display: flex; flex-direction: column; }
-    #zoom-8-view.active { display: flex; flex-direction: column; }
     #zoom-4-view {
       position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
       background: #0a1929; font-family: -apple-system, sans-serif;
@@ -1269,17 +1268,20 @@
     }
 
     /* ============================================================
-       ROADMAP VIEW (zoom-8). Light, embeddable board. Two lanes
-       (Product / Engineering) x four horizons (Now/Next/Later/Vision),
-       plus an Unsorted tray for issues not yet placed.
+       ROADMAP VIEW. Light, embeddable board nested as a sub-view of
+       the GitLab tab. Two lanes (Product / Engineering) x four horizons
+       (Now/Next/Later/Vision), plus an Unsorted tray for issues not yet
+       placed. Bleeds out of #z7-body's padding to fill the tab.
        ============================================================ */
-    #zoom-8-view {
+    #z7-view-roadmap {
       --rm-bg:#f7f8fa; --rm-panel:#ffffff; --rm-border:#e3e6eb;
       --rm-text:#1f2733; --rm-text-2:#5b6675; --rm-text-3:#8a93a3;
       --rm-accent:#1f75cb; --rm-now:#dd2b0e; --rm-next:#c9610e;
       --rm-later:#1f75cb; --rm-vision:#6d49cb; --rm-unsorted:#8a93a3;
       --rm-product:#1f7e5a; --rm-eng:#4b6cb7;
-      position: fixed; top: 41px; left: 0; right: 0; bottom: 0;
+      /* #z7-body padding is 18px 28px 60px; cancel it so the board fills edge-to-edge. */
+      display: flex; flex-direction: column;
+      margin: -18px -28px -60px; height: calc(100% + 78px);
       background: var(--rm-bg); color: var(--rm-text);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       overflow: hidden; -webkit-font-smoothing: antialiased;
@@ -2598,27 +2600,6 @@
       padding: 1px 7px; font-size: 10.5px; color: #8fa8c4;
     }
     .z6-proposed-card .z6-conf-pill.conf-low { color: #f59e0b; border-color: rgba(245,158,11,0.35); }
-    /* Suggested-fix block: collapsed by default so the AI's guess does not bias
-       a dev's own investigation. Full border, no side-stripe. */
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix {
-      background: rgba(167, 139, 250, 0.07);
-      border: 1px solid rgba(167, 139, 250, 0.28);
-      border-radius: 6px; padding: 0; margin: 4px 0 8px;
-    }
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix > summary {
-      list-style: none; cursor: pointer; padding: 6px 10px;
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    }
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix > summary::-webkit-details-marker { display: none; }
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix > summary::before {
-      content: '\25B8'; color: #a78bfa; font-size: 11px; transition: transform 0.15s ease;
-    }
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix[open] > summary::before { transform: rotate(90deg); }
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix .z6-detail-label { color: #c4b5fd; margin: 0; }
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix-flag {
-      font-size: 10px; color: #8b7bb8; font-style: italic;
-    }
-    .z6-proposed-card .z6-proposed-detail .z6-suggested-fix p { margin: 0; padding: 0 10px 8px; }
     /* AI-Learning filed-success — purple instead of bug-green */
     .z6-proposed-card.ai-filed-success {
       border-left-color: #a78bfa;
@@ -4034,26 +4015,7 @@
     </main>
   </div>
 
-  <!-- ZOOM 7: GITLAB TAB -->
-  <div id="zoom-8-view">
-    <div id="rm-topbar">
-      <div><span class="rm-title">Roadmap</span> <span class="rm-sub">Now &middot; Next &middot; Later &middot; Vision &middot; backed by gg-mvp issues</span></div>
-      <div class="rm-seg" id="rm-squad-seg" role="group" aria-label="Lane filter">
-        <button type="button" class="active" data-squad="all" onclick="rmSetSquad('all')">All</button>
-        <button type="button" data-squad="product" onclick="rmSetSquad('product')">Product</button>
-        <button type="button" data-squad="eng" onclick="rmSetSquad('eng')">Engineering</button>
-      </div>
-      <label class="rm-toggle" id="rm-timothy-toggle" title="Show only items assigned to Timothy">
-        <input type="checkbox" onchange="rmToggleTimothy(this.checked)"> Timothy view
-      </label>
-      <button type="button" id="rm-refresh" onclick="loadRoadmap(true)" title="Reload from GitLab">&#8635; Refresh</button>
-      <span id="rm-meta"></span>
-    </div>
-    <div id="rm-board">
-      <div id="rm-loading">Loading roadmap&hellip;</div>
-    </div>
-  </div>
-
+  <!-- ZOOM 7: GITLAB TAB (Docs / Repository / Issues / Board / Roadmap / Merge Requests) -->
   <div id="zoom-7-view">
     <div id="z7-topbar">
       <button type="button" id="z7-back-to-qa" class="z7-btn-ghost" onclick="glBackToQA()" style="display:none;margin-right:10px" title="Return to the QA dashboard">&larr; Back to QA</button>
@@ -4069,6 +4031,7 @@
       <button type="button" class="z7-subnav-btn" data-view="repo" onclick="setGitLabView('repo')">Repository</button>
       <button type="button" class="z7-subnav-btn" data-view="issues" onclick="setGitLabView('issues')">Issues</button>
       <button type="button" class="z7-subnav-btn" data-view="board" onclick="setGitLabView('board')">Board</button>
+      <button type="button" class="z7-subnav-btn" data-view="roadmap" onclick="setGitLabView('roadmap')">Roadmap</button>
       <button type="button" class="z7-subnav-btn" data-view="mrs" onclick="setGitLabView('mrs')">Merge Requests</button>
     </div>
     <!-- Team "Now": live agent sessions (tool-agnostic heartbeats, public read).
@@ -4214,6 +4177,26 @@
         <div id="z7-repo-wrap">
           <div id="z7-repo-tree"><div class="z7-loading">Loading…</div></div>
           <div id="z7-repo-viewer"><div class="z7-empty">Select a file from the tree to view it.</div></div>
+        </div>
+      </section>
+
+      <!-- ROADMAP sub-view (Now / Next / Later / Vision, backed by gg-mvp issues) -->
+      <section id="z7-view-roadmap" style="display:none">
+        <div id="rm-topbar">
+          <div><span class="rm-title">Roadmap</span> <span class="rm-sub">Now &middot; Next &middot; Later &middot; Vision &middot; backed by gg-mvp issues</span></div>
+          <div class="rm-seg" id="rm-squad-seg" role="group" aria-label="Lane filter">
+            <button type="button" class="active" data-squad="all" onclick="rmSetSquad('all')">All</button>
+            <button type="button" data-squad="product" onclick="rmSetSquad('product')">Product</button>
+            <button type="button" data-squad="eng" onclick="rmSetSquad('eng')">Engineering</button>
+          </div>
+          <label class="rm-toggle" id="rm-timothy-toggle" title="Show only items assigned to Timothy">
+            <input type="checkbox" onchange="rmToggleTimothy(this.checked)"> Timothy view
+          </label>
+          <button type="button" id="rm-refresh" onclick="loadRoadmap(true)" title="Reload from GitLab">&#8635; Refresh</button>
+          <span id="rm-meta"></span>
+        </div>
+        <div id="rm-board">
+          <div id="rm-loading">Loading roadmap&hellip;</div>
         </div>
       </section>
     </div>
@@ -4883,17 +4866,11 @@
                 : '')
             + '</figure>').join('') + '</div>'
         : '';
-      const suggestedFix = (f.suggested_fix && String(f.suggested_fix).trim()) ? String(f.suggested_fix).trim() : '';
 
       // Detail block
       const detail = expanded
         ? '<div class="z6-proposed-detail">'
           + (f.evidence ? '<div class="z6-detail-label">Evidence</div><p>' + qaEscape(f.evidence) + '</p>' : '')
-          + (suggestedFix
-              ? '<details class="z6-suggested-fix"><summary><span class="z6-detail-label">Suggested fix</span>'
-                + '<span class="z6-suggested-fix-flag">AI guess, open after forming your own read</span></summary>'
-                + '<p>' + qaEscape(suggestedFix) + '</p></details>'
-              : '')
           + (f.ai_block && f.ai_block.repro_steps
               ? '<div class="z6-detail-label">Repro steps</div><p>' + qaEscape(f.ai_block.repro_steps) + '</p>'
               : '')
@@ -6398,8 +6375,6 @@
       if (qaView) qaView.classList.toggle('active', level === 6);
       const glView = document.getElementById('zoom-7-view');
       if (glView) glView.classList.toggle('active', level === 7);
-      const rmView = document.getElementById('zoom-8-view');
-      if (rmView) rmView.classList.toggle('active', level === 8);
 
       // Cross-zoom round-trip housekeeping: landing back on QA completes the
       // trip (drop the flag); keep the "Back to QA" button in sync otherwise.
@@ -6427,11 +6402,6 @@
       // Lazy-load QA data the first time level 6 is opened, then refresh on every revisit.
       if (level === 6 && typeof loadQADashboard === 'function') {
         loadQADashboard();
-      }
-
-      // Lazy-load the roadmap the first time level 8 is opened, refresh on revisit.
-      if (level === 8 && typeof loadRoadmap === 'function') {
-        loadRoadmap();
       }
 
       // GitLab tab: check connection + render the active sub-view, and run the
@@ -9800,17 +9770,17 @@
     // ---- sub-view switching ------------------------------------------------
 
     function restoreGitLabView() {
-      try { const v = localStorage.getItem(GL_VIEW_KEY); if (['issues','board','mrs','docs','repo'].includes(v)) _glView = v; } catch (_e) {}
+      try { const v = localStorage.getItem(GL_VIEW_KEY); if (['issues','board','mrs','docs','repo','roadmap'].includes(v)) _glView = v; } catch (_e) {}
     }
 
     function setGitLabView(view, force) {
-      if (!['issues', 'board', 'mrs', 'docs', 'repo'].includes(view)) return;
+      if (!['issues', 'board', 'mrs', 'docs', 'repo', 'roadmap'].includes(view)) return;
       if (view === _glView && !force) return;
       _glView = view;
       try { localStorage.setItem(GL_VIEW_KEY, view); } catch (_e) {}
       document.querySelectorAll('#z7-subnav .z7-subnav-btn').forEach(b =>
         b.classList.toggle('active', b.dataset.view === view));
-      ['issues', 'board', 'mrs', 'docs', 'repo'].forEach(v => {
+      ['issues', 'board', 'mrs', 'docs', 'repo', 'roadmap'].forEach(v => {
         const s = document.getElementById('z7-view-' + v);
         if (s) s.style.display = v === view ? '' : 'none';
       });
@@ -9849,6 +9819,7 @@
       else if (view === 'mrs') loadGitLabMRs();
       else if (view === 'docs') loadGitLabDocs();
       else if (view === 'repo') loadGitLabRepo();
+      else if (view === 'roadmap') loadRoadmap();
     }
 
     // Populate the New Issue + filter screen dropdowns from QA_FLOW_ORDER once.
@@ -11347,7 +11318,7 @@
   </script>
   <script>
   /* ============================================================
-     ROADMAP VIEW (zoom-8). Read-only board over gg-mvp issues.
+     ROADMAP VIEW (GitLab tab sub-view). Read-only board over gg-mvp issues.
      Data: GET /internal/roadmap/api/items (worker, GitLab-backed).
      Label edits happen in GitLab; every card links out to its issue.
      ============================================================ */
