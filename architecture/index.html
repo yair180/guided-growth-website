@@ -9191,23 +9191,30 @@
     // existing OAuth connect trigger (gitlabConnect) for the button.
     function glRenderLoginGate() {
       if (document.getElementById('gl-login-gate')) return;
+      var denied = false;
+      try { denied = new URLSearchParams(window.location.search).get('gl_denied') === '1'; } catch (_e) {}
       const gate = document.createElement('div');
       gate.id = 'gl-login-gate';
       gate.setAttribute('style',
         'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;'
         + 'background:#1f1f24;color:#ececef;'
         + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;");
+      const msg = denied
+        ? 'This GitLab account is not a member of the Guided Growth group. '
+          + 'Ask Yair to add you, then log in again.'
+        : 'This board is for the team. Log in with GitLab to continue.';
+      const btnLabel = denied ? 'Try a different account' : 'Login with GitLab';
       gate.innerHTML =
         '<div style="background:#28272d;border:1px solid #434248;border-radius:12px;'
           + 'padding:40px 36px;max-width:380px;width:90%;text-align:center;'
           + 'box-shadow:0 8px 32px rgba(0,0,0,0.4);">'
         + '<h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#fff;">Guided Growth</h2>'
-        + '<p style="margin:0 0 24px;font-size:13px;line-height:1.6;color:#bfbfc3;">'
-          + 'This board is for the team. Log in with GitLab to continue.</p>'
+        + '<p style="margin:0 0 24px;font-size:13px;line-height:1.6;color:'
+          + (denied ? '#e6a6a0' : '#bfbfc3') + ';">' + msg + '</p>'
         + '<button type="button" id="gl-login-gate-btn" style="'
           + 'background:#1f75cb;color:#fff;border:none;font:inherit;font-weight:500;'
           + 'border-radius:6px;padding:10px 20px;font-size:14px;cursor:pointer;'
-          + 'transition:background 0.15s;">Login with GitLab</button>'
+          + 'transition:background 0.15s;">' + btnLabel + '</button>'
         + '</div>';
       document.body.appendChild(gate);
       document.documentElement.style.overflow = 'hidden';
