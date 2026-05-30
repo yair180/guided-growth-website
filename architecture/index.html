@@ -581,6 +581,7 @@
       cursor: pointer; user-select: none;
       transition: all 0.12s; font-family: inherit;
       display: inline-flex; align-items: center; gap: 4px;
+      white-space: nowrap;
     }
     #zoom-toggle-bar .zoom-btn:hover { background: rgba(30, 58, 95, 0.5); color: #fff; }
     #zoom-toggle-bar .zoom-btn.active {
@@ -2879,7 +2880,7 @@
       <strong>Analytics</strong> records events from both Frontend and Backend.
       <strong>Tools</strong> are how the team builds and ships the system.
       <br><br>
-      Click <strong>Zoom 2</strong> to see the vendors inside each region. Click <strong>Zoom 3</strong> for the engineering map with all 21 nodes and 55 build tasks.
+      Open <strong>Components</strong> to see the vendors inside each region. Open <strong>Engineering</strong> for the full map with all 21 nodes and 55 build tasks.
     </div>
   </div>
 </div>
@@ -3299,7 +3300,7 @@
     </div>
 
     <div class="z-explanation">
-      <strong>How to read this view:</strong> Same five regions as Zoom 1, opened up to show the actual vendors and components.
+      <strong>How to read this view:</strong> Same five regions as the System view, opened up to show the actual vendors and components.
       <br><br>
       The <strong>Frontend</strong> is React + Vite hosted on Vercel, with three React hooks (<code>useRealtimeVoice</code> for Path 1, <code>useAsync</code> for Path 2, <code>useLLM</code> for Path 3).
       The <strong>Voice Layer</strong> is Vapi (orchestrator) plus Cartesia (Ink for STT, Sonic-3 for TTS, Sonic API for direct TTS).
@@ -3309,7 +3310,7 @@
       <br><br>
       The three paths below show how the components combine for different user moments: live voice for onboarding (Path 1), MP3 + LLM for daily check-ins (Path 2), text or async voice for free chat (Path 3).
       <br><br>
-      Click <strong>Zoom 3</strong> for the engineering map with all 21 nodes and 55 build tasks organized into the same 5 lanes.
+      Open <strong>Engineering</strong> for the full map with all 21 nodes and 55 build tasks organized into the same 5 lanes.
     </div>
   </div>
 </div>
@@ -3319,7 +3320,7 @@
   <div id="header">
     <div>
       <h1>Guided Growth - Data Architecture Map <span style="font-size:11px;color:#5bc0de;font-weight:500;margin-left:6px;">v5.1</span></h1>
-      <div class="subtitle">v2.3 May 6 2026 (5-region structure across all 3 zooms). Three LLM paths (Vapi for onboarding, Async Reflection for check-ins, Direct LLM otherwise), anon_id in MVP, frontend talks directly to Supabase. Hover for quick info, click for details, or pick a walkthrough.</div>
+      <div class="subtitle">v2.3 May 6 2026 (5-region structure across all 3 architecture views). Three LLM paths (Vapi for onboarding, Async Reflection for check-ins, Direct LLM otherwise), anon_id in MVP, frontend talks directly to Supabase. Hover for quick info, click for details, or pick a walkthrough.</div>
     </div>
     <div id="controls-bar">
       <div class="tutorial-launcher">
