@@ -2815,6 +2815,7 @@
               if (gate) gate.remove();
               document.documentElement.style.overflow = "";
               paintBoard();
+              if (typeof glRenderUserChip === "function") glRenderUserChip();
             } else {
               if (gate) gate.remove();
               glRenderLoginGate();
@@ -9416,6 +9417,33 @@
       try { await glFetch('/oauth/logout', { method: 'POST' }); } catch (_e) {}
       _glConnected = false; _glDocsLoaded = false;
       glCheckConnection();
+    }
+
+    // Global signed-in chip in the top bar. Only meaningful when the whole board
+    // is gated by GitLab login. Reuses /api/me (cheap, session resolved server
+    // side) to show who is signed in next to a Sign out button.
+    async function glRenderUserChip() {
+      if (typeof GL_REQUIRE_LOGIN === 'undefined' || !GL_REQUIRE_LOGIN) return;
+      const host = document.getElementById('gl-userchip');
+      if (!host) return;
+      try {
+        const me = await glFetch('/api/me');
+        if (!me || !me.connected) { host.style.display = 'none'; return; }
+        const u = me.user || {};
+        const nameEl = document.getElementById('gl-uc-name');
+        if (nameEl) nameEl.textContent = u.name || u.username || 'Signed in';
+        host.style.display = '';
+      } catch (_e) {
+        host.style.display = 'none';
+      }
+    }
+
+    // Whole-board sign out: clear the server session, then hard-reload so the
+    // login gate paints from a clean state instead of a half-rendered board.
+    async function glSignOut() {
+      try { await glFetch('/oauth/logout', { method: 'POST' }); } catch (_e) {}
+      try { window.location.reload(); }
+      catch (_e) { window.location.href = window.location.pathname; }
     }
 
     // ---- sub-view switching ------------------------------------------------
