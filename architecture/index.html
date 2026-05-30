@@ -8838,10 +8838,12 @@
     // is sent because every fetch passes credentials:'include').
     // ============================================================
     const GL_BASE = '/internal/gitlab';
-    // OFF by default. When true, the whole board is gated behind GitLab login:
-    // an unauthenticated visitor sees only the login screen. Leave false until
-    // tested; the live site serves from main and this flag is the only switch.
-    const GL_REQUIRE_LOGIN = false;
+    // When true, the whole board is gated behind GitLab login: an unauthenticated
+    // visitor sees only the login screen, and only guidedgrowth-group members can
+    // get a session (membership is enforced server-side in the OAuth callback).
+    // This flag is the only switch; set it back to false to restore the shared
+    // password fallback with no other changes.
+    const GL_REQUIRE_LOGIN = true;
     let _glConnected = null;           // null = unknown, true/false once /api/me resolves
     let _glView = 'docs';              // docs | issues | mrs (docs is the centerpiece default)
     let _glSearchDebounce = null;
