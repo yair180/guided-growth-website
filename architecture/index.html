@@ -3341,7 +3341,7 @@
         </g>
         <g>
           <rect x="500" y="315" width="160" height="44" rx="6" fill="#dc2626" stroke="#f87171" stroke-width="1" />
-          <text x="580" y="332" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="-apple-system, sans-serif">Soniox / Gladia</text>
+          <text x="580" y="332" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="-apple-system, sans-serif">Soniox</text>
           <text x="580" y="349" text-anchor="middle" fill="#fff" font-size="9" font-family="-apple-system, sans-serif">speech-to-text</text>
         </g>
         <g>
@@ -3542,7 +3542,7 @@
             <!-- STT sub-box -->
             <rect x="280" y="92" width="195" height="38" rx="5" fill="rgba(0,0,0,0.30)" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
             <text x="290" y="108" fill="#fff" font-size="11" font-weight="700">STT</text>
-            <text x="465" y="108" text-anchor="end" fill="rgba(255,255,255,0.85)" font-size="10" font-weight="600">Soniox / Gladia</text>
+            <text x="465" y="108" text-anchor="end" fill="rgba(255,255,255,0.85)" font-size="10" font-weight="600">Soniox</text>
             <text x="290" y="122" fill="rgba(255,255,255,0.7)" font-size="9">streaming transcription</text>
             <!-- LLM sub-box -->
             <rect x="488" y="92" width="195" height="38" rx="5" fill="rgba(0,0,0,0.30)" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
@@ -3624,7 +3624,7 @@
       <strong>How to read this view:</strong> Same five regions as the System view, opened up to show the actual vendors and components.
       <br><br>
       The <strong>Frontend</strong> is React + Vite hosted on Vercel, with three React hooks (<code>useRealtimeVoice</code> for Path 1, <code>useAsync</code> for Path 2, <code>useLLM</code> for Path 3).
-      The <strong>Voice Layer</strong> is Vapi (orchestrator), Soniox / Gladia for STT, and Cartesia (Sonic 3.5) for TTS.
+      The <strong>Voice Layer</strong> is Vapi (orchestrator), Soniox for STT, and Cartesia (Sonic 3.5) for TTS.
       The <strong>Backend</strong> centers on <code>callLLM()</code> with the /api/context endpoint, tool execution, rate limiting and anonymization.
       The <strong>LLM</strong> is GPT-4o mini via OpenAI's API (swappable to Gemini, Groq, or Claude).
       <strong>Memory</strong> is Supabase: Auth (used by Frontend), Database (used by Backend), Storage (used by Frontend for MP3s).
@@ -6622,12 +6622,12 @@
         { id: "vapi", label: "Vapi", group: "external", x: 725, y: 250, width: 240, height: 220,
           owners: "Backend team",
           subItems: [
-            { label: "STT", meta: "Soniox / Gladia" },
+            { label: "STT", meta: "Soniox" },
             { label: "LLM" },
             { label: "TTS", meta: "Cartesia Sonic-3" }
           ],
           summary: "Path 1 voice orchestrator. STT + LLM + TTS pipeline managed inside Vapi for onboarding.",
-          description: "Vapi is the real-time voice agent orchestrator. The CONDUCTOR of voice conversations.\n\nVapi internally manages a full STT → LLM → TTS pipeline:\n- STT: Soniox (multilingual, sub-200ms streaming), Gladia fallback\n- LLM: GPT-4o mini (BYO key)\n- TTS: Cartesia Sonic-3 (Yair cloned voice)\n\nUsed for Path 1 - ONBOARDING ONLY. Screens: WELCOME-01, PREF-01, MIC-01, POST-AUTH-01, ONBOARD-01 to ONBOARD-09, HOME-RETURN, ADV-01, ADV-02. Also used by P2-31 feedback sessions.\n\nManages turn-taking, interruption handling, latency optimization, and the streaming buffer loop between STT, LLM, and TTS. Vapi decides WHEN and HOW SMOOTHLY; the LLM decides WHAT.\n\nMost expensive voice path per minute — reserved for high-trust onboarding moment. Path 2 (check-ins) bypasses Vapi entirely and calls Soniox + Sonic API directly, so the frontend pays only for the underlying TTS rather than full orchestration." },
+          description: "Vapi is the real-time voice agent orchestrator. The CONDUCTOR of voice conversations.\n\nVapi internally manages a full STT → LLM → TTS pipeline:\n- STT: Soniox (multilingual, sub-200ms streaming)\n- LLM: GPT-4o mini (BYO key)\n- TTS: Cartesia Sonic-3 (Yair cloned voice)\n\nUsed for Path 1 - ONBOARDING ONLY. Screens: WELCOME-01, PREF-01, MIC-01, POST-AUTH-01, ONBOARD-01 to ONBOARD-09, HOME-RETURN, ADV-01, ADV-02. Also used by P2-31 feedback sessions.\n\nManages turn-taking, interruption handling, latency optimization, and the streaming buffer loop between STT, LLM, and TTS. Vapi decides WHEN and HOW SMOOTHLY; the LLM decides WHAT.\n\nMost expensive voice path per minute — reserved for high-trust onboarding moment. Path 2 (check-ins) bypasses Vapi entirely and calls Soniox + Sonic API directly, so the frontend pays only for the underlying TTS rather than full orchestration." },
         { id: "cartesia-stt", label: "Soniox (STT)", group: "cartesia-sub", x: 480, y: 480, width: 200, height: 60,
           owners: "Backend team",
           summary: "Path 2 STT direct. Frontend streams mic audio for check-in transcription.",
