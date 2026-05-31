@@ -9705,15 +9705,27 @@
     }
 
     // ---- Shared squad / assignee / sort logic (Issues + Board) -------------
-    // Squad reads the same roadmap::squad::<product|eng> scoped label the
-    // Sheet->GitLab sync stamps, so the split here matches the Roadmap exactly.
+    // Squad is derived from WHO OWNS the work, matching the worker's roadmap
+    // derivation exactly so the Issues / Board filters stay in lockstep with the
+    // Roadmap: an explicit roadmap::squad:: label wins; else a bug is eng; else
+    // an engineer assignee is eng; else a Yair/Timothy assignee is product; else
+    // (unowned, non-bug) default to eng.
+    var SQUAD_ENG_USERS = ['yonaSisay', 'jamymarcoss47', 'voidreamer'];
+    var SQUAD_PRODUCT_USERS = ['Yair180', 'dionisius.timothyjm'];
     function glSquadOf(iss) {
-      for (const l of ((iss && iss.labels) || [])) {
-        const nm = (l && typeof l === 'object') ? (l.name || '') : String(l || '');
-        const m = nm.match(/^roadmap::squad::(product|eng)$/i);
-        if (m) return m[1].toLowerCase();
+      var names = glLabelNames((iss && iss.labels) || []); // lowercased
+      for (var j = 0; j < names.length; j++) {
+        var m = names[j].match(/^roadmap::squad::(product|eng)$/);
+        if (m) return m[1];
       }
-      return '';
+      if (names.indexOf('bug') !== -1) return 'eng';
+      var arr = (iss && iss.assignees) || [];
+      for (var k = 0; k < arr.length; k++) {
+        var u = arr[k] && arr[k].username;
+        if (u && SQUAD_ENG_USERS.indexOf(u) !== -1) return 'eng';
+        if (u && SQUAD_PRODUCT_USERS.indexOf(u) !== -1) return 'product';
+      }
+      return 'eng';
     }
     function glMatchSquad(iss, squad) {
       return (!squad || squad === 'all') ? true : glSquadOf(iss) === squad;
