@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guided Growth — Founding Users</title>
+  <meta name="description" content="Be one of 50 founding users. Early, free access to a coach you can actually talk to." />
+  <meta name="robots" content="noindex" />
+  <meta property="og:title" content="Guided Growth — Founding Users" />
+  <meta property="og:description" content="Be one of 50 founding users. Early, free access to a coach you can actually talk to." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="founding.css" />
+  <script>
+    // Public config. Anon key is safe to expose — Row Level Security on
+    // `founding_signups` allows INSERT only from the anon role, and reads
+    // go through SECURITY DEFINER RPCs that never expose other rows.
+    window.GG_PUBLIC = {
+      supabaseUrl:     "https://pmunbflbjpoawicgimyc.supabase.co",
+      supabaseAnonKey: "sb_publishable_5bPgufddcvI-TJPHcHsdMQ_MAFGztKJ"
+    };
+  </script>
+</head>
+<body class="founding">
+
+  <!-- ============ NAV ============ -->
+  <nav class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">
+        <img src="../logo.svg" alt="Guided Growth OS" class="nav__logo-img" />
+        <span class="nav__brand">Guided Growth</span>
+      </a>
+      <span class="fnd-badge fnd-badge--nav" id="spots-nav" hidden></span>
+    </div>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero fnd-hero" id="home">
+    <div class="hero__bg">
+      <div class="blob blob--1"></div>
+      <div class="blob blob--2"></div>
+    </div>
+    <div class="container container--narrow">
+      <div class="hero__eyebrow fade-in" id="spots-eyebrow">Founding Users · 50 Spots</div>
+      <h1 class="hero__headline fade-in fade-in--delay-1">
+        Be one of<br>
+        <span class="headline__gradient">50 founding users</span>
+      </h1>
+      <p class="hero__sub fade-in fade-in--delay-2">
+        Early, free access to a coach you can actually talk to. Real conversation, not another tracker.
+      </p>
+
+      <!-- Value -->
+      <div class="fnd-value fade-in fade-in--delay-3">
+        A cutting-edge AI coach for personal growth, there whenever you want to think out loud.
+        It listens, it reflects with you, and it helps you build the habits and the mindset you are after.
+      </div>
+
+      <!-- The honest deal -->
+      <div class="fnd-deal fade-in fade-in--delay-3">
+        <h2 class="fnd-deal__title">Here is the deal</h2>
+        <ul class="fnd-deal__list">
+          <li>
+            <span class="fnd-deal__icon">💸</span>
+            <span>Running a conversational AI coach costs us real money on every session. For our 50 founding users, we are covering all of it. You get <strong>3 months completely free</strong>, and if you are still showing up and getting value, we extend you to <strong>6</strong>.</span>
+          </li>
+          <li>
+            <span class="fnd-deal__icon">🤝</span>
+            <span>All we ask is an <strong>honest two weeks</strong>. Enough time to feel whether it fits your life. If it does not click, no problem and no strings. You can stop anytime.</span>
+          </li>
+          <li>
+            <span class="fnd-deal__icon">🗣️</span>
+            <span>What we want from you is the truth, the good and the brutal, so we can build something worth keeping.</span>
+          </li>
+        </ul>
+      </div>
+
+      <a href="#claim" class="btn btn--gradient btn--lg fnd-hero__cta fade-in fade-in--delay-3">Claim your founding spot</a>
+    </div>
+  </section>
+
+  <!-- ============ QUESTIONNAIRE ============ -->
+  <section class="fnd-form-section" id="claim">
+    <div class="container container--narrow">
+      <div class="fnd-card">
+
+        <!-- progress -->
+        <div class="fnd-progress" aria-hidden="true">
+          <div class="fnd-progress__bar" id="progress-bar"></div>
+        </div>
+
+        <form id="founding-form" novalidate>
+
+          <!-- STEP 1: name + email -->
+          <div class="fstep is-active" data-step="0">
+            <h3 class="fstep__title">First, who are we welcoming?</h3>
+            <p class="fstep__hint">This is how we send your founding invite, and how your coach greets you.</p>
+            <label class="fstep__label" for="f-name">First name</label>
+            <input class="input" id="f-name" name="first_name" type="text" autocomplete="given-name" placeholder="Alex" required />
+            <label class="fstep__label" for="f-email">Email</label>
+            <input class="input" id="f-email" name="email" type="email" autocomplete="email" placeholder="your@email.com" required />
+            <p class="fstep__error" data-error hidden></p>
+          </div>
+
+          <!-- STEP 2: how heard -->
+          <div class="fstep" data-step="1">
+            <h3 class="fstep__title">How did you hear about us?</h3>
+            <div class="chips" data-single data-field="heard_from">
+              <button type="button" class="chip" data-value="founder_invite">Founder invite</button>
+              <button type="button" class="chip" data-value="friend">Friend</button>
+              <button type="button" class="chip" data-value="linkedin">LinkedIn</button>
+              <button type="button" class="chip" data-value="webinar">Webinar</button>
+              <button type="button" class="chip" data-value="other">Other</button>
+            </div>
+            <p class="fstep__error" data-error hidden></p>
+          </div>
+
+          <!-- STEP 3: track level -->
+          <div class="fstep" data-step="2">
+            <h3 class="fstep__title">Do you track your habits or growth today?</h3>
+            <p class="fstep__hint">No wrong answer. It just helps us start you in the right place.</p>
+            <div class="chips chips--stack" data-single data-field="track_level">
+              <button type="button" class="chip chip--wide" data-value="none">No, not really</button>
+              <button type="button" class="chip chip--wide" data-value="casual">Yes, casually</button>
+              <button type="button" class="chip chip--wide" data-value="serious">Yes, seriously</button>
+            </div>
+            <p class="fstep__error" data-error hidden></p>
+          </div>
+
+          <!-- STEP 4: which apps -->
+          <div class="fstep" data-step="3">
+            <h3 class="fstep__title">Which apps or tools do you use for this?</h3>
+            <p class="fstep__hint">Pick any that apply. Helps us tailor your start.</p>
+            <div class="chips" data-multi data-field="apps_used">
+              <button type="button" class="chip" data-value="none">None</button>
+              <button type="button" class="chip" data-value="notes">Notes app</button>
+              <button type="button" class="chip" data-value="notion">Notion</button>
+              <button type="button" class="chip" data-value="apple_health">Apple Health</button>
+              <button type="button" class="chip" data-value="habit_tracker">A habit tracker</button>
+              <button type="button" class="chip" data-value="journaling">A journaling app</button>
+              <button type="button" class="chip" data-value="meditation">A meditation app</button>
+              <button type="button" class="chip" data-value="coaching">A coaching or therapy app</button>
+              <button type="button" class="chip" data-value="other">Other</button>
+            </div>
+            <input class="input fnd-other" id="f-apps-other" name="apps_other" type="text" placeholder="Which one?" hidden />
+          </div>
+
+          <!-- STEP 5: pays -->
+          <div class="fstep" data-step="4">
+            <h3 class="fstep__title">Do you pay for any of them?</h3>
+            <div class="chips chips--stack" data-single data-field="pays_for_apps">
+              <button type="button" class="chip chip--wide" data-value="none">No, all free</button>
+              <button type="button" class="chip chip--wide" data-value="one">Yes, one</button>
+              <button type="button" class="chip chip--wide" data-value="several">Yes, a few</button>
+            </div>
+          </div>
+
+          <!-- STEP 6: age + gender -->
+          <div class="fstep" data-step="5">
+            <h3 class="fstep__title">A couple of quick ones.</h3>
+            <p class="fstep__hint">Optional. Skip if you would rather not.</p>
+            <label class="fstep__label">Age</label>
+            <div class="chips" data-single data-field="age_group">
+              <button type="button" class="chip" data-value="18-24">18-24</button>
+              <button type="button" class="chip" data-value="25-34">25-34</button>
+              <button type="button" class="chip" data-value="35-44">35-44</button>
+              <button type="button" class="chip" data-value="45-54">45-54</button>
+              <button type="button" class="chip" data-value="55+">55+</button>
+            </div>
+            <label class="fstep__label">Gender</label>
+            <div class="chips" data-single data-field="gender">
+              <button type="button" class="chip" data-value="male">Male</button>
+              <button type="button" class="chip" data-value="female">Female</button>
+              <button type="button" class="chip" data-value="other">Other</button>
+            </div>
+          </div>
+
+          <!-- STEP 7: baseline -->
+          <div class="fstep" data-step="6">
+            <h3 class="fstep__title">Right now, how on-track do you feel about your growth?</h3>
+            <p class="fstep__hint">Optional. We will ask again in two weeks to see what moved.</p>
+            <div class="fnd-slider">
+              <input type="range" id="f-baseline" name="baseline_score" min="1" max="10" step="1" value="5" />
+              <div class="fnd-slider__scale">
+                <span>1 · Not at all</span>
+                <span class="fnd-slider__value" id="baseline-value">5</span>
+                <span>10 · Totally</span>
+              </div>
+              <button type="button" class="fnd-skip" id="baseline-skip">Skip this one</button>
+            </div>
+          </div>
+
+          <!-- STEP 8: commit -->
+          <div class="fstep" data-step="7">
+            <h3 class="fstep__title">One last thing.</h3>
+            <p class="fstep__hint">Founding users go in with intention. No pressure beyond an honest try.</p>
+            <label class="fnd-commit">
+              <input type="checkbox" id="f-commit" name="two_week_commit" />
+              <span class="fnd-commit__box" aria-hidden="true"></span>
+              <span class="fnd-commit__text">I am in. I will give Guided Growth an honest two weeks.</span>
+            </label>
+            <p class="fstep__error" data-error hidden></p>
+          </div>
+
+          <!-- nav controls -->
+          <div class="fnd-nav">
+            <button type="button" class="btn btn--ghost" id="btn-back" hidden>Back</button>
+            <button type="button" class="btn btn--accent" id="btn-next">Continue</button>
+            <button type="submit" class="btn btn--gradient btn--lg" id="btn-submit" hidden>Claim my founding spot</button>
+          </div>
+        </form>
+
+        <!-- SUCCESS state -->
+        <div class="fnd-success" id="success" hidden>
+          <div class="fnd-success__icon">✓</div>
+          <h3 class="fnd-success__title">You are in.</h3>
+          <p class="fnd-success__msg">Watch your inbox for your founding invite. When you open the app, we already know you, so you go straight into your program. No setup forms.</p>
+        </div>
+
+        <!-- FULL state (cap reached) -->
+        <div class="fnd-full" id="full" hidden>
+          <h3 class="fnd-full__title">All 50 founding spots are taken.</h3>
+          <p class="fnd-full__msg">Thank you for the interest. Leave your email and you will be first in line as we open more access.</p>
+          <form id="overflow-form" class="fnd-full__form" novalidate>
+            <input class="input" type="email" name="email" placeholder="your@email.com" autocomplete="email" required aria-label="Email address" />
+            <button type="submit" class="btn btn--accent">Join the waitlist</button>
+          </form>
+          <p class="fstep__error" id="overflow-error" hidden></p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__bottom">
+        <p>© 2026 Guided Growth OS. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast__icon">✓</span>
+    <span class="toast__msg"></span>
+  </div>
+
+  <script src="founding.js"></script>
+</body>
+</html>
