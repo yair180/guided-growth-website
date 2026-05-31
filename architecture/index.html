@@ -1286,6 +1286,18 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       overflow: hidden; -webkit-font-smoothing: antialiased;
     }
+    /* Dark-mode override for the Roadmap's local --rm-* palette so it stops
+       flashing a light board inside the dark GitLab shell. Values mirror the
+       z7 dark tokens; horizon and lane hues are lightened for dark contrast. */
+    #zoom-7-view[data-gl-theme="dark"] #z7-view-roadmap {
+      --rm-bg:#1f1f24; --rm-panel:#28272d; --rm-border:#434248;
+      --rm-text:#ececef; --rm-text-2:#bfbfc3; --rm-text-3:#89888d;
+      --rm-accent:#428fdc; --rm-now:#f1705f; --rm-next:#e0944a;
+      --rm-later:#5a9fe0; --rm-vision:#a78fe6; --rm-unsorted:#89888d;
+      --rm-product:#3aa57e; --rm-eng:#6d8fd8;
+    }
+    #zoom-7-view[data-gl-theme="dark"] #z7-view-roadmap .rm-seg button:not(.active):hover,
+    #zoom-7-view[data-gl-theme="dark"] #z7-view-roadmap #rm-refresh:hover { background: var(--rm-border); }
     #rm-topbar {
       flex-shrink: 0; display: flex; align-items: center; gap: 14px;
       padding: 10px 18px; background: var(--rm-panel);
@@ -10191,23 +10203,36 @@
 
     // ---- ISSUES ------------------------------------------------------------
 
-    function loadGitLabIssues() {
+    async function loadGitLabIssues() {
       const listEl = document.getElementById('z7-issues-list');
       const project = document.getElementById('z7-issues-project').value;
       const state = document.getElementById('z7-issues-state').value;
       const screen = document.getElementById('z7-issues-screen').value;
       const search = document.getElementById('z7-issues-search').value.trim();
       if (listEl) listEl.innerHTML = glSkeleton(5);
-      const qs = new URLSearchParams({ project, state });
-      if (screen) qs.set('screen', screen);
-      if (search) qs.set('search', search);
-      glFetch('/api/issues?' + qs.toString())
-        .then(data => {
-          _glIssuesRaw = (data && data.issues) || [];
-          glFillAssigneeSelect(document.getElementById('z7-issues-assignee'), _glIssuesRaw);
-          glApplyIssueFilters();
-        })
-        .catch(e => glHandleListError(listEl, e));
+      try {
+        // Page through ALL results (bounded) before filtering. The squad,
+        // assignee, and sort controls run client-side over _glIssuesRaw, so
+        // fetching only page 1 (the old behavior) made them produce false-empty
+        // results on a project with more issues than one 50-row page.
+        const all = [];
+        let page = 1; const MAX_PAGES = 12;
+        while (page <= MAX_PAGES) {
+          const qs = new URLSearchParams({ project, state, page: String(page) });
+          if (screen) qs.set('screen', screen);
+          if (search) qs.set('search', search);
+          const data = await glFetch('/api/issues?' + qs.toString());
+          all.push(...((data && data.issues) || []));
+          if (!data || !data.has_more) break;
+          page++;
+        }
+        _glIssuesRaw = all;
+        glFillAssigneeSelect(document.getElementById('z7-issues-assignee'), _glIssuesRaw);
+        glApplyIssueFilters();
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        glHandleListError(listEl, e);
+      }
     }
 
     // Squad segmented control on the Issues view (client-side, no refetch).
@@ -10570,14 +10595,28 @@
 
     // ---- MERGE REQUESTS ----------------------------------------------------
 
-    function loadGitLabMRs() {
+    async function loadGitLabMRs() {
       const listEl = document.getElementById('z7-mrs-list');
       const project = document.getElementById('z7-mrs-project').value;
       const state = document.getElementById('z7-mrs-state').value;
       if (listEl) listEl.innerHTML = glSkeleton(4);
-      glFetch('/api/mrs?project=' + encodeURIComponent(project) + '&state=' + encodeURIComponent(state))
-        .then(data => renderGitLabMRs((data && data.mrs) || []))
-        .catch(e => glHandleListError(listEl, e));
+      try {
+        // Page through all MRs (bounded) so none are silently dropped past the
+        // first page, matching the Issues and Board loaders.
+        const all = [];
+        let page = 1; const MAX_PAGES = 12;
+        while (page <= MAX_PAGES) {
+          const qs = new URLSearchParams({ project, state, page: String(page) });
+          const data = await glFetch('/api/mrs?' + qs.toString());
+          all.push(...((data && data.mrs) || []));
+          if (!data || !data.has_more) break;
+          page++;
+        }
+        renderGitLabMRs(all);
+      } catch (e) {
+        if (e.unauthorized) return glCheckConnection();
+        glHandleListError(listEl, e);
+      }
     }
 
     function renderGitLabMRs(mrs) {
@@ -11589,6 +11628,11 @@
       if (!_rmItems) board.innerHTML = '<div id="rm-loading">Loading roadmap&hellip;</div>';
       try {
         const res = await fetch('/internal/roadmap/api/items', { cache: 'no-store' });
+        // Auth failure (expired session) drops to the login gate like the
+        // glFetch-routed views, instead of showing a raw "HTTP 401/403".
+        if ((res.status === 401 || res.status === 403) && typeof glCheckConnection === 'function') {
+          return glCheckConnection();
+        }
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (data && data.error) throw new Error(data.error);
