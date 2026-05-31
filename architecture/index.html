@@ -5659,7 +5659,7 @@
           qaLoadIssues();
           qaLoadProposed();
         }
-      }, 60000);
+      }, 300000); // 5-min poll (was 60s) to stay under Cloudflare free-tier request limits
       restoreQAMode();
     }
 
@@ -6637,7 +6637,9 @@
     function startLiveNow() {
       loadLiveNow();
       if (_liveNowTimer) clearInterval(_liveNowTimer);
-      _liveNowTimer = setInterval(loadLiveNow, 60000);
+      // 5-min poll (was 60s): each /internal/live/api/now hit costs a KV list
+      // op, and a 60s poll from one open tab exceeds the free ~1k list-ops/day.
+      _liveNowTimer = setInterval(loadLiveNow, 300000);
     }
     function stopLiveNow() {
       if (_liveNowTimer) { clearInterval(_liveNowTimer); _liveNowTimer = null; }
