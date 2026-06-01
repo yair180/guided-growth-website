@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squad — Live Project Boards · Guided Growth</title>
+<style>
+  :root{
+    --bg:#faf8f4;--surface:#fff;--surface-2:#f3efe7;--surface-3:#ece6da;--border:#e5dfd2;--border-strong:#d3cab8;
+    --text:#1c1c1a;--text-2:#48443c;--muted:#6b665b;--accent:#2257a0;
+    --now:#dd2b0e;--next:#c9610e;--later:#1f75cb;
+    --done:#1f9d57;--prog:#e0922f;--todo:#b8b1a3;
+    --qa:#16A085;--claude:#7c5cff;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#16140f;--surface:#211e18;--surface-2:#2b271f;--surface-3:#36312a;--border:#39342b;--border-strong:#4a443a;
+    --text:#f1ede3;--text-2:#cdc7ba;--muted:#9c968a;--accent:#8bb8ff;
+    --done:#2fc46f;--prog:#f0a93f;--todo:#6b655a;--qa:#1ab5a0;--claude:#a98bff;
+  }}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  main{max-width:1180px;margin:0 auto;padding:40px 24px 100px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 8px}
+  h1{font-size:31px;margin:0 0 10px;letter-spacing:-.02em}
+  .lede{color:var(--text-2);font-size:15.5px;margin:0 0 6px;max-width:74ch}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 26px;max-width:74ch}
+  /* operating-model strip */
+  .model{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin:0 0 10px}
+  .loop{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;flex:1;min-width:240px}
+  .loop .step-n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+  .loop .t{font-weight:600;font-size:14px}
+  .loop .d{font-size:12px;color:var(--muted)}
+  .arrow{align-self:center;color:var(--muted);font-size:20px;flex:0 0 auto}
+  .controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:18px 0 6px;font-size:12.5px;color:var(--muted)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .ld{width:11px;height:11px;border-radius:50%;display:inline-block}
+  button.ghost{font:inherit;font-size:12px;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 12px;color:var(--text)}
+  button.ghost:hover{border-color:var(--accent)}
+  .hint{font-size:12px;color:var(--muted)}
+  /* person */
+  .person{margin-top:38px;border-top:1px solid var(--border);padding-top:22px}
+  .phead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .phead h2{font-size:21px;margin:0;letter-spacing:-.01em}
+  .load{font-size:12px;font-weight:700;color:#fff;background:var(--claude);border-radius:20px;padding:3px 11px}
+  .role{color:var(--text-2);font-size:13.5px;margin:2px 0 12px;max-width:88ch}
+  .stretch{background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--next);border-radius:9px;padding:11px 14px;margin:0 0 18px;font-size:13px;color:var(--text-2);max-width:92ch}
+  .stretch b{color:var(--text)}
+  /* project grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;align-items:start}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:15px 16px;display:flex;flex-direction:column}
+  .card-top{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .pill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:5px;color:#fff}
+  .pill.now{background:var(--now)}.pill.next{background:var(--next)}.pill.later{background:var(--later)}
+  .cname{font-size:15.5px;font-weight:650;margin:0 0 5px;letter-spacing:-.01em}
+  .one{font-size:12.5px;color:var(--text-2);margin:0 0 9px}
+  .claude{display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;color:var(--claude);background:color-mix(in srgb,var(--claude) 12%,transparent);border:1px solid color-mix(in srgb,var(--claude) 30%,transparent);border-radius:6px;padding:3px 8px;margin-bottom:11px;align-self:flex-start}
+  details.why{margin:0 0 11px}
+  details.why summary{font-size:11.5px;color:var(--muted);cursor:pointer;list-style:none}
+  details.why summary::-webkit-details-marker{display:none}
+  details.why summary:hover{color:var(--accent)}
+  details.why p{font-size:12px;color:var(--text-2);margin:7px 0 0;padding-left:2px;border-left:2px solid var(--border);padding:6px 0 6px 10px}
+  .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+  .stp{display:flex;align-items:flex-start;gap:9px;padding:7px 8px;border-radius:8px;cursor:grab;border:1px solid transparent}
+  .stp:hover{background:var(--surface-2);border-color:var(--border)}
+  .stp.dragging{opacity:.4}
+  .stp.drag-over{border-top:2px solid var(--accent)}
+  .dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:2px;cursor:pointer;border:2px solid var(--todo);background:transparent;position:relative}
+  .dot.done{background:var(--done);border-color:var(--done)}
+  .dot.done::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:800;top:-1px}
+  .dot.in-progress{background:var(--prog);border-color:var(--prog)}
+  .stp .body{flex:1;min-width:0}
+  .stp .txt{font-size:12.5px;line-height:1.4}
+  .stp.done .txt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--border-strong)}
+  .stp .meta{display:flex;align-items:center;gap:8px;margin-top:2px}
+  .iss{font-size:10.5px;font-family:ui-monospace,Menlo,monospace;color:var(--accent);text-decoration:none}
+  .iss:hover{text-decoration:underline}
+  .cbtn{font-size:10.5px;color:var(--muted);cursor:pointer;background:none;border:none;padding:0;font-family:inherit}
+  .cbtn:hover{color:var(--accent)}
+  .cmt{font-size:11.5px;color:var(--text-2);background:color-mix(in srgb,var(--accent) 9%,transparent);border-left:2px solid var(--accent);border-radius:0 5px 5px 0;padding:4px 8px;margin-top:4px;white-space:pre-wrap}
+  .grip{color:var(--border-strong);font-size:12px;margin-top:1px;flex-shrink:0;cursor:grab}
+  footer{margin-top:54px;border-top:1px solid var(--border);padding-top:16px;color:var(--muted);font-size:12px}
+  footer a{color:var(--accent);text-decoration:none}
+  .draft{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--next);border:1px solid var(--next);border-radius:5px;padding:2px 7px;vertical-align:middle;margin-left:8px}
+</style></head>
+<body><main>
+  <p class="eyebrow">Guided Growth · Squad</p>
+  <h1>Live Project Boards <span class="draft">Proposal / mock-up</span></h1>
+  <p class="lede">A new operating model for the team. Each person stops hand-writing every line and instead runs several Claude sessions in parallel, one per project. Their real job is to <b>define the requirements</b>, let a Claude <b>build it</b>, and then <b>verify the result</b> — testing it, and going into the code when needed. It is the QA-engineer role: someone who knows code, directing AI instead of typing it.</p>
+  <p class="sub">Every project below is one Claude session. The steps are pulled from each person's live GitLab issues. Drag steps to reorder, click a dot to change its state, and add a comment to any step — your changes stick in this browser, so you can reshape it live in the meeting.</p>
+
+  <div class="model">
+    <div class="loop"><span class="step-n" style="background:var(--accent)">1</span><div><div class="t">Define</div><div class="d">The person writes the requirement + acceptance criteria</div></div></div>
+    <span class="arrow">→</span>
+    <div class="loop"><span class="step-n" style="background:var(--claude)">2</span><div><div class="t">Build (Claude)</div><div class="d">A dedicated Claude session implements it</div></div></div>
+    <span class="arrow">→</span>
+    <div class="loop"><span class="step-n" style="background:var(--qa)">3</span><div><div class="t">Verify</div><div class="d">The person QAs on device + reads/tweaks the code</div></div></div>
+  </div>
+
+  <div class="controls">
+    <div class="legend">
+      <span><i class="ld" style="background:var(--done)"></i>done</span>
+      <span><i class="ld" style="background:var(--prog)"></i>in progress</span>
+      <span><i class="ld" style="border:2px solid var(--todo);background:transparent"></i>to do</span>
+      <span><i class="ld" style="background:var(--now)"></i>now</span>
+      <span><i class="ld" style="background:var(--next)"></i>next</span>
+      <span><i class="ld" style="background:var(--later)"></i>later</span>
+    </div>
+    <button class="ghost" onclick="resetBoard()">Reset my changes</button>
+    <span class="hint">↕ drag steps · click a dot to cycle state · “comment” to annotate</span>
+  </div>
+
+  <div id="people"></div>
+
+  <footer>
+    Live mock-up · <a href="/architecture/">Workspace board</a> · <a href="/internal/hub">Workspace hub</a><br>
+    Data scanned from gg-mvp GitLab issues. This is a proposal to discuss, not a committed plan.
+  </footer>
+</main>
+<script>
+  var DATA = [
+    {"person":"Yonas","username":"yonaSisay","concurrent_load":4,"role_summary":"Owns the voice backend, Vapi integration, and backend stability. ~42 open issues cluster into four lanes: the callLLM + Vapi wiring epic (the heart of the voice product), the launch-blocking high-priority bugs, the qa-stability backlog, and web-to-mobile feature sync. Day-to-day under the new model: write tight requirements per issue, hand the build to a Claude session, verify the fix on device or in Supabase before closing.","stretch_note":"<b>4 is a genuine stretch right now.</b> Three of the four lanes all touch the same backend surface (Vapi sessions, habit persistence, tool-calling all run through callLLM / Supabase), so a fix in one often unblocks or regresses another. Recommended starting load: <b>3 active</b>, opening web-to-mobile sync once the launch bugs are closed and the context builder passes QA.","projects":[
+      {"name":"Launch-blocking backend bugs","status":"now","claude_topic":"launch-blocking-backend-bugs","one_liner":"Four high-priority backend crashes / data-loss bugs fixed and verified before the demo.","why":"The only now-phase, high-priority backend issues: voice-created habits don't persist (#161), reflection edits get stuck (#163), mic permission is broken for existing users (#162), voice + typing broken on iOS (#88). None can appear in a demo or founding session.","steps":[
+        {"title":"Define reproduction steps + acceptance criteria for all four bugs","state":"in-progress","issue":"#161"},
+        {"title":"Claude fixes voice-created habit not persisted (Supabase write after tool call)","state":"in-progress","issue":"#161"},
+        {"title":"Claude fixes reflection edit save stuck (optimistic update / RLS conflict)","state":"todo","issue":"#163"},
+        {"title":"Claude fixes mic permission not requestable for existing users","state":"todo","issue":"#162"},
+        {"title":"Claude resolves critical voice + typing issues on iOS (Capacitor keyboard + Vapi)","state":"todo","issue":"#88"},
+        {"title":"Verify all four on device via a MobAI smoke run through the affected flows","state":"todo","issue":""}]},
+      {"name":"Vapi callLLM backbone + context builder","status":"next","claude_topic":"vapi-callllm-backbone","one_liner":"The unified callLLM() entry point, shared context builder, and Vapi wiring built and tested; the session leak closed.","why":"Every voice feature routes through this layer. Without it, tool-calling is unverifiable, assistantOverrides can't be tested, and the session leak keeps burning Vapi credits (incident 2026-05-15). Foundation for personalization, feedback sessions, and the auto-fill bugs.","steps":[
+        {"title":"Define the callLLM() contract: input shape, context fields, delta injection spec","state":"todo","issue":"#91"},
+        {"title":"Claude refactors agent system prompt to support context + delta injection","state":"todo","issue":"#90"},
+        {"title":"Claude builds callLLM() wrapper as the single entry point","state":"todo","issue":"#91"},
+        {"title":"Claude wires shared context builder and connects Vapi to use it","state":"todo","issue":"#92"},
+        {"title":"Claude wires Vapi context builder end-to-end (#131) + assistantOverrides backend (#147)","state":"todo","issue":"#131"},
+        {"title":"Claude implements Vapi session leak fix (close session when voice mode off)","state":"todo","issue":"#150"},
+        {"title":"Claude fixes gender/referral buttons not auto-filled via chat","state":"todo","issue":"#192"},
+        {"title":"Verify full onboarding voice flow on device: context injected, session closes, tool calls fill fields","state":"todo","issue":"#101"}]},
+      {"name":"QA stability backlog — next-release bugs","status":"next","claude_topic":"qa-stability-next-bugs","one_liner":"The ~12 medium-priority stability bugs triaged, batch-fixed by Claude, and verified — a clean tracker for the founding cohort.","why":"These are visible to founding users: wrong habit cadence (#196), Vapi reset mid-conversation (#195), keyboard pushes the nav bar (#194), no habit-creation confirmation (#176), mic missing from Settings (#172). Small individually, together they make the app feel unfinished.","steps":[
+        {"title":"Triage all 12 next-phase bugs: confirm repro, frontend vs backend, dependency order","state":"todo","issue":"#196"},
+        {"title":"Claude fixes backend data bugs: cadence (#196), past-date habits (#173), no creation confirm (#176)","state":"todo","issue":"#173"},
+        {"title":"Claude fixes Vapi mid-conversation reset — session state not preserved on re-mount","state":"todo","issue":"#195"},
+        {"title":"Claude fixes UI/layout bugs: keyboard-nav (#194), save behind nav (#165), stray mic (#167,#164), confirmations (#171,#169), Settings mic (#172)","state":"todo","issue":"#194"},
+        {"title":"Claude builds POST /api/qa-reset endpoint for MobAI autonomous resets","state":"todo","issue":"#158"},
+        {"title":"Run a MobAI smoke test across fixed screens to verify no regressions before closing","state":"todo","issue":""}]},
+      {"name":"Web-to-mobile feature sync","status":"now","claude_topic":"web-to-mobile-sync","one_liner":"Features that already work on web audited and wired into the mobile build for a consistent founding-cohort experience.","why":"#87 (high, now-phase) is the explicit ask: sync web functionality into mobile. Yonas owns this since the 2026-05-15 standup. Without it, the iOS app founding users download is a subset of web — support confusion + churn risk.","steps":[
+        {"title":"Audit every web feature: table of web-only features with their Supabase queries + React components","state":"todo","issue":"#87"},
+        {"title":"Prioritize the gap list: which block founding users, which are cosmetic","state":"todo","issue":"#87"},
+        {"title":"Claude implements top-priority web features in the Capacitor mobile build, one per sub-issue","state":"todo","issue":""},
+        {"title":"Claude documents the anon_id contract so mobile behavioral data is attributed correctly","state":"todo","issue":"#89"},
+        {"title":"Claude bundles anon_id generation into auth so mobile emits the same anon ID as web","state":"todo","issue":"#98"},
+        {"title":"Verify on device: same journey on web then mobile, confirm parity + same Supabase rows","state":"todo","issue":""}]}
+    ]},
+    {"person":"Mint","username":"jamymarcoss47","concurrent_load":4,"role_summary":"Owns the AI intelligence layer: the voice/tool-calling backend, the LLM hooks for non-voice paths, async reflection state, and the QA hard gates. ~33 open issues across 6 epics — the deepest technical owner on the team. Under the new model: define requirements, review Claude-built implementations, and sign off on the hard gates rather than typing every line.","stretch_note":"<b>4 concurrent is a stretch.</b> The voice-infra track (#145,#144,#143,#142,#140) is dense and interdependent — it needs close attention before Claude can build without drift. The QA track can run nearly autonomously once Mint writes the scenario specs. Recommendation: treat <b>voice as the primary daily driver</b>, time-box the other three (~1 focused hour each/day). 4 works only if Mint truly delegates the build step.","projects":[
+      {"name":"Voice infrastructure wiring (P1 gate)","status":"now","claude_topic":"voice-infra-wiring","one_liner":"A fully wired voice layer: multi-coach routing, crisis escape, universal FAB, MP3 fills, chat overlay — the last P1 items before the demo.","why":"Blocking next-phase issues on the voice epic. The product feels incomplete without the FAB on every screen, the crisis escape path, and coach selection writing coach_id to session_log. They must land before QA can sign off.","steps":[
+        {"title":"Define the Universal Voice FAB spec: positions, z-index rules, Vapi lifecycle hooks, suppressed screens","state":"todo","issue":"#143"},
+        {"title":"Claude implements useLLM hook (non-voice path) + FAB wired to Vapi entry/exit","state":"in-progress","issue":"#93"},
+        {"title":"Define multi-coach assistantOverrides schema + coach_id flow to session_log","state":"todo","issue":"#145"},
+        {"title":"Claude implements frontend coach selection UI + session_log coach_id writes","state":"todo","issue":"#149"},
+        {"title":"Define crisis hard-escape spec: triggers, interruption priority over Vapi, fallback routing","state":"todo","issue":"#144"},
+        {"title":"Claude implements MP3-fill wiring (5 clips) + chat overlay auto-open/close on Vapi","state":"todo","issue":"#142"},
+        {"title":"Mint verifies on device: coach switching persists, FAB everywhere, crisis fires, MP3 plays cleanly","state":"todo","issue":"#140"}]},
+      {"name":"Onboarding + home screen wiring","status":"next","claude_topic":"onboarding-home-wiring","one_liner":"All 9 onboarding screens and the 4 HOME variants wired to the live backend so the journey runs without stubs.","why":"The onboarding shell + HOME-FIRST/MORNING/EVENING/RETURN variants are the first thing every user sees. Without real session_log writes and screen connections, the product can't be demoed end-to-end or QA'd by Timothy.","steps":[
+        {"title":"Define the session_log write contract per onboarding screen: fields, timing, error handling","state":"todo","issue":"#95"},
+        {"title":"Claude builds the onboarding shell + instruments session_log writes across all 9 screens","state":"todo","issue":"#96"},
+        {"title":"Claude wires all 9 onboarding screens with real navigation + Supabase persistence","state":"todo","issue":"#97"},
+        {"title":"Define HOME variant routing: what data maps to FIRST/MORNING/EVENING/RETURN + load-time needs","state":"todo","issue":"#119"},
+        {"title":"Claude implements the four HOME variant routes with live data","state":"todo","issue":"#119"},
+        {"title":"Mint verifies a full onboarding run: screens advance, session_log rows appear, correct HOME on return","state":"todo","issue":""}]},
+      {"name":"Async reflection state machine","status":"next","claude_topic":"async-reflection-state-machine","one_liner":"Replace the mock with a real async reflection backend so check-ins persist across sessions and drive the MCHECK/ECHECK screens.","why":"Morning/evening check-ins without a live voice session are a core retention mechanic. The current scaffold is a stub. useAsyncReflection() with a real backend is the P2 foundation — MCHECK-01..ECHECK-06 can't be wired until it exists.","steps":[
+        {"title":"Define the state schema: Supabase fields, transitions (pending/in-progress/completed/skipped), timeouts","state":"todo","issue":"#115"},
+        {"title":"Claude scaffolds the state machine + Supabase tables/RLS","state":"todo","issue":"#116"},
+        {"title":"Claude implements useAsyncReflection() replacing the mock with real reads/writes","state":"todo","issue":"#132"},
+        {"title":"Define the MCHECK/ECHECK screen-to-state mapping + per-screen data needs","state":"todo","issue":"#120"},
+        {"title":"Claude wires MCHECK-01/02 and ECHECK-01..06 to the live state machine","state":"todo","issue":"#120"},
+        {"title":"Mint verifies persistence: start a check-in, background, return — state resumes; Supabase rows match","state":"todo","issue":""}]},
+      {"name":"Cross-channel QA suite (hard gates)","status":"now","claude_topic":"cross-channel-qa-suite","one_liner":"The full P1 test suite — happy paths, session_log integrity, cost/latency, edge cases, crisis — proving the product is shippable.","why":"#103 (AI context across channels) and #125 (cross-channel QA) are HARD GATES: nothing ships until they pass. Under the new model Mint writes the scenario specs, Claude generates the scripts/fixtures, Mint executes or delegates device runs to Timothy.","steps":[
+        {"title":"Write happy-path scenario specs (voice + manual): steps, expected Supabase state, pass/fail criteria","state":"todo","issue":"#105"},
+        {"title":"Claude generates test scripts + fixtures for happy paths and session_log integrity","state":"todo","issue":"#102"},
+        {"title":"Mint or Timothy runs full happy-path tests on iOS (voice + manual) and documents results","state":"todo","issue":"#106"},
+        {"title":"Write edge-case specs: partial completion, network drop, duplicate writes, invalid voice nav","state":"todo","issue":"#107"},
+        {"title":"Claude generates edge-case + crisis test scripts; Mint signs off on crisis coverage","state":"todo","issue":"#109"},
+        {"title":"Run cost + latency budget test: Vapi tokens + Supabase reads per session vs targets","state":"todo","issue":"#104"},
+        {"title":"Run Android APK + Web smoke; document the delta from the iOS baseline","state":"todo","issue":"#110"},
+        {"title":"Mint signs off on HARD GATES #103 + #125 — no ship until both are green","state":"todo","issue":"#103"}]}
+    ]},
+    {"person":"Timothy","username":"dionisius.timothyjm","concurrent_load":2,"role_summary":"Part-time (3-5h/day after 6pm Singapore), first month. One direct assign (#156, onboarding emails). The QA bugs sit with Yonas/Yair, but Timothy's stated role is MVP QA + design. That maps to two coherent projects: draft the onboarding email sequences, and own the frontend UI-polish QA loop — file, verify, and close the device-visible bugs.","stretch_note":"<b>2 is realistic, not a stretch</b>, given part-time hours. The email project is async writing he can batch; the UI QA project is device verification, batchable per session. They don't interfere — one content-side, one product-side. Only risk: if both need Yair review at the same time in week 1-2, that review bottleneck briefly slows both before he builds momentum.","projects":[
+      {"name":"Onboarding email sequences","status":"next","claude_topic":"notifications-email","one_liner":"Six behavior-gated onboarding emails drafted, reviewed, and ready to import into Loops.so for founding users.","why":"The six briefs exist in gg-notif-email/briefs/ but drafts/ is empty. Without the copy, the Loops.so workflows can't be built and founding users land with no post-signup communication — a day-one trust + retention gap.","steps":[
+        {"title":"Read all six briefs + strategy.md to internalize constraints, skip rules, brand voice","state":"todo","issue":"#156"},
+        {"title":"Define acceptance criteria per email: word-count range, tone checklist, what passes Yair review","state":"todo","issue":"#156"},
+        {"title":"A Claude session drafts all six emails (Day 0–14) in branches, following the MR workflow","state":"todo","issue":"#156"},
+        {"title":"Review each draft vs the brief — no feature-tour overwhelm, correct skip-rule framing per day","state":"todo","issue":""},
+        {"title":"Open MRs to main, assign Yair as reviewer, iterate until all six merge","state":"todo","issue":"#156"},
+        {"title":"Verify merged drafts match the Loops.so import format (subject + body + skip-rule header)","state":"todo","issue":""}]},
+      {"name":"Frontend UI-polish QA loop","status":"next","claude_topic":"frontend-ui-polish-qa","one_liner":"Every medium-priority frontend bug reproduced on device, fixes verified on TestFlight, and issues closed — a clean UI with no visible defects.","why":"7 medium frontend bugs in next-phase (keyboard-nav, missing Settings mic, missing confirmations, save behind nav, stray mic, focus-exit confirm, wrong advanced-flow mic) plus one now-phase high (#162). None are assigned to Timothy yet, but he's the QA owner and these are device-visible issues he can file, chase, and verify without backend context.","steps":[
+        {"title":"Reproduce + document all 7 next-phase frontend bugs on device with screenshot/recording on the issue","state":"todo","issue":"#194"},
+        {"title":"Confirm #162 reproduces on device and escalate to Yonas as now-blocking","state":"todo","issue":"#162"},
+        {"title":"Triage the 7 into a fix order with Yair — keyboard-nav + save-behind-nav are most visible, first","state":"todo","issue":"#165"},
+        {"title":"For each bug, a Claude session writes the targeted fix (or pair with Yonas); verify the diff before merge","state":"todo","issue":"#167"},
+        {"title":"Install each TestFlight build, re-run the exact repro, post a pass/fail comment on the issue","state":"todo","issue":"#169"},
+        {"title":"Close verified issues and update the QA board to reflect resolved status","state":"todo","issue":""},
+        {"title":"Run a full onboarding walkthrough after fixes land; capture a walkthrough video for the team","state":"todo","issue":""}]}
+    ]}
+  ];
+
+  var GL_BASE = 'https://gitlab.com/guidedgrowth-group/guided-growth-mvp/-/issues/';
+  var LS_KEY = 'gg-team-boards-v1';
+  var STATES = ['todo','in-progress','done'];
+
+  function loadOverlay(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e){ return {}; } }
+  function saveOverlay(o){ try { localStorage.setItem(LS_KEY, JSON.stringify(o)); } catch(e){} }
+  var overlay = loadOverlay();
+  function pkey(pi,ci){ return pi + ':' + ci; }            // project key
+  function skey(pi,ci,si){ return pi + ':' + ci + ':' + si; } // step key (by ORIGINAL index)
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  // current order of step-indices for a project (overlay or default 0..n-1)
+  function orderFor(pi,ci,n){
+    var o = overlay[pkey(pi,ci)];
+    if (o && Array.isArray(o.order) && o.order.length === n) return o.order.slice();
+    return Array.from({length:n}, function(_,i){ return i; });
+  }
+  function stateFor(pi,ci,si,def){ var o = overlay[skey(pi,ci,si)]; return (o && o.state) || def; }
+  function commentFor(pi,ci,si){ var o = overlay[skey(pi,ci,si)]; return (o && o.comment) || ''; }
+
+  function setStepOverlay(k, patch){ overlay[k] = Object.assign({}, overlay[k], patch); saveOverlay(overlay); }
+  function setOrder(pi,ci,order){ var k = pkey(pi,ci); overlay[k] = Object.assign({}, overlay[k], {order:order}); saveOverlay(overlay); }
+
+  function render(){
+    var root = document.getElementById('people');
+    root.innerHTML = DATA.map(function(person, pi){
+      var cards = person.projects.map(function(proj, ci){
+        var n = proj.steps.length;
+        var ord = orderFor(pi, ci, n);
+        var stepsHtml = ord.map(function(si){
+          var st = proj.steps[si];
+          var stt = stateFor(pi, ci, si, st.state);
+          var cmt = commentFor(pi, ci, si);
+          var iss = st.issue ? '<a class="iss" href="'+GL_BASE+st.issue.replace('#','')+'" target="_blank" rel="noopener">'+esc(st.issue)+'</a>' : '';
+          return '<li class="stp '+stt+'" draggable="true" data-pi="'+pi+'" data-ci="'+ci+'" data-si="'+si+'">'
+            + '<span class="grip">⋮⋮</span>'
+            + '<span class="dot '+stt+'" title="click to change state" onclick="cycleState('+pi+','+ci+','+si+')"></span>'
+            + '<span class="body"><span class="txt">'+esc(st.title)+'</span>'
+            + '<span class="meta">'+iss+'<button class="cbtn" onclick="editComment('+pi+','+ci+','+si+')">'+(cmt?'edit note':'comment')+'</button></span>'
+            + (cmt?'<div class="cmt">'+esc(cmt)+'</div>':'')
+            + '</span></li>';
+        }).join('');
+        return '<div class="card">'
+          + '<div class="card-top"><span class="pill '+proj.status+'">'+proj.status+'</span></div>'
+          + '<div class="cname">'+esc(proj.name)+'</div>'
+          + '<div class="one">'+esc(proj.one_liner)+'</div>'
+          + '<span class="claude">◇ claude: '+esc(proj.claude_topic)+'</span>'
+          + '<details class="why"><summary>Why this matters</summary><p>'+esc(proj.why)+'</p></details>'
+          + '<ul class="steps" data-pi="'+pi+'" data-ci="'+ci+'">'+stepsHtml+'</ul>'
+          + '</div>';
+      }).join('');
+      return '<section class="person">'
+        + '<div class="phead"><h2>'+esc(person.person)+'</h2>'
+        + '<span class="load">'+person.concurrent_load+' projects at once</span></div>'
+        + '<div class="role">'+esc(person.role_summary)+'</div>'
+        + '<div class="stretch"><b>Is it a stretch?</b> '+person.stretch_note+'</div>'
+        + '<div class="grid">'+cards+'</div>'
+        + '</section>';
+    }).join('');
+    wireDrag();
+  }
+
+  window.cycleState = function(pi,ci,si){
+    var k = skey(pi,ci,si);
+    var cur = stateFor(pi,ci,si, DATA[pi].projects[ci].steps[si].state);
+    var next = STATES[(STATES.indexOf(cur)+1) % STATES.length];
+    setStepOverlay(k, {state:next});
+    render();
+  };
+  window.editComment = function(pi,ci,si){
+    var k = skey(pi,ci,si);
+    var cur = commentFor(pi,ci,si);
+    var v = window.prompt('Note on this step (blank to clear):', cur);
+    if (v === null) return;
+    setStepOverlay(k, {comment: v.trim()});
+    render();
+  };
+  window.resetBoard = function(){
+    if (!window.confirm('Clear all your reorders, state changes, and notes on this board?')) return;
+    overlay = {}; saveOverlay(overlay); render();
+  };
+
+  // ---- drag to reorder steps within a project ----
+  var dragEl = null;
+  function wireDrag(){
+    document.querySelectorAll('.stp').forEach(function(el){
+      el.addEventListener('dragstart', function(e){ dragEl = el; el.classList.add('dragging'); try{e.dataTransfer.effectAllowed='move';}catch(_){} });
+      el.addEventListener('dragend', function(){ el.classList.remove('dragging'); document.querySelectorAll('.stp.drag-over').forEach(function(x){x.classList.remove('drag-over');}); });
+      el.addEventListener('dragover', function(e){
+        e.preventDefault();
+        if (!dragEl || dragEl===el) return;
+        if (el.dataset.pi!==dragEl.dataset.pi || el.dataset.ci!==dragEl.dataset.ci) return; // same project only
+        el.classList.add('drag-over');
+      });
+      el.addEventListener('dragleave', function(){ el.classList.remove('drag-over'); });
+      el.addEventListener('drop', function(e){
+        e.preventDefault(); el.classList.remove('drag-over');
+        if (!dragEl || dragEl===el) return;
+        var pi=el.dataset.pi, ci=el.dataset.ci;
+        if (el.dataset.pi!==dragEl.dataset.pi || el.dataset.ci!==dragEl.dataset.ci) return;
+        var n = DATA[pi].projects[ci].steps.length;
+        var ord = orderFor(+pi,+ci,n);
+        var from = ord.indexOf(+dragEl.dataset.si);
+        var to = ord.indexOf(+el.dataset.si);
+        if (from<0||to<0) return;
+        ord.splice(to,0, ord.splice(from,1)[0]);
+        setOrder(+pi,+ci,ord);
+        render();
+      });
+    });
+  }
+
+  render();
+</script>
+</body></html>
