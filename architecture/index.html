@@ -673,7 +673,7 @@
     #zoom-4-view.active, #zoom-5-view.active { display: flex; flex-direction: column; }
     #zoom-6-view.active { display: flex; flex-direction: row; }
     #zoom-7-view.active { display: flex; flex-direction: column; }
-    #zoom-8-view.active { display: flex; flex-direction: column; }
+    #zoom-8-view.active { display: block; }
     /* Team view (zoom-8): per-person lanes of GitLab issues grouped by status. */
     #zoom-8-main { flex: 1; overflow: auto; padding: 18px 22px 60px; }
     #zoom-8-main .zoom-title { font-size: 17px; font-weight: 700; color: #e0e6ed; }
@@ -4350,15 +4350,9 @@
 
   <!-- ZOOM 8: TEAM VIEW (per-person GitLab lanes) -->
   <div id="zoom-8-view">
-    <main id="zoom-8-main">
-      <div class="zoom-title">Team</div>
-      <div class="zoom-subtitle">Each teammate's open issues on <a href="https://gitlab.com/guidedgrowth-group/guided-growth-mvp/-/issues" target="_blank" rel="noopener">guided-growth-mvp</a>, grouped by status. Sessions move issues across the board; this mirrors GitLab live.</div>
-      <div class="z8-toolbar">
-        <span id="z8-meta">Loading&hellip;</span>
-        <button type="button" class="z8-refresh" onclick="loadTeamView(true)">&#8635; Refresh</button>
-      </div>
-      <div id="z8-lanes"><div class="z8-loading">Loading team board&hellip;</div></div>
-    </main>
+    <!-- The real team board (per-person Claude-session buckets with ordered steps) lives at
+         /team-projects and is embedded here so it is reachable as a view inside the architecture hub. -->
+    <iframe id="z8-frame" title="Team project boards" style="border:0;width:100%;height:calc(100vh - 41px);display:block;background:#faf8f4"></iframe>
   </div>
 
   <script>
@@ -6549,28 +6543,9 @@
     }
     function teamStatusLabel(s) { return s === 'in_progress' ? 'In progress' : s === 'in_testing' ? 'In testing' : s === 'done' ? 'Done' : 'To do'; }
     function loadTeamView(force) {
-      if (_teamLoaded && !force) return;
-      _teamLoaded = true;
-      var lanesEl = document.getElementById('z8-lanes');
-      var metaEl = document.getElementById('z8-meta');
-      if (!lanesEl) return;
-      if (force) lanesEl.innerHTML = '<div class="z8-loading">Refreshing&hellip;</div>';
-      fetch(TEAM_API, { cache: 'no-store' })
-        .then(function (r) {
-          if (r.status === 401 || r.status === 403) { var ae = new Error('auth'); ae.authNeeded = true; throw ae; }
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.json();
-        })
-        .then(function (items) { renderTeamView(Array.isArray(items) ? items : []); })
-        .catch(function (e) {
-          _teamLoaded = false; // let the next tab-open or Refresh retry instead of staying stuck
-          if (e && e.authNeeded) {
-            lanesEl.innerHTML = '<div class="z8-empty">This board reads GitLab through the worker and needs a GitLab sign-in. <a href="' + TEAM_OAUTH + '">Connect GitLab</a>, then return to this tab.</div>';
-          } else {
-            lanesEl.innerHTML = '<div class="z8-empty">Could not load issues (' + teamEsc(e.message) + '). Click Refresh to retry.</div>';
-          }
-          if (metaEl) metaEl.textContent = 'not connected';
-        });
+      // The real team board lives at /team-projects; load it into the embedded iframe on first open.
+      var f = document.getElementById('z8-frame');
+      if (f && !f.getAttribute('src')) f.setAttribute('src', '/team-projects/');
     }
     function renderTeamView(items) {
       var lanesEl = document.getElementById('z8-lanes');
