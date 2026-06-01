@@ -139,6 +139,72 @@
   <p class="lede">A new operating model for the team. Each person stops hand-writing every line and instead runs several Claude sessions in parallel, one per project. Their real job is to <b>define the requirements</b>, let a Claude <b>build it</b>, and then <b>verify the result</b> — testing it, and going into the code when needed. It is the QA-engineer role: someone who knows code, directing AI instead of typing it.</p>
   <p class="sub">Every project below is one Claude session. The steps are pulled from each person's live GitLab issues. Drag steps to reorder, click a dot to change its state, and add a comment to any step — your changes stick in this browser, so you can reshape it live in the meeting.</p>
 
+  <style>
+    #product-roadmap{margin:18px 0 26px}
+    #product-roadmap .pr-h{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+    #product-roadmap .pr-north{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 14px;font-size:13px;color:var(--muted,#94a0ad);line-height:1.5;margin:0 0 14px}
+    #product-roadmap .pr-north b{color:var(--text,#1c1c1a)}
+    #product-roadmap .pr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+    @media(max-width:980px){#product-roadmap .pr-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:560px){#product-roadmap .pr-grid{grid-template-columns:1fr}}
+    #product-roadmap .pr-stage{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px}
+    #product-roadmap .pr-bar{height:3px;border-radius:3px;margin:0 0 9px}
+    #product-roadmap .pr-stage h3{margin:0 0 2px;font-size:14px}
+    #product-roadmap .pr-when{font-size:11px;color:var(--muted,#8a93a3);margin:0 0 9px}
+    #product-roadmap .pr-chip{display:block;background:var(--surface-2,#f3efe7);border:1px solid var(--border);border-radius:8px;padding:6px 9px;margin:0 0 6px;font-size:12px;line-height:1.35}
+    #product-roadmap .pr-chip:last-child{margin-bottom:0}
+    .pr-part2{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin:8px 0 12px}
+  </style>
+  <section id="product-roadmap">
+    <div class="pr-h">Part 1 · Product roadmap</div>
+    <div class="pr-north"><b>North star: Behavioral OS.</b> We show how your behaviors connect, sleep against mood against screen time and more. It starts in the MVP (we capture multiple behaviors) and deepens every phase.</div>
+    <div class="pr-grid">
+      <div class="pr-stage">
+        <div class="pr-bar" style="background:#27c08a"></div>
+        <h3>MVP</h3><div class="pr-when">The 50 founding users</div>
+        <span class="pr-chip">Voice-first onboarding that works</span>
+        <span class="pr-chip">The AI fills the app (tool-calling)</span>
+        <span class="pr-chip">Solid, shippable mobile app</span>
+        <span class="pr-chip">Founding sign-up on the website</span>
+        <span class="pr-chip">Notifications + email sequence</span>
+        <span class="pr-chip">Thierry additions (weekdays, completion types, notes, free trial, drop-off analytics)</span>
+        <span class="pr-chip">Some insights (basic progress + history)</span>
+        <span class="pr-chip">Behavioral OS foundation</span>
+        <span class="pr-chip">Safety + privacy baseline (988)</span>
+        <span class="pr-chip">QA pass before launch</span>
+      </div>
+      <div class="pr-stage">
+        <div class="pr-bar" style="background:#5aa9e6"></div>
+        <h3>Phase 1</h3><div class="pr-when">Right after launch · depth</div>
+        <span class="pr-chip">Insights improve (trends, deeper history)</span>
+        <span class="pr-chip">Coaching personalization (style selector, morning context)</span>
+        <span class="pr-chip">Behavioral OS grows (first connections surfaced)</span>
+      </div>
+      <div class="pr-stage">
+        <div class="pr-bar" style="background:#d6a73a"></div>
+        <h3>Phase 2</h3><div class="pr-when">Differentiation</div>
+        <span class="pr-chip">Sleep + Apple Health / Google Health</span>
+        <span class="pr-chip">Wearables</span>
+        <span class="pr-chip">Screen time category</span>
+        <span class="pr-chip">Voice-controlled settings</span>
+        <span class="pr-chip">Gym / power-user logging</span>
+        <span class="pr-chip">Accountability (groups, challenges, seeing others)</span>
+        <span class="pr-chip">UI depth (animations, real chat screens, visual cards)</span>
+        <span class="pr-chip">Competitor study</span>
+        <span class="pr-chip">Behavioral OS deepens (cross-behavior correlations)</span>
+      </div>
+      <div class="pr-stage">
+        <div class="pr-bar" style="background:#9b6cf0"></div>
+        <h3>Phase 3</h3><div class="pr-when">Expansion + bets</div>
+        <span class="pr-chip">Category packs (nutrition, fitness, womens health)</span>
+        <span class="pr-chip">Marketplace (human-coach handoff, supplements)</span>
+        <span class="pr-chip">Voice infra evolution (self-hosted Pipecat)</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="pr-part2">Part 2 · How it runs (the lanes)</div>
+
   <div class="tabs">
     <button id="tab-boards" class="active" onclick="showView('boards')">📋 The boards</button>
     <button id="tab-connect" onclick="showView('connect')">🖥 How it connects</button>
