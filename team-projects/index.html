@@ -269,7 +269,9 @@
   </footer>
 </main>
 <script>
-  var DATA = [
+  // Offline fallback only. The live board is fetched from the worker (see load() below);
+  // this hardcoded copy renders if the backend is unreachable so the page never goes blank.
+  var FALLBACK_RAW = [
     {"person":"Yonas","username":"yonaSisay","concurrent_load":4,"role_summary":"Owns the voice backend, Vapi integration, and backend stability. ~42 open issues cluster into four lanes: the callLLM + Vapi wiring epic (the heart of the voice product), the launch-blocking high-priority bugs, the qa-stability backlog, and web-to-mobile feature sync. Day-to-day under the new model: write tight requirements per issue, hand the build to a Claude session, verify the fix on device or in Supabase before closing.","stretch_note":"<b>4 is a genuine stretch right now.</b> Three of the four lanes all touch the same backend surface (Vapi sessions, habit persistence, tool-calling all run through callLLM / Supabase), so a fix in one often unblocks or regresses another. Recommended starting load: <b>3 active</b>, opening web-to-mobile sync once the launch bugs are closed and the context builder passes QA.","projects":[
       {"name":"Launch-blocking backend bugs","status":"now","claude_topic":"launch-blocking-backend-bugs","one_liner":"Four high-priority backend crashes / data-loss bugs fixed and verified before the demo.","why":"The only now-phase, high-priority backend issues: voice-created habits don't persist (#161), reflection edits get stuck (#163), mic permission is broken for existing users (#162), voice + typing broken on iOS (#88). None can appear in a demo or founding session.","steps":[
         {"title":"Define reproduction steps + acceptance criteria for all four bugs","state":"in-progress","issue":"#161"},
@@ -376,60 +378,66 @@
   ];
 
   var GL_BASE = 'https://gitlab.com/guidedgrowth-group/guided-growth-mvp/-/issues/';
-  var LS_KEY = 'gg-team-boards-v1';
+  var API_GET = '/internal/yair-os/team-board.json';
+  var API_PUT = '/internal/yair-os/team-board-update';
+  var LOGIN_URL = '/internal/yair-os/preview/login?next=' + encodeURIComponent('/team-projects/');
+  var LS_KEY = 'gg-team-boards-v2';
   var STATES = ['todo','in-progress','done'];
 
-  function loadOverlay(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e){ return {}; } }
-  function saveOverlay(o){ try { localStorage.setItem(LS_KEY, JSON.stringify(o)); } catch(e){} }
-  var overlay = loadOverlay();
-  function pkey(pi,ci){ return pi + ':' + ci; }            // project key
-  function skey(pi,ci,si){ return pi + ':' + ci + ':' + si; } // step key (by ORIGINAL index)
+  var BOARD = null;       // {version, people:[{person,projects:[{claude_topic,steps:[{id,state,comment,...}]}]}]}
+  var MODE = 'loading';   // 'live' (persists to the worker/Sheet) | 'local' (localStorage only)
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(BOARD)); }catch(e){} }
+  function loadLocal(){ try{ var v=localStorage.getItem(LS_KEY); return v?JSON.parse(v):null; }catch(e){ return null; } }
 
-  // current order of step-indices for a project (overlay or default 0..n-1)
-  function orderFor(pi,ci,n){
-    var o = overlay[pkey(pi,ci)];
-    if (o && Array.isArray(o.order) && o.order.length === n) return o.order.slice();
-    return Array.from({length:n}, function(_,i){ return i; });
+  // Give the offline fallback the same shape as the backend (stable step ids + comment field).
+  function normalize(raw){
+    var sid=0, people=raw.map(function(p){
+      return { person:p.person, username:p.username, concurrent_load:p.concurrent_load, role_summary:p.role_summary, stretch_note:p.stretch_note,
+        projects:p.projects.map(function(pr){
+          return { name:pr.name, status:pr.status, claude_topic:pr.claude_topic, one_liner:pr.one_liner, why:pr.why,
+            steps:pr.steps.map(function(st){ sid++; return { id:'s'+sid, title:st.title, state:st.state||'todo', issue:st.issue||'', comment:st.comment||'' }; }) };
+        }) };
+    });
+    return { version:1, people:people };
   }
-  function stateFor(pi,ci,si,def){ var o = overlay[skey(pi,ci,si)]; return (o && o.state) || def; }
-  function commentFor(pi,ci,si){ var o = overlay[skey(pi,ci,si)]; return (o && o.comment) || ''; }
 
-  function setStepOverlay(k, patch){ overlay[k] = Object.assign({}, overlay[k], patch); saveOverlay(overlay); }
-  function setOrder(pi,ci,order){ var k = pkey(pi,ci); overlay[k] = Object.assign({}, overlay[k], {order:order}); saveOverlay(overlay); }
+  function bucketByTopic(topic){
+    if(!BOARD) return null;
+    for(var i=0;i<BOARD.people.length;i++){ var pr=BOARD.people[i].projects; for(var j=0;j<pr.length;j++){ if(pr[j].claude_topic===topic) return pr[j]; } }
+    return null;
+  }
 
   function render(){
     var root = document.getElementById('people');
-    root.innerHTML = DATA.map(function(person, pi){
-      var cards = person.projects.map(function(proj, ci){
-        var n = proj.steps.length;
-        var ord = orderFor(pi, ci, n);
-        var stepsHtml = ord.map(function(si){
-          var st = proj.steps[si];
-          var stt = stateFor(pi, ci, si, st.state);
-          var cmt = commentFor(pi, ci, si);
+    if(!BOARD || !BOARD.people){ root.innerHTML = '<p class="hint">Loading the live board…</p>'; return; }
+    root.innerHTML = BOARD.people.map(function(person){
+      var cards = person.projects.map(function(proj){
+        var topic = proj.claude_topic;
+        var stepsHtml = proj.steps.map(function(st){
           var iss = st.issue ? '<a class="iss" href="'+GL_BASE+st.issue.replace('#','')+'" target="_blank" rel="noopener">'+esc(st.issue)+'</a>' : '';
-          return '<li class="stp '+stt+'" draggable="true" data-pi="'+pi+'" data-ci="'+ci+'" data-si="'+si+'">'
+          var cmt = st.comment || '';
+          return '<li class="stp '+esc(st.state)+'" draggable="true" data-topic="'+esc(topic)+'" data-sid="'+esc(st.id)+'">'
             + '<span class="grip">⋮⋮</span>'
-            + '<span class="dot '+stt+'" title="click to change state" onclick="cycleState('+pi+','+ci+','+si+')"></span>'
+            + '<span class="dot '+esc(st.state)+'" title="click to change state" onclick="cycleState(\''+esc(topic)+'\',\''+esc(st.id)+'\')"></span>'
             + '<span class="body"><span class="txt">'+esc(st.title)+'</span>'
-            + '<span class="meta">'+iss+'<button class="cbtn" onclick="editComment('+pi+','+ci+','+si+')">'+(cmt?'edit note':'comment')+'</button></span>'
+            + '<span class="meta">'+iss+'<button class="cbtn" onclick="editComment(\''+esc(topic)+'\',\''+esc(st.id)+'\')">'+(cmt?'edit note':'comment')+'</button></span>'
             + (cmt?'<div class="cmt">'+esc(cmt)+'</div>':'')
             + '</span></li>';
         }).join('');
         return '<div class="card">'
-          + '<div class="card-top"><span class="pill '+proj.status+'">'+proj.status+'</span></div>'
+          + '<div class="card-top"><span class="pill '+esc(proj.status)+'">'+esc(proj.status)+'</span></div>'
           + '<div class="cname">'+esc(proj.name)+'</div>'
           + '<div class="one">'+esc(proj.one_liner)+'</div>'
           + '<span class="claude">◇ claude: '+esc(proj.claude_topic)+'</span>'
           + '<details class="why"><summary>Why this matters</summary><p>'+esc(proj.why)+'</p></details>'
-          + '<ul class="steps" data-pi="'+pi+'" data-ci="'+ci+'">'+stepsHtml+'</ul>'
+          + '<ul class="steps" data-topic="'+esc(topic)+'">'+stepsHtml+'</ul>'
           + '</div>';
       }).join('');
       return '<section class="person">'
         + '<div class="phead"><h2>'+esc(person.person)+'</h2>'
-        + '<span class="load">'+person.concurrent_load+' projects at once</span></div>'
+        + '<span class="load">'+esc(person.concurrent_load)+' projects at once</span></div>'
         + '<div class="role">'+esc(person.role_summary)+'</div>'
         + '<div class="stretch"><b>Is it a stretch?</b> '+person.stretch_note+'</div>'
         + '<div class="grid">'+cards+'</div>'
@@ -438,27 +446,41 @@
     wireDrag();
   }
 
-  window.cycleState = function(pi,ci,si){
-    var k = skey(pi,ci,si);
-    var cur = stateFor(pi,ci,si, DATA[pi].projects[ci].steps[si].state);
-    var next = STATES[(STATES.indexOf(cur)+1) % STATES.length];
-    setStepOverlay(k, {state:next});
+  // Push a patch to the backend. Optimistic: BOARD is already updated + rendered by the caller.
+  function persist(payload){
+    saveLocal();
+    if(MODE!=='live') return;
+    fetch(API_PUT, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+      .then(function(r){
+        if(r.status===401){ MODE='local'; showToast('Not signed in — changes saved on this device only. Log in to share.'); return; }
+        if(!r.ok) throw new Error('HTTP '+r.status);
+      })
+      .catch(function(){ MODE='local'; showToast('Save failed — kept on this device.'); });
+  }
+
+  window.cycleState = function(topic, sid){
+    var b = bucketByTopic(topic); if(!b) return;
+    var st = b.steps.filter(function(s){return s.id===sid;})[0]; if(!st) return;
+    st.state = STATES[(STATES.indexOf(st.state)+1) % STATES.length];
     render();
+    persist({op:'state', topic:topic, step_id:sid, state:st.state});
   };
-  window.editComment = function(pi,ci,si){
-    var k = skey(pi,ci,si);
-    var cur = commentFor(pi,ci,si);
-    var v = window.prompt('Note on this step (blank to clear):', cur);
-    if (v === null) return;
-    setStepOverlay(k, {comment: v.trim()});
+  window.editComment = function(topic, sid){
+    var b = bucketByTopic(topic); if(!b) return;
+    var st = b.steps.filter(function(s){return s.id===sid;})[0]; if(!st) return;
+    var v = window.prompt('Note on this step (blank to clear):', st.comment||'');
+    if(v===null) return;
+    st.comment = v.trim();
     render();
+    persist({op:'comment', topic:topic, step_id:sid, comment:st.comment});
   };
   window.resetBoard = function(){
-    if (!window.confirm('Clear all your reorders, state changes, and notes on this board?')) return;
-    overlay = {}; saveOverlay(overlay); render();
+    if(!window.confirm('Reload the board from the server, discarding local-only changes?')) return;
+    try{ localStorage.removeItem(LS_KEY); }catch(e){}
+    load();
   };
 
-  // ---- drag to reorder steps within a project ----
+  // ---- drag to reorder steps within a bucket ----
   var dragEl = null;
   function wireDrag(){
     document.querySelectorAll('.stp').forEach(function(el){
@@ -467,25 +489,40 @@
       el.addEventListener('dragover', function(e){
         e.preventDefault();
         if (!dragEl || dragEl===el) return;
-        if (el.dataset.pi!==dragEl.dataset.pi || el.dataset.ci!==dragEl.dataset.ci) return; // same project only
+        if (el.dataset.topic!==dragEl.dataset.topic) return; // same bucket only
         el.classList.add('drag-over');
       });
       el.addEventListener('dragleave', function(){ el.classList.remove('drag-over'); });
       el.addEventListener('drop', function(e){
         e.preventDefault(); el.classList.remove('drag-over');
         if (!dragEl || dragEl===el) return;
-        var pi=el.dataset.pi, ci=el.dataset.ci;
-        if (el.dataset.pi!==dragEl.dataset.pi || el.dataset.ci!==dragEl.dataset.ci) return;
-        var n = DATA[pi].projects[ci].steps.length;
-        var ord = orderFor(+pi,+ci,n);
-        var from = ord.indexOf(+dragEl.dataset.si);
-        var to = ord.indexOf(+el.dataset.si);
+        var topic = el.dataset.topic;
+        if (topic!==dragEl.dataset.topic) return;
+        var b = bucketByTopic(topic); if(!b) return;
+        var ids = b.steps.map(function(s){return s.id;});
+        var from = ids.indexOf(dragEl.dataset.sid);
+        var to = ids.indexOf(el.dataset.sid);
         if (from<0||to<0) return;
-        ord.splice(to,0, ord.splice(from,1)[0]);
-        setOrder(+pi,+ci,ord);
+        var moved = b.steps.splice(from,1)[0];
+        b.steps.splice(to,0,moved);
         render();
+        persist({op:'reorder', topic:topic, order:b.steps.map(function(s){return s.id;})});
       });
     });
+  }
+
+  // Load the live board; fall back to local copy or the embedded fallback if offline.
+  function load(){
+    fetch(API_GET, {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(b){ if(!b || !b.people || !b.people.length) throw new Error('empty'); BOARD=b; MODE='live'; render(); })
+      .catch(function(){
+        var local = loadLocal();
+        BOARD = local || normalize(FALLBACK_RAW);
+        MODE = 'local';
+        render();
+        showToast('Showing a local copy (backend unreachable).');
+      });
   }
 
   // ================= How it connects (demo view) =================
@@ -579,7 +616,7 @@
     });
   }
 
-  render();
+  load();
   renderSim();
 </script>
 </body></html>
