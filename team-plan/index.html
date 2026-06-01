@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guided Growth · Product plan + lanes</title>
+<style>
+  :root{
+    --bg:#0f1216; --surface:#171c22; --surface-2:#1e242c; --border:#2a323c;
+    --text:#eef2f6; --muted:#94a0ad; --faint:#6b7682;
+    --mvp:#27c08a; --p1:#5aa9e6; --p2:#d6a73a; --p3:#9b6cf0;
+    --live:#27c08a; --queue:#4b6cb7;
+    --screens:#e0709a; --wiring:#5aa9e6; --ux:#d6a73a; --qa:#27c08a; --notif:#e0843a; --email:#9b6cf0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:26px 22px 70px}
+  .topnav{position:sticky;top:0;background:rgba(15,18,22,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);margin:-26px -22px 22px;padding:12px 22px;display:flex;gap:18px;align-items:center;z-index:10}
+  .topnav a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600}
+  .topnav a:hover{color:var(--text)}
+  .topnav .brand{font-weight:800;color:var(--text);font-size:13px;letter-spacing:.02em;margin-right:auto}
+  .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700;margin:0 0 6px}
+  h1{font-size:27px;margin:0 0 6px;letter-spacing:-.02em}
+  h2{font-size:19px;margin:34px 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px;max-width:90ch;line-height:1.55}
+  .northstar{background:linear-gradient(90deg,rgba(123,97,255,.12),rgba(39,192,138,.08));border:1px solid var(--border);border-radius:12px;padding:12px 15px;font-size:13.5px;color:var(--muted);line-height:1.5;margin:0 0 8px}
+  .northstar b{color:var(--text)}
+  .stages{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:16px 0 0;align-items:start}
+  @media(max-width:980px){.stages{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.stages{grid-template-columns:1fr}}
+  .stage{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px}
+  .stage h3{margin:0 0 4px;font-size:14px;display:flex;align-items:center;gap:8px}
+  .stage .when{font-size:11px;color:var(--faint);margin:0 0 10px}
+  .bar{height:3px;border-radius:3px;margin:0 0 10px}
+  .chip{display:block;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 9px;margin:0 0 6px;font-size:12.5px;line-height:1.35}
+  .chip:last-child{margin-bottom:0}
+  /* lanes */
+  .model{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:14px 0 16px;font-size:13.5px;color:var(--muted);line-height:1.55}
+  .model b{color:var(--text)}
+  .team{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px}
+  .person{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:12.5px;min-width:150px}
+  .person .n{font-weight:700;font-size:13px}
+  .person .r{color:var(--faint);font-size:11.5px;margin-top:2px}
+  .lane-head{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+  .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7b61ff,#e0709a);display:flex;align-items:center;justify-content:center;font-weight:700}
+  .board{display:grid;grid-template-columns:repeat(6,minmax(165px,1fr));gap:12px;align-items:start}
+  @media(max-width:1100px){.board{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:620px){.board{grid-template-columns:repeat(2,1fr)}}
+  .col{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px;min-height:110px}
+  .col.live{border-color:var(--live);box-shadow:0 0 0 1px var(--live) inset}
+  .col-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 9px}
+  .col-name{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .pill{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:999px}
+  .pill.live{background:rgba(39,192,138,.16);color:var(--live)}
+  .pill.queue{background:rgba(75,108,183,.16);color:#8aa6e0}
+  .pill.on{background:rgba(224,132,58,.14);color:#e0a06a}
+  .card{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 9px;margin:0 0 7px;font-size:12px;line-height:1.4}
+  .card:last-child{margin-bottom:0}
+  .now{outline:1.5px solid rgba(39,192,138,.5)}
+  .foot{margin-top:28px;color:var(--faint);font-size:12px;line-height:1.6}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0 0;font-size:12px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+<div class="topnav">
+  <span class="brand">Guided Growth</span>
+  <a href="#roadmap">Product roadmap</a>
+  <a href="#lanes">How it runs (lanes)</a>
+</div>
+<div class="wrap">
+
+  <p class="eyebrow">Team plan · 2026-06-01</p>
+  <h1>What we are building, and how it runs</h1>
+  <p class="sub">Two parts. First the product topics across MVP and the phases after. Then the actual way the work goes, lane by lane, as live Claude sessions.</p>
+
+  <!-- PART 1 -->
+  <h2 id="roadmap">Part 1 · Product roadmap</h2>
+  <div class="northstar"><b>North star: Behavioral OS.</b> We show how your behaviors connect, sleep against mood against screen time and more. It starts in the MVP (we capture multiple behaviors) and deepens every phase.</div>
+  <div class="stages">
+
+    <div class="stage">
+      <div class="bar" style="background:var(--mvp)"></div>
+      <h3><span class="dot" style="background:var(--mvp)"></span>MVP</h3>
+      <div class="when">The 50 founding users</div>
+      <span class="chip">Voice-first onboarding that works</span>
+      <span class="chip">The AI fills the app (tool-calling)</span>
+      <span class="chip">Solid, shippable mobile app</span>
+      <span class="chip">Founding sign-up on the website</span>
+      <span class="chip">Notifications + email sequence</span>
+      <span class="chip">Thierry MVP additions (weekdays, completion types, notes, free trial, drop-off analytics)</span>
+      <span class="chip">Some insights (basic progress + history)</span>
+      <span class="chip">Behavioral OS foundation</span>
+      <span class="chip">Safety + privacy baseline (988 boundary)</span>
+      <span class="chip">QA pass before launch</span>
+    </div>
+
+    <div class="stage">
+      <div class="bar" style="background:var(--p1)"></div>
+      <h3><span class="dot" style="background:var(--p1)"></span>Phase 1</h3>
+      <div class="when">Right after launch · depth</div>
+      <span class="chip">Insights improve (trends, deeper history)</span>
+      <span class="chip">Coaching personalization (style selector, morning context)</span>
+      <span class="chip">Behavioral OS grows (first connections surfaced)</span>
+    </div>
+
+    <div class="stage">
+      <div class="bar" style="background:var(--p2)"></div>
+      <h3><span class="dot" style="background:var(--p2)"></span>Phase 2</h3>
+      <div class="when">Differentiation</div>
+      <span class="chip">Sleep + Apple Health / Google Health</span>
+      <span class="chip">Wearables</span>
+      <span class="chip">Screen time category</span>
+      <span class="chip">Voice-controlled settings</span>
+      <span class="chip">Gym / power-user logging</span>
+      <span class="chip">Accountability (groups, challenges, seeing others)</span>
+      <span class="chip">UI depth (animations, real chat screens, visual cards)</span>
+      <span class="chip">Competitor study</span>
+      <span class="chip">Behavioral OS deepens (cross-behavior correlations)</span>
+    </div>
+
+    <div class="stage">
+      <div class="bar" style="background:var(--p3)"></div>
+      <h3><span class="dot" style="background:var(--p3)"></span>Phase 3</h3>
+      <div class="when">Expansion + bets</div>
+      <span class="chip">Category packs (nutrition, fitness, womens health)</span>
+      <span class="chip">Marketplace (human-coach handoff, supplements)</span>
+      <span class="chip">Voice infra evolution (self-hosted Pipecat)</span>
+    </div>
+
+  </div>
+
+  <!-- PART 2 -->
+  <h2 id="lanes">Part 2 · How it runs, lane by lane</h2>
+  <div class="model"><b>The model:</b> one lane per person. Each lane holds that person's projects as Claude session buckets. Each bucket is an ordered task queue. You keep 2 to 3 running as live sessions, jump between them, the session does the next task and moves on. Product is the planning. Engineering is all the execution (Yonas). QA is checking (Timothy).</div>
+
+  <div class="team">
+    <div class="person"><div class="n">Yonas</div><div class="r">Engineering · all execution and fixes</div></div>
+    <div class="person"><div class="n">Mint</div><div class="r">AI / tool-calling, Path 2 + Path 3</div></div>
+    <div class="person"><div class="n">Alejandro</div><div class="r">Infra / CI / auth / security</div></div>
+    <div class="person"><div class="n">Timothy</div><div class="r">Design + QA + notifications</div></div>
+    <div class="person"><div class="n">Yair</div><div class="r">Product / planning / direction</div></div>
+  </div>
+
+  <div class="lane-head">
+    <div class="avatar">T</div>
+    <div>
+      <div style="font-size:17px;font-weight:650">Timothy's lane</div>
+      <div style="color:var(--faint);font-size:12.5px">2 to 3 live at a time · QA is the last approver of fixes</div>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="col live">
+      <div class="col-head"><div class="col-name"><span class="dot" style="background:var(--screens)"></span>Screens</div><span class="pill live">Live</span></div>
+      <div class="card now">Gender split on character art</div>
+      <div class="card">Remove mood field on edit reflection</div>
+      <div class="card">Edit / delete as its own screen</div>
+      <div class="card">New screens as the roadmap needs</div>
+    </div>
+    <div class="col">
+      <div class="col-head"><div class="col-name"><span class="dot" style="background:var(--wiring)"></span>Wiring</div><span class="pill queue">Queued</span></div>
+      <div class="card">Wire prototype interactions per the flows</div>
+      <div class="card">Connect new screens into the prototype</div>
+      <div class="card">Keep wiring in sync via the Renamer plugin</div>
+    </div>
+    <div class="col">
+      <div class="col-head"><div class="col-name"><span class="dot" style="background:var(--ux)"></span>UX rules</div><span class="pill queue">Queued</span></div>
+      <div class="card">Apply the global UX rules per screen</div>
+      <div class="card">Voice never tells the user to tap or scroll</div>
+      <div class="card">Subtitle component consistent across screens</div>
+    </div>
+    <div class="col live">
+      <div class="col-head"><div class="col-name"><span class="dot" style="background:var(--qa)"></span>QA + Android</div><span class="pill live">Live</span></div>
+      <div class="card now">Test today's TestFlight, record walkthrough</div>
+      <div class="card">File findings via Claude (bug / AI learning)</div>
+      <div class="card">Play Store parity on Android</div>
+      <div class="card">Approve fixes before they close</div>
+    </div>
+    <div class="col">
+      <div class="col-head"><div class="col-name"><span class="dot" style="background:var(--notif)"></span>Notifications</div><span class="pill on">On-demand</span></div>
+      <div class="card">Finish the notification setup page</div>
+      <div class="card">Notification states and copy</div>
+    </div>
+    <div class="col">
+      <div class="col-head"><div class="col-name"><span class="dot" style="background:var(--email)"></span>Email design</div><span class="pill on">On-demand</span></div>
+      <div class="card">Design the onboarding email sequence</div>
+      <div class="card">Build from the briefs, collaboratively</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--live)"></span>Live session now</span>
+    <span><span class="dot" style="background:#8aa6e0"></span>Queued, ready to open</span>
+    <span><span class="dot" style="background:#e0a06a"></span>On-demand</span>
+    <span>Green outline = the task the session is on now</span>
+  </div>
+
+  <p class="foot">
+    Timothy's two halves are design (Screens, Wiring, UX rules) and QA (Android folded in). Notifications is its own project, Email design follows it. His tasks are live on the board and in GitLab (issues 200 to 205). Source: team sync 2026-06-01.
+  </p>
+
+</div>
+</body>
+</html>
