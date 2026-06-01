@@ -81,6 +81,57 @@
   footer{margin-top:54px;border-top:1px solid var(--border);padding-top:16px;color:var(--muted);font-size:12px}
   footer a{color:var(--accent);text-decoration:none}
   .draft{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--next);border:1px solid var(--next);border-radius:5px;padding:2px 7px;vertical-align:middle;margin-left:8px}
+  /* ---- top-level view tabs ---- */
+  .tabs{display:flex;gap:4px;margin:6px 0 24px;border-bottom:1px solid var(--border)}
+  .tabs button{font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;padding:9px 15px;color:var(--muted);margin-bottom:-1px}
+  .tabs button.active{color:var(--text);border-bottom-color:var(--accent)}
+  /* ---- How it connects ---- */
+  .cintro{font-size:14.5px;color:var(--text-2);max-width:82ch;margin:0 0 18px}
+  .who-tabs{display:flex;gap:8px;margin:0 0 18px;flex-wrap:wrap}
+  .who-tabs button{font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 14px;color:var(--text-2)}
+  .who-tabs button.active{background:var(--claude);border-color:var(--claude);color:#fff}
+  .demo-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:26px 0 10px}
+  /* Claude desktop window */
+  .cwrap{display:grid;grid-template-columns:236px 1fr;background:#1d1d1b;border:1px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 12px 44px rgba(0,0,0,.4);min-height:440px}
+  .csidebar{background:#191917;border-right:1px solid #2a2a27;padding:14px 9px;overflow:hidden}
+  .csb-head{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#8d877b;font-weight:600;padding:2px 8px 12px}
+  .csb-item{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:7px;font-size:12.5px;color:#b8b2a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .csb-item.active{background:#2e2d2a;color:#f5f1e8}
+  .csb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#d9a441}
+  .csb-dot.idle{background:transparent;border:1.5px solid #6a655b}
+  .cmain{display:flex;flex-direction:column;background:#212120;min-width:0}
+  .cmain-head{padding:11px 16px;border-bottom:1px solid #2a2a27;font-size:12.5px;color:#8d877b;display:flex;align-items:center;gap:8px}
+  .cmsgs{padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;flex:1}
+  .cmsg{display:flex;gap:11px;font-size:13px;line-height:1.58}
+  .cav{width:24px;height:24px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+  .cmsg.user .cav{background:#3a6df0}.cmsg.ai .cav{background:#d97757}
+  .cmsg .c{color:#e7e3d9;min-width:0}
+  .cmsg .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#15130f;color:#e6b450;border-radius:4px;padding:1px 5px}
+  .cmsg .ok{color:#46c47a;font-family:ui-monospace,Menlo,monospace;font-weight:600}
+  .cinput{margin:6px 14px 14px;border:1px solid #34332f;background:#191917;border-radius:10px;padding:11px 13px;color:#6a655b;font-size:12.5px;display:flex;justify-content:space-between;align-items:center}
+  /* terminals */
+  .terms{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .term{background:#0d0d0c;border:1px solid #000;border-radius:9px;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.32)}
+  .term-head{display:flex;align-items:center;gap:7px;background:#1b1b19;padding:8px 11px;border-bottom:1px solid #000}
+  .tdot{width:11px;height:11px;border-radius:50%}.tdot.r{background:#ff5f57}.tdot.y{background:#febc2e}.tdot.g{background:#28c840}
+  .term-title{margin-left:6px;font-size:11.5px;color:#9c968a;font-family:ui-monospace,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .term-body{padding:12px 13px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1.7;color:#cfcabf;min-height:118px}
+  .term-body .p{color:#46c47a}.term-body .dim{color:#6a655b}.term-body .y{color:#e0922f}
+  /* control flow */
+  .flow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;margin:6px 0 20px}
+  .fnode{flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:13px 15px}
+  .fnode .ft{font-weight:650;font-size:13.5px;margin-bottom:3px}
+  .fnode .fd{font-size:12px;color:var(--muted)}
+  .farrow{align-self:center;color:var(--muted);font-size:22px}
+  .sim{background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:15px 16px;max-width:540px}
+  .sim h4{margin:0 0 4px;font-size:13.5px}.sim .shint{font-size:12px;color:var(--muted);margin:0 0 12px}
+  .simrow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:7px;cursor:grab;font-size:12.5px}
+  .simrow.dragging{opacity:.4}.simrow.drag-over{border-top:2px solid var(--claude)}
+  .simrow .rank{font-weight:800;color:var(--claude);font-variant-numeric:tabular-nums;width:14px}
+  .simrow .grip{color:var(--border-strong)}
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--claude);color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:0 10px 34px rgba(0,0,0,.35);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:50;max-width:90vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:720px){.terms{grid-template-columns:1fr}.cwrap{grid-template-columns:1fr}.csidebar{display:none}}
 </style></head>
 <body><main>
   <p class="eyebrow">Guided Growth · Squad</p>
@@ -88,6 +139,12 @@
   <p class="lede">A new operating model for the team. Each person stops hand-writing every line and instead runs several Claude sessions in parallel, one per project. Their real job is to <b>define the requirements</b>, let a Claude <b>build it</b>, and then <b>verify the result</b> — testing it, and going into the code when needed. It is the QA-engineer role: someone who knows code, directing AI instead of typing it.</p>
   <p class="sub">Every project below is one Claude session. The steps are pulled from each person's live GitLab issues. Drag steps to reorder, click a dot to change its state, and add a comment to any step — your changes stick in this browser, so you can reshape it live in the meeting.</p>
 
+  <div class="tabs">
+    <button id="tab-boards" class="active" onclick="showView('boards')">📋 The boards</button>
+    <button id="tab-connect" onclick="showView('connect')">🖥 How it connects</button>
+  </div>
+
+  <div id="view-boards">
   <div class="model">
     <div class="loop"><span class="step-n" style="background:var(--accent)">1</span><div><div class="t">Define</div><div class="d">The person writes the requirement + acceptance criteria</div></div></div>
     <span class="arrow">→</span>
@@ -110,6 +167,33 @@
   </div>
 
   <div id="people"></div>
+  </div><!-- /view-boards -->
+
+  <div id="view-connect" style="display:none">
+    <p class="cintro">Each project a teammate runs is a real Claude session. This is what that looks like on their machine — the same app in your sidebar — and how this website drives it. Pick a teammate.</p>
+    <div class="who-tabs" id="who-tabs">
+      <button class="active" onclick="renderConnect('yonas',event)">Yonas · 4 sessions</button>
+      <button onclick="renderConnect('mint',event)">Mint · 4 sessions</button>
+      <button onclick="renderConnect('timothy',event)">Timothy · 2 sessions</button>
+    </div>
+    <div id="connect-body"></div>
+
+    <div class="demo-label">How the website controls it</div>
+    <div class="flow">
+      <div class="fnode"><div class="ft">1 · This website</div><div class="fd">A teammate drags a task to set its priority on the board.</div></div>
+      <span class="farrow">→</span>
+      <div class="fnode"><div class="ft">2 · Sync</div><div class="fd">The new order is pushed to the matching Claude session.</div></div>
+      <span class="farrow">→</span>
+      <div class="fnode"><div class="ft">3 · Claude reprioritizes</div><div class="fd">The session picks up the new top task next, no terminal needed.</div></div>
+    </div>
+    <div class="sim">
+      <h4>Try it — drag to reprioritize</h4>
+      <p class="shint">Simulated for now. Dragging here would push the new order straight to Yonas's “launch-blocking” Claude session. We'll wire the real link later; today it's the picture.</p>
+      <div id="simlist"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
 
   <footer>
     Live mock-up · <a href="/architecture/">Workspace board</a> · <a href="/internal/hub">Workspace hub</a><br>
