@@ -240,7 +240,7 @@
     <div class="who-tabs" id="who-tabs">
       <button class="active" onclick="renderConnect('yonas',event)">Yonas · 4 sessions</button>
       <button onclick="renderConnect('mint',event)">Mint · 4 sessions</button>
-      <button onclick="renderConnect('timothy',event)">Timothy · 2 sessions</button>
+      <button onclick="renderConnect('timothy',event)">Timothy · 6 sessions</button>
     </div>
     <div id="connect-body"></div>
 
@@ -333,22 +333,38 @@
         {"title":"Run Android APK + Web smoke; document the delta from the iOS baseline","state":"todo","issue":"#110"},
         {"title":"Mint signs off on HARD GATES #103 + #125 — no ship until both are green","state":"todo","issue":"#103"}]}
     ]},
-    {"person":"Timothy","username":"dionisius.timothyjm","concurrent_load":2,"role_summary":"Part-time (3-5h/day after 6pm Singapore), first month. One direct assign (#156, onboarding emails). The QA bugs sit with Yonas/Yair, but Timothy's stated role is MVP QA + design. That maps to two coherent projects: draft the onboarding email sequences, and own the frontend UI-polish QA loop — file, verify, and close the device-visible bugs.","stretch_note":"<b>2 is realistic, not a stretch</b>, given part-time hours. The email project is async writing he can batch; the UI QA project is device verification, batchable per session. They don't interfere — one content-side, one product-side. Only risk: if both need Yair review at the same time in week 1-2, that review bottleneck briefly slows both before he builds momentum.","projects":[
-      {"name":"Onboarding email sequences","status":"next","claude_topic":"notifications-email","one_liner":"Six behavior-gated onboarding emails drafted, reviewed, and ready to import into Loops.so for founding users.","why":"The six briefs exist in gg-notif-email/briefs/ but drafts/ is empty. Without the copy, the Loops.so workflows can't be built and founding users land with no post-signup communication — a day-one trust + retention gap.","steps":[
-        {"title":"Read all six briefs + strategy.md to internalize constraints, skip rules, brand voice","state":"todo","issue":"#156"},
-        {"title":"Define acceptance criteria per email: word-count range, tone checklist, what passes Yair review","state":"todo","issue":"#156"},
-        {"title":"A Claude session drafts all six emails (Day 0–14) in branches, following the MR workflow","state":"todo","issue":"#156"},
-        {"title":"Review each draft vs the brief — no feature-tour overwhelm, correct skip-rule framing per day","state":"todo","issue":""},
-        {"title":"Open MRs to main, assign Yair as reviewer, iterate until all six merge","state":"todo","issue":"#156"},
-        {"title":"Verify merged drafts match the Loops.so import format (subject + body + skip-rule header)","state":"todo","issue":""}]},
-      {"name":"Frontend UI-polish QA loop","status":"next","claude_topic":"frontend-ui-polish-qa","one_liner":"Every medium-priority frontend bug reproduced on device, fixes verified on TestFlight, and issues closed — a clean UI with no visible defects.","why":"7 medium frontend bugs in next-phase (keyboard-nav, missing Settings mic, missing confirmations, save behind nav, stray mic, focus-exit confirm, wrong advanced-flow mic) plus one now-phase high (#162). None are assigned to Timothy yet, but he's the QA owner and these are device-visible issues he can file, chase, and verify without backend context.","steps":[
-        {"title":"Reproduce + document all 7 next-phase frontend bugs on device with screenshot/recording on the issue","state":"todo","issue":"#194"},
+    {"person":"Timothy","username":"dionisius.timothyjm","concurrent_load":3,"role_summary":"Part-time (3-5h/day after 6pm Singapore), first month. His role is MVP design plus QA. The work splits into six focused Claude sessions by topic: three design sessions (Screens, Wiring, UX rules), the QA loop with Android folded in, the notification setup page, and the onboarding email design. He runs 2 to 3 live at a time, not all six.","stretch_note":"<b>Run 2 to 3 at once, not all six.</b> Each session is one topic with its own queue. The design sessions are batchable Figma work, QA is device verification, Notifications and Email are content-side, so they do not interfere. QA fixes route to Yonas, Timothy is the last approver.","projects":[
+      {"name":"Screens","status":"next","claude_topic":"screens-design","one_liner":"The screens that need designing, built in Figma: the design-fixes list plus new screens as the roadmap needs them.","why":"Timothy's core craft is the screens. The design-fixes are device-visible and queued, and new roadmap screens flow through here.","steps":[
+        {"title":"Gender split on character art (male and female variants)","state":"todo","issue":"#200"},
+        {"title":"Remove the mood field from the edit-reflection screen","state":"todo","issue":"#201"},
+        {"title":"Edit and delete as its own screen, matching the existing delete pattern, not a slider","state":"todo","issue":"#202"},
+        {"title":"Design new screens through Claude, export, and place them in Figma","state":"todo","issue":""},
+        {"title":"Post before and after for Yair on each fix","state":"todo","issue":""}]},
+      {"name":"Wiring","status":"next","claude_topic":"prototype-wiring","one_liner":"The prototype wired so screens connect and the flow runs, kept in sync with the Renamer plugin.","why":"Designed screens are inert until wired. Wiring is its own session because it touches the prototype interactions and the Renamer plugin, separate from visual design.","steps":[
+        {"title":"Wire prototype interactions per the flows","state":"todo","issue":""},
+        {"title":"Connect new screens into the prototype","state":"todo","issue":""},
+        {"title":"Keep wiring in sync via the Renamer plugin, the only sanctioned writer","state":"todo","issue":""}]},
+      {"name":"UX rules","status":"next","claude_topic":"ux-rules","one_liner":"The global UX rules applied consistently across every screen.","why":"Consistency is its own discipline: the voice-never-pushes rule, the subtitle component, and the global UX rules need a pass per screen.","steps":[
+        {"title":"Apply the global UX rules to each screen","state":"todo","issue":""},
+        {"title":"Enforce that the coach never tells the user to tap or scroll","state":"todo","issue":""},
+        {"title":"Keep the subtitle component consistent across all screens","state":"todo","issue":""}]},
+      {"name":"QA loop (with Android)","status":"now","claude_topic":"frontend-ui-polish-qa","one_liner":"Every device-visible bug reproduced, fixes verified on TestFlight and Android, and issues closed, a clean UI with no visible defects.","why":"Timothy is the QA owner and the last approver. He files, chases, and verifies the device-visible issues on both iOS and Android, without needing backend context.","steps":[
+        {"title":"Test the latest TestFlight, record the walkthrough (external camera so the coach voice records), file findings","state":"todo","issue":"#203"},
+        {"title":"Confirm Play Store parity on Android, file any Android-only gaps","state":"todo","issue":"#204"},
+        {"title":"Reproduce and document the next-phase frontend bugs on device with a screenshot or recording on the issue","state":"todo","issue":"#194"},
         {"title":"Confirm #162 reproduces on device and escalate to Yonas as now-blocking","state":"todo","issue":"#162"},
-        {"title":"Triage the 7 into a fix order with Yair — keyboard-nav + save-behind-nav are most visible, first","state":"todo","issue":"#165"},
-        {"title":"For each bug, a Claude session writes the targeted fix (or pair with Yonas); verify the diff before merge","state":"todo","issue":"#167"},
-        {"title":"Install each TestFlight build, re-run the exact repro, post a pass/fail comment on the issue","state":"todo","issue":"#169"},
-        {"title":"Close verified issues and update the QA board to reflect resolved status","state":"todo","issue":""},
-        {"title":"Run a full onboarding walkthrough after fixes land; capture a walkthrough video for the team","state":"todo","issue":""}]}
+        {"title":"Triage into a fix order with Yair, most visible first","state":"todo","issue":"#165"},
+        {"title":"Install each TestFlight build, re-run the exact repro, post a pass or fail comment, then close verified issues","state":"todo","issue":"#167"}]},
+      {"name":"Notifications","status":"next","claude_topic":"notifications","one_liner":"The in-app notification setup page finished, where users pick their reminder times, plus the notification states and copy.","why":"Timothy already started the notification page. It is its own project between product and design, with the push tiers defined in strategy.md.","steps":[
+        {"title":"Finish the notification setup page (morning and evening reminder time pickers)","state":"todo","issue":"#205"},
+        {"title":"Design the notification states and copy","state":"todo","issue":""},
+        {"title":"Match the tiers and quiet-hours rules in strategy.md","state":"todo","issue":""}]},
+      {"name":"Onboarding email sequences","status":"next","claude_topic":"notifications-email","one_liner":"Six behavior-gated onboarding emails drafted, reviewed, and ready to import into Loops.so for founding users.","why":"The six briefs exist in gg-notif-email/briefs/ but drafts/ is empty. Without the copy, the Loops.so workflows cannot be built and founding users land with no post-signup communication.","steps":[
+        {"title":"Read all six briefs and strategy.md to internalize constraints, skip rules, brand voice","state":"todo","issue":"#156"},
+        {"title":"Define acceptance criteria per email: word-count range, tone checklist, what passes Yair review","state":"todo","issue":"#156"},
+        {"title":"A Claude session drafts all six emails (Day 0 to 14) in branches, following the MR workflow","state":"todo","issue":"#156"},
+        {"title":"Review each draft vs the brief, no feature-tour overwhelm, correct skip-rule framing per day","state":"todo","issue":""},
+        {"title":"Open MRs to main, assign Yair as reviewer, iterate until all six merge","state":"todo","issue":"#156"}]}
     ]}
   ];
 
