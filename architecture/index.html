@@ -1541,6 +1541,23 @@
     .z7-board-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
     .z7-board-card-iid { font-size: 11px; color: var(--z7-text-3); font-variant-numeric: tabular-nums; }
     .z7-board-empty { color: var(--z7-text-3); font-size: 12px; padding: 16px 4px; text-align: center; }
+    /* QA findings (bug / ai-learning) get a left accent stripe so a "found in
+       testing" card is distinguishable at a glance from a planned build task. */
+    .z7-board-card.z7-qa { border-left: 3px solid #16A085; padding-left: 9px; }
+    /* Curated, low-noise tag set on each board card (replaces the full label
+       dump): kind badge + type + priority for QA; squad + priority + epic for
+       build tasks. */
+    .z7-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .z7-tag { font-size: 10.5px; font-weight: 600; line-height: 1; padding: 3px 7px; border-radius: 5px; white-space: nowrap; letter-spacing: .02em; }
+    .z7-tag-qa  { background: #16A085; color: #fff; }
+    .z7-tag-bug { background: #d73a4a; color: #fff; }
+    .z7-tag-ai  { background: #8E44AD; color: #fff; }
+    .z7-tag-prod { background: rgba(31,126,90,.16);  color: #1f7e5a; border: 1px solid rgba(31,126,90,.4); }
+    .z7-tag-eng  { background: rgba(75,108,183,.16); color: #4b6cb7; border: 1px solid rgba(75,108,183,.4); }
+    .z7-tag-epic { background: var(--z7-panel-3); color: var(--z7-text-2); }
+    .z7-pri-high   { background: #C0392B; color: #fff; }
+    .z7-pri-medium { background: #F39C12; color: #3a2a00; }
+    .z7-pri-low    { background: #95A5A6; color: #fff; }
 
     /* Team "Live now" strip — live agent sessions across the team, polled every 60s.
        Separate data source from the Yair OS board; reuses card styling only. */
@@ -4179,9 +4196,10 @@
             </select>
           </div>
           <div class="z7-filter-group">
-            <label>Squad</label>
-            <div class="z7-seg" id="z7-board-squad" role="group" aria-label="Squad filter">
+            <label>Show</label>
+            <div class="z7-seg" id="z7-board-squad" role="group" aria-label="Kind filter">
               <button type="button" class="active" data-squad="all" onclick="glBoardSetSquad('all')">All</button>
+              <button type="button" data-squad="qa" onclick="glBoardSetSquad('qa')">QA</button>
               <button type="button" data-squad="product" onclick="glBoardSetSquad('product')">Product</button>
               <button type="button" data-squad="eng" onclick="glBoardSetSquad('eng')">Engineering</button>
             </div>
@@ -9455,7 +9473,7 @@
     let _glIssuesRaw = [];              // last fetched issues, before client-side filtering
     let _glIssueSquad = 'all';          // Issues squad filter: all | product | eng
     let _glBoardIssues = [];            // last fetched open + recently-closed issues for the Board
-    let _glBoardSquad = 'all';          // Board squad filter: all | product | eng
+    let _glBoardSquad = 'all';          // Board "Show" kind filter: all | qa | product | eng
     let _glAwardSupported = true;       // flips false on first 404 from /issue/award
     // Cross-zoom round-trip: when QA (zoom 6) deep-links into an issue here, we
     // remember to show a "Back to QA" affordance and queue the issue to open
@@ -9704,6 +9722,43 @@
     // Plain lowercase names of labels (objects or strings), for grouping logic.
     function glLabelNames(labels) {
       return (labels || []).map(l => ((l && typeof l === 'object') ? (l.name || '') : String(l || '')).toLowerCase());
+    }
+
+    // ---- Board "kind" = the top-level partition shown by the Show filter ----
+    // Every issue is exactly one of: qa (a finding tagged `qa`), product, or
+    // eng (build tasks, by squad). qa wins over squad so a finding never hides
+    // in a build lane. Used only by the Board; the Issues view keeps glSquadOf.
+    function glHasLabel(iss, name) { return glLabelNames(iss && iss.labels).indexOf(name) !== -1; }
+    function glBoardKindOf(iss) { return glHasLabel(iss, 'qa') ? 'qa' : glSquadOf(iss); }
+    function glBoardMatchKind(iss, kind) { return (!kind || kind === 'all') ? true : glBoardKindOf(iss) === kind; }
+    function glPriorityOf(iss) {
+      var n = glLabelNames(iss && iss.labels);
+      for (var i = 0; i < n.length; i++) { var m = n[i].match(/^priority::(high|medium|low)$/); if (m) return m[1]; }
+      return '';
+    }
+    function glEpicOf(iss) {
+      var n = glLabelNames(iss && iss.labels);
+      for (var i = 0; i < n.length; i++) { var m = n[i].match(/^epic::(.+)$/); if (m) return m[1]; }
+      return '';
+    }
+    function glPrettyEpic(e) { return String(e || '').replace(/-/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
+    // The 2-3 tags shown on a board card. Keeps cards scannable instead of
+    // dumping 7 label pills; the full label set still shows in the detail view.
+    function glBoardCardTags(iss) {
+      var out = [], kind = glBoardKindOf(iss);
+      if (kind === 'qa') {
+        out.push('<span class="z7-tag z7-tag-qa">QA</span>');
+        if (glHasLabel(iss, 'ai-learning')) out.push('<span class="z7-tag z7-tag-ai">AI learning</span>');
+        else if (glHasLabel(iss, 'bug')) out.push('<span class="z7-tag z7-tag-bug">Bug</span>');
+      } else if (kind === 'product') {
+        out.push('<span class="z7-tag z7-tag-prod">Product</span>');
+      } else {
+        out.push('<span class="z7-tag z7-tag-eng">Eng</span>');
+      }
+      var p = glPriorityOf(iss);
+      if (p) out.push('<span class="z7-tag z7-pri-' + p + '">' + (p === 'high' ? 'High' : p === 'medium' ? 'Med' : 'Low') + '</span>');
+      if (kind !== 'qa') { var e = glEpicOf(iss); if (e) out.push('<span class="z7-tag z7-tag-epic">' + qaEscape(glPrettyEpic(e)) + '</span>'); }
+      return '<span class="z7-tags">' + out.join('') + '</span>';
     }
 
     // ---- Shared squad / assignee / sort logic (Issues + Board) -------------
@@ -10068,7 +10123,7 @@
       glFillAssigneeSelect(document.getElementById('z7-board-assignee'), raw);
       const assignee = (document.getElementById('z7-board-assignee') || {}).value || '';
       const sort = (document.getElementById('z7-board-sort') || {}).value || 'updated_desc';
-      const issues = raw.filter(iss => glMatchSquad(iss, _glBoardSquad) && glMatchAssignee(iss, assignee));
+      const issues = raw.filter(iss => glBoardMatchKind(iss, _glBoardSquad) && glMatchAssignee(iss, assignee));
       const buckets = { open: [], 'in progress': [], testing: [], done: [] };
       issues.forEach(iss => {
         if (iss.state === 'closed') { buckets.done.push(iss); return; }
@@ -10101,7 +10156,8 @@
     }
 
     function glBoardCard(iss) {
-      return '<div class="z7-board-card" role="button" tabindex="0" draggable="true"'
+      const qaCls = glHasLabel(iss, 'qa') ? ' z7-qa' : '';
+      return '<div class="z7-board-card' + qaCls + '" role="button" tabindex="0" draggable="true"'
         + ' data-iid="' + iss.iid + '" data-project="' + qaEscape(iss.project) + '"'
         + ' ondragstart="glBoardDragStart(event)" ondragend="glBoardDragEnd(event)"'
         + ' onclick="glBoardCardClick(event, ' + glAttr(iss.project) + ', ' + iss.iid + ')">'
@@ -10112,7 +10168,7 @@
         + '<div class="z7-board-card-meta">'
         + '<span class="z7-board-card-iid">' + qaEscape(iss.project) + ' #' + iss.iid + '</span>'
         + (iss.screen ? '<span class="z7-screen-chip">' + qaEscape(iss.screen) + '</span>' : '')
-        + (glLabelPills(iss.labels) || '')
+        + glBoardCardTags(iss)
         + (iss.assignees && iss.assignees.length ? glAvatarStack(iss.assignees, 'sm') : '')
         + '</div>'
         + '</div>';
