@@ -399,6 +399,98 @@
     });
   }
 
+  // ================= How it connects (demo view) =================
+  var CONNECT = {
+    yonas: {
+      label:'Yonas',
+      sessions:['Launch-blocking backend bugs','Vapi callLLM backbone','QA stability backlog','Web-to-mobile sync'], active:0,
+      prompt:"Spec for #161 — voice-created habits aren't persisting. When the coach creates a habit via a tool call it must write to Supabase `habits` and show on Home immediately. Acceptance: row exists with the right user_id + cadence; Home updates with no refresh. Implement and verify on device.",
+      reply:"Reading the create_habit tool handler in <span class='mono'>src/voice/tools</span>… the insert ran before the authed Supabase client was attached, so RLS dropped it silently. I moved the insert behind the authed client and added an optimistic Home update. Wrote a test: create via tool → row present → Home re-renders. Running on device… <span class='ok'>✓ passes</span>. Open the MR to gg-mvp?",
+      terms:[
+        {t:'launch-blocking-backend-bugs', lines:['<span class="p">●</span> Fixing #161 voice-habit persistence','  <span class="dim">moved insert behind authed client</span>','<span class="y">▸ running MobAI smoke…</span>']},
+        {t:'vapi-callllm-backbone', lines:['<span class="p">●</span> Building callLLM() wrapper (#91)','  <span class="dim">wired shared context builder</span>','<span class="y">▸ awaiting delta-injection spec</span>']},
+        {t:'qa-stability-next-bugs', lines:['<span class="dim">○ idle — 12 bugs queued</span>','<span class="dim">$ waiting on triage order</span>']},
+        {t:'web-to-mobile-sync', lines:['<span class="p">●</span> Auditing web vs mobile features','  <span class="dim">12 web-only features found</span>','<span class="y">▸ drafting parity table</span>']}
+      ]
+    },
+    mint: {
+      label:'Mint',
+      sessions:['Voice infrastructure wiring','Onboarding + home wiring','Async reflection state machine','Cross-channel QA suite'], active:0,
+      prompt:"Spec for the Universal Voice FAB (#143): a floating mic button on every screen except SPLASH + auth. Tap opens the Vapi session; close returns to the prior screen. Acceptance: present on all non-suppressed screens, correct z-index over modals, Vapi lifecycle hooks fire on open/close. Build the component and wire it.",
+      reply:"Scaffolding <span class='mono'>&lt;VoiceFAB/&gt;</span> as a portal so it sits above modals… wired it to the Vapi entry/exit events and added a suppressed-screens list. It renders on all 38 screens except the 6 you flagged. Added a story plus a test asserting it mounts and fires onOpen. <span class='ok'>✓ green</span>. Drop it into the app shell?",
+      terms:[
+        {t:'voice-infra-wiring', lines:['<span class="p">●</span> Wiring &lt;VoiceFAB/&gt; (#143)','  <span class="dim">portal over modals, z-index ok</span>','<span class="y">▸ test: mounts + onOpen…</span>']},
+        {t:'onboarding-home-wiring', lines:['<span class="dim">○ idle — awaiting session_log spec</span>']},
+        {t:'async-reflection-state-machine', lines:['<span class="p">●</span> Scaffolding state machine (#116)','  <span class="dim">Supabase tables + RLS drafted</span>']},
+        {t:'cross-channel-qa-suite', lines:['<span class="p">●</span> Generating happy-path scripts','  <span class="dim">voice + manual fixtures</span>']}
+      ]
+    },
+    timothy: {
+      label:'Timothy',
+      sessions:['Onboarding email sequences','Frontend UI-polish QA loop'], active:0,
+      prompt:"Draft the Day 0 welcome email from brief 01. Constraints: under 120 words, warm not hypey, no feature tour, one clear next step (open the app), match the brand voice in strategy.md. Give me two variants.",
+      reply:"Read brief 01 + strategy.md. Here are two Day-0 drafts under 120 words, both leading with the founding-member framing and a single CTA, neither mentioning features. Variant A is warmer, B is shorter. Want them as a branch + MR for Yair's review?",
+      terms:[
+        {t:'notifications-email', lines:['<span class="p">●</span> Drafting Day 0 email (brief 01)','  <span class="dim">2 variants, &lt;120 words</span>','<span class="y">▸ open MR for Yair review</span>']},
+        {t:'frontend-ui-polish-qa', lines:['<span class="dim">○ reproducing #194 on device…</span>','<span class="dim">$ TestFlight build installing</span>']}
+      ]
+    }
+  };
+
+  function renderConnect(who, ev){
+    var d = CONNECT[who];
+    document.querySelectorAll('#who-tabs button').forEach(function(b){ b.classList.remove('active'); });
+    if (ev && ev.currentTarget) ev.currentTarget.classList.add('active');
+    var sidebar = d.sessions.map(function(s,i){
+      return '<div class="csb-item'+(i===d.active?' active':'')+'"><span class="csb-dot'+(i===d.sessions.length-1?' idle':'')+'"></span>'+esc(s)+'</div>';
+    }).join('');
+    var win = '<div class="cwrap">'
+      + '<div class="csidebar"><div class="csb-head"><span>Recents</span><span>⌖</span></div>'+sidebar+'</div>'
+      + '<div class="cmain"><div class="cmain-head">◇ '+esc(d.sessions[d.active])+'</div>'
+      + '<div class="cmsgs">'
+      + '<div class="cmsg user"><span class="cav">'+esc(d.label.charAt(0))+'</span><span class="c">'+esc(d.prompt)+'</span></div>'
+      + '<div class="cmsg ai"><span class="cav">C</span><span class="c">'+d.reply+'</span></div>'
+      + '</div>'
+      + '<div class="cinput"><span>Reply to Claude…</span><span>⏎</span></div>'
+      + '</div></div>';
+    var terms = '<div class="terms">'+d.terms.map(function(t){
+      return '<div class="term"><div class="term-head"><span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span><span class="term-title">claude — '+esc(t.t)+'</span></div>'
+        + '<div class="term-body"><span class="dim">$ claude</span><br>'+t.lines.join('<br>')+'</div></div>';
+    }).join('')+'</div>';
+    document.getElementById('connect-body').innerHTML =
+      '<div class="demo-label">'+esc(d.label)+'’s Claude — one app, '+d.sessions.length+' project sessions</div>'+win
+      + '<div class="demo-label">The same '+d.sessions.length+' sessions, running as terminals</div>'+terms;
+  }
+
+  function showView(v){
+    document.getElementById('view-boards').style.display = (v==='boards')?'':'none';
+    document.getElementById('view-connect').style.display = (v==='connect')?'':'none';
+    document.getElementById('tab-boards').classList.toggle('active', v==='boards');
+    document.getElementById('tab-connect').classList.toggle('active', v==='connect');
+    if (v==='connect' && !document.getElementById('connect-body').innerHTML) renderConnect('yonas');
+  }
+  window.showView = showView;
+  window.renderConnect = renderConnect;
+
+  // simulated drag-to-reprioritize -> session reacts (toast)
+  var SIM = [{r:'#161', t:'Voice-created habit not persisted'},{r:'#163', t:'Reflection edit save stuck'},{r:'#162', t:'Mic permission broken for existing users'}];
+  var simDrag=null, toastT=null;
+  function showToast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},2800); }
+  function renderSim(){
+    var el = document.getElementById('simlist'); if(!el) return;
+    el.innerHTML = SIM.map(function(x,i){
+      return '<div class="simrow" draggable="true" data-i="'+i+'"><span class="rank">'+(i+1)+'</span><span class="grip">⋮⋮</span><span style="color:var(--accent);font-family:ui-monospace,Menlo,monospace;font-size:11.5px">'+x.r+'</span><span>'+esc(x.t)+'</span></div>';
+    }).join('');
+    el.querySelectorAll('.simrow').forEach(function(row){
+      row.addEventListener('dragstart',function(e){ simDrag=row; row.classList.add('dragging'); try{e.dataTransfer.effectAllowed='move';}catch(_){}});
+      row.addEventListener('dragend',function(){ row.classList.remove('dragging'); el.querySelectorAll('.drag-over').forEach(function(x){x.classList.remove('drag-over');});});
+      row.addEventListener('dragover',function(e){ e.preventDefault(); if(simDrag&&simDrag!==row) row.classList.add('drag-over');});
+      row.addEventListener('dragleave',function(){ row.classList.remove('drag-over');});
+      row.addEventListener('drop',function(e){ e.preventDefault(); row.classList.remove('drag-over'); if(!simDrag||simDrag===row) return; var from=+simDrag.dataset.i, to=+row.dataset.i; SIM.splice(to,0,SIM.splice(from,1)[0]); renderSim(); showToast('↳ synced to Claude · now starting '+SIM[0].r+' next'); });
+    });
+  }
+
   render();
+  renderSim();
 </script>
 </body></html>
