@@ -166,6 +166,7 @@
         <span class="pr-chip">The AI fills the app (tool-calling)</span>
         <span class="pr-chip">Solid, shippable mobile app</span>
         <span class="pr-chip">Founding sign-up on the website</span>
+        <span class="pr-chip">Name pronunciation (phonetic spelling for the AI)</span>
         <span class="pr-chip">Notifications + email sequence</span>
         <span class="pr-chip">Thierry additions (weekdays, completion types, notes, free trial, drop-off analytics)</span>
         <span class="pr-chip">Some insights (basic progress + history)</span>
@@ -188,6 +189,7 @@
         <span class="pr-chip">Screen time category</span>
         <span class="pr-chip">Voice-controlled settings</span>
         <span class="pr-chip">Gym / power-user logging</span>
+        <span class="pr-chip">Shopping lists module</span>
         <span class="pr-chip">Accountability (groups, challenges, seeing others)</span>
         <span class="pr-chip">UI depth (animations, real chat screens, visual cards)</span>
         <span class="pr-chip">Competitor study</span>
@@ -333,12 +335,13 @@
         {"title":"Run Android APK + Web smoke; document the delta from the iOS baseline","state":"todo","issue":"#110"},
         {"title":"Mint signs off on HARD GATES #103 + #125 — no ship until both are green","state":"todo","issue":"#103"}]}
     ]},
-    {"person":"Timothy","username":"dionisius.timothyjm","concurrent_load":3,"role_summary":"Part-time (3-5h/day after 6pm Singapore), first month. His role is MVP design plus QA. The work splits into six focused Claude sessions by topic: three design sessions (Screens, Wiring, UX rules), the QA loop with Android folded in, the notification setup page, and the onboarding email design. He runs 2 to 3 live at a time, not all six.","stretch_note":"<b>Run 2 to 3 at once, not all six.</b> Each session is one topic with its own queue. The design sessions are batchable Figma work, QA is device verification, Notifications and Email are content-side, so they do not interfere. QA fixes route to Yonas, Timothy is the last approver.","projects":[
+    {"person":"Timothy","username":"dionisius.timothyjm","concurrent_load":3,"role_summary":"Part-time (3-5h/day after 6pm Singapore), first month. Immediate focus from the 2026-06-01 call: design the MVP notification and email sequence, starting from Yair's research, then competitor analysis, then Figma mockups. His role is MVP design plus QA, split into focused Claude sessions by topic. He runs 2 to 3 live at a time. Next sync in 2 days at 3pm Yair time.","stretch_note":"<b>Start with Notifications + Email design (now), run 2 to 3 sessions at once.</b> Each session is one topic with its own queue. Android QA is blocked until the build error is fixed (Alejandro), so iOS QA continues meanwhile. QA fixes route to Yonas, Timothy is the last approver.","projects":[
       {"name":"Screens","status":"next","claude_topic":"screens-design","one_liner":"The screens that need designing, built in Figma: the design-fixes list plus new screens as the roadmap needs them.","why":"Timothy's core craft is the screens. The design-fixes are device-visible and queued, and new roadmap screens flow through here.","steps":[
         {"title":"Gender split on character art (male and female variants)","state":"todo","issue":"#200"},
         {"title":"Remove the mood field from the edit-reflection screen","state":"todo","issue":"#201"},
         {"title":"Edit and delete as its own screen, matching the existing delete pattern, not a slider","state":"todo","issue":"#202"},
         {"title":"Design new screens through Claude, export, and place them in Figma","state":"todo","issue":""},
+        {"title":"Name pronunciation feature: let users phonetically spell their name (Alexa-app model) so the AI says it right, design for MVP","state":"todo","issue":""},
         {"title":"Post before and after for Yair on each fix","state":"todo","issue":""}]},
       {"name":"Wiring","status":"next","claude_topic":"prototype-wiring","one_liner":"The prototype wired so screens connect and the flow runs, kept in sync with the Renamer plugin.","why":"Designed screens are inert until wired. Wiring is its own session because it touches the prototype interactions and the Renamer plugin, separate from visual design.","steps":[
         {"title":"Wire prototype interactions per the flows","state":"todo","issue":""},
@@ -348,22 +351,26 @@
         {"title":"Apply the global UX rules to each screen","state":"todo","issue":""},
         {"title":"Enforce that the coach never tells the user to tap or scroll","state":"todo","issue":""},
         {"title":"Keep the subtitle component consistent across all screens","state":"todo","issue":""}]},
-      {"name":"QA loop (with Android)","status":"now","claude_topic":"frontend-ui-polish-qa","one_liner":"Every device-visible bug reproduced, fixes verified on TestFlight and Android, and issues closed, a clean UI with no visible defects.","why":"Timothy is the QA owner and the last approver. He files, chases, and verifies the device-visible issues on both iOS and Android, without needing backend context.","steps":[
+      {"name":"QA loop (with Android)","status":"next","claude_topic":"frontend-ui-polish-qa","one_liner":"Every device-visible bug reproduced, fixes verified on TestFlight, and issues closed, a clean UI with no visible defects.","why":"Timothy is the QA owner and last approver. Android is blocked right now by a build error, so iOS QA continues while Alejandro fixes it.","steps":[
+        {"title":"Post the Android build error (failed to fetch a dynamically imported module) in Mattermost, tag Alejandro, it blocks Android access","state":"todo","issue":"#204"},
         {"title":"Test the latest TestFlight, record the walkthrough (external camera so the coach voice records), file findings","state":"todo","issue":"#203"},
         {"title":"Confirm Play Store parity on Android, file any Android-only gaps","state":"todo","issue":"#204"},
         {"title":"Reproduce and document the next-phase frontend bugs on device with a screenshot or recording on the issue","state":"todo","issue":"#194"},
         {"title":"Confirm #162 reproduces on device and escalate to Yonas as now-blocking","state":"todo","issue":"#162"},
         {"title":"Triage into a fix order with Yair, most visible first","state":"todo","issue":"#165"},
         {"title":"Install each TestFlight build, re-run the exact repro, post a pass or fail comment, then close verified issues","state":"todo","issue":"#167"}]},
-      {"name":"Notifications","status":"next","claude_topic":"notifications","one_liner":"The in-app notification setup page finished, where users pick their reminder times, plus the notification states and copy.","why":"Timothy already started the notification page. It is its own project between product and design, with the push tiers defined in strategy.md.","steps":[
-        {"title":"Finish the notification setup page (morning and evening reminder time pickers)","state":"todo","issue":"#205"},
-        {"title":"Design the notification states and copy","state":"todo","issue":""},
-        {"title":"Match the tiers and quiet-hours rules in strategy.md","state":"todo","issue":""}]},
+      {"name":"Notifications","status":"now","claude_topic":"notifications","one_liner":"The MVP notification sequence designed (triggers, content, routing) and the in-app setup page finished, starting from Yair's research.","why":"Timothy's immediate focus from the 2026-06-01 call. Start from Yair's research, do a competitor pass, design the sequence, then finish the setup page.","steps":[
+        {"title":"Start from Yair's notification and email research doc to internalize the plan","state":"todo","issue":"#205"},
+        {"title":"Competitor analysis on notification and email sequences","state":"todo","issue":""},
+        {"title":"Design the full notification sequence: triggers, content, and routing","state":"todo","issue":""},
+        {"title":"Figma mockups for the notification states and the setup page","state":"todo","issue":""},
+        {"title":"Finish the in-app notification setup page (morning and evening reminder pickers)","state":"todo","issue":"#205"}]},
       {"name":"Onboarding email sequences","status":"next","claude_topic":"notifications-email","one_liner":"Six behavior-gated onboarding emails drafted, reviewed, and ready to import into Loops.so for founding users.","why":"The six briefs exist in gg-notif-email/briefs/ but drafts/ is empty. Without the copy, the Loops.so workflows cannot be built and founding users land with no post-signup communication.","steps":[
         {"title":"Read all six briefs and strategy.md to internalize constraints, skip rules, brand voice","state":"todo","issue":"#156"},
         {"title":"Define acceptance criteria per email: word-count range, tone checklist, what passes Yair review","state":"todo","issue":"#156"},
         {"title":"A Claude session drafts all six emails (Day 0 to 14) in branches, following the MR workflow","state":"todo","issue":"#156"},
         {"title":"Review each draft vs the brief, no feature-tour overwhelm, correct skip-rule framing per day","state":"todo","issue":""},
+        {"title":"In Figma, place each email above or below its matching screen mockup for visual context","state":"todo","issue":""},
         {"title":"Open MRs to main, assign Yair as reviewer, iterate until all six merge","state":"todo","issue":"#156"}]}
     ]}
   ];
