@@ -6526,23 +6526,28 @@
     // with assignee + labels), so no worker change is needed. The board-agent skill
     // moves issues across In Progress / In Testing in GitLab; this view reflects it.
     // ============================================================
-    var TEAM_API = '/internal/roadmap/api/items';
+    var TEAM_API = '/internal/roadmap/api/items?include_closed=1';
+    var TEAM_OAUTH = '/internal/gitlab/oauth/start?return=' + encodeURIComponent('/architecture/#team');
+    // Always-present dev lanes. Other assignees (Alejandro once in the group, Yair, platform) are
+    // appended dynamically only when they actually have issues, so no permanently-empty lane shows.
     var TEAM_LANES = [
       { key: 'yonaSisay', label: 'Yonas' },
       { key: 'jamymarcoss47', label: 'Mint' },
-      { key: 'dionisius.timothyjm', label: 'Timothy' },
-      { key: 'voidreamer', label: 'Alejandro' }
+      { key: 'dionisius.timothyjm', label: 'Timothy' }
     ];
     var TEAM_NAMES = { yonaSisay: 'Yonas', jamymarcoss47: 'Mint', 'dionisius.timothyjm': 'Timothy', voidreamer: 'Alejandro', Yair180: 'Yair', guidedgrowthplatform: 'Platform' };
     var _teamLoaded = false;
     function teamEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function teamSafeUrl(u) { return (typeof u === 'string' && /^https?:\/\//i.test(u)) ? u : '#'; }
     function teamStatusOf(it) {
+      if (it.state === 'closed') return 'done';
       var labs = (it.labels || []).map(function (l) { return String(l).toLowerCase(); });
-      if (labs.indexOf('in progress') !== -1) return 'in_progress';
+      // testing takes precedence over in progress, matching the canonical GitLab board order.
       if (labs.indexOf('testing') !== -1) return 'in_testing';
+      if (labs.indexOf('in progress') !== -1) return 'in_progress';
       return 'todo';
     }
-    function teamStatusLabel(s) { return s === 'in_progress' ? 'In progress' : s === 'in_testing' ? 'In testing' : 'To do'; }
+    function teamStatusLabel(s) { return s === 'in_progress' ? 'In progress' : s === 'in_testing' ? 'In testing' : s === 'done' ? 'Done' : 'To do'; }
     function loadTeamView(force) {
       if (_teamLoaded && !force) return;
       _teamLoaded = true;
@@ -6551,29 +6556,41 @@
       if (!lanesEl) return;
       if (force) lanesEl.innerHTML = '<div class="z8-loading">Refreshing&hellip;</div>';
       fetch(TEAM_API, { cache: 'no-store' })
-        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .then(function (items) { renderTeamView(items || []); })
+        .then(function (r) {
+          if (r.status === 401 || r.status === 403) { var ae = new Error('auth'); ae.authNeeded = true; throw ae; }
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (items) { renderTeamView(Array.isArray(items) ? items : []); })
         .catch(function (e) {
-          lanesEl.innerHTML = '<div class="z8-empty">Could not load issues (' + teamEsc(e.message) + '). This board reads GitLab through the worker; if you are not signed in via GitLab, the request is blocked. Open the GitLab tab to sign in, then come back.</div>';
-          if (metaEl) metaEl.textContent = 'error';
+          _teamLoaded = false; // let the next tab-open or Refresh retry instead of staying stuck
+          if (e && e.authNeeded) {
+            lanesEl.innerHTML = '<div class="z8-empty">This board reads GitLab through the worker and needs a GitLab sign-in. <a href="' + TEAM_OAUTH + '">Connect GitLab</a>, then return to this tab.</div>';
+          } else {
+            lanesEl.innerHTML = '<div class="z8-empty">Could not load issues (' + teamEsc(e.message) + '). Click Refresh to retry.</div>';
+          }
+          if (metaEl) metaEl.textContent = 'not connected';
         });
     }
     function renderTeamView(items) {
       var lanesEl = document.getElementById('z8-lanes');
       var metaEl = document.getElementById('z8-meta');
+      if (!Array.isArray(items)) items = [];
       var byA = {};
       items.forEach(function (it) { var a = it.assignee || '__unassigned__'; (byA[a] = byA[a] || []).push(it); });
       var lanes = TEAM_LANES.slice();
       var seen = {}; lanes.forEach(function (l) { seen[l.key] = 1; });
       Object.keys(byA).forEach(function (a) { if (!seen[a] && a !== '__unassigned__') { seen[a] = 1; lanes.push({ key: a, label: TEAM_NAMES[a] || a }); } });
-      var GROUPS = ['in_progress', 'in_testing', 'todo'];
-      var prioRank = function (p) { return p === 'high' ? 0 : p === 'medium' ? 1 : p === 'low' ? 3 : 2; };
+      if (byA['__unassigned__'] && byA['__unassigned__'].length) lanes.push({ key: '__unassigned__', label: 'Unassigned' });
+      var TEAM_GROUPS = ['in_progress', 'in_testing', 'todo', 'done'];
+      var prioRank = function (p) { return p === 'high' ? 0 : p === 'medium' ? 1 : p === 'low' ? 2 : 3; };
       var html = '', totalOpen = 0;
       lanes.forEach(function (lane) {
         var issues = byA[lane.key] || [];
-        totalOpen += issues.length;
+        var openN = issues.filter(function (it) { return teamStatusOf(it) !== 'done'; }).length;
+        totalOpen += openN;
         var body = '';
-        GROUPS.forEach(function (st) {
+        TEAM_GROUPS.forEach(function (st) {
           var gi = issues.filter(function (it) { return teamStatusOf(it) === st; });
           if (!gi.length) return;
           gi.sort(function (a, b) { return (prioRank(a.priority) - prioRank(b.priority)) || (a.iid - b.iid); });
@@ -6581,14 +6598,14 @@
             var labs = (it.labels || []).filter(function (l) { return !/^(roadmap|epic|priority|lane|screen|ai)::/i.test(l); }).slice(0, 4)
               .map(function (l) { return '<span class="z8-lab">' + teamEsc(l) + '</span>'; }).join('');
             var prio = it.priority === 'high' ? '<span class="z8-lab prio-high">high</span>' : '';
-            return '<a class="z8-iss s-' + st + '" href="' + teamEsc(it.web_url) + '" target="_blank" rel="noopener"><div class="z8-iss-top"><span class="z8-iid">#' + teamEsc(it.iid) + '</span><span class="z8-iss-title">' + teamEsc(it.title) + '</span></div><div class="z8-iss-labels">' + prio + labs + '</div></a>';
+            return '<a class="z8-iss s-' + st + '" href="' + teamEsc(teamSafeUrl(it.web_url)) + '" target="_blank" rel="noopener"><div class="z8-iss-top"><span class="z8-iid">#' + teamEsc(it.iid) + '</span><span class="z8-iss-title">' + teamEsc(it.title) + '</span></div><div class="z8-iss-labels">' + prio + labs + '</div></a>';
           }).join('');
           body += '<div class="z8-grp"><div class="z8-grp-h"><span>' + teamStatusLabel(st) + '</span><span>' + gi.length + '</span></div>' + cards + '</div>';
         });
-        if (!body) body = '<div class="z8-empty">No open issues assigned</div>';
-        html += '<div class="z8-lane"><div class="z8-lane-head"><span class="z8-lane-name">' + teamEsc(lane.label) + '</span><span class="z8-lane-n">' + issues.length + ' open</span></div><div class="z8-lane-body">' + body + '</div></div>';
+        if (!body) body = '<div class="z8-empty">No issues assigned</div>';
+        html += '<div class="z8-lane"><div class="z8-lane-head"><span class="z8-lane-name">' + teamEsc(lane.label) + '</span><span class="z8-lane-n">' + openN + ' open</span></div><div class="z8-lane-body">' + body + '</div></div>';
       });
-      lanesEl.innerHTML = html || '<div class="z8-empty">No open issues.</div>';
+      lanesEl.innerHTML = html || '<div class="z8-empty">No issues.</div>';
       if (metaEl) metaEl.textContent = totalOpen + ' open issues · live from GitLab';
     }
 
