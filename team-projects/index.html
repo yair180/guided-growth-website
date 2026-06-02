@@ -159,6 +159,9 @@
   /* overview/detail board */
   .topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:30px 0 14px}
   .tbtitle{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .bprivate{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--claude);background:color-mix(in srgb,var(--claude) 14%,transparent);border-radius:5px;padding:2px 7px;vertical-align:middle;margin-left:8px}
+  .bswitch{font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none;white-space:nowrap}
+  .bswitch:hover{text-decoration:underline}
   .chips{display:flex;gap:7px;flex-wrap:wrap}
   .pchip{font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;color:var(--text-2)}
   .pchip:hover{border-color:var(--accent)}
@@ -302,9 +305,10 @@
   ];
 
   var GL_BASE = 'https://gitlab.com/guidedgrowth-group/guided-growth-mvp/-/issues/';
-  var API_GET = '/internal/yair-os/team-board.json';
-  var API_PUT = '/internal/yair-os/team-board-update';
-  var LOGIN_URL = '/internal/yair-os/preview/login?next=' + encodeURIComponent('/team-projects/');
+  var IS_ME = (location.search.indexOf('board=me') !== -1);  // ?board=me = Yair's PRIVATE board
+  var API_GET = IS_ME ? '/internal/yair-os/my-board.json' : '/internal/yair-os/team-board.json';
+  var API_PUT = IS_ME ? '/internal/yair-os/my-board-update' : '/internal/yair-os/team-board-update';
+  var LOGIN_URL = '/internal/yair-os/preview/login?next=' + encodeURIComponent('/team-projects/' + (IS_ME ? '?board=me' : ''));
   var LS_KEY = 'gg-team-boards-v2';
   var STATES = ['todo','in-progress','done'];
 
@@ -443,7 +447,10 @@
     if(!root) return;
     if(!BOARD || !BOARD.people){ root.innerHTML='<p class="hint" style="padding:40px 0">Loading the team board&hellip;</p>'; return; }
     var body = VIEW.open ? renderDetail(VIEW.open) : renderOverview();
-    root.innerHTML = '<div class="topbar"><span class="tbtitle">Team</span>'+chipsHtml()+'</div>'
+    var title = IS_ME ? 'My board <span class="bprivate">private</span>' : 'Team';
+    var switchLink = IS_ME ? '<a class="bswitch" href="/team-projects/">Team board &#8599;</a>'
+                           : '<a class="bswitch" href="/team-projects/?board=me">My private board &#8599;</a>';
+    root.innerHTML = '<div class="topbar"><span class="tbtitle">'+title+'</span>'+(IS_ME?'':chipsHtml())+'<span style="flex:1"></span>'+switchLink+'</div>'
       + syncBarHtml() + '<span id="syncmsg" class="syncmsg"></span>' + body;
     if(VIEW.open) wireDrag();  // step drag only inside a zoomed bucket
   }
