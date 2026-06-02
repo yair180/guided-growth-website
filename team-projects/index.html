@@ -155,140 +155,41 @@
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--claude);color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:0 10px 34px rgba(0,0,0,.35);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:50;max-width:90vw}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   @media(max-width:720px){.terms{grid-template-columns:1fr}.cwrap{grid-template-columns:1fr}.csidebar{display:none}}
+
+  /* overview/detail board */
+  .topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:30px 0 14px}
+  .tbtitle{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .pchip{font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;color:var(--text-2)}
+  .pchip:hover{border-color:var(--accent)}
+  .pchip.on{background:var(--claude);border-color:var(--claude);color:#fff}
+  .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start;margin-bottom:10px}
+  .bcard{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:15px 16px;display:flex;flex-direction:column}
+  .bcard-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .bdot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-left:auto}
+  .bdot.live{background:var(--done);box-shadow:0 0 0 3px color-mix(in srgb,var(--done) 22%,transparent)}
+  .bname{font-size:16px;font-weight:650;letter-spacing:-.01em;margin:0 0 5px}
+  .bone{font-size:12.5px;color:var(--text-2);line-height:1.4;margin:0 0 11px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .bact{font-size:11px;color:var(--done);margin:-6px 0 9px}
+  .bbar{height:5px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin:0 0 9px}.bbar span{display:block;height:100%;background:var(--done);border-radius:4px;transition:width .3s}
+  .bfoot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .bcount{font-size:11.5px;color:var(--muted)}
+  .bopen{font:inherit;font-size:12px;font-weight:600;cursor:pointer;background:var(--claude);border:none;border-radius:7px;padding:5px 13px;color:#fff}
+  .bopen:hover{filter:brightness(1.06)}
+  .detail{max-width:780px}
+  .dback{font:inherit;font-size:12.5px;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 13px;color:var(--text-2);margin-bottom:16px}
+  .dback:hover{border-color:var(--accent)}
+  .dhead{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .dtitle{font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
+  .dsub{color:var(--text-2);font-size:13.5px;margin:0 0 12px;max-width:70ch}
 </style></head>
 <body><main>
-  <p class="eyebrow">Guided Growth · Squad</p>
-  <h1>Live Project Boards <span class="draft">Proposal / mock-up</span></h1>
-  <p class="lede">A new operating model for the team. Each person stops hand-writing every line and instead runs several Claude sessions in parallel, one per project. Their real job is to <b>define the requirements</b>, let a Claude <b>build it</b>, and then <b>verify the result</b> — testing it, and going into the code when needed. It is the QA-engineer role: someone who knows code, directing AI instead of typing it.</p>
-  <p class="sub">Every project below is one Claude session, and its ordered steps are the running instructions that session works through. Drag steps to reorder, click a dot to change state, add a comment to any step — when you are signed in, changes save to the shared board (so the whole team and each Claude session see the same thing). Each bucket's Claude session reads its steps top to bottom and moves them as it goes.</p>
-
-  <style>
-    #product-roadmap{margin:18px 0 26px}
-    #product-roadmap .pr-h{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin:0 0 8px}
-    #product-roadmap .pr-north{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 14px;font-size:13px;color:var(--muted,#94a0ad);line-height:1.5;margin:0 0 14px}
-    #product-roadmap .pr-north b{color:var(--text,#1c1c1a)}
-    #product-roadmap .pr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
-    @media(max-width:980px){#product-roadmap .pr-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:560px){#product-roadmap .pr-grid{grid-template-columns:1fr}}
-    #product-roadmap .pr-stage{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px}
-    #product-roadmap .pr-bar{height:3px;border-radius:3px;margin:0 0 9px}
-    #product-roadmap .pr-stage h3{margin:0 0 2px;font-size:14px}
-    #product-roadmap .pr-when{font-size:11px;color:var(--muted,#8a93a3);margin:0 0 9px}
-    #product-roadmap .pr-chip{display:block;background:var(--surface-2,#f3efe7);border:1px solid var(--border);border-radius:8px;padding:6px 9px;margin:0 0 6px;font-size:12px;line-height:1.35}
-    #product-roadmap .pr-chip:last-child{margin-bottom:0}
-    .pr-part2{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin:8px 0 12px}
-  </style>
-  <section id="product-roadmap">
-    <div class="pr-h">Part 1 · Product roadmap</div>
-    <div class="pr-north"><b>North star: Behavioral OS.</b> We show how your behaviors connect, sleep against mood against screen time and more. It starts in the MVP (we capture multiple behaviors) and deepens every phase.</div>
-    <div class="pr-grid">
-      <div class="pr-stage">
-        <div class="pr-bar" style="background:#27c08a"></div>
-        <h3>MVP</h3><div class="pr-when">The 50 founding users</div>
-        <span class="pr-chip">Voice-first onboarding that works</span>
-        <span class="pr-chip">The AI fills the app (tool-calling)</span>
-        <span class="pr-chip">Solid, shippable mobile app</span>
-        <span class="pr-chip">Founding sign-up on the website</span>
-        <span class="pr-chip">Name pronunciation (phonetic spelling for the AI)</span>
-        <span class="pr-chip">Notifications + email sequence</span>
-        <span class="pr-chip">Thierry additions (weekdays, completion types, notes, free trial, drop-off analytics)</span>
-        <span class="pr-chip">Some insights (basic progress + history)</span>
-        <span class="pr-chip">Behavioral OS foundation</span>
-        <span class="pr-chip">Safety + privacy baseline (988)</span>
-        <span class="pr-chip">QA pass before launch</span>
-      </div>
-      <div class="pr-stage">
-        <div class="pr-bar" style="background:#5aa9e6"></div>
-        <h3>Phase 1</h3><div class="pr-when">Right after launch · depth</div>
-        <span class="pr-chip">Insights improve (trends, deeper history)</span>
-        <span class="pr-chip">Coaching personalization (style selector, morning context)</span>
-        <span class="pr-chip">Behavioral OS grows (first connections surfaced)</span>
-      </div>
-      <div class="pr-stage">
-        <div class="pr-bar" style="background:#d6a73a"></div>
-        <h3>Phase 2</h3><div class="pr-when">Differentiation</div>
-        <span class="pr-chip">Sleep + Apple Health / Google Health</span>
-        <span class="pr-chip">Wearables</span>
-        <span class="pr-chip">Screen time category</span>
-        <span class="pr-chip">Voice-controlled settings</span>
-        <span class="pr-chip">Gym / power-user logging</span>
-        <span class="pr-chip">Shopping lists module</span>
-        <span class="pr-chip">Accountability (groups, challenges, seeing others)</span>
-        <span class="pr-chip">UI depth (animations, real chat screens, visual cards)</span>
-        <span class="pr-chip">Competitor study</span>
-        <span class="pr-chip">Behavioral OS deepens (cross-behavior correlations)</span>
-      </div>
-      <div class="pr-stage">
-        <div class="pr-bar" style="background:#9b6cf0"></div>
-        <h3>Phase 3</h3><div class="pr-when">Expansion + bets</div>
-        <span class="pr-chip">Category packs (nutrition, fitness, womens health)</span>
-        <span class="pr-chip">Marketplace (human-coach handoff, supplements)</span>
-        <span class="pr-chip">Voice infra evolution (self-hosted Pipecat)</span>
-      </div>
-    </div>
-  </section>
-
-  <div class="pr-part2">Part 2 · How it runs (the lanes)</div>
-
-  <div class="tabs">
-    <button id="tab-boards" class="active" onclick="showView('boards')">📋 The boards</button>
-    <button id="tab-connect" onclick="showView('connect')">🖥 How it connects</button>
-  </div>
-
-  <div id="view-boards">
-  <div class="model">
-    <div class="loop"><span class="step-n" style="background:var(--accent)">1</span><div><div class="t">Define</div><div class="d">The person writes the requirement + acceptance criteria</div></div></div>
-    <span class="arrow">→</span>
-    <div class="loop"><span class="step-n" style="background:var(--claude)">2</span><div><div class="t">Build (Claude)</div><div class="d">A dedicated Claude session implements it</div></div></div>
-    <span class="arrow">→</span>
-    <div class="loop"><span class="step-n" style="background:var(--qa)">3</span><div><div class="t">Verify</div><div class="d">The person QAs on device + reads/tweaks the code</div></div></div>
-  </div>
-
-  <div class="controls">
-    <div class="legend">
-      <span><i class="ld" style="background:var(--done)"></i>done</span>
-      <span><i class="ld" style="background:var(--prog)"></i>in progress</span>
-      <span><i class="ld" style="border:2px solid var(--todo);background:transparent"></i>to do</span>
-      <span><i class="ld" style="background:var(--now)"></i>now</span>
-      <span><i class="ld" style="background:var(--next)"></i>next</span>
-      <span><i class="ld" style="background:var(--later)"></i>later</span>
-    </div>
-    <button class="ghost" onclick="resetBoard()">Reset my changes</button>
-    <span class="hint">↕ drag steps · click a dot to cycle state · “comment” to annotate</span>
-  </div>
-
-  <div id="people"></div>
-  </div><!-- /view-boards -->
-
-  <div id="view-connect" style="display:none">
-    <p class="cintro">Each project a teammate runs is a real Claude session. This is what that looks like on their machine — the same app in your sidebar — and how this website drives it. Pick a teammate.</p>
-    <div class="who-tabs" id="who-tabs">
-      <button class="active" onclick="renderConnect('yonas',event)">Yonas · 4 sessions</button>
-      <button onclick="renderConnect('mint',event)">Mint · 4 sessions</button>
-      <button onclick="renderConnect('timothy',event)">Timothy · 6 sessions</button>
-    </div>
-    <div id="connect-body"></div>
-
-    <div class="demo-label">How the website controls it</div>
-    <div class="flow">
-      <div class="fnode"><div class="ft">1 · This website</div><div class="fd">A teammate drags a task to set its priority on the board.</div></div>
-      <span class="farrow">→</span>
-      <div class="fnode"><div class="ft">2 · Sync</div><div class="fd">The new order is pushed to the matching Claude session.</div></div>
-      <span class="farrow">→</span>
-      <div class="fnode"><div class="ft">3 · Claude reprioritizes</div><div class="fd">The session picks up the new top task next, no terminal needed.</div></div>
-    </div>
-    <div class="sim">
-      <h4>Try it — drag to reprioritize</h4>
-      <p class="shint">Simulated for now. Dragging here would push the new order straight to Yonas's “launch-blocking” Claude session. We'll wire the real link later; today it's the picture.</p>
-      <div id="simlist"></div>
-    </div>
-  </div>
+  <div id="board"></div>
 
   <div id="toast" class="toast"></div>
 
   <footer>
-    Live mock-up · <a href="/architecture/">Workspace board</a> · <a href="/internal/hub">Workspace hub</a><br>
-    Data scanned from gg-mvp GitLab issues. This is a proposal to discuss, not a committed plan.
+    <a href="/architecture/">Workspace</a> &middot; <a href="/internal/hub">Hub</a> &middot; GitLab is the source of truth; this board is the orchestration layer.
   </footer>
 </main>
 <script>
@@ -458,50 +359,93 @@
     return {body:body, btn:btn};
   }
 
-  function render(){
-    var root = document.getElementById('people');
-    if(!BOARD || !BOARD.people){ root.innerHTML = '<p class="hint">Loading the live board…</p>'; return; }
-    var html = syncBarHtml() + '<span id="syncmsg" class="syncmsg"></span>';
-    html += BOARD.people.map(function(person){
-      var cards = person.projects.map(function(proj, ci){
-        var topic = proj.claude_topic;
-        var stepsHtml = proj.steps.map(function(st){
-          var iss = st.issue ? '<a class="iss" href="'+GL_BASE+st.issue.replace('#','')+'" target="_blank" rel="noopener">'+esc(st.issue)+'</a>' : '';
-          var prompt = fieldBlock(topic, st, 'prompt', 'Prompt');
-          var upd = fieldBlock(topic, st, 'update', 'Update');
-          var nxt = fieldBlock(topic, st, 'next', 'Next steps');
-          var badge = '<span class="sbadge '+esc(st.state)+'">'+esc(STATE_LABEL[st.state]||st.state)+'</span>';
-          var glchip = '';
-          if(st.issue && BOARD.gitlab_status){ var gs=BOARD.gitlab_status[String(st.issue).replace('#','')]; if(gs){ glchip='<span class="glchip gl-'+esc(gs)+'" title="Live status of '+esc(st.issue)+' in GitLab">GitLab: '+esc(GL_LABEL[gs]||gs)+'</span>'; } }
-          return '<li class="stp '+esc(st.state)+'" draggable="true" data-topic="'+esc(topic)+'" data-sid="'+esc(st.id)+'">'
-            + '<span class="grip">⋮⋮</span>'
-            + '<span class="dot '+esc(st.state)+'" title="click: Not yet -> In progress -> Done" onclick="cycleState(\''+esc(topic)+'\',\''+esc(st.id)+'\')"></span>'
-            + '<span class="body">'
-            +   '<span class="txt">'+esc(st.title)+'</span>'
-            +   '<span class="meta">'+badge+glchip+iss+prompt.btn+upd.btn+nxt.btn+'</span>'
-            +   prompt.body + upd.body + nxt.body
-            + '</span></li>';
-        }).join('');
-        return '<div class="card">'
-          + '<div class="card-top"><span class="pill '+esc(proj.status)+'">'+esc(proj.status)+'</span><span class="sess">Claude session '+(ci+1)+'</span></div>'
-          + '<div class="cname">'+esc(proj.topic||proj.name)+'</div>'
-          + '<div class="one">'+esc(proj.one_liner)+'</div>'
-          + '<span class="claude">◇ claude: '+esc(proj.claude_topic)+'</span>'
-          + presenceHtml(proj)
-          + '<details class="why"><summary>Why this matters</summary><p>'+esc(proj.why)+'</p></details>'
-          + '<ul class="steps" data-topic="'+esc(topic)+'">'+stepsHtml+'</ul>'
-          + '</div>';
-      }).join('');
-      return '<section class="person">'
-        + '<div class="phead"><h2>'+esc(person.person)+'</h2>'
-        + '<span class="load">'+esc(person.concurrent_load)+' projects at once</span></div>'
-        + '<div class="role">'+esc(person.role_summary)+'</div>'
-        + '<div class="stretch"><b>Is it a stretch?</b> '+person.stretch_note+'</div>'
-        + '<div class="grid">'+cards+'</div>'
-        + '</section>';
+  var VIEW = { person:'all', open:null };  // open = claude_topic of the zoomed bucket, or null
+  function isLive(proj){ if(!proj.session_active_at) return false; var t=Date.parse(proj.session_active_at); return !isNaN(t) && (Date.now()-t)<600000; }
+  function counts(steps){ var c={todo:0,'in-progress':0,done:0}; (steps||[]).forEach(function(s){c[s.state]=(c[s.state]||0)+1;}); return c; }
+  function pct(steps){ if(!steps||!steps.length) return 0; return Math.round(counts(steps).done/steps.length*100); }
+
+  window.setPerson = function(k){ VIEW.person=k; VIEW.open=null; render(); window.scrollTo(0,0); };
+  window.openBucket = function(t){ VIEW.open=t; render(); window.scrollTo(0,0); };
+  window.backToOverview = function(){ VIEW.open=null; render(); window.scrollTo(0,0); };
+
+  function chipsHtml(){
+    var ppl=(BOARD.people||[]).map(function(p){return p.person;});
+    function chip(k,l){ return '<button class="pchip'+(VIEW.person===k?' on':'')+'" onclick="setPerson(\''+esc(k)+'\')">'+esc(l)+'</button>'; }
+    return '<div class="chips">'+chip('all','All')+ppl.map(function(n){return chip(n,n);}).join('')+'</div>';
+  }
+
+  function stepHtml(topic, st){
+    var iss = st.issue ? '<a class="iss" href="'+GL_BASE+st.issue.replace('#','')+'" target="_blank" rel="noopener">'+esc(st.issue)+'</a>' : '';
+    var prompt = fieldBlock(topic, st, 'prompt', 'Prompt');
+    var upd = fieldBlock(topic, st, 'update', 'Update');
+    var nxt = fieldBlock(topic, st, 'next', 'Next steps');
+    var badge = '<span class="sbadge '+esc(st.state)+'">'+esc(STATE_LABEL[st.state]||st.state)+'</span>';
+    var glchip='';
+    if(st.issue && BOARD.gitlab_status){ var gs=BOARD.gitlab_status[String(st.issue).replace('#','')]; if(gs){ glchip='<span class="glchip gl-'+esc(gs)+'" title="Live status in GitLab">GitLab: '+esc(GL_LABEL[gs]||gs)+'</span>'; } }
+    return '<li class="stp '+esc(st.state)+'" draggable="true" data-topic="'+esc(topic)+'" data-sid="'+esc(st.id)+'">'
+      + '<span class="grip">&#8942;&#8942;</span>'
+      + '<span class="dot '+esc(st.state)+'" title="click: Not yet -> In progress -> Done" onclick="cycleState(\''+esc(topic)+'\',\''+esc(st.id)+'\')"></span>'
+      + '<span class="body"><span class="txt">'+esc(st.title)+'</span>'
+      + '<span class="meta">'+badge+glchip+iss+prompt.btn+upd.btn+nxt.btn+'</span>'
+      + prompt.body + upd.body + nxt.body
+      + '</span></li>';
+  }
+
+  function bucketCard(proj, ci){
+    var ct=counts(proj.steps); var parts=[];
+    if(ct['in-progress']) parts.push(ct['in-progress']+' doing');
+    if(ct.done) parts.push(ct.done+' done');
+    if(ct.todo) parts.push(ct.todo+' to do');
+    var live=isLive(proj);
+    var act = (live && proj.session_last_action) ? '<div class="bact">session live &middot; '+esc(proj.session_last_action)+'</div>' : '';
+    return '<div class="bcard">'
+      + '<div class="bcard-top"><span class="pill '+esc(proj.status)+'">'+esc(proj.status)+'</span><span class="sess">Claude session '+(ci+1)+'</span>'+(live?'<span class="bdot live" title="session live"></span>':'')+'</div>'
+      + '<div class="bname">'+esc(proj.topic||proj.name)+'</div>'
+      + '<div class="bone">'+esc(proj.one_liner||'')+'</div>'
+      + act
+      + '<div class="bbar"><span style="width:'+pct(proj.steps)+'%"></span></div>'
+      + '<div class="bfoot"><span class="bcount">'+(parts.join(' &middot; ')||(proj.steps?proj.steps.length+' steps':'no steps'))+'</span>'
+      + '<button class="bopen" onclick="openBucket(\''+esc(proj.claude_topic)+'\')">Expand &#9656;</button></div>'
+      + '</div>';
+  }
+
+  function renderOverview(){
+    var ppl=BOARD.people.filter(function(p){ return VIEW.person==='all' || p.person===VIEW.person; });
+    if(!ppl.length) return '<p class="hint">No one to show.</p>';
+    return ppl.map(function(person){
+      var cards=person.projects.map(function(proj,ci){ return bucketCard(proj,ci); }).join('');
+      return '<section class="person"><div class="phead"><h2>'+esc(person.person)+'</h2>'
+        + '<span class="load">'+person.projects.length+' sessions</span></div>'
+        + (person.stretch_note?'<div class="stretch"><b>Is it a stretch?</b> '+person.stretch_note+'</div>':'')
+        + '<div class="bgrid">'+cards+'</div></section>';
     }).join('');
-    root.innerHTML = html;
-    wireDrag();
+  }
+
+  function renderDetail(topic){
+    var person=null, proj=null, ci=0;
+    BOARD.people.forEach(function(p){ p.projects.forEach(function(pr,i){ if(pr.claude_topic===topic){person=p;proj=pr;ci=i;} }); });
+    if(!proj) return '<button class="dback" onclick="backToOverview()">&#9666; back</button><p class="hint">Bucket not found.</p>';
+    var stepsHtml=proj.steps.map(function(st){ return stepHtml(topic, st); }).join('');
+    return '<div class="detail">'
+      + '<button class="dback" onclick="backToOverview()">&#9666; back to all sessions</button>'
+      + '<div class="dhead"><span class="pill '+esc(proj.status)+'">'+esc(proj.status)+'</span><span class="sess">Claude session '+(ci+1)+'</span>'+(isLive(proj)?'<span class="bdot live"></span>':'')+'</div>'
+      + '<h2 class="dtitle">'+esc(person.person)+' &middot; '+esc(proj.topic||proj.name)+'</h2>'
+      + '<div class="dsub">'+esc(proj.one_liner||'')+'</div>'
+      + '<span class="claude">&#9671; claude: '+esc(proj.claude_topic)+'</span>'
+      + presenceHtml(proj)
+      + '<details class="why"><summary>Why this matters</summary><p>'+esc(proj.why||'')+'</p></details>'
+      + '<ul class="steps" data-topic="'+esc(topic)+'">'+stepsHtml+'</ul>'
+      + '</div>';
+  }
+
+  function render(){
+    var root=document.getElementById('board');
+    if(!root) return;
+    if(!BOARD || !BOARD.people){ root.innerHTML='<p class="hint" style="padding:40px 0">Loading the team board&hellip;</p>'; return; }
+    var body = VIEW.open ? renderDetail(VIEW.open) : renderOverview();
+    root.innerHTML = '<div class="topbar"><span class="tbtitle">Team</span>'+chipsHtml()+'</div>'
+      + syncBarHtml() + '<span id="syncmsg" class="syncmsg"></span>' + body;
+    if(VIEW.open) wireDrag();  // step drag only inside a zoomed bucket
   }
 
   // Push a patch to the backend. Optimistic: BOARD is already updated + rendered by the caller.
@@ -587,98 +531,9 @@
       });
   }
 
-  // ================= How it connects (demo view) =================
-  var CONNECT = {
-    yonas: {
-      label:'Yonas',
-      sessions:['Launch-blocking backend bugs','Vapi callLLM backbone','QA stability backlog','Web-to-mobile sync'], active:0,
-      prompt:"Spec for #161 — voice-created habits aren't persisting. When the coach creates a habit via a tool call it must write to Supabase `habits` and show on Home immediately. Acceptance: row exists with the right user_id + cadence; Home updates with no refresh. Implement and verify on device.",
-      reply:"Reading the create_habit tool handler in <span class='mono'>src/voice/tools</span>… the insert ran before the authed Supabase client was attached, so RLS dropped it silently. I moved the insert behind the authed client and added an optimistic Home update. Wrote a test: create via tool → row present → Home re-renders. Running on device… <span class='ok'>✓ passes</span>. Open the MR to gg-mvp?",
-      terms:[
-        {t:'launch-blocking-backend-bugs', lines:['<span class="p">●</span> Fixing #161 voice-habit persistence','  <span class="dim">moved insert behind authed client</span>','<span class="y">▸ running MobAI smoke…</span>']},
-        {t:'vapi-callllm-backbone', lines:['<span class="p">●</span> Building callLLM() wrapper (#91)','  <span class="dim">wired shared context builder</span>','<span class="y">▸ awaiting delta-injection spec</span>']},
-        {t:'qa-stability-next-bugs', lines:['<span class="dim">○ idle — 12 bugs queued</span>','<span class="dim">$ waiting on triage order</span>']},
-        {t:'web-to-mobile-sync', lines:['<span class="p">●</span> Auditing web vs mobile features','  <span class="dim">12 web-only features found</span>','<span class="y">▸ drafting parity table</span>']}
-      ]
-    },
-    mint: {
-      label:'Mint',
-      sessions:['Voice infrastructure wiring','Onboarding + home wiring','Async reflection state machine','Cross-channel QA suite'], active:0,
-      prompt:"Spec for the Universal Voice FAB (#143): a floating mic button on every screen except SPLASH + auth. Tap opens the Vapi session; close returns to the prior screen. Acceptance: present on all non-suppressed screens, correct z-index over modals, Vapi lifecycle hooks fire on open/close. Build the component and wire it.",
-      reply:"Scaffolding <span class='mono'>&lt;VoiceFAB/&gt;</span> as a portal so it sits above modals… wired it to the Vapi entry/exit events and added a suppressed-screens list. It renders on all 38 screens except the 6 you flagged. Added a story plus a test asserting it mounts and fires onOpen. <span class='ok'>✓ green</span>. Drop it into the app shell?",
-      terms:[
-        {t:'voice-infra-wiring', lines:['<span class="p">●</span> Wiring &lt;VoiceFAB/&gt; (#143)','  <span class="dim">portal over modals, z-index ok</span>','<span class="y">▸ test: mounts + onOpen…</span>']},
-        {t:'onboarding-home-wiring', lines:['<span class="dim">○ idle — awaiting session_log spec</span>']},
-        {t:'async-reflection-state-machine', lines:['<span class="p">●</span> Scaffolding state machine (#116)','  <span class="dim">Supabase tables + RLS drafted</span>']},
-        {t:'cross-channel-qa-suite', lines:['<span class="p">●</span> Generating happy-path scripts','  <span class="dim">voice + manual fixtures</span>']}
-      ]
-    },
-    timothy: {
-      label:'Timothy',
-      sessions:['Onboarding email sequences','Frontend UI-polish QA loop'], active:0,
-      prompt:"Draft the Day 0 welcome email from brief 01. Constraints: under 120 words, warm not hypey, no feature tour, one clear next step (open the app), match the brand voice in strategy.md. Give me two variants.",
-      reply:"Read brief 01 + strategy.md. Here are two Day-0 drafts under 120 words, both leading with the founding-member framing and a single CTA, neither mentioning features. Variant A is warmer, B is shorter. Want them as a branch + MR for Yair's review?",
-      terms:[
-        {t:'notifications-email', lines:['<span class="p">●</span> Drafting Day 0 email (brief 01)','  <span class="dim">2 variants, &lt;120 words</span>','<span class="y">▸ open MR for Yair review</span>']},
-        {t:'frontend-ui-polish-qa', lines:['<span class="dim">○ reproducing #194 on device…</span>','<span class="dim">$ TestFlight build installing</span>']}
-      ]
-    }
-  };
-
-  function renderConnect(who, ev){
-    var d = CONNECT[who];
-    document.querySelectorAll('#who-tabs button').forEach(function(b){ b.classList.remove('active'); });
-    if (ev && ev.currentTarget) ev.currentTarget.classList.add('active');
-    var sidebar = d.sessions.map(function(s,i){
-      return '<div class="csb-item'+(i===d.active?' active':'')+'"><span class="csb-dot'+(i===d.sessions.length-1?' idle':'')+'"></span>'+esc(s)+'</div>';
-    }).join('');
-    var win = '<div class="cwrap">'
-      + '<div class="csidebar"><div class="csb-head"><span>Recents</span><span>⌖</span></div>'+sidebar+'</div>'
-      + '<div class="cmain"><div class="cmain-head">◇ '+esc(d.sessions[d.active])+'</div>'
-      + '<div class="cmsgs">'
-      + '<div class="cmsg user"><span class="cav">'+esc(d.label.charAt(0))+'</span><span class="c">'+esc(d.prompt)+'</span></div>'
-      + '<div class="cmsg ai"><span class="cav">C</span><span class="c">'+d.reply+'</span></div>'
-      + '</div>'
-      + '<div class="cinput"><span>Reply to Claude…</span><span>⏎</span></div>'
-      + '</div></div>';
-    var terms = '<div class="terms">'+d.terms.map(function(t){
-      return '<div class="term"><div class="term-head"><span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span><span class="term-title">claude — '+esc(t.t)+'</span></div>'
-        + '<div class="term-body"><span class="dim">$ claude</span><br>'+t.lines.join('<br>')+'</div></div>';
-    }).join('')+'</div>';
-    document.getElementById('connect-body').innerHTML =
-      '<div class="demo-label">'+esc(d.label)+'’s Claude — one app, '+d.sessions.length+' project sessions</div>'+win
-      + '<div class="demo-label">The same '+d.sessions.length+' sessions, running as terminals</div>'+terms;
-  }
-
-  function showView(v){
-    document.getElementById('view-boards').style.display = (v==='boards')?'':'none';
-    document.getElementById('view-connect').style.display = (v==='connect')?'':'none';
-    document.getElementById('tab-boards').classList.toggle('active', v==='boards');
-    document.getElementById('tab-connect').classList.toggle('active', v==='connect');
-    if (v==='connect' && !document.getElementById('connect-body').innerHTML) renderConnect('yonas');
-  }
-  window.showView = showView;
-  window.renderConnect = renderConnect;
-
-  // simulated drag-to-reprioritize -> session reacts (toast)
-  var SIM = [{r:'#161', t:'Voice-created habit not persisted'},{r:'#163', t:'Reflection edit save stuck'},{r:'#162', t:'Mic permission broken for existing users'}];
-  var simDrag=null, toastT=null;
-  function showToast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},2800); }
-  function renderSim(){
-    var el = document.getElementById('simlist'); if(!el) return;
-    el.innerHTML = SIM.map(function(x,i){
-      return '<div class="simrow" draggable="true" data-i="'+i+'"><span class="rank">'+(i+1)+'</span><span class="grip">⋮⋮</span><span style="color:var(--accent);font-family:ui-monospace,Menlo,monospace;font-size:11.5px">'+x.r+'</span><span>'+esc(x.t)+'</span></div>';
-    }).join('');
-    el.querySelectorAll('.simrow').forEach(function(row){
-      row.addEventListener('dragstart',function(e){ simDrag=row; row.classList.add('dragging'); try{e.dataTransfer.effectAllowed='move';}catch(_){}});
-      row.addEventListener('dragend',function(){ row.classList.remove('dragging'); el.querySelectorAll('.drag-over').forEach(function(x){x.classList.remove('drag-over');});});
-      row.addEventListener('dragover',function(e){ e.preventDefault(); if(simDrag&&simDrag!==row) row.classList.add('drag-over');});
-      row.addEventListener('dragleave',function(){ row.classList.remove('drag-over');});
-      row.addEventListener('drop',function(e){ e.preventDefault(); row.classList.remove('drag-over'); if(!simDrag||simDrag===row) return; var from=+simDrag.dataset.i, to=+row.dataset.i; SIM.splice(to,0,SIM.splice(from,1)[0]); renderSim(); showToast('↳ synced to Claude · now starting '+SIM[0].r+' next'); });
-    });
-  }
+  var toastT=null;
+  function showToast(msg){ var t=document.getElementById("toast"); if(!t)return; t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("show");},2800); }
 
   load();
-  renderSim();
 </script>
 </body></html>
