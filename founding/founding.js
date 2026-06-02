@@ -201,6 +201,7 @@ function buildPayload() {
     heard_from:      state.heard_from || null,
     track_level:     state.track_level || null,
     apps_used:       apps.length ? apps : null,
+    apps_other:      (apps.includes('other') && state.apps_other.trim()) ? state.apps_other.trim() : null,
     pays_for_apps:   state.pays_for_apps || null,
     age_group:       state.age_group || null,
     gender:          state.gender || null,

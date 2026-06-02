@@ -20,6 +20,7 @@ create table if not exists public.founding_signups (
   -- Behavioral signal (the rich part)
   track_level     text,        -- none | casual | serious   (drives beginner vs advanced)
   apps_used       text[],      -- e.g. {notion,habit_tracker,journaling}
+  apps_other      text,        -- free text when they pick "Other"
   pays_for_apps   text,        -- none | one | several
 
   -- Light demographics (low priority)
