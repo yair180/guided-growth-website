@@ -186,6 +186,24 @@
   .dhead{display:flex;align-items:center;gap:8px;margin-bottom:7px}
   .dtitle{font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
   .dsub{color:var(--text-2);font-size:13.5px;margin:0 0 12px;max-width:70ch}
+  /* usable task rows: colored status + Sheets-like labeled cells, divider-separated */
+  .steps .stp{display:flex;align-items:flex-start;gap:10px;padding:11px 6px;border-bottom:1px solid var(--border);border-radius:0;cursor:default;background:none}
+  .steps .stp:last-child{border-bottom:none}
+  .steps .stp:hover{background:var(--surface-2)}
+  .steps .stp.dragging{opacity:.4}.steps .stp.drag-over{border-top:2px solid var(--accent)}
+  .steps .stp .grip{color:var(--border-strong);cursor:grab;font-size:13px;margin-top:4px;flex:0 0 auto;user-select:none}
+  .stat{flex:0 0 auto;font:inherit;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;color:#fff;border:none;border-radius:5px;padding:4px 8px;margin-top:1px;min-width:78px;text-align:center}
+  .stat.s-todo{background:var(--todo)}.stat.s-in-progress{background:var(--prog)}.stat.s-blocked{background:var(--now)}.stat.s-done{background:var(--done)}
+  .srow{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .stask{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:2px}
+  .stitle{font-size:13px;font-weight:600;line-height:1.35}
+  .steps .stp.done .stitle{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--border-strong)}
+  .sfield{display:flex;align-items:baseline;gap:8px;font-size:11.5px;line-height:1.4}
+  .sflabel{flex:0 0 50px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:2px}
+  .sfval{flex:1;min-width:0;color:var(--text-2);white-space:pre-wrap}
+  .sfval.empty{color:var(--border-strong);cursor:pointer}.sfval.empty:hover{color:var(--accent)}
+  .sfedit{flex:0 0 auto;font:inherit;font-size:12px;cursor:pointer;background:none;border:none;color:var(--muted);padding:0 2px;opacity:0}
+  .steps .stp:hover .sfedit{opacity:.8}.sfedit:hover{color:var(--accent)}
 </style></head>
 <body><main>
   <div id="board"></div>
@@ -313,7 +331,7 @@
   var API_PUT = IS_ME ? '/internal/yair-os/my-board-update' : '/internal/yair-os/team-board-update';
   var LOGIN_URL = '/internal/yair-os/preview/login?next=' + encodeURIComponent('/team-projects/' + (IS_ME ? '?board=me' : ''));
   var LS_KEY = 'gg-team-boards-v2';
-  var STATES = ['todo','in-progress','done'];
+  var STATES = ['todo','in-progress','done','blocked'];  // click cycles: not started -> in progress -> done -> blocked -> ...
 
   var BOARD = null;       // {version, people:[{person,projects:[{claude_topic,steps:[{id,state,comment,...}]}]}]}
   var MODE = 'loading';   // 'live' (persists to the worker/Sheet) | 'local' (localStorage only)
@@ -340,7 +358,7 @@
     return null;
   }
 
-  var STATE_LABEL = {'todo':'Not yet','in-progress':'In progress','done':'Done'};
+  var STATE_LABEL = {'todo':'Not started','in-progress':'In progress','done':'Done','blocked':'Blocked'};
   var GL_LABEL = {'todo':'To do','in_progress':'In progress','in_testing':'In testing','done':'Done'};
   var FIELD_LABEL = {'prompt':'Prompt','update':'Update','next':'Next steps'};
 
@@ -381,21 +399,26 @@
     return '<div class="chips">'+chip('all','All')+ppl.map(function(n){return chip(n,n);}).join('')+'</div>';
   }
 
+  function fieldRow(topic, st, field, label){
+    var v = st[field] || '';
+    var val = v ? '<span class="sfval">'+esc(v).replace(/\n/g,'<br>')+'</span>' : '<span class="sfval empty" onclick="editField(\''+esc(topic)+'\',\''+esc(st.id)+'\',\''+field+'\')">+ add</span>';
+    return '<div class="sfield"><span class="sflabel">'+label+'</span>'+val
+      + '<button class="sfedit" title="edit '+label.toLowerCase()+'" onclick="editField(\''+esc(topic)+'\',\''+esc(st.id)+'\',\''+field+'\')">&#9998;</button></div>';
+  }
   function stepHtml(topic, st){
     var iss = st.issue ? '<a class="iss" href="'+GL_BASE+st.issue.replace('#','')+'" target="_blank" rel="noopener">'+esc(st.issue)+'</a>' : '';
-    var prompt = fieldBlock(topic, st, 'prompt', 'Prompt');
-    var upd = fieldBlock(topic, st, 'update', 'Update');
-    var nxt = fieldBlock(topic, st, 'next', 'Next steps');
-    var badge = '<span class="sbadge '+esc(st.state)+'">'+esc(STATE_LABEL[st.state]||st.state)+'</span>';
     var glchip='';
     if(st.issue && BOARD.gitlab_status){ var gs=BOARD.gitlab_status[String(st.issue).replace('#','')]; if(gs){ glchip='<span class="glchip gl-'+esc(gs)+'" title="Live status in GitLab">GitLab: '+esc(GL_LABEL[gs]||gs)+'</span>'; } }
     return '<li class="stp '+esc(st.state)+'" draggable="true" data-topic="'+esc(topic)+'" data-sid="'+esc(st.id)+'">'
-      + '<span class="grip">&#8942;&#8942;</span>'
-      + '<span class="dot '+esc(st.state)+'" title="click: Not yet -> In progress -> Done" onclick="cycleState(\''+esc(topic)+'\',\''+esc(st.id)+'\')"></span>'
-      + '<span class="body"><span class="txt">'+esc(st.title)+'</span>'
-      + '<span class="meta">'+badge+glchip+iss+prompt.btn+upd.btn+nxt.btn+'</span>'
-      + prompt.body + upd.body + nxt.body
-      + '</span></li>';
+      + '<span class="grip" title="drag to reorder">&#8942;&#8942;</span>'
+      + '<button class="stat s-'+esc(st.state)+'" title="click to change status" onclick="cycleState(\''+esc(topic)+'\',\''+esc(st.id)+'\')">'+esc(STATE_LABEL[st.state]||st.state)+'</button>'
+      + '<div class="srow">'
+      +   '<div class="stask"><span class="stitle">'+esc(st.title)+'</span>'+iss+glchip+'</div>'
+      +   fieldRow(topic, st, 'prompt', 'Prompt')
+      +   fieldRow(topic, st, 'update', 'Update')
+      +   fieldRow(topic, st, 'next', 'Next')
+      + '</div>'
+      + '</li>';
   }
 
   function bucketCard(proj, ci){
