@@ -446,7 +446,7 @@
     if(!BOARD || !BOARD.people){ root.innerHTML = '<p class="hint">Loading the live board…</p>'; return; }
     var html = syncBarHtml() + '<span id="syncmsg" class="syncmsg"></span>';
     html += BOARD.people.map(function(person){
-      var cards = person.projects.map(function(proj){
+      var cards = person.projects.map(function(proj, ci){
         var topic = proj.claude_topic;
         var stepsHtml = proj.steps.map(function(st){
           var iss = st.issue ? '<a class="iss" href="'+GL_BASE+st.issue.replace('#','')+'" target="_blank" rel="noopener">'+esc(st.issue)+'</a>' : '';
@@ -464,7 +464,7 @@
             + '</span></li>';
         }).join('');
         return '<div class="card">'
-          + '<div class="card-top"><span class="pill '+esc(proj.status)+'">'+esc(proj.status)+'</span><span class="sess">'+esc(proj.session_label||'')+'</span></div>'
+          + '<div class="card-top"><span class="pill '+esc(proj.status)+'">'+esc(proj.status)+'</span><span class="sess">Claude session '+(ci+1)+'</span></div>'
           + '<div class="cname">'+esc(proj.topic||proj.name)+'</div>'
           + '<div class="one">'+esc(proj.one_liner)+'</div>'
           + '<span class="claude">◇ claude: '+esc(proj.claude_topic)+'</span>'
