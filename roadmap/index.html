@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guided Growth · Product Roadmap</title>
+<style>
+  :root{
+    --bg:#0f1216; --surface:#171c22; --surface-2:#1e242c; --border:#2a323c;
+    --text:#eef2f6; --muted:#94a0ad; --faint:#6b7682;
+    --mvp:#27c08a; --p1:#5aa9e6; --p2:#d6a73a; --p3:#9b6cf0; --accent:#7b61ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:26px 22px 80px}
+  .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700;margin:0 0 6px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+  .zoombar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;background:rgba(15,18,22,.92);backdrop-filter:blur(8px);padding:12px 0;margin:0 0 6px;border-bottom:1px solid var(--border)}
+  .zoombar .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:700;margin-right:2px}
+  .zbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer}
+  .zbtn:hover{color:var(--text)}
+  .zbtn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .hint{margin-left:auto;font-size:12px;color:var(--faint)}
+  .north{background:linear-gradient(90deg,rgba(123,97,255,.12),rgba(39,192,138,.08));border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-size:13px;color:var(--muted);line-height:1.5;margin:14px 0 18px}
+  .north b{color:var(--text)}
+  .board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
+  @media(max-width:980px){.board{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.board{grid-template-columns:1fr}}
+  .stage{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;transition:all .18s}
+  .stage .bar{height:4px;border-radius:4px;margin:0 0 11px}
+  .stage h2{margin:0 0 2px;font-size:17px;letter-spacing:-.01em}
+  .stage .when{font-size:11px;color:var(--faint);margin:0 0 4px}
+  .stage .count{font-size:12px;color:var(--muted);margin:0 0 10px}
+  .theme{margin:0 0 11px}
+  .theme > .tname{font-size:12px;font-weight:700;color:var(--text);margin:0 0 6px;display:flex;align-items:center;gap:7px}
+  .theme > .tname .tdot{width:7px;height:7px;border-radius:50%}
+  .topic{display:block;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;margin:0 0 6px;font-size:12.5px;line-height:1.35;color:var(--text)}
+  .topic:last-child{margin-bottom:0}
+  /* zoom behaviour */
+  body[data-zoom="1"] .theme .tname{display:none}
+  body[data-zoom="1"] .topic{display:none}
+  body[data-zoom="1"] .theme{margin:0}
+  body[data-zoom="2"] .topic{display:none}
+  body[data-zoom="2"] .theme{margin-bottom:7px}
+  body[data-zoom="1"] .stage{padding-bottom:16px}
+</style>
+</head>
+<body data-zoom="2">
+<div class="wrap">
+  <p class="eyebrow">Guided Growth · Product</p>
+  <h1>Product Roadmap</h1>
+  <p class="sub">Zoom out for the four stages, in for the themes, in further for every topic.</p>
+
+  <div class="zoombar">
+    <span class="lbl">Zoom</span>
+    <button class="zbtn" data-z="1" onclick="setZoom(1)">1 · Stages</button>
+    <button class="zbtn active" data-z="2" onclick="setZoom(2)">2 · Themes</button>
+    <button class="zbtn" data-z="3" onclick="setZoom(3)">3 · Full detail</button>
+    <span class="hint">Each stage is a column. Zoom changes how much shows.</span>
+  </div>
+
+  <div class="north"><b>North star: Behavioral OS.</b> We show how your behaviors connect, sleep against mood against screen time and more. It starts in the MVP and deepens every stage.</div>
+
+  <div class="board">
+
+    <!-- MVP -->
+    <div class="stage">
+      <div class="bar" style="background:var(--mvp)"></div>
+      <h2>MVP</h2><div class="when">The 50 founding users</div><div class="count">6 themes · 11 topics</div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--mvp)"></span>Core experience</div>
+        <span class="topic">Voice-first onboarding that works</span>
+        <span class="topic">The AI fills the app (tool-calling)</span>
+        <span class="topic">Name pronunciation (phonetic spelling for the AI)</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--mvp)"></span>App and access</div>
+        <span class="topic">Solid, shippable mobile app</span>
+        <span class="topic">Founding sign-up on the website</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--mvp)"></span>Engagement</div>
+        <span class="topic">Notifications and email sequence</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--mvp)"></span>Habit depth (Thierry)</div>
+        <span class="topic">Weekdays per habit, completion types, notes per check-in, free trial, drop-off analytics</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--mvp)"></span>Insight and foundation</div>
+        <span class="topic">Some insights (basic progress and history)</span>
+        <span class="topic">Behavioral OS foundation</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--mvp)"></span>Trust</div>
+        <span class="topic">Safety and privacy baseline (988)</span>
+        <span class="topic">QA pass before launch</span></div>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="stage">
+      <div class="bar" style="background:var(--p1)"></div>
+      <h2>Phase 1</h2><div class="when">Right after launch · depth</div><div class="count">1 theme · 3 topics</div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--p1)"></span>Depth</div>
+        <span class="topic">Insights improve (trends, deeper history)</span>
+        <span class="topic">Coaching personalization (style selector, morning context)</span>
+        <span class="topic">Behavioral OS grows (first connections surfaced)</span></div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="stage">
+      <div class="bar" style="background:var(--p2)"></div>
+      <h2>Phase 2</h2><div class="when">Differentiation</div><div class="count">5 themes · 10 topics</div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--p2)"></span>Integrations</div>
+        <span class="topic">Sleep + Apple Health / Google Health</span>
+        <span class="topic">Wearables</span>
+        <span class="topic">Screen time category</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--p2)"></span>New modules</div>
+        <span class="topic">Gym / power-user logging</span>
+        <span class="topic">Shopping lists</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--p2)"></span>Conversation control</div>
+        <span class="topic">Voice-controlled settings</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--p2)"></span>Virality</div>
+        <span class="topic">Accountability (groups, challenges, seeing others)</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--p2)"></span>Polish and intel</div>
+        <span class="topic">UI depth (animations, real chat screens, visual cards)</span>
+        <span class="topic">Competitor study</span>
+        <span class="topic">Behavioral OS deepens (cross-behavior correlations)</span></div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="stage">
+      <div class="bar" style="background:var(--p3)"></div>
+      <h2>Phase 3</h2><div class="when">Expansion + bets</div><div class="count">3 themes · 3 topics</div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--p3)"></span>Expansion</div>
+        <span class="topic">Category packs (nutrition, fitness, womens health)</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--p3)"></span>Revenue</div>
+        <span class="topic">Marketplace (human-coach handoff, supplements)</span></div>
+      <div class="theme"><div class="tname"><span class="tdot" style="background:var(--p3)"></span>Infrastructure</div>
+        <span class="topic">Voice infra evolution (self-hosted Pipecat)</span></div>
+    </div>
+
+  </div>
+</div>
+<script>
+  function setZoom(n){
+    document.body.setAttribute('data-zoom', String(n));
+    document.querySelectorAll('.zbtn').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-z')===String(n)); });
+  }
+</script>
+</body>
+</html>
