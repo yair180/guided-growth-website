@@ -77,6 +77,21 @@
   .cbtn{font-size:10.5px;color:var(--muted);cursor:pointer;background:none;border:none;padding:0;font-family:inherit}
   .cbtn:hover{color:var(--accent)}
   .cmt{font-size:11.5px;color:var(--text-2);background:color-mix(in srgb,var(--accent) 9%,transparent);border-left:2px solid var(--accent);border-radius:0 5px 5px 0;padding:4px 8px;margin-top:4px;white-space:pre-wrap}
+  /* sync state bar */
+  .syncbar{display:flex;align-items:center;gap:9px;font-size:13px;border-radius:10px;padding:9px 14px;margin:0 0 16px;border:1px solid var(--border)}
+  .syncbar .sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .syncbar.live{background:color-mix(in srgb,var(--done) 10%,transparent);border-color:color-mix(in srgb,var(--done) 35%,transparent);color:var(--text-2)}
+  .syncbar.live .sdot{background:var(--done);box-shadow:0 0 0 3px color-mix(in srgb,var(--done) 22%,transparent)}
+  .syncbar.off{background:color-mix(in srgb,var(--next) 10%,transparent);border-color:color-mix(in srgb,var(--next) 38%,transparent);color:var(--text-2)}
+  .syncbar.off .sdot{background:var(--next)}
+  .syncbar a{color:var(--accent);font-weight:600}
+  .syncmsg{display:inline-block;font-size:12px;font-weight:700;color:var(--done);margin:-8px 0 14px;height:14px;opacity:0;transition:opacity .15s}
+  .syncmsg.ok{opacity:1}
+  /* session label + status badge + editable field values */
+  .sess{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--claude);background:color-mix(in srgb,var(--claude) 12%,transparent);border-radius:5px;padding:2px 8px;letter-spacing:.02em}
+  .sbadge{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:5px;color:#fff}
+  .sbadge.todo{background:var(--todo)}.sbadge.in-progress{background:var(--prog)}.sbadge.done{background:var(--done)}
+  .tval{font-size:11.5px;color:var(--text-2);background:var(--surface-2);border-radius:6px;padding:4px 8px;margin-top:4px;line-height:1.4}
   .grip{color:var(--border-strong);font-size:12px;margin-top:1px;flex-shrink:0;cursor:grab}
   footer{margin-top:54px;border-top:1px solid var(--border);padding-top:16px;color:var(--muted);font-size:12px}
   footer a{color:var(--accent);text-decoration:none}
@@ -409,26 +424,48 @@
     return null;
   }
 
+  var STATE_LABEL = {'todo':'Not yet','in-progress':'In progress','done':'Done'};
+  var FIELD_LABEL = {'prompt':'Prompt','update':'Update','next':'Next steps'};
+
+  function syncBarHtml(){
+    if(MODE==='live') return '<div class="syncbar live"><span class="sdot"></span>Synced. Drag steps, click a dot, edit the prompt / update / next steps — every change saves to the shared board.</div>';
+    if(MODE==='signedout') return '<div class="syncbar off"><span class="sdot"></span>Not signed in, so your changes will not save yet. <a href="'+LOGIN_URL+'">Sign in to edit</a> (one click, then it sticks).</div>';
+    return '<div class="syncbar off"><span class="sdot"></span>Offline — showing a local copy. Changes are kept on this device only.</div>';
+  }
+  function flashSaved(){ var b=document.getElementById('syncmsg'); if(b){ b.textContent='✓ saved'; b.classList.add('ok'); clearTimeout(b._t); b._t=setTimeout(function(){ b.classList.remove('ok'); b.textContent=''; },1600); } }
+
+  function fieldBlock(topic, st, field, label){
+    var v = st[field] || '';
+    var body = v ? '<div class="tval">'+esc(v).replace(/\n/g,'<br>')+'</div>' : '';
+    var btn = '<button class="cbtn" onclick="editField(\''+esc(topic)+'\',\''+esc(st.id)+'\',\''+field+'\')">'+(v?'edit '+label.toLowerCase():'+ '+label.toLowerCase())+'</button>';
+    return {body:body, btn:btn};
+  }
+
   function render(){
     var root = document.getElementById('people');
     if(!BOARD || !BOARD.people){ root.innerHTML = '<p class="hint">Loading the live board…</p>'; return; }
-    root.innerHTML = BOARD.people.map(function(person){
+    var html = syncBarHtml() + '<span id="syncmsg" class="syncmsg"></span>';
+    html += BOARD.people.map(function(person){
       var cards = person.projects.map(function(proj){
         var topic = proj.claude_topic;
         var stepsHtml = proj.steps.map(function(st){
           var iss = st.issue ? '<a class="iss" href="'+GL_BASE+st.issue.replace('#','')+'" target="_blank" rel="noopener">'+esc(st.issue)+'</a>' : '';
-          var cmt = st.comment || '';
+          var prompt = fieldBlock(topic, st, 'prompt', 'Prompt');
+          var upd = fieldBlock(topic, st, 'update', 'Update');
+          var nxt = fieldBlock(topic, st, 'next', 'Next steps');
+          var badge = '<span class="sbadge '+esc(st.state)+'">'+esc(STATE_LABEL[st.state]||st.state)+'</span>';
           return '<li class="stp '+esc(st.state)+'" draggable="true" data-topic="'+esc(topic)+'" data-sid="'+esc(st.id)+'">'
             + '<span class="grip">⋮⋮</span>'
-            + '<span class="dot '+esc(st.state)+'" title="click to change state" onclick="cycleState(\''+esc(topic)+'\',\''+esc(st.id)+'\')"></span>'
-            + '<span class="body"><span class="txt">'+esc(st.title)+'</span>'
-            + '<span class="meta">'+iss+'<button class="cbtn" onclick="editComment(\''+esc(topic)+'\',\''+esc(st.id)+'\')">'+(cmt?'edit note':'comment')+'</button></span>'
-            + (cmt?'<div class="cmt">'+esc(cmt)+'</div>':'')
+            + '<span class="dot '+esc(st.state)+'" title="click: Not yet -> In progress -> Done" onclick="cycleState(\''+esc(topic)+'\',\''+esc(st.id)+'\')"></span>'
+            + '<span class="body">'
+            +   '<span class="txt">'+esc(st.title)+'</span>'
+            +   '<span class="meta">'+badge+iss+prompt.btn+upd.btn+nxt.btn+'</span>'
+            +   prompt.body + upd.body + nxt.body
             + '</span></li>';
         }).join('');
         return '<div class="card">'
-          + '<div class="card-top"><span class="pill '+esc(proj.status)+'">'+esc(proj.status)+'</span></div>'
-          + '<div class="cname">'+esc(proj.name)+'</div>'
+          + '<div class="card-top"><span class="pill '+esc(proj.status)+'">'+esc(proj.status)+'</span><span class="sess">'+esc(proj.session_label||'')+'</span></div>'
+          + '<div class="cname">'+esc(proj.topic||proj.name)+'</div>'
           + '<div class="one">'+esc(proj.one_liner)+'</div>'
           + '<span class="claude">◇ claude: '+esc(proj.claude_topic)+'</span>'
           + '<details class="why"><summary>Why this matters</summary><p>'+esc(proj.why)+'</p></details>'
@@ -443,19 +480,21 @@
         + '<div class="grid">'+cards+'</div>'
         + '</section>';
     }).join('');
+    root.innerHTML = html;
     wireDrag();
   }
 
   // Push a patch to the backend. Optimistic: BOARD is already updated + rendered by the caller.
   function persist(payload){
     saveLocal();
-    if(MODE!=='live') return;
+    if(MODE!=='live'){ showToast('Sign in to save changes to the shared board.'); return; }
     fetch(API_PUT, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
       .then(function(r){
-        if(r.status===401){ MODE='local'; showToast('Not signed in — changes saved on this device only. Log in to share.'); return; }
+        if(r.status===401){ MODE='signedout'; render(); showToast('Your session expired — sign in again to save.'); return; }
         if(!r.ok) throw new Error('HTTP '+r.status);
+        flashSaved();
       })
-      .catch(function(){ MODE='local'; showToast('Save failed — kept on this device.'); });
+      .catch(function(){ showToast('Save failed — check your connection and try again.'); });
   }
 
   window.cycleState = function(topic, sid){
@@ -465,14 +504,17 @@
     render();
     persist({op:'state', topic:topic, step_id:sid, state:st.state});
   };
-  window.editComment = function(topic, sid){
+  window.editField = function(topic, sid, field){
     var b = bucketByTopic(topic); if(!b) return;
     var st = b.steps.filter(function(s){return s.id===sid;})[0]; if(!st) return;
-    var v = window.prompt('Note on this step (blank to clear):', st.comment||'');
+    var hint = field==='prompt' ? 'The actual prompt you would give this Claude session:'
+      : field==='update' ? 'Status update (waiting on X / working on X / done: outcome):'
+      : 'Next steps:';
+    var v = window.prompt(hint, st[field]||'');
     if(v===null) return;
-    st.comment = v.trim();
+    st[field] = v.trim();
     render();
-    persist({op:'comment', topic:topic, step_id:sid, comment:st.comment});
+    persist({op:'set', topic:topic, step_id:sid, field:field, value:st[field]});
   };
   window.resetBoard = function(){
     if(!window.confirm('Reload the board from the server, discarding local-only changes?')) return;
@@ -515,7 +557,7 @@
   function load(){
     fetch(API_GET, {cache:'no-store'})
       .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-      .then(function(b){ if(!b || !b.people || !b.people.length) throw new Error('empty'); BOARD=b; MODE='live'; render(); })
+      .then(function(b){ if(!b || !b.people || !b.people.length) throw new Error('empty'); BOARD=b; MODE = b.authed ? 'live' : 'signedout'; render(); })
       .catch(function(){
         var local = loadLocal();
         BOARD = local || normalize(FALLBACK_RAW);
