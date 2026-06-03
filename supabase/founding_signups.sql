@@ -15,7 +15,8 @@ create table if not exists public.founding_signups (
   first_name      text,
 
   -- Attribution (replaces the in-app referral field for founding users)
-  heard_from      text,        -- founder_invite | friend | linkedin | webinar | other
+  heard_from       text,        -- founder_invite | friend
+  referred_by_name text,        -- the friend's name when heard_from = 'friend' (required in the UI)
 
   -- Behavioral signal (the rich part)
   track_level     text,        -- none | casual | serious   (drives beginner vs advanced)
@@ -23,8 +24,8 @@ create table if not exists public.founding_signups (
   apps_other      text,        -- free text when they pick "Other"
   pays_for_apps   text,        -- none | one | several
 
-  -- Light demographics (low priority)
-  age_group       text,        -- 18-24 | 25-34 | 35-44 | 45-54 | 55+
+  -- Light demographics
+  age             smallint,    -- typed age (founding users enter a number)
   gender          text,        -- male | female | other
 
   -- Optional baseline outcome metric (the "before" number)
@@ -53,6 +54,10 @@ alter table public.founding_signups
 alter table public.founding_signups
   add constraint founding_baseline_range
   check (baseline_score is null or (baseline_score between 1 and 10));
+
+alter table public.founding_signups
+  add constraint founding_age_range
+  check (age is null or (age between 13 and 120));
 
 -- ---- Row Level Security: anon can INSERT only. No read / update / delete. ----
 alter table public.founding_signups enable row level security;

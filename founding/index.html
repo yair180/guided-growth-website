@@ -108,13 +108,11 @@
           <!-- STEP 2: how heard -->
           <div class="fstep" data-step="1">
             <h3 class="fstep__title">How did you hear about us?</h3>
-            <div class="chips" data-single data-field="heard_from">
-              <button type="button" class="chip" data-value="founder_invite">Founder invite</button>
-              <button type="button" class="chip" data-value="friend">Friend</button>
-              <button type="button" class="chip" data-value="linkedin">LinkedIn</button>
-              <button type="button" class="chip" data-value="webinar">Webinar</button>
-              <button type="button" class="chip" data-value="other">Other</button>
+            <div class="chips chips--stack" data-single data-field="heard_from">
+              <button type="button" class="chip chip--wide" data-value="founder_invite">Yair, the founder</button>
+              <button type="button" class="chip chip--wide" data-value="friend">A friend</button>
             </div>
+            <input class="input fnd-other" id="f-referred-by" name="referred_by_name" type="text" placeholder="What's their name?" aria-label="Name of the friend who referred you" hidden />
             <p class="fstep__error" data-error hidden></p>
           </div>
 
@@ -161,21 +159,15 @@
           <!-- STEP 6: age + gender -->
           <div class="fstep" data-step="5">
             <h3 class="fstep__title">A couple of quick ones.</h3>
-            <p class="fstep__hint">Optional. Skip if you would rather not.</p>
-            <label class="fstep__label">Age</label>
-            <div class="chips" data-single data-field="age_group">
-              <button type="button" class="chip" data-value="18-24">18-24</button>
-              <button type="button" class="chip" data-value="25-34">25-34</button>
-              <button type="button" class="chip" data-value="35-44">35-44</button>
-              <button type="button" class="chip" data-value="45-54">45-54</button>
-              <button type="button" class="chip" data-value="55+">55+</button>
-            </div>
-            <label class="fstep__label">Gender</label>
+            <label class="fstep__label" for="f-age">Age</label>
+            <input class="input" id="f-age" name="age" type="number" inputmode="numeric" min="13" max="120" placeholder="e.g. 34" required />
+            <label class="fstep__label">Gender <span class="fstep__optional">(optional)</span></label>
             <div class="chips" data-single data-field="gender">
               <button type="button" class="chip" data-value="male">Male</button>
               <button type="button" class="chip" data-value="female">Female</button>
               <button type="button" class="chip" data-value="other">Other</button>
             </div>
+            <p class="fstep__error" data-error hidden></p>
           </div>
 
           <!-- STEP 7: baseline -->

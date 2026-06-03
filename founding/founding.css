@@ -1,7 +1,45 @@
 /* ==========================================================
-   Founding Users page — layered on top of the shared styles.css
-   Reuses the same tokens (--color-*, --space-*, --radius-*).
+   Founding Users page — layered on top of the shared styles.css.
+   This page was authored against a --color-* / --space-* token
+   namespace that styles.css does not define, so this :root block
+   supplies those names by mapping onto the shared palette. Without
+   it, spacing/colors/shadows silently collapse to browser defaults.
    ========================================================== */
+
+:root {
+  /* colors → shared palette */
+  --color-ink:         var(--text);
+  --color-ink-soft:    var(--text-muted);
+  --color-ink-faint:   var(--text-subtle);
+  --color-surface:     var(--bg);
+  --color-bg-alt:      var(--bg-elevated);
+  --color-line:        var(--border);
+  --color-accent:      var(--accent);
+  --color-accent-soft: var(--accent-dim);
+  --color-accent-dark: #0c44b4;
+  --color-teal:        var(--second);
+  --color-teal-soft:   var(--second-dim);
+  --color-gradient-1:  var(--accent);
+  --color-gradient-2:  #7c3aed;
+
+  /* radii / shadow / ease / layout */
+  --radius-xl: 24px;
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.10);
+  --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --nav-h:     72px;
+
+  /* 4px spacing scale */
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-16: 64px;
+  --space-24: 96px;
+}
 
 .founding .nav__inner { justify-content: space-between; }
 
@@ -99,6 +137,7 @@
   color: var(--color-ink-soft);
 }
 .fstep .input { margin-bottom: var(--space-2); }
+.fstep__optional { font-weight: 500; color: var(--color-ink-faint); }
 .fstep__error { color: #D64545; font-size: 14px; font-weight: 600; margin-top: var(--space-3); }
 
 /* ---- Chips ---- */
@@ -226,9 +265,20 @@
 }
 .fnd-full__form { display: flex; gap: var(--space-3); margin-top: var(--space-8); max-width: 440px; margin-left: auto; margin-right: auto; }
 
+/* keyboard focus visibility */
+.chip:focus-visible,
+.fnd-skip:focus-visible,
+.fnd-commit input:focus-visible + .fnd-commit__box {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 @media (max-width: 560px) {
   .fnd-card { padding: var(--space-6); }
   .fnd-deal { padding: var(--space-6); }
   .fnd-full__form { flex-direction: column; }
-  .fnd-nav { flex-wrap: wrap; }
+  /* primary action goes full-width, Back tucks under it */
+  .fnd-nav { flex-direction: column-reverse; align-items: stretch; }
+  .fnd-nav .btn { width: 100%; margin-left: 0; }
+  .fnd-nav .btn--ghost { background: transparent; }
 }

@@ -36,11 +36,12 @@ const state = {
   first_name: '',
   email: '',
   heard_from: '',
+  referred_by_name: '',
   track_level: '',
   apps_used: [],
   apps_other: '',
   pays_for_apps: '',
-  age_group: '',
+  age: '',
   gender: '',
   baseline_score: 5,
   baseline_skipped: false,
@@ -56,16 +57,23 @@ const btnSubmit= document.getElementById('btn-submit');
 let current = 0;
 
 // Steps that must have an answer before Continue.
+function isValidAge(v) {
+  const n = parseInt(v, 10);
+  return Number.isInteger(n) && n >= 13 && n <= 120;
+}
+
 const REQUIRED = {
   0: () => state.first_name.trim() && isValidEmail(state.email.trim()),
-  1: () => !!state.heard_from,
+  1: () => !!state.heard_from && (state.heard_from !== 'friend' || !!state.referred_by_name.trim()),
   2: () => !!state.track_level,
+  5: () => isValidAge(state.age),
   7: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
   0: 'Please add your name and a valid email.',
-  1: 'Pick one so we know where you came from.',
+  1: () => state.heard_from === 'friend' ? 'Add your friend’s name so we can thank them.' : 'Pick one so we know where you came from.',
   2: 'Pick one so we can start you in the right place.',
+  5: 'Please enter your age.',
   7: 'Check the box to claim your founding spot.'
 };
 
@@ -91,9 +99,14 @@ function setError(i, msg) {
   if (el) { el.hidden = false; el.textContent = msg; }
 }
 
+function msgFor(i) {
+  const m = REQUIRED_MSG[i];
+  return typeof m === 'function' ? m() : m;
+}
+
 function validateStep(i) {
   const check = REQUIRED[i];
-  if (check && !check()) { setError(i, REQUIRED_MSG[i]); return false; }
+  if (check && !check()) { setError(i, msgFor(i)); return false; }
   clearError(i);
   return true;
 }
@@ -134,6 +147,15 @@ form.querySelectorAll('.chips').forEach(group => {
         chip.classList.add('is-selected');
         state[field] = val;
         clearError(current);
+        // reveal the friend-name field only when "A friend" is chosen
+        if (field === 'heard_from') {
+          const ref = document.getElementById('f-referred-by');
+          if (ref) {
+            const isFriend = val === 'friend';
+            ref.hidden = !isFriend;
+            if (isFriend) { ref.focus(); } else { ref.value = ''; state.referred_by_name = ''; }
+          }
+        }
       } else {
         // multi-select (apps_used)
         chip.classList.toggle('is-selected');
@@ -158,6 +180,8 @@ form.querySelectorAll('.chips').forEach(group => {
 });
 
 document.getElementById('f-apps-other').addEventListener('input', e => { state.apps_other = e.target.value; });
+document.getElementById('f-referred-by').addEventListener('input', e => { state.referred_by_name = e.target.value; clearError(1); });
+document.getElementById('f-age').addEventListener('input', e => { state.age = e.target.value; clearError(5); });
 
 // ==========================================================
 //   Baseline slider
@@ -196,15 +220,16 @@ function derivePath() {
 function buildPayload() {
   const apps = [...(state.apps_used || [])];
   return {
-    email:           state.email.trim().toLowerCase(),
-    first_name:      state.first_name.trim(),
-    heard_from:      state.heard_from || null,
-    track_level:     state.track_level || null,
-    apps_used:       apps.length ? apps : null,
-    apps_other:      (apps.includes('other') && state.apps_other.trim()) ? state.apps_other.trim() : null,
-    pays_for_apps:   state.pays_for_apps || null,
-    age_group:       state.age_group || null,
-    gender:          state.gender || null,
+    email:            state.email.trim().toLowerCase(),
+    first_name:       state.first_name.trim(),
+    heard_from:       state.heard_from || null,
+    referred_by_name: (state.heard_from === 'friend' && state.referred_by_name.trim()) ? state.referred_by_name.trim() : null,
+    track_level:      state.track_level || null,
+    apps_used:        apps.length ? apps : null,
+    apps_other:       (apps.includes('other') && state.apps_other.trim()) ? state.apps_other.trim() : null,
+    pays_for_apps:    state.pays_for_apps || null,
+    age:              isValidAge(state.age) ? parseInt(state.age, 10) : null,
+    gender:           state.gender || null,
     baseline_score:  state.baseline_skipped ? null : state.baseline_score,
     derived_path:    derivePath(),
     two_week_commit: state.two_week_commit,
@@ -239,7 +264,7 @@ form.addEventListener('submit', async (e) => {
 
   // validate every required step before sending
   for (const i of Object.keys(REQUIRED).map(Number)) {
-    if (!REQUIRED[i]()) { current = i; render(); setError(i, REQUIRED_MSG[i]); scrollCard(); return; }
+    if (!REQUIRED[i]()) { current = i; render(); setError(i, msgFor(i)); scrollCard(); return; }
   }
 
   btnSubmit.textContent = 'Claiming…';
