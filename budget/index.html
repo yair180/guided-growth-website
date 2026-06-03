@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Anthropic Billing and the $100 Agent Budget</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0a1420; color: #e0e6ed; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: #5bc0de; text-decoration: none; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* header */
+  header { background: #060d18; border-bottom: 1px solid #16263c; padding: 22px 0; }
+  header .wrap { padding-bottom: 0; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #5bc0de; font-weight: 700; }
+  h1 { font-size: 27px; margin: 6px 0 4px; color: #fff; font-weight: 700; letter-spacing: -0.01em; }
+  header p { margin: 0; color: #8fa8c4; font-size: 14px; }
+
+  /* countdown banner */
+  .claim-banner {
+    margin: 18px 0 0; padding: 14px 18px; border-radius: 10px;
+    background: linear-gradient(90deg, rgba(217,119,6,0.18), rgba(217,119,6,0.06));
+    border: 1px solid rgba(245,158,11,0.45);
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .claim-banner .dot { width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 12px #f59e0b; flex: none; }
+  .claim-banner strong { color: #fcd34d; }
+  .claim-banner .days { font-family: ui-monospace, monospace; font-weight: 700; color: #fff; background: rgba(245,158,11,0.2); padding: 2px 9px; border-radius: 6px; }
+
+  section { margin-top: 40px; }
+  .sec-label { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #6b8aaf; font-weight: 700; margin-bottom: 14px; }
+  h2 { font-size: 19px; color: #fff; margin: 0 0 4px; font-weight: 650; }
+  .lede { color: #8fa8c4; font-size: 14px; margin: 0 0 18px; max-width: 760px; }
+
+  /* three pools */
+  .pools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .pool { background: #0e1c2e; border: 1px solid #1d3350; border-radius: 12px; padding: 18px; position: relative; overflow: hidden; }
+  .pool::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .pool.free::before { background: #10b981; }
+  .pool.credit::before { background: #f59e0b; }
+  .pool.api::before { background: #5bc0de; }
+  .pool .tag { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 5px; display: inline-block; }
+  .pool.free .tag { background: rgba(16,185,129,0.16); color: #34d399; }
+  .pool.credit .tag { background: rgba(245,158,11,0.16); color: #fbbf24; }
+  .pool.api .tag { background: rgba(91,192,222,0.16); color: #5bc0de; }
+  .pool h3 { font-size: 16px; color: #fff; margin: 12px 0 2px; }
+  .pool .meter { font-family: ui-monospace, monospace; font-size: 13px; color: #c2cee0; margin-bottom: 12px; }
+  .pool .meter b { color: #fff; }
+  .pool ul { margin: 0; padding: 0; list-style: none; }
+  .pool li { font-size: 12.5px; color: #aebfd6; padding: 4px 0 4px 18px; position: relative; }
+  .pool li::before { content: "›"; position: absolute; left: 4px; color: #5bc0de; }
+  .pool .verdict { margin-top: 12px; font-size: 12px; padding-top: 10px; border-top: 1px solid #1d3350; }
+  .pool.free .verdict { color: #34d399; }
+  .pool.credit .verdict { color: #fbbf24; }
+  .pool.api .verdict { color: #7fb0c8; }
+  .june { color: #f59e0b; font-weight: 700; }
+
+  /* gauge panel */
+  .gauge-panel { background: #0e1c2e; border: 1px solid #1d3350; border-radius: 12px; padding: 22px; }
+  .gauge-top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  .gauge-top .big { font-size: 30px; font-weight: 700; color: #fff; font-family: ui-monospace, monospace; }
+  .gauge-top .big small { font-size: 15px; color: #6b8aaf; font-weight: 500; }
+  .est-pill { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: #fbbf24; background: rgba(245,158,11,0.14); border: 1px solid rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 20px; text-transform: uppercase; }
+  .bar { height: 16px; border-radius: 8px; background: #0a1420; border: 1px solid #1d3350; margin: 16px 0 8px; overflow: hidden; display: flex; }
+  .bar .used { background: linear-gradient(90deg,#f59e0b,#fbbf24); }
+  .bar .head { background: repeating-linear-gradient(45deg,#16314e,#16314e 6px,#0e2238 6px,#0e2238 12px); }
+  .gauge-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-top: 16px; }
+  .stat { background: #0a1420; border: 1px solid #16263c; border-radius: 9px; padding: 12px 14px; }
+  .stat .k { font-size: 11px; color: #6b8aaf; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat .v { font-size: 20px; font-weight: 700; color: #fff; font-family: ui-monospace, monospace; margin-top: 3px; }
+  .stat .v.green { color: #34d399; } .stat .v.amber { color: #fbbf24; }
+
+  /* table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b8aaf; padding: 0 12px 10px; border-bottom: 1px solid #1d3350; font-weight: 700; }
+  tbody td { padding: 12px; border-bottom: 1px solid #142235; color: #c2cee0; vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td b { color: #fff; }
+  .chip { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 5px; white-space: nowrap; }
+  .chip.haiku { background: rgba(16,185,129,0.16); color: #34d399; }
+  .chip.sonnet { background: rgba(91,192,222,0.16); color: #5bc0de; }
+  .chip.opus { background: rgba(168,85,247,0.18); color: #c084fc; }
+  .chip.sep { background: rgba(120,140,170,0.16); color: #9fb2cc; }
+  .chip.free { background: rgba(16,185,129,0.16); color: #34d399; }
+  .num { font-family: ui-monospace, monospace; color: #fff; white-space: nowrap; }
+  .num.dim { color: #6b8aaf; }
+
+  /* levers */
+  .levers { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+  .lever { background: #0e1c2e; border: 1px solid #1d3350; border-radius: 11px; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start; }
+  .lever .n { width: 28px; height: 28px; flex: none; border-radius: 8px; background: rgba(91,192,222,0.14); color: #5bc0de; font-weight: 700; display: flex; align-items: center; justify-content: center; font-family: ui-monospace, monospace; }
+  .lever h4 { margin: 0 0 3px; color: #fff; font-size: 14.5px; }
+  .lever p { margin: 0; font-size: 12.5px; color: #9fb2cc; }
+  .lever .save { color: #34d399; font-weight: 700; }
+
+  /* cost spread */
+  .spread { background: #0e1c2e; border: 1px solid #1d3350; border-radius: 12px; padding: 20px; }
+  .spread-row { display: grid; grid-template-columns: 200px 1fr 120px; align-items: center; gap: 14px; padding: 9px 0; }
+  .spread-row .lbl { font-size: 13px; color: #c2cee0; }
+  .spread-row .lbl small { color: #6b8aaf; display: block; font-size: 11px; }
+  .spread-bar { height: 22px; border-radius: 6px; }
+  .spread-bar.a { background: linear-gradient(90deg,#a855f7,#c084fc); }
+  .spread-bar.b { background: linear-gradient(90deg,#0ea5e9,#5bc0de); }
+  .spread-bar.c { background: linear-gradient(90deg,#059669,#34d399); }
+  .spread-row .cyc { text-align: right; font-family: ui-monospace, monospace; font-size: 14px; color: #fff; font-weight: 700; }
+  .spread-row .cyc small { color: #6b8aaf; font-weight: 500; display: block; font-size: 10px; }
+
+  /* rate cards */
+  .rates { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .rate { background: #0e1c2e; border: 1px solid #1d3350; border-radius: 11px; padding: 16px; }
+  .rate h4 { margin: 0 0 10px; font-size: 14px; }
+  .rate .io { display: flex; justify-content: space-between; font-size: 12.5px; padding: 4px 0; color: #aebfd6; }
+  .rate .io b { font-family: ui-monospace, monospace; color: #fff; }
+  .rate.h4-haiku h4 { color: #34d399; } .rate.h4-sonnet h4 { color: #5bc0de; } .rate.h4-opus h4 { color: #c084fc; }
+  .extras { margin-top: 14px; font-size: 12px; color: #8fa8c4; }
+  .extras span { display: inline-block; background: #0a1420; border: 1px solid #16263c; border-radius: 6px; padding: 4px 9px; margin: 3px 4px 0 0; }
+  .extras b { color: #c2cee0; font-family: ui-monospace, monospace; }
+
+  footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid #16263c; font-size: 12px; color: #6b8aaf; }
+  footer a { color: #7fb0c8; }
+  .note { font-size: 12px; color: #6b8aaf; margin-top: 10px; }
+
+  @media (max-width: 860px) {
+    .pools, .rates { grid-template-columns: 1fr; }
+    .levers { grid-template-columns: 1fr; }
+    .gauge-stats { grid-template-columns: repeat(2,1fr); }
+    .spread-row { grid-template-columns: 130px 1fr 90px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Guided Growth · Ops</div>
+    <h1>Anthropic Billing and the $100 Agent Budget</h1>
+    <p>How we run Claude after June 15, and how we keep the team inside the budget all month.</p>
+    <div class="claim-banner">
+      <span class="dot"></span>
+      <span><strong>Action before June 15:</strong> claim the agent credit from Anthropic's email. If it isn't claimed, the $100 doesn't activate.</span>
+      <span class="days" id="countdown">— days left</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- THREE POOLS -->
+  <section>
+    <div class="sec-label">The model · three pools, not two</div>
+    <h2>What changed on June 15</h2>
+    <p class="lede">Until June 15 our subscription quietly subsidized agent runs at roughly 15 to 30 times under API price. That subsidy ended. Programmatic Claude now draws a separate metered credit. Here is where every kind of usage lands.</p>
+    <div class="pools">
+
+      <div class="pool free">
+        <span class="tag">Pool 1 · unchanged</span>
+        <h3>Interactive subscription</h3>
+        <div class="meter">flat rate · <b>$0 marginal</b></div>
+        <ul>
+          <li>Claude.ai web, desktop, mobile</li>
+          <li>Claude Code in a terminal (interactive)</li>
+          <li>Board agents run as a foreground session</li>
+          <li>Workflows and subagents inside that session</li>
+        </ul>
+        <div class="verdict">June 15 does nothing here. This stays free against our flat limits.</div>
+      </div>
+
+      <div class="pool credit">
+        <span class="tag">Pool 2 · new</span>
+        <h3>Agent credit</h3>
+        <div class="meter">$100 / mo · <b>metered at API rates</b> · no rollover</div>
+        <ul>
+          <li>Agent SDK and <code>claude -p</code></li>
+          <li>GitHub Actions running Claude</li>
+          <li>Cron and background automation</li>
+          <li>Third party agents on our subscription</li>
+        </ul>
+        <div class="verdict">This is <span class="june">the $100</span>. It bundles with one Max 5x plan and resets monthly.</div>
+      </div>
+
+      <div class="pool api">
+        <span class="tag">Pool 3 · separate</span>
+        <h3>Raw API key</h3>
+        <div class="meter">pay as you go · <b>own meter</b></div>
+        <ul>
+          <li>OpenClaw on its own API key</li>
+          <li>Anything with its own ANTHROPIC_API_KEY</li>
+          <li>Never was subsidized</li>
+        </ul>
+        <div class="verdict">Unchanged by June 15. Tracked as its own line, not against the $100.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- GAUGE -->
+  <section>
+    <div class="sec-label">This month · the $100 agent credit</div>
+    <div class="gauge-panel">
+      <div class="gauge-top">
+        <div class="big" id="spentBig">$0 <small>of $100 used</small></div>
+        <span class="est-pill">Estimate · live spend wires in Phase 2</span>
+      </div>
+      <div class="bar">
+        <div class="used" id="barUsed" style="width:0%"></div>
+        <div class="head" id="barHead" style="width:100%"></div>
+      </div>
+      <div class="gauge-stats">
+        <div class="stat"><div class="k">Spent to date</div><div class="v amber" id="sSpent">$0</div></div>
+        <div class="stat"><div class="k">Remaining</div><div class="v green" id="sRem">$100</div></div>
+        <div class="stat"><div class="k">Days left in month</div><div class="v" id="sDays">—</div></div>
+        <div class="stat"><div class="k">Projected month end</div><div class="v" id="sProj">$—</div></div>
+      </div>
+      <p class="note">Numbers below are best-estimate placeholders for the walkthrough. Phase 2 swaps these for live figures, either hand entered weekly into a Budget tab on the Master Sheet or pulled from the Anthropic usage API.</p>
+    </div>
+  </section>
+
+  <!-- WHERE IT GOES -->
+  <section>
+    <div class="sec-label">Where the credit goes</div>
+    <h2>Every line that can draw the $100</h2>
+    <p class="lede">The single biggest saving is keeping repetitive agent work interactive, where it costs nothing against this meter. Only genuinely unattended automation should touch the credit.</p>
+    <table>
+      <thead>
+        <tr><th>Workload</th><th>Pool</th><th>Model</th><th>Cache</th><th>Est / mo</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Board agents</b><br><span style="color:#6b8aaf;font-size:11.5px">kept interactive, foreground</span></td>
+          <td><span class="chip free">Pool 1 free</span></td>
+          <td>any</td>
+          <td>n/a</td>
+          <td class="num green" style="color:#34d399">$0</td>
+        </tr>
+        <tr>
+          <td><b>OpenClaw</b><br><span style="color:#6b8aaf;font-size:11.5px">own API key</span></td>
+          <td><span class="chip sep">Pool 3 separate</span></td>
+          <td><span class="chip haiku">Haiku</span></td>
+          <td>recommended</td>
+          <td class="num dim">~$15 *</td>
+        </tr>
+        <tr>
+          <td><b>MobAI / cron scans</b><br><span style="color:#6b8aaf;font-size:11.5px">nightly, when re-enabled</span></td>
+          <td><span class="chip" style="background:rgba(245,158,11,0.16);color:#fbbf24">Pool 2</span></td>
+          <td><span class="chip haiku">Haiku</span></td>
+          <td>+ batch 50%</td>
+          <td class="num">~$20 *</td>
+        </tr>
+        <tr>
+          <td><b>GitHub Actions</b><br><span style="color:#6b8aaf;font-size:11.5px">CI agents</span></td>
+          <td><span class="chip" style="background:rgba(245,158,11,0.16);color:#fbbf24">Pool 2</span></td>
+          <td><span class="chip sonnet">Sonnet</span></td>
+          <td>recommended</td>
+          <td class="num">~$25 *</td>
+        </tr>
+        <tr>
+          <td><b>Internal Growth app</b><br><span style="color:#6b8aaf;font-size:11.5px">background Claude calls, if any</span></td>
+          <td><span class="chip" style="background:rgba(245,158,11,0.16);color:#fbbf24">Pool 2</span></td>
+          <td><span class="chip haiku">Haiku</span></td>
+          <td>recommended</td>
+          <td class="num">~$15 *</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note">* Illustrative estimates for the call. Pool 2 lines (about $60 in this scenario) sit inside the $100. OpenClaw on Pool 3 is its own meter on top.</p>
+  </section>
+
+  <!-- LEVERS -->
+  <section>
+    <div class="sec-label">The four levers</div>
+    <h2>How we stretch $100 across the whole month</h2>
+    <div class="levers">
+      <div class="lever"><div class="n">1</div><div><h4>Interactive over headless</h4><p>Foreground terminal Claude stays on the flat plan. The moment we cron it as <code>claude -p</code>, every cycle starts billing. <span class="save">Worth more than the other three combined.</span></p></div></div>
+      <div class="lever"><div class="n">2</div><div><h4>Per-person credit pools</h4><p>Each teammate's own plan carries its own credit. Run agents under your own login and the team budget is the <span class="save">sum of everyone's credits</span>, not one shared $100.</p></div></div>
+      <div class="lever"><div class="n">3</div><div><h4>Haiku first for headless</h4><p>Haiku is <span class="save">5x cheaper</span> than Opus per token. Reserve Opus for final synthesis only. This is a 5x dial on Pool 2 burn.</p></div></div>
+      <div class="lever"><div class="n">4</div><div><h4>Cache and batch</h4><p>Cache the board and context every cycle re-reads for <span class="save">90% off input</span>. Batch anything that can wait for another <span class="save">50% off</span>.</p></div></div>
+    </div>
+  </section>
+
+  <!-- COST SPREAD -->
+  <section>
+    <div class="sec-label">Why the levers matter · same job, different cost</div>
+    <div class="spread">
+      <p class="lede" style="margin-bottom:16px">One headless agent cycle, about 30k tokens in and 3k out. The two dials of model and cache move it across a 12x range. The same $100 buys anywhere from 440 to 5,500 cycles.</p>
+      <div class="spread-row">
+        <div class="lbl">Opus, no cache <small>the expensive default</small></div>
+        <div class="spread-bar a" style="width:100%"></div>
+        <div class="cyc">$0.22<small>~440 cycles</small></div>
+      </div>
+      <div class="spread-row">
+        <div class="lbl">Haiku, no cache <small>5x cheaper model</small></div>
+        <div class="spread-bar c" style="width:20%"></div>
+        <div class="cyc">$0.045<small>~2,200 cycles</small></div>
+      </div>
+      <div class="spread-row">
+        <div class="lbl">Haiku, 90% cached <small>model + cache</small></div>
+        <div class="spread-bar c" style="width:8%"></div>
+        <div class="cyc">$0.018<small>~5,500 cycles</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RATES -->
+  <section>
+    <div class="sec-label">Reference · API rates the credit is metered at</div>
+    <div class="rates">
+      <div class="rate h4-haiku"><h4>Haiku 4.5</h4><div class="io"><span>Input</span><b>$1 / M</b></div><div class="io"><span>Output</span><b>$5 / M</b></div></div>
+      <div class="rate h4-sonnet"><h4>Sonnet 4.6</h4><div class="io"><span>Input</span><b>$3 / M</b></div><div class="io"><span>Output</span><b>$15 / M</b></div></div>
+      <div class="rate h4-opus"><h4>Opus 4.7</h4><div class="io"><span>Input</span><b>$5 / M</b></div><div class="io"><span>Output</span><b>$25 / M</b></div></div>
+    </div>
+    <div class="extras">
+      <span>Cache hit <b>0.10x</b> input (90% off)</span>
+      <span>Cache write <b>1.25x</b> (5 min) / <b>2x</b> (1 hr)</span>
+      <span>Batch API <b>50% off</b></span>
+      <span>Max 5x plan <b>$100/mo</b>, includes the $100 agent credit</span>
+    </div>
+  </section>
+
+  <footer>
+    Internal walkthrough view · figures are estimates pending live wiring · destination is the Budget tab on the architecture dashboard.<br>
+    Sources:
+    <a href="https://www.the-decoder.com/claude-subscriptions-get-separate-budgets-for-programmatic-use-billed-at-full-api-prices/">the-decoder: separate budgets for programmatic use</a> ·
+    <a href="https://www.techtimes.com/articles/317625/20260602/anthropic-ends-subscription-subsidy-agents-june-15-credit-pool-replaces-flat-rate-access.htm">TechTimes: subsidy ends June 15</a> ·
+    <a href="https://platform.claude.com/docs/en/about-claude/pricing">Anthropic pricing docs</a>
+  </footer>
+
+</div>
+
+<script>
+  // June 15 2026 claim countdown
+  (function () {
+    var now = new Date();
+    var claim = new Date(2026, 5, 15); // month is 0-indexed: 5 = June
+    var msDay = 86400000;
+    var d = Math.max(0, Math.ceil((claim - now) / msDay));
+    document.getElementById('countdown').textContent = d + (d === 1 ? ' day left' : ' days left');
+
+    // days left in current month
+    var endMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    var daysLeft = Math.max(0, Math.ceil((endMonth - now) / msDay));
+    document.getElementById('sDays').textContent = daysLeft;
+
+    // ESTIMATE scenario: ~$60 of Pool 2 projected this month, pace-to-date
+    var projected = 60;
+    var dayOfMonth = now.getDate();
+    var totalDays = endMonth.getDate();
+    var spent = Math.round(projected * (dayOfMonth / totalDays));
+    var rem = 100 - spent;
+    document.getElementById('spentBig').innerHTML = '$' + spent + ' <small>of $100 used</small>';
+    document.getElementById('sSpent').textContent = '$' + spent;
+    document.getElementById('sRem').textContent = '$' + rem;
+    document.getElementById('sProj').textContent = '$' + projected;
+    document.getElementById('barUsed').style.width = spent + '%';
+    document.getElementById('barHead').style.width = (100 - spent) + '%';
+  })();
+</script>
+</body>
+</html>
