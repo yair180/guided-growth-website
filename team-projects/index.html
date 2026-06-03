@@ -447,12 +447,22 @@
       +'<div class="blist" data-person="'+esc(p.person)+'">'+p.projects.map(bucketHtml).join('')+'</div>'
     +'</section>';
   }
+  function emptyHtml(title,sub,signin){
+    var btn=signin?'<a href="'+LOGIN_URL+'" style="display:inline-block;margin-top:16px;background:var(--accent);color:#fff;font-weight:650;font-size:13.5px;border-radius:10px;padding:10px 22px;text-decoration:none">Sign in</a>':'';
+    return '<div style="text-align:center;padding:72px 20px"><div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:7px">'+esc(title)+'</div><div style="font-size:13px;color:var(--muted);max-width:48ch;margin:0 auto;line-height:1.55">'+esc(sub)+'</div>'+btn+'</div>';
+  }
   function render(){
     if(!BOARD||!BOARD.people){var lb=document.getElementById('board');if(lb)lb.innerHTML='<p style="color:var(--muted);padding:60px 26px">Loading Mission Control&hellip;</p>';renderStatus();return;}
     document.getElementById('ribbon').innerHTML=ribbonHtml();
     document.getElementById('chips').innerHTML=chipsHtml();
     var ppl=BOARD.people.filter(function(p){return VIEW.person==='all'||p.person===VIEW.person;});
-    document.getElementById('board').innerHTML=ppl.map(personSection).join('')||'<p style="color:var(--muted);padding:40px 0">No one to show.</p>';
+    var bodyHtml=ppl.map(personSection).join('');
+    if(!bodyHtml){
+      if(MODE==='signedout')bodyHtml=emptyHtml('Sign in to see this board',(IS_ME?'Your board is private, so it only loads when you are signed in. ':'')+'One click, then it sticks and your changes save.',true);
+      else if(IS_ME)bodyHtml=emptyHtml('Your private board is empty','No sessions here yet. Ask Claude to seed it from your projects, or add buckets.',false);
+      else bodyHtml=emptyHtml('Nothing to show here','No sessions match this view.',false);
+    }
+    document.getElementById('board').innerHTML=bodyHtml;
     renderStatus();wireBucketDrag();wireStepDrag();
   }
 
@@ -553,7 +563,7 @@
   function load(){
     fetch(API_GET,{cache:'no-store'})
       .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-      .then(function(b){if(!b||!b.people||!b.people.length)throw new Error('empty');BOARD=guardShape(b);MODE=b.authed?'live':'signedout';afterLoad();})
+      .then(function(b){if(!b||!Array.isArray(b.people))throw new Error('bad shape');BOARD=guardShape(b);MODE=b.authed?'live':'signedout';afterLoad();})
       .catch(function(){BOARD=loadLocal()||normalize(FALLBACK_RAW);MODE='local';afterLoad();toast('Showing a local copy (backend unreachable).');});
   }
   window.resetBoard=function(){try{localStorage.removeItem(LS_KEY);}catch(e){}MODE='loading';render();load();};
