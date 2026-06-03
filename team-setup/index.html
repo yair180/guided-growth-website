@@ -4,336 +4,222 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Guided Growth · Team Setup Walkthrough</title>
+<title>Guided Growth · Team Setup</title>
 <style>
   * { box-sizing: border-box; }
   :root {
     --bg:#0a1420; --panel:#0e1c2e; --panel2:#060d18; --line:#1d3350; --line2:#16263c;
-    --ink:#e0e6ed; --mut:#8fa8c4; --mut2:#6b8aaf; --cy:#5bc0de; --teal:#0d9488;
+    --ink:#e0e6ed; --mut:#8fa8c4; --mut2:#6b8aaf; --cy:#5bc0de;
     --green:#34d399; --amber:#fbbf24; --orange:#f59e0b; --purple:#c084fc;
   }
   html, body { height: 100%; }
-  body {
-    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg); color: var(--ink); line-height: 1.55; -webkit-font-smoothing: antialiased;
-    display: flex; flex-direction: column; min-height: 100vh;
-  }
-  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+  code, .inline, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
   a { color: var(--cy); text-decoration: none; }
 
-  /* progress header */
-  header { background: var(--panel2); border-bottom: 1px solid var(--line2); padding: 12px 22px; position: sticky; top: 0; z-index: 10; }
-  .htop { display: flex; align-items: center; gap: 12px; max-width: 1080px; margin: 0 auto; }
-  .brand { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cy); font-weight: 700; white-space: nowrap; }
+  header { background: var(--panel2); border-bottom: 1px solid var(--line2); padding: 11px 22px; position: sticky; top: 0; z-index: 10; }
+  .htop { display: flex; align-items: center; gap: 12px; max-width: 1000px; margin: 0 auto; }
+  .brand { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cy); font-weight: 700; }
   .brand .sub { color: var(--mut2); margin-left: 8px; letter-spacing: 0; text-transform: none; font-weight: 500; }
-  .acts { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
-  .act { font-size: 11px; color: var(--mut2); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; }
-  .pips { display: flex; gap: 5px; max-width: 1080px; margin: 10px auto 0; flex-wrap: wrap; }
-  .pip { height: 6px; flex: 1 1 18px; border-radius: 4px; background: #16263c; cursor: pointer; transition: background .15s; }
-  .pip.done { background: #244a6e; }
-  .pip.cur { background: var(--cy); }
-  .pip.act-explain.cur { background: var(--cy); } .pip.act-setup.cur { background: var(--amber); } .pip.act-hands.cur { background: var(--green); }
+  .pips { display: flex; gap: 5px; max-width: 1000px; margin: 9px auto 0; }
+  .pip { height: 6px; flex: 1; border-radius: 4px; background: #16263c; cursor: pointer; transition: background .15s; }
+  .pip.done { background: #244a6e; } .pip.cur { background: var(--cy); }
 
-  /* stage */
-  main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 38px 22px; }
-  .stage { max-width: 880px; width: 100%; }
-  .step { display: none; animation: fade .25s ease; }
-  .step.active { display: block; }
-  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 34px 22px; }
+  .stage { max-width: 860px; width: 100%; }
+  .step { display: none; animation: fade .2s ease; } .step.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
-  .kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
+  .kicker { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
   .kicker.explain { color: var(--cy); background: rgba(91,192,222,.13); }
   .kicker.setup { color: var(--amber); background: rgba(245,158,11,.13); }
   .kicker.hands { color: var(--green); background: rgba(16,185,129,.13); }
-  .kicker.wrap { color: var(--purple); background: rgba(168,85,247,.13); }
-  h1 { font-size: 30px; line-height: 1.18; color: #fff; margin: 16px 0 6px; letter-spacing: -0.01em; }
-  .sub { color: var(--mut); font-size: 16px; margin: 0 0 22px; max-width: 680px; }
+  h1 { font-size: 28px; line-height: 1.15; color: #fff; margin: 14px 0 14px; letter-spacing: -0.01em; }
+  .one { color: var(--mut); font-size: 15px; margin: -6px 0 18px; }
 
-  .say { border-left: 3px solid var(--cy); background: rgba(91,192,222,.06); padding: 10px 16px; border-radius: 0 8px 8px 0; margin: 0 0 22px; font-size: 14px; color: #bcd0e6; }
-  .say b { color: var(--cy); font-weight: 700; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 12px 0; }
+  .card h3 { margin: 0 0 10px; color: #fff; font-size: 15px; }
+  ul.ck { margin: 0; padding: 0; list-style: none; }
+  ul.ck > li { padding: 7px 0 7px 28px; position: relative; font-size: 14.5px; color: #c2cee0; }
+  ul.ck > li::before { content: "☐"; position: absolute; left: 2px; color: var(--green); font-size: 16px; }
+  ul.ck > li b { color: #fff; }
 
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 14px 0; }
-  .card h3 { margin: 0 0 8px; color: #fff; font-size: 16px; }
-
-  ol.steps, ul.checks { margin: 0; padding: 0; list-style: none; }
-  ol.steps { counter-reset: s; }
-  ol.steps > li { counter-increment: s; position: relative; padding: 9px 0 9px 38px; font-size: 14px; color: #c2cee0; border-bottom: 1px solid var(--line2); }
-  ol.steps > li:last-child { border-bottom: none; }
-  ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 8px; width: 24px; height: 24px; border-radius: 7px; background: rgba(91,192,222,.13); color: var(--cy); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; font-family: ui-monospace, monospace; }
-  ul.checks > li { padding: 8px 0 8px 30px; position: relative; font-size: 14px; color: #c2cee0; }
-  ul.checks > li::before { content: "☐"; position: absolute; left: 4px; color: var(--green); font-size: 16px; }
-
-  pre { background: #07101d; border: 1px solid var(--line); border-radius: 9px; padding: 13px 15px; overflow-x: auto; font-size: 12.5px; color: #cfe3f5; margin: 10px 0; line-height: 1.5; }
-  pre .cmt { color: #5b7390; }
+  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 4px; }
+  .lbtn { display: inline-flex; align-items: center; gap: 8px; background: #14304d; color: #fff; border: 1px solid #2d5080; border-radius: 9px; padding: 10px 15px; font-size: 14px; font-weight: 600; }
+  .lbtn:hover { background: #1b3c60; border-color: var(--cy); } .lbtn .ar { color: var(--cy); }
   .inline { background: #07101d; border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 12.5px; color: #cfe3f5; }
 
-  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 4px; }
-  .lbtn { display: inline-flex; align-items: center; gap: 8px; background: #14304d; color: #fff; border: 1px solid #2d5080; border-radius: 9px; padding: 11px 16px; font-size: 14px; font-weight: 600; }
-  .lbtn:hover { background: #1b3c60; border-color: var(--cy); }
-  .lbtn .ar { color: var(--cy); }
-
-  .gap { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--amber); background: rgba(245,158,11,.1); border: 1px dashed rgba(245,158,11,.5); border-radius: 7px; padding: 5px 10px; margin: 6px 6px 0 0; }
+  .gap { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--amber); background: rgba(245,158,11,.1); border: 1px dashed rgba(245,158,11,.5); border-radius: 7px; padding: 4px 9px; margin: 6px 6px 0 0; }
   .gap::before { content: "NEEDS"; font-size: 9px; letter-spacing: .08em; background: var(--amber); color: #1a1206; padding: 1px 5px; border-radius: 4px; }
+  .teambadge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--green); background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.35); border-radius: 20px; padding: 3px 11px; margin-top: 12px; }
+  .teambadge::before { content: "●"; font-size: 8px; }
 
-  .teambadge { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--green); background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.35); border-radius: 20px; padding: 4px 12px; }
-  .teambadge::before { content: "●"; font-size: 9px; }
-
-  /* tabs (connector paths) */
-  .tabs { display: flex; gap: 8px; margin: 4px 0 14px; }
-  .tab { flex: 1; text-align: center; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); cursor: pointer; }
-  .tab.on { border-color: var(--cy); background: rgba(91,192,222,.08); }
-  .tab .t1 { font-weight: 700; color: #fff; font-size: 14px; }
-  .tab .t2 { font-size: 11.5px; color: var(--mut2); margin-top: 2px; }
-  .tabbody { display: none; } .tabbody.on { display: block; }
-
-  /* system map */
-  .map { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0; }
-  .node { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 13px; text-align: center; }
-  .node .ic { font-size: 20px; } .node .nm { color: #fff; font-weight: 700; font-size: 13px; margin-top: 5px; } .node .ds { color: var(--mut2); font-size: 11px; margin-top: 3px; }
-  .truth { text-align: center; margin-top: 12px; font-size: 13px; color: var(--cy); }
+  /* lanes overview */
+  .lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; }
+  .lane { background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 13px; }
+  .lane .who { color: #fff; font-weight: 700; font-size: 14px; }
+  .lane .role { color: var(--mut2); font-size: 11px; margin: 2px 0 9px; }
+  .lane .b { font-size: 11.5px; color: #aebfd6; padding: 4px 0 4px 14px; position: relative; }
+  .lane .b::before { content: "·"; position: absolute; left: 3px; color: var(--mut2); }
+  .lane .b.on { color: #fff; } .lane .b.on::before { content: "●"; color: var(--green); font-size: 8px; top: 6px; }
 
   /* pools mini */
-  .pools { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
-  .pm { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 13px; border-top: 3px solid; }
+  .pools { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
+  .pm { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; border-top: 3px solid; }
   .pm.free { border-top-color: var(--green); } .pm.credit { border-top-color: var(--orange); } .pm.api { border-top-color: var(--cy); }
-  .pm .h { color: #fff; font-weight: 700; font-size: 13px; } .pm .m { font-family: ui-monospace, monospace; font-size: 11px; color: var(--mut); margin: 3px 0 6px; } .pm .x { font-size: 11.5px; color: #aebfd6; }
-  .levers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .lv { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 11px 13px; font-size: 12.5px; color: #aebfd6; }
-  .lv b { color: #fff; display: block; font-size: 13px; margin-bottom: 2px; } .lv .s { color: var(--green); font-weight: 700; }
+  .pm .h { color: #fff; font-weight: 700; font-size: 13px; } .pm .m { font-family: ui-monospace, monospace; font-size: 11px; color: var(--mut); margin: 2px 0 5px; } .pm .x { font-size: 11.5px; color: #aebfd6; }
+  .rule { font-size: 14px; color: #c2cee0; background: rgba(91,192,222,.06); border-left: 3px solid var(--cy); border-radius: 0 8px 8px 0; padding: 10px 14px; }
+  .rule b { color: #fff; }
 
-  /* footer nav */
-  footer { background: var(--panel2); border-top: 1px solid var(--line2); padding: 14px 22px; position: sticky; bottom: 0; }
-  .fnav { max-width: 880px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
-  .nbtn { background: #14304d; color: #fff; border: 1px solid #2d5080; border-radius: 9px; padding: 11px 22px; font-size: 15px; font-weight: 650; cursor: pointer; font-family: inherit; }
-  .nbtn:hover { background: #1b3c60; }
-  .nbtn.ghost { background: transparent; color: var(--mut); }
-  .nbtn:disabled { opacity: .35; cursor: not-allowed; }
-  .counter { margin-left: auto; margin-right: auto; font-size: 13px; color: var(--mut2); font-family: ui-monospace, monospace; }
-  .next { background: var(--cy); color: #042330; border-color: var(--cy); }
-  .next:hover { background: #7ad0e8; }
-  .hint { text-align: center; font-size: 11px; color: var(--mut2); margin-top: 8px; }
+  /* tabs */
+  .tabs { display: flex; gap: 8px; margin: 4px 0 12px; }
+  .tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); cursor: pointer; }
+  .tab.on { border-color: var(--cy); background: rgba(91,192,222,.08); }
+  .tab .t1 { font-weight: 700; color: #fff; font-size: 13.5px; } .tab .t2 { font-size: 11px; color: var(--mut2); margin-top: 1px; }
+  .tabbody { display: none; } .tabbody.on { display: block; }
+  ol.steps { margin: 0; padding-left: 20px; } ol.steps li { font-size: 14px; color: #c2cee0; padding: 4px 0; }
 
-  @media (max-width: 720px) {
-    .map, .pools { grid-template-columns: 1fr 1fr; } .levers { grid-template-columns: 1fr; }
-    h1 { font-size: 24px; } .tabs { flex-direction: column; }
-  }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 680px) { .pools { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } h1 { font-size: 23px; } }
+
+  footer { background: var(--panel2); border-top: 1px solid var(--line2); padding: 13px 22px; position: sticky; bottom: 0; }
+  .fnav { max-width: 860px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .nbtn { background: #14304d; color: #fff; border: 1px solid #2d5080; border-radius: 9px; padding: 10px 20px; font-size: 15px; font-weight: 650; cursor: pointer; font-family: inherit; }
+  .nbtn:hover { background: #1b3c60; } .nbtn.ghost { background: transparent; color: var(--mut); } .nbtn:disabled { opacity: .35; cursor: not-allowed; }
+  .next { background: var(--cy); color: #042330; border-color: var(--cy); } .next:hover { background: #7ad0e8; }
+  .counter { margin: 0 auto; font-size: 13px; color: var(--mut2); font-family: ui-monospace, monospace; }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="htop">
-    <div class="brand">Guided Growth<span class="sub">Team setup walkthrough</span></div>
-    <div class="acts">
-      <span class="act" style="color:var(--cy)">Explain</span>
-      <span class="act" style="color:var(--amber)">Set up</span>
-      <span class="act" style="color:var(--green)">Hands-on</span>
-    </div>
-  </div>
+  <div class="htop"><div class="brand">Guided Growth<span class="sub">Team setup</span></div></div>
   <div class="pips" id="pips"></div>
 </header>
 
 <main>
   <div class="stage" id="stage">
 
-    <!-- 1 WELCOME -->
-    <section class="step active" data-act="explain">
-      <span class="kicker explain">Explain · welcome</span>
-      <h1>What we're doing today</h1>
-      <p class="sub">By the end of this call, every one of you will have your tools connected and your own board live, working for you.</p>
-      <div class="say"><b>Say:</b> "We'll do three things. First I'll show you how the whole system fits together. Then we cover the new budget so we all run Claude the smart way. Then you each set everything up, live, right now on this call."</div>
+    <!-- 1 TODAY -->
+    <section class="step active">
+      <span class="kicker explain">Today</span>
+      <h1>Get you set up and working, live</h1>
+      <p class="one">Three quick acts: see what we're all building, connect your tools, run your first step.</p>
       <div class="card">
-        <h3>Today's three acts</h3>
-        <ol class="steps">
-          <li><b>Explain</b> &nbsp;the system, and the new $100 budget for running Claude.</li>
-          <li><b>Set up</b> &nbsp;each person opens the apps and connects Claude to the board.</li>
-          <li><b>Hands-on</b> &nbsp;everyone organizes their own buckets and runs their first step.</li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- 2 SYSTEM MAP -->
-    <section class="step" data-act="explain">
-      <span class="kicker explain">Explain · the system in one picture</span>
-      <h1>How it all fits together</h1>
-      <p class="sub">Four pieces. The board is where your work lives. Your Claude connects to it. GitLab is the source of truth. Two apps sit on top.</p>
-      <div class="say"><b>Say:</b> "Everything routes through the board. Your board bucket is the running instructions, your Claude reads it and works the top step, and GitLab stays the single source of truth for issues."</div>
-      <div class="map">
-        <div class="node"><div class="ic">🗂️</div><div class="nm">Team board</div><div class="ds">your buckets + steps</div></div>
-        <div class="node"><div class="ic">🔌</div><div class="nm">Connector</div><div class="ds">links Claude to the board</div></div>
-        <div class="node"><div class="ic">🦊</div><div class="nm">GitLab</div><div class="ds">source of truth</div></div>
-        <div class="node"><div class="ic">🖥️</div><div class="nm">Two apps</div><div class="ds">Internal Growth + Guided Growth</div></div>
-      </div>
-      <div class="truth">board = what to do &nbsp;·&nbsp; Claude = does it &nbsp;·&nbsp; GitLab = the truth it writes back to</div>
-    </section>
-
-    <!-- 3 BILLING -->
-    <section class="step" data-act="explain">
-      <span class="kicker explain">Explain · how we run Claude</span>
-      <h1>The new $100 budget</h1>
-      <p class="sub">After June 15, programmatic Claude stopped being subsidized. There are three pools now, and only one of them is metered.</p>
-      <div class="say"><b>Say:</b> "Run Claude in the terminal interactively and it's free on our plan. Only unattended automation draws the $100. So our default is: stay interactive."</div>
-      <div class="pools">
-        <div class="pm free"><div class="h">Interactive</div><div class="m">flat · $0 marginal</div><div class="x">Claude.ai, terminal Claude Code, board agents you run live.</div></div>
-        <div class="pm credit"><div class="h">Agent credit</div><div class="m">$100/mo · metered</div><div class="x">Agent SDK, claude -p, GitHub Actions, cron automation.</div></div>
-        <div class="pm api"><div class="h">Raw API</div><div class="m">pay as you go</div><div class="x">OpenClaw on its own key. Separate meter, not the $100.</div></div>
-      </div>
-      <div class="btnrow"><a class="lbtn" href="/budget/" target="_blank">Open the full budget view <span class="ar">→</span></a></div>
-      <div style="margin-top:6px"><span class="gap">Claim the agent credit from Anthropic's email before June 15</span></div>
-    </section>
-
-    <!-- 4 LEVERS -->
-    <section class="step" data-act="explain">
-      <span class="kicker explain">Explain · staying in budget</span>
-      <h1>Four habits that keep us under $100</h1>
-      <p class="sub">Same work, very different cost. These four are the whole game.</p>
-      <div class="levers">
-        <div class="lv"><b>1 · Interactive over headless</b>Run it live in the terminal, not as a cron job. <span class="s">Worth more than the other three combined.</span></div>
-        <div class="lv"><b>2 · Your own login</b>Each person's plan has its own credit, so the team budget is the <span class="s">sum of everyone's</span>, not one shared $100.</div>
-        <div class="lv"><b>3 · Haiku first</b>For anything automated, Haiku is <span class="s">5x cheaper</span> than Opus. Save Opus for the final synthesis.</div>
-        <div class="lv"><b>4 · Cache and batch</b>Re-read context cached is <span class="s">90% off</span>. Anything that can wait, batch for <span class="s">50% off</span>.</div>
-      </div>
-    </section>
-
-    <!-- 5 INTERNAL GROWTH APP -->
-    <section class="step" data-act="setup">
-      <span class="kicker setup">Set up · the cockpit</span>
-      <h1>Open the Internal Growth app</h1>
-      <p class="sub">This is your desktop cockpit: every web surface in one place, plus parallel Claude sessions. Native Mac app.</p>
-      <div class="say"><b>Say:</b> "This is the hub you'll live in. Let's get it built and open on your Mac now."</div>
-      <div class="card">
-        <h3>One-time install (Mac)</h3>
-        <ol class="steps">
-          <li>Clone the app repo to <span class="inline">~/Developer/yair-os-app</span></li>
-          <li>Run <span class="inline">./install-team.sh</span> from inside it</li>
-          <li>First launch: right-click the app → <b>Open</b> (Gatekeeper, ad-hoc signed)</li>
-          <li>After that, open from <span class="inline">~/Applications/Internal Growth.app</span></li>
-        </ol>
-      </div>
-      <div><span class="gap">Repo access for the team to clone Internal Growth (invite + clone URL)</span></div>
-      <div style="margin-top:10px"><span class="teambadge">Everyone does this now</span></div>
-    </section>
-
-    <!-- 6 GUIDED GROWTH APP -->
-    <section class="step" data-act="setup">
-      <span class="kicker setup">Set up · the product</span>
-      <h1>Open the Guided Growth app</h1>
-      <p class="sub">The product itself, the thing we're building and testing. Pick the path for your device.</p>
-      <div class="say"><b>Say:</b> "Get the app on your phone so you can test against what you're working on."</div>
-      <div class="card">
-        <h3>By device</h3>
-        <ul class="checks">
-          <li><b>iPhone:</b> accept the TestFlight invite, install, open</li>
-          <li><b>Android:</b> grab the debug APK from the Mattermost <span class="inline">#MVPtesting</span> channel</li>
-          <li><b>Web:</b> open the live app URL in a browser</li>
+        <ul class="ck">
+          <li><b>See</b> &nbsp;what every session is working on right now</li>
+          <li><b>Set up</b> &nbsp;open the apps, connect Claude to your board</li>
+          <li><b>Go</b> &nbsp;organize your buckets and run a step on the call</li>
         </ul>
       </div>
-      <div>
-        <span class="gap">TestFlight invite link</span>
-        <span class="gap">Live web app URL</span>
-      </div>
-      <div style="margin-top:10px"><span class="teambadge">Everyone does this now</span></div>
     </section>
 
-    <!-- 7 CONNECTOR -->
-    <section class="step" data-act="setup">
-      <span class="kicker setup">Set up · the connector</span>
+    <!-- 2 WHAT WE'RE BUILDING -->
+    <section class="step">
+      <span class="kicker explain">The work</span>
+      <h1>What we're all building right now</h1>
+      <p class="one">One card per person. Each line is a Claude session on one workstream. Green dots are active.</p>
+      <div class="lanes">
+        <div class="lane"><div class="who">Yair</div><div class="role">Direction + board</div>
+          <div class="b on">Board maintainer</div></div>
+        <div class="lane"><div class="who">Yonas</div><div class="role">Voice backend</div>
+          <div class="b on">Launch-blocking bugs</div><div class="b">Vapi callLLM backbone</div><div class="b">QA stability</div><div class="b on">Web-to-mobile sync</div></div>
+        <div class="lane"><div class="who">Mint</div><div class="role">AI layer</div>
+          <div class="b on">Voice infra</div><div class="b">Onboarding + home</div><div class="b">Async reflection</div><div class="b on">Cross-channel QA</div></div>
+        <div class="lane"><div class="who">Timothy</div><div class="role">Design + QA</div>
+          <div class="b">Screens</div><div class="b">Prototype wiring</div><div class="b">UX rules</div><div class="b">QA loop</div><div class="b on">Notifications</div><div class="b">Onboarding emails</div></div>
+        <div class="lane"><div class="who">Alejandro</div><div class="role">Infra / DevOps</div>
+          <div class="b on">Branching + CI</div><div class="b on">Release + Android</div></div>
+      </div>
+      <div class="btnrow"><a class="lbtn" href="/team-projects/" target="_blank">Open the live board <span class="ar">→</span></a></div>
+    </section>
+
+    <!-- 3 $100 RULE -->
+    <section class="step">
+      <span class="kicker explain">The budget</span>
+      <h1>How we run Claude on $100</h1>
+      <div class="pools">
+        <div class="pm free"><div class="h">Interactive</div><div class="m">free</div><div class="x">Terminal Claude, run live.</div></div>
+        <div class="pm credit"><div class="h">Agent credit</div><div class="m">$100/mo</div><div class="x">Cron + automation only.</div></div>
+        <div class="pm api"><div class="h">Raw API</div><div class="m">own meter</div><div class="x">OpenClaw. Separate.</div></div>
+      </div>
+      <div class="rule"><b>The rule:</b> run Claude live = free. Only unattended automation touches the $100. So stay interactive, use Haiku for anything automated, and claim the credit before June 15.</div>
+      <div class="btnrow"><a class="lbtn" href="/budget/" target="_blank">Full budget view <span class="ar">→</span></a></div>
+      <div><span class="gap">Claim the agent credit before June 15</span></div>
+    </section>
+
+    <!-- 4 OPEN APPS -->
+    <section class="step">
+      <span class="kicker setup">Set up · apps</span>
+      <h1>Open both apps</h1>
+      <div class="two">
+        <div class="card"><h3>Internal Growth (cockpit)</h3>
+          <ul class="ck"><li>Clone the repo</li><li>Run <span class="inline">./install-team.sh</span></li><li>Right-click → Open the first time</li></ul>
+          <div><span class="gap">Repo access to clone</span></div>
+        </div>
+        <div class="card"><h3>Guided Growth (product)</h3>
+          <ul class="ck"><li>iPhone: TestFlight</li><li>Android: APK in <span class="inline">#MVPtesting</span></li><li>Web: open the live URL</li></ul>
+          <div><span class="gap">TestFlight link</span><span class="gap">Web URL</span></div>
+        </div>
+      </div>
+      <div><span class="teambadge">Everyone, now</span></div>
+    </section>
+
+    <!-- 5 CONNECT -->
+    <section class="step">
+      <span class="kicker setup">Set up · connector</span>
       <h1>Connect Claude to your board</h1>
-      <p class="sub">This is the piece that lets your Claude read your board and move your steps. Two ways. Pick yours.</p>
-      <div class="say"><b>Say:</b> "If you don't live in a terminal, use the easy path on the left. Engineers, use the terminal path on the right."</div>
       <div class="tabs">
-        <div class="tab on" data-tab="easy" onclick="pickTab(this)"><div class="t1">Claude app · easy</div><div class="t2">no terminal, 4 clicks</div></div>
-        <div class="tab" data-tab="term" onclick="pickTab(this)"><div class="t1">Claude Code · terminal</div><div class="t2">engineers</div></div>
+        <div class="tab on" data-tab="easy" onclick="pickTab(this)"><div class="t1">Claude app</div><div class="t2">4 clicks, no terminal</div></div>
+        <div class="tab" data-tab="term" onclick="pickTab(this)"><div class="t1">Claude Code</div><div class="t2">terminal</div></div>
       </div>
       <div class="tabbody on" data-tab="easy">
         <ol class="steps">
-          <li>Sign in at <span class="inline">guidedgrowthos.com</span></li>
-          <li>Open <a href="/internal/yair-os/connect" target="_blank">guidedgrowthos.com/internal/yair-os/connect</a> and copy your personal connector URL</li>
-          <li>In the Claude app: Settings → Connectors → <b>Add custom connector</b>. Name it <span class="inline">GG Board</span>, paste the URL, auth none, save</li>
-          <li>Say to Claude: <span class="inline">use the GG Board connector, read_board, then work my top step</span></li>
+          <li>Open <a href="/internal/yair-os/connect" target="_blank">/internal/yair-os/connect</a>, copy your URL</li>
+          <li>Claude → Settings → Connectors → Add custom connector → paste → save</li>
+          <li>Say: <span class="inline">read_board, work my top step</span></li>
         </ol>
       </div>
       <div class="tabbody" data-tab="term">
         <ol class="steps">
-          <li>Create <span class="inline">~/.config/guided-growth/bug-report.env</span> with your GitLab token, reporter name, and <span class="inline">GG_BOARD_TOKEN</span></li>
-          <li>Install the board skill (one curl block, pulls from gg-spec)</li>
-          <li><span class="inline">cd ~/Developer/guided-growth-mvp &amp;&amp; claude</span></li>
-          <li>Say: <span class="inline">work my board</span></li>
-        </ol>
-        <pre><span class="cmt"># install the gg-board-agent skill</span>
-TOKEN=$(grep '^GG_GITLAB_TOKEN=' ~/.config/guided-growth/bug-report.env | cut -d= -f2-)
-mkdir -p ~/.claude/skills/gg-board-agent/scripts
-curl -fsSL -H "PRIVATE-TOKEN: $TOKEN" \
- "https://gitlab.com/api/v4/projects/guidedgrowth-group%2Fgg-spec/repository/files/skills%2Fgg-board-agent%2FSKILL.md/raw?ref=main" \
- -o ~/.claude/skills/gg-board-agent/SKILL.md</pre>
-      </div>
-      <div style="margin-top:6px"><span class="gap">How each person receives their GG_BOARD_TOKEN on the call</span></div>
-      <div style="margin-top:10px"><span class="teambadge">Everyone does this now</span></div>
-    </section>
-
-    <!-- 8 SIGN IN BOARD -->
-    <section class="step" data-act="hands">
-      <span class="kicker hands">Hands-on · your board</span>
-      <h1>Open your board and sign in</h1>
-      <p class="sub">This is where your work lives, organized as buckets. Until you sign in it's read-only.</p>
-      <div class="say"><b>Say:</b> "Open the board, sign in, and find your lane. Each card with steps under it is one of your buckets."</div>
-      <div class="btnrow"><a class="lbtn" href="/team-projects/" target="_blank">Open the team board <span class="ar">→</span></a></div>
-      <div><span class="gap">Board sign-in credentials to share on the call</span></div>
-      <div style="margin-top:10px"><span class="teambadge">Everyone does this now</span></div>
-    </section>
-
-    <!-- 9 ORGANIZE BUCKETS -->
-    <section class="step" data-act="hands">
-      <span class="kicker hands">Hands-on · organize</span>
-      <h1>Set up and organize your buckets</h1>
-      <p class="sub">A bucket is one Claude-session topic. The steps inside it, top to bottom, are exactly what your Claude will work through.</p>
-      <div class="say"><b>Say:</b> "Drag your most important step to the top. The board is the instructions, so whatever sits at the top is what your next session does first."</div>
-      <div class="card">
-        <h3>In your lane, right now</h3>
-        <ul class="checks">
-          <li>Find your buckets (each is a Claude-session topic)</li>
-          <li>Drag steps so the top step is what to do next</li>
-          <li>Edit a step's prompt or next-note if it's unclear</li>
-          <li>Click a status dot to set where each step stands</li>
-        </ul>
-      </div>
-      <div><span class="gap">Decide: pre-seed each person's buckets before the call, or build them live</span></div>
-      <div style="margin-top:10px"><span class="teambadge">Everyone does this now</span></div>
-    </section>
-
-    <!-- 10 FIRST STEP -->
-    <section class="step" data-act="hands">
-      <span class="kicker hands">Hands-on · go live</span>
-      <h1>Run your first step</h1>
-      <p class="sub">Now let your Claude take the top step. Watch the board move while it works.</p>
-      <div class="say"><b>Say:</b> "Tell your Claude to work the board. Watch the top step go in-progress, then done, live on the board. That's the loop you'll run every day."</div>
-      <div class="card">
-        <h3>The loop</h3>
-        <ol class="steps">
-          <li>Tell Claude <span class="inline">work my board</span> (terminal) or <span class="inline">read_board, work my top step</span> (app)</li>
-          <li>It reads your top step and starts it, marking it in-progress on the board</li>
-          <li>It finishes and marks it done, then takes the new top step</li>
-          <li>You reprioritize any time by dragging a step up</li>
+          <li>Set <span class="inline">GG_BOARD_TOKEN</span> in <span class="inline">~/.config/guided-growth/bug-report.env</span></li>
+          <li>Install the board skill (one curl block from gg-spec)</li>
+          <li><span class="inline">cd ~/Developer/guided-growth-mvp &amp;&amp; claude</span> → say <span class="inline">work my board</span></li>
         </ol>
       </div>
-      <div style="margin-top:10px"><span class="teambadge">Everyone does this now</span></div>
+      <div><span class="gap">How each person gets their GG_BOARD_TOKEN</span></div>
+      <div><span class="teambadge">Everyone, now</span></div>
     </section>
 
-    <!-- 11 WRAP -->
-    <section class="step" data-act="wrap">
-      <span class="kicker wrap">Wrap · you're set</span>
-      <h1>Where everything lives</h1>
-      <p class="sub">You're connected, your board is live, and you ran your first step. Here's the daily shape and where to get help.</p>
+    <!-- 6 YOUR BOARD -->
+    <section class="step">
+      <span class="kicker hands">Hands-on</span>
+      <h1>Open your board and run your first step</h1>
       <div class="card">
-        <h3>Day to day</h3>
-        <ul class="checks">
-          <li>The board is the running instructions. Top step first.</li>
-          <li>GitLab is the source of truth. Your Claude writes back there.</li>
-          <li>File bugs with the gg-bug-report skill, they land in GitLab + Mattermost.</li>
-          <li>Run Claude interactively to stay off the $100 meter.</li>
+        <ul class="ck">
+          <li>Open the board and <b>sign in</b></li>
+          <li>Find your lane, <b>drag your top step</b> to what's next</li>
+          <li>Tell Claude <span class="inline">work my board</span></li>
+          <li>Watch the step go in-progress, then done, live</li>
         </ul>
       </div>
-      <div class="say"><b>Say:</b> "Setup docs live in gg-spec/docs. If anything broke today, drop it in Mattermost and we'll clear it. Don't forget to claim the Anthropic credit before June 15."</div>
+      <div class="btnrow"><a class="lbtn" href="/team-projects/" target="_blank">Open your board <span class="ar">→</span></a></div>
+      <div><span class="gap">Board sign-in credentials</span></div>
+      <div><span class="teambadge">Everyone, now</span></div>
+    </section>
+
+    <!-- 7 GO -->
+    <section class="step">
+      <span class="kicker hands">You're live</span>
+      <h1>That's the daily loop</h1>
+      <div class="card">
+        <ul class="ck">
+          <li>The board is your instructions. Top step first.</li>
+          <li>GitLab is the source of truth. Claude writes back there.</li>
+          <li>Run Claude interactively to stay off the $100.</li>
+          <li>Claim the Anthropic credit before June 15.</li>
+        </ul>
+      </div>
     </section>
 
   </div>
@@ -342,31 +228,20 @@ curl -fsSL -H "PRIVATE-TOKEN: $TOKEN" \
 <footer>
   <div class="fnav">
     <button class="nbtn ghost" id="back" onclick="go(-1)">← Back</button>
-    <span class="counter" id="counter">1 / 11</span>
+    <span class="counter" id="counter">1 / 7</span>
     <button class="nbtn next" id="next" onclick="go(1)">Next →</button>
   </div>
-  <div class="hint">Use ← → arrow keys to move. Click a bar up top to jump.</div>
 </footer>
 
 <script>
   var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
-  var cur = 0;
-  var pipsEl = document.getElementById('pips');
-  steps.forEach(function (s, i) {
-    var p = document.createElement('div');
-    p.className = 'pip act-' + s.dataset.act;
-    p.onclick = function () { show(i); };
-    pipsEl.appendChild(p);
-  });
+  var cur = 0, pipsEl = document.getElementById('pips');
+  steps.forEach(function (s, i) { var p = document.createElement('div'); p.className = 'pip'; p.onclick = function () { show(i); }; pipsEl.appendChild(p); });
   var pips = Array.prototype.slice.call(pipsEl.children);
-
   function show(i) {
     cur = Math.max(0, Math.min(steps.length - 1, i));
     steps.forEach(function (s, j) { s.classList.toggle('active', j === cur); });
-    pips.forEach(function (p, j) {
-      p.classList.toggle('done', j < cur);
-      p.classList.toggle('cur', j === cur);
-    });
+    pips.forEach(function (p, j) { p.classList.toggle('done', j < cur); p.classList.toggle('cur', j === cur); });
     document.getElementById('counter').textContent = (cur + 1) + ' / ' + steps.length;
     document.getElementById('back').disabled = cur === 0;
     document.getElementById('next').disabled = cur === steps.length - 1;
@@ -379,10 +254,7 @@ curl -fsSL -H "PRIVATE-TOKEN: $TOKEN" \
     var k = el.dataset.tab;
     sec.querySelectorAll('.tabbody').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === k); });
   }
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowRight') go(1);
-    else if (e.key === 'ArrowLeft') go(-1);
-  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); });
   show(0);
 </script>
 </body>
