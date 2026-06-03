@@ -202,6 +202,7 @@
   .sflabel{flex:0 0 50px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:2px}
   .sfval{flex:1;min-width:0;color:var(--text-2);white-space:pre-wrap}
   .sfval.empty{color:var(--border-strong);cursor:pointer}.sfval.empty:hover{color:var(--accent)}
+  .sby{font-size:9.5px;font-weight:600;color:var(--claude);background:color-mix(in srgb,var(--claude) 12%,transparent);border-radius:4px;padding:1px 6px}
   .sfedit{flex:0 0 auto;font:inherit;font-size:12px;cursor:pointer;background:none;border:none;color:var(--muted);padding:0 2px;opacity:0}
   .steps .stp:hover .sfedit{opacity:.8}.sfedit:hover{color:var(--accent)}
 </style></head>
@@ -360,6 +361,8 @@
 
   var STATE_LABEL = {'todo':'Not started','in-progress':'In progress','done':'Done','blocked':'Blocked'};
   var GL_LABEL = {'todo':'To do','in_progress':'In progress','in_testing':'In testing','done':'Done'};
+  var ACTOR_NAMES = {yair:'Yair',yonas:'Yonas',mint:'Mint',timothy:'Timothy',alejandro:'Alejandro'};
+  function actorName(s){ return s ? (ACTOR_NAMES[s] || (s.charAt(0).toUpperCase()+s.slice(1))) : ''; }
   var FIELD_LABEL = {'prompt':'Prompt','update':'Update','next':'Next steps'};
 
   function syncBarHtml(){
@@ -373,9 +376,10 @@
     if(!proj.session_active_at) return '';
     var t=Date.parse(proj.session_active_at); if(isNaN(t)) return '';
     var mins=(Date.now()-t)/60000;
-    if(mins<10){ return '<div class="pres live"><span class="pdot"></span>session live'+(proj.session_last_action?' · '+esc(proj.session_last_action):'')+'</div>'; }
+    var who = proj.session_person ? esc(actorName(proj.session_person))+' · ' : '';
+    if(mins<10){ return '<div class="pres live"><span class="pdot"></span>'+who+'session live'+(proj.session_last_action?' · '+esc(proj.session_last_action):'')+'</div>'; }
     var ago = mins<60 ? Math.round(mins)+'m' : Math.round(mins/60)+'h';
-    return '<div class="pres idle"><span class="pdot"></span>session idle · last seen '+ago+' ago</div>';
+    return '<div class="pres idle"><span class="pdot"></span>'+who+'session idle · last seen '+ago+' ago</div>';
   }
   function fieldBlock(topic, st, field, label){
     var v = st[field] || '';
@@ -413,7 +417,7 @@
       + '<span class="grip" title="drag to reorder">&#8942;&#8942;</span>'
       + '<button class="stat s-'+esc(st.state)+'" title="click to change status" onclick="cycleState(\''+esc(topic)+'\',\''+esc(st.id)+'\')">'+esc(STATE_LABEL[st.state]||st.state)+'</button>'
       + '<div class="srow">'
-      +   '<div class="stask"><span class="stitle">'+esc(st.title)+'</span>'+iss+glchip+'</div>'
+      +   '<div class="stask"><span class="stitle">'+esc(st.title)+'</span>'+iss+glchip+(st.by?'<span class="sby">'+esc(actorName(st.by))+'</span>':'')+'</div>'
       +   fieldRow(topic, st, 'prompt', 'Prompt')
       +   fieldRow(topic, st, 'update', 'Update')
       +   fieldRow(topic, st, 'next', 'Next')
@@ -427,7 +431,7 @@
     if(ct.done) parts.push(ct.done+' done');
     if(ct.todo) parts.push(ct.todo+' to do');
     var live=isLive(proj);
-    var act = (live && proj.session_last_action) ? '<div class="bact">session live &middot; '+esc(proj.session_last_action)+'</div>' : '';
+    var act = (live && proj.session_last_action) ? '<div class="bact">'+(proj.session_person?esc(actorName(proj.session_person))+' &middot; ':'')+'session live &middot; '+esc(proj.session_last_action)+'</div>' : '';
     return '<div class="bcard">'
       + '<div class="bcard-top"><span class="pill '+esc(proj.status)+'">'+esc(proj.status)+'</span><span class="sess">Claude session '+(ci+1)+'</span>'+(live?'<span class="bdot live" title="session live"></span>':'')+'</div>'
       + '<div class="bname">'+esc(proj.topic||proj.name)+'</div>'
