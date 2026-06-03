@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Internal Growth — Backlog Board</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c232c; --line:#2a313c;
+    --txt:#e6edf3; --dim:#8b949e; --accent:#7c9cff;
+    --s:#3fb950; --m:#d29922; --l:#f85149;
+    --bug:#f0883e; --feat:#7c9cff; --infra:#8b949e; --core:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  header{padding:18px 22px 12px;border-bottom:1px solid var(--line);
+    display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;position:sticky;top:0;background:var(--bg);z-index:10}
+  header h1{font-size:18px;margin:0;font-weight:650}
+  header .sub{color:var(--dim);font-size:12.5px}
+  header .spacer{flex:1}
+  header button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    border-radius:7px;padding:6px 11px;font-size:12.5px;cursor:pointer}
+  header button:hover{border-color:var(--accent)}
+  .hint{padding:8px 22px;color:var(--dim);font-size:12px;border-bottom:1px solid var(--line)}
+  .board{display:flex;gap:14px;padding:16px 22px 60px;align-items:flex-start;overflow-x:auto}
+  .col{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    width:330px;min-width:330px;flex-shrink:0;display:flex;flex-direction:column;max-height:calc(100vh - 150px)}
+  .col.core{opacity:.92;border-style:dashed}
+  .col-head{padding:12px 14px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);border-radius:11px 11px 0 0}
+  .col-head .name{font-weight:650;font-size:13.5px;display:flex;align-items:center;gap:8px}
+  .col-head .dot{width:9px;height:9px;border-radius:50%}
+  .col-head .meta{color:var(--dim);font-size:11.5px;margin-top:3px}
+  .col-body{padding:9px;overflow-y:auto;flex:1;min-height:60px}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+    padding:9px 10px;margin-bottom:8px;cursor:grab;position:relative;transition:border-color .12s}
+  .card:hover{border-color:#3d4655}
+  .card.dragging{opacity:.4}
+  .card .top{display:flex;align-items:flex-start;gap:7px}
+  .card .num{color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums;min-width:16px;padding-top:1px}
+  .card .title{flex:1;font-size:13px;font-weight:550;line-height:1.35}
+  .card .eff{font-size:10px;font-weight:700;border-radius:4px;padding:1px 5px;color:#0d1117}
+  .eff.S{background:var(--s)} .eff.M{background:var(--m)} .eff.L{background:var(--l)}
+  .card .desc{color:var(--dim);font-size:12px;margin-top:6px;display:none}
+  .card.open .desc{display:block}
+  .card .src{color:#5d6675;font-size:10.5px;margin-top:5px;display:none}
+  .card.open .src{display:block}
+  .card .arch{position:absolute;top:7px;right:8px;color:#5d6675;font-size:13px;cursor:pointer;opacity:0;border:none;background:none}
+  .card:hover .arch{opacity:1}
+  .card .arch:hover{color:var(--s)}
+  .drop-line{height:2px;background:var(--accent);border-radius:2px;margin:2px 4px}
+  .archived-wrap{padding:0 22px 50px}
+  .archived-wrap h3{color:var(--dim);font-size:12px;font-weight:600;cursor:pointer;user-select:none}
+  .archived-list{display:none;flex-wrap:wrap;gap:7px;margin-top:8px}
+  .archived-list.show{display:flex}
+  .archived-list .ac{background:var(--panel);border:1px solid var(--line);border-radius:7px;
+    padding:5px 9px;font-size:12px;color:var(--dim);cursor:pointer}
+  .archived-list .ac:hover{color:var(--txt);border-color:var(--accent)}
+  .tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--dim)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Internal Growth · Backlog Board</h1>
+  <span class="sub">drag to prioritize · top = do first · order saves automatically</span>
+  <span class="spacer"></span>
+  <button id="collapseAll">Collapse details</button>
+  <button id="reset">Reset order</button>
+</header>
+<div class="hint">
+  The <b style="color:var(--core)">CORE</b> column is what the <i>other session</i> needs to run the controller for your meeting — listed here only so you see the boundary. The three background columns are this session's job: drag cards within a column to set priority, or across columns to recategorize. Click a card to see its detail. Hover a card and click ✓ to archive it once it's done or dismissed.
+</div>
+<div class="board" id="board"></div>
+<div class="archived-wrap">
+  <h3 id="archToggle">▸ Archived <span id="archCount"></span></h3>
+  <div class="archived-list" id="archList"></div>
+</div>
+
+<script>
+const COLUMNS = [
+  {id:'core',  name:'CORE — for the meeting', color:'var(--core)',  note:'other session owns this'},
+  {id:'bugs',  name:'Bug fixes',              color:'var(--bug)',   note:'background'},
+  {id:'features',name:'Additional features',  color:'var(--feat)',  note:'background'},
+  {id:'infra', name:'Infra / cleanup',        color:'var(--infra)', note:'background'},
+];
+
+// Default seed. Order here = default priority. localStorage overrides it.
+const ITEMS = [
+  // ---------- CORE ----------
+  {id:'c1',col:'core',t:'Verify the Intake live round-trip (cookie POST)',e:'S',d:'Intake Promote/Dismiss writes are deployed but never tested with a real board login. Mirrors the working task-update path, so likely fine — needs one confirmation.',s:'HANDOFF-agent-command-center'},
+  {id:'c2',col:'core',t:'Run claude setup-token so Chat goes live',e:'S',d:'macOS Chat is fully built but shows "Connect Claude" until the OAuth token is saved to ~/.config/yair-os/claude-oauth-token. One-time manual step.',s:'PLAN.md Stage 2'},
+  {id:'c3',col:'core',t:'Set ANTHROPIC_API_KEY on worker for cloud /chat',e:'S',d:'The cloud fallback /chat and /ig are deployed but inert until the API key is set as a Wrangler secret. Currently returns "not provisioned".',s:'IOS-SPEC / src/index.js'},
+  {id:'c4',col:'core',t:'Kill + re-activate sessions started before the auth fix',e:'S',d:'Pre-auth-fix sessions still 401 on every request. They show in the sidebar but cannot communicate until killed and re-activated.',s:'PROJECT.md §7'},
+
+  // ---------- BUG FIXES ----------
+  {id:'b1',col:'bugs',t:'Data race on proc/task in ClaudeChat (P0-1)',e:'S',d:'proc/task written from a global queue, read on main thread — can crash or kill the wrong process. Fix: mark ClaudeChat @MainActor.',s:'qa-report P0-1'},
+  {id:'b2',col:'bugs',t:'Force-unwrap crash in terminalWebView URL (P0-2)',e:'S',d:'URL(string:)! at line 337 crashes on a malformed port string. Called every 4s by refresh() — a bad port kills the app each cycle.',s:'qa-report P0-2'},
+  {id:'b3',col:'bugs',t:'Protect ClaudeChat.cache static dict (P0-3)',e:'S',d:'Static cache dict has no @MainActor. One off-main call corrupts memory. Add @MainActor to forSession + the cache.',s:'qa-report P0-3'},
+  {id:'b4',col:'bugs',t:'waitStable thread starvation (P0-5)',e:'M',d:'Blocks a global-pool thread up to 120s/task. Six sequential controller tasks starve the pool for 12+ min. Use a dedicated queue + shorter timeout.',s:'qa-report P0-5'},
+  {id:'b5',col:'bugs',t:'Stop button leaves "…" message stuck forever (P1-3)',e:'S',d:'Stop terminates the process but never cleans the pending "…" assistant bubble; cleanup only runs on natural exit.',s:'qa-report P1-3'},
+  {id:'b6',col:'bugs',t:'Stale ghost message after proc exits (P1-1)',e:'S',d:'Pipe readabilityHandler can fire after busy=false, producing ghost updates on a finished turn. Clear the handler before the final dispatch.',s:'qa-report P1-1'},
+  {id:'b7',col:'bugs',t:'Tool-call collapse breaks on interleaved text/tool (P1-2)',e:'M',d:'Collapse groups by adjacency, not by parent turn — mixed text+tool_use blocks render an inconsistent mix of collapsed/uncollapsed chips.',s:'qa-report P1-2'},
+  {id:'b8',col:'bugs',t:'LimitsMonitor fires 480 real Haiku calls/day (P1-5)',e:'S',d:'refresh() sends a real POST /v1/messages every 3 min just to read rate-limit headers. After Jun 15 this burns credits. Poll every 15-30 min.',s:'qa-report P1-5'},
+  {id:'b9',col:'bugs',t:'SessionInfoBar defined but never placed (P1-7)',e:'S',d:'A complete SwiftUI view exists (lines 1181-1209) but is rendered nowhere. Place it or delete it.',s:'qa-report P1-7'},
+  {id:'b10',col:'bugs',t:'Controller waitStable fires during silent tool calls (P1-8)',e:'S',d:'6s of no pane change is treated as "done" — triggers mid-read of a large file and returns garbage. Raise threshold to 10-12s or use a sentinel.',s:'qa-report P1-8'},
+  {id:'b11',col:'bugs',t:'portIsOpen blocks the main thread (P2-4)',e:'S',d:'Blocking connect() runs inside refresh() on DispatchQueue.main.async — freezes the UI on a slow network stack. Move it to the global queue.',s:'qa-report P2-4'},
+  {id:'b12',col:'bugs',t:'qaLog opens a new file handle every call — EMFILE risk (P2-8)',e:'S',d:'Each qaLog opens a fresh FileHandle. refresh() every 4s leaks descriptors until the OS open-file limit is hit. Reuse one handle.',s:'qa-report P2-8'},
+  {id:'b13',col:'bugs',t:'Briefing.refresh subprocess has no timeout (P2-6)',e:'S',d:'python3 generate.py has no termination handler. If it hangs (network/expired token), loading stays true forever and the UI is stuck.',s:'qa-report P2-6'},
+  {id:'b14',col:'bugs',t:'extractNew sentinel breaks when Claude quotes the prompt (P2-10)',e:'S',d:'range(of: prompt, .backwards) finds a quoted copy of the prompt and returns empty content. Use a unique UUID sentinel.',s:'qa-report P2-10'},
+  {id:'b15',col:'bugs',t:'Codex invocation uses deprecated --full-auto flag',e:'S',d:'codex exec --full-auto is deprecated; the CLI prepends a warning to all output, polluting the bubble. Switch to --sandbox workspace-write, strip preamble.',s:'planner/REQUESTS item 5'},
+  {id:'b16',col:'bugs',t:'relaxTrackingPrevention private API silent no-op (P2-3)',e:'S',d:'_setResourceLoadStatisticsEnabled: is private and will silently no-op on a macOS rename. Guard prevents a crash but ITP re-enables silently — add a qaLog when the guard fails.',s:'qa-report P2-3'},
+  {id:'b17',col:'bugs',t:'Query parser drops values containing encoded = (P2-5)',e:'S',d:'components(separatedBy:"=") with count!=2 drops any value with %3D. Fragile for /send and /chat. Take kv[1...].joined("=").',s:'qa-report P2-5'},
+  {id:'b18',col:'bugs',t:'CORS header missing from control-server responses (P2-7)',e:'S',d:'No Access-Control-Allow-Origin on ControlServer responses — embedded web content calling 127.0.0.1:7777 via fetch() is blocked by same-origin.',s:'qa-report P2-7'},
+  {id:'b19',col:'bugs',t:'Board JSON endpoint is open-read with wildcard CORS',e:'M',d:'/internal/yair-os.json has Access-Control-Allow-Origin:* and reads the whole Sheet (projects, tasks, sessions, intake) unauthed. Pre-existing hardening debt, now a real surface.',s:'CHANGELOG 06-02 / src line 9'},
+
+  // ---------- ADDITIONAL FEATURES ----------
+  {id:'f1',col:'features',t:'Default CHAT model Opus → Sonnet (highest cost leverage)',e:'S',d:'Every new Chat session defaults to Opus. After Jun 15 that eats the $100/mo credit budget fast. One-line change to modelPref(for:) (line 460) saves ~5x per session.',s:'qa-report P0-4 / billing §3.1'},
+  {id:'f2',col:'features',t:'Credit-exhaustion warning banners at 70/90/100%',e:'M',d:'Spend is tracked but only in a popover. Add proactive banners at 70/90% and a hard "Credit exhausted — use Terminal (free)" at 100%.',s:'billing §3.3'},
+  {id:'f3',col:'features',t:'Label sessions by billing lane (Subscription vs Credit)',e:'S',d:'No indicator separating the flat-subscription REPL lane from the metered Chat/claude -p lane. A small chip per session row makes the cost model obvious.',s:'billing §3.2'},
+  {id:'f4',col:'features',t:'Show estimated cost per model in the picker',e:'S',d:'Picker shows Opus/Sonnet/Haiku/Local but no cost. Add rough labels (~$1.50/hr, ~$0.30/hr, ~$0.03/hr, free) to prevent accidental Opus use.',s:'billing §5'},
+  {id:'f5',col:'features',t:'Usage tab with per-session cost history',e:'M',d:'The governor tracks total_cost_usd per session but never surfaces it. A Usage tab (tokens, est. cost, model per session) gives real observability.',s:'billing §3.4'},
+  {id:'f6',col:'features',t:'Plumb real per-turn cost from planner → governor',e:'S',d:'UsageGovernor reads cost from /chat if present, else 0. The planner does not return a real per-turn dollar cost yet — without it the $100 governor cannot pace.',s:'planner/REQUESTS item 1'},
+  {id:'f7',col:'features',t:'Return Claude session id from planner /chat for --resume',e:'S',d:'App passes the tmux name as session and relies on history. Real threading needs the actual --resume id returned by claude -p.',s:'planner/REQUESTS item 2'},
+  {id:'f8',col:'features',t:'SSE / token streaming for planner /chat',e:'M',d:'Long turns show a spinner until the full response returns. SSE streaming would render token-by-token, much better for local Ollama turns.',s:'planner/REQUESTS item 3'},
+  {id:'f9',col:'features',t:'Intake Step 4 — drag-reorder + merge UI',e:'M',d:'Server side is fully plumbed (updateIntake takes order, merged_into, notes); only the client UI is missing. Reorder extends the existing kbWireDnD engine.',s:'HANDOFF-cmd-center / src 1831'},
+  {id:'f10',col:'features',t:'Wire Phase 3 — Live Now strip on the Cockpit',e:'M',d:'"Working right now" renders from KB_SESSIONS via a Sessions Sheet tab. sessions_to_sheet.py exists and is hooked to snapshot.sh but the tab is empty until the cron is confirmed.',s:'HANDOFF Phase 3'},
+  {id:'f11',col:'features',t:'Open-Asks harvester + board panel',e:'M',d:'Open AskUserQuestion tool_use entries with no matching result = things Claude is waiting on. Parse transcripts → a Sheet tab → a board panel so you see where you are the bottleneck.',s:'HANDOFF Asks surfacing'},
+  {id:'f12',col:'features',t:'GitLab one-login → per-user connector + membership gate',e:'L',d:'Replace the shared board-write token: "Sign in with GitLab once" mints a per-user HMAC token and gates by group membership, so removing someone revokes access within the TTL.',s:'research/worker-spec-gitlab-oauth'},
+  {id:'f13',col:'features',t:'planner/install-local.sh for clean team installs',e:'S',d:'install-team.sh calls planner/install-local.sh if present (passing IG_PROFILE), else an inline LaunchAgent fallback. The file does not exist yet.',s:'planner/REQUESTS item 4'},
+  {id:'f14',col:'features',t:'Build the iOS native app shell (v1 scope locked)',e:'L',d:'Two-tab SwiftUI (Chat + Board WKWebView). Backend /chat + /health are live, Tailscale in scope. The Xcode target does not exist yet.',s:'IOS-MOBILE-APP-SPEC / KICKOFF'},
+  {id:'f15',col:'features',t:'Tailscale so the iPhone can reach the Mac planner',e:'S',d:'Mac planner binds to 127.0.0.1:7788. iOS needs it over Tailscale MagicDNS — prerequisite for the Mac-first fallback.',s:'IOS-SPEC prerequisites'},
+  {id:'f16',col:'features',t:'Cross-session overview on a blank/new session',e:'M',d:'A new session should preview all other sessions so you are oriented across the 19 workstreams before typing.',s:'PROJECT.md §1'},
+  {id:'f17',col:'features',t:'Drag sessions to reorder / recategorize in the sidebar',e:'M',d:'Sessions can be renamed and moved by right-click, but not dragged to reorder within or between categories.',s:'PROJECT.md §2'},
+  {id:'f18',col:'features',t:'Parallel task execution in the Controller',e:'L',d:'Controller runs tasks one at a time. Parallel execution is open — but the waitStable thread-starvation bug must be fixed first.',s:'PROJECT.md §3'},
+  {id:'f19',col:'features',t:'Drag a sidebar session into a Terminal Grid pane',e:'M',d:'Grid does 2x2 / 2x3, but sessions can only be picked from the sidebar, not dragged straight into a pane.',s:'PROJECT.md §4'},
+  {id:'f20',col:'features',t:'Keyboard pane-switch shortcuts in the Terminal Grid',e:'S',d:'⌘1–9 switch tabs but there is no shortcut to move focus between grid panes.',s:'PROJECT.md §4'},
+  {id:'f21',col:'features',t:'Session forking / branching',e:'L',d:'#1 in the feature-gap study. Clone a session at any point and continue two ways for risk-free exploration across 12+ workstreams.',s:'research/feature-gap #1'},
+  {id:'f22',col:'features',t:'Checkpoint + rewind (snapshot before each agent action)',e:'L',d:'#2 gap. Snapshot code before each autonomous action with selective restore — long runs become recoverable without git surgery.',s:'research/feature-gap #2'},
+  {id:'f23',col:'features',t:'Side chat — read-only parallel lane per session',e:'M',d:'#3 gap. A lane that reads session context but writes nothing, so you can ask/verify mid-task without derailing the agent.',s:'research/feature-gap #3'},
+  {id:'f24',col:'features',t:'Sticky scroll + pass/fail decorations in the terminal',e:'S',d:'#4 gap. Spatial awareness in long output: each command gets a pass/fail marker and the terminal auto-sticks to the bottom during active runs.',s:'research/feature-gap #4'},
+  {id:'f25',col:'features',t:'Named layout presets for the Terminal Grid',e:'M',d:'#6 gap. One-click rebuild of an 8-10 session working set after restart (which sessions in which positions).',s:'research/feature-gap #6'},
+  {id:'f26',col:'features',t:'Global hotkey / quake-mode floating overlay',e:'S',d:'#9 gap. A global hotkey drops the cockpit as a floating overlay over Figma/Docs/anything — kills the Cmd-Tab chain.',s:'research/feature-gap #9'},
+  {id:'f27',col:'features',t:'Cross-session command history + full-text search palette',e:'M',d:'#10 gap. A palette indexing all tool calls, bash commands and messages across sessions — turns the cockpit into a searchable audit trail.',s:'research/feature-gap #10'},
+  {id:'f28',col:'features',t:'Auto-QA scheduled sweep of all tabs',e:'M',d:'A scheduled qa.sh sweep flags any broken or logged-out tab without manual checking.',s:'PLAN.md Stage 3'},
+  {id:'f29',col:'features',t:'Drive in-tab workflows from Claude (Mattermost, board, PostHog)',e:'L',d:'Claude can navigate to tabs but not interact. /eval exists; needs higher-level click/fill/wait/read-table helpers for multi-step in-tab work.',s:'PLAN.md Stage 3'},
+  {id:'f30',col:'features',t:'Programmatic session dispatch (send prompt, read output)',e:'L',d:'Dispatch a prompt into a running tmux Claude session and read its output without terminal scraping — connects the command-center vision to the app.',s:'PLAN.md Stage 3'},
+  {id:'f31',col:'features',t:'PostHog team rollout — 5 members, 5 priority dashboards',e:'M',d:'The research doc names exactly which views each teammate needs and the first 5 dashboards (Key Metrics, Onboarding Funnel, Error Tracking, Retention). None built yet.',s:'research/posthog-for-the-team §4'},
+  {id:'f32',col:'features',t:'DESIGN.md v2 — Cmd-K palette, 5-tab Home, 6 rail types',e:'L',d:'The full v2 design was never built; the live board is a simpler cockpit. Unbuilt: Cmd-K palette, Today/Agents/Focus/Company/Personal tabs, all six card rails, cross-jump matrix, time scrubber, mobile IA.',s:'DESIGN.md'},
+  {id:'f33',col:'features',t:'Signed share links for scoped entity sharing',e:'M',d:'Share on an agent/task should mint a JWT-scoped link that exposes only that entity, nothing else on the board.',s:'DESIGN.md auth'},
+  {id:'f34',col:'features',t:'DESIGN.md v2 backlog (6 deferred features)',e:'L',d:'WCAG audit, Sheet audit-log time-travel, richer routines (/schedule, RemoteTrigger), pin/compare two rails (rail2= reserved), auto-sweep abandoned agents >7d, bidirectional OPEN→HANDOFF write-back.',s:'DESIGN.md v2 backlog'},
+  {id:'f35',col:'features',t:'Cost forecasting per project / skill',e:'L',d:'Project cards show a projected spend trajectory from the current agent burn rate.',s:'DESIGN.md v2 / billing §4.2'},
+  {id:'f36',col:'features',t:'Webhook — commits auto-advance / close tasks',e:'M',d:'When a commit lands or an MR merges, the matching task updates automatically instead of a manual drag.',s:'DESIGN.md v2 backlog'},
+  {id:'f37',col:'features',t:'Per-step model field for gg-board-agent',e:'S',d:'Each board step run via claude -p burns credits. Add a model field to the step schema so classification/status steps use Haiku and only code steps use Sonnet/Opus.',s:'billing §4.2'},
+
+  // ---------- INFRA / CLEANUP ----------
+  {id:'i1',col:'infra',t:'Extract duplicated prettyModel helper (P2-1)',e:'S',d:'Identical 6-line function copy-pasted in UsageButton and SessionInfoBar. Extract to one top-level prettyModelName(_:).',s:'qa-report P2-1'},
+  {id:'i2',col:'infra',t:'Resolve canChat vs hasToken naming / dead branch (P2-2)',e:'S',d:'Code only has hasToken; verify no dead branch depends on a removed canChat guard, then clean up or document.',s:'qa-report P2-2'},
+  {id:'i3',col:'infra',t:'Document appToken global / crash-dump risk (P2-9)',e:'S',d:'appToken is a file-scope global, so it appears in any crash dump. Risk is low (loopback) but worth a comment so future code does not widen it.',s:'qa-report P2-9'},
+  {id:'i4',col:'infra',t:'Add .claude/settings.json + .mcp.json to controlled projects',e:'S',d:'The research doc gives exact JSON for both plus recommended per-session launch flags. None created in any project repo yet.',s:'research/permissions-and-connectors'},
+  {id:'i5',col:'infra',t:'Confirm google-sheets MCP auth end-to-end',e:'S',d:'MCP shows Connected but the health check only verifies the server starts, not that the service-account credential resolves a real Sheet read.',s:'research/permissions-and-connectors'},
+  {id:'i6',col:'infra',t:'Make planner/install-local.sh the canonical installer',e:'S',d:'install-team.sh always falls back to the inline LaunchAgent install. Providing the script makes the planner daemon install canonical and idempotent.',s:'planner/REQUESTS item 4'},
+  {id:'i7',col:'infra',t:'Stop leaking upstream error bodies from igChat',e:'S',d:'igChat returns raw API error text (up to 500 chars) in its error field, exposing Anthropic/OpenAI internal messages. Known deferred hardening.',s:'CHANGELOG 06-02'},
+  {id:'i8',col:'infra',t:'Roadmap board shows testing-labeled issues in phase bucket',e:'S',d:'The architecture roadmap tab displays GitLab "in testing" issues inside a phase bucket — wrong state. Pre-existing, deferred from 06-02.',s:'CHANGELOG 06-02'},
+  {id:'i9',col:'infra',t:'Verify Max 5x agent-credit amount vs Anthropic docs',e:'S',d:'The governor assumes the Max 5x pool is $100/mo; the billing video skips the real number. Confirm at console.anthropic.com before treating it as a hard cap.',s:'billing Corrections'},
+  {id:'i10',col:'infra',t:'Full QA pass / checklist per desktop surface',e:'M',d:'No automated control-API smoke test exists across Claude Sessions, Terminal Grid, Chat, Controller, Broadcast.',s:'PROJECT.md §7'},
+  {id:'i11',col:'infra',t:'Populate Yair’s personal "My Board" tab',e:'S',d:'my-board.json / my-board-update endpoints exist and are Yair-gated, but the MyBoard Sheet tab has no personal workstreams yet.',s:'src/index.js 193-226'},
+  {id:'i12',col:'infra',t:'Delete dead flat-mirror code in gg-cron-worker',e:'S',d:'zoom-8 helpers + include_closed from the old Team-view approach are superseded by the team-board JSON. Harmless but dead.',s:'CHANGELOG 06-02'},
+  {id:'i13',col:'infra',t:'Make sessions_to_sheet.py run reliably in the 30-min cron',e:'S',d:'Script is hooked into snapshot.sh but the Cockpit shows "No sessions reported yet" — the Sessions tab is empty. Confirm the cron path writes the tab.',s:'src/index.js 1608'},
+  {id:'i14',col:'infra',t:'Confirm IG_TOKEN is set on worker and known to the iOS project',e:'S',d:'iOS app and worker both expect the same shared IG_TOKEN secret; unclear if wrangler secret put IG_TOKEN was actually run and the value recorded.',s:'IOS-SPEC prerequisites'},
+  {id:'i15',col:'infra',t:'Gate auto-mirror commits so they stop polluting git log',e:'S',d:'29 of the last 40 worker commits are "auto-mirror:" from a watcher. git log --oneline is useless for tracking real changes. Gate to only run on real source changes.',s:'git log'},
+  {id:'i16',col:'infra',t:'Surface session_person attribution on the board UI',e:'S',d:'The worker records session_person (who moved a step) and by (who wrote) on every op, but neither is shown anywhere on the team-projects page.',s:'src/index.js 1028+'},
+];
+
+const LS_KEY = 'ig-backlog-board-v1';
+function load(){ try{return JSON.parse(localStorage.getItem(LS_KEY))||{}}catch(e){return {}} }
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+// state: {order:{colId:[ids]}, archived:[ids], open:{id:true}}
+let state = load();
+state.order ||= {};
+state.archived ||= [];
+state.open ||= {};
+
+function model(){
+  // Build per-column id lists, honoring saved order, appending any new defaults.
+  const byCol = {}; COLUMNS.forEach(c=>byCol[c.id]=[]);
+  const known = new Set();
+  COLUMNS.forEach(c=>{
+    (state.order[c.id]||[]).forEach(id=>{
+      const it = ITEMS.find(x=>x.id===id);
+      if(it && !state.archived.includes(id)){ byCol[c.id].push(id); known.add(id); }
+    });
+  });
+  // append defaults not yet placed
+  ITEMS.forEach(it=>{
+    if(known.has(it.id)||state.archived.includes(it.id)) return;
+    byCol[it.col] ? byCol[it.col].push(it.id) : (byCol[it.col]=[it.id]);
+    known.add(it.id);
+  });
+  return byCol;
+}
+
+function persistFromDom(){
+  state.order = {};
+  document.querySelectorAll('.col').forEach(col=>{
+    const cid = col.dataset.col;
+    state.order[cid] = [...col.querySelectorAll('.card')].map(c=>c.dataset.id);
+  });
+  save();
+}
+
+let dragId = null;
+
+function render(){
+  const board = document.getElementById('board');
+  board.innerHTML='';
+  const byCol = model();
+  COLUMNS.forEach(c=>{
+    const col = document.createElement('div');
+    col.className = 'col'+(c.id==='core'?' core':'');
+    col.dataset.col = c.id;
+    const ids = byCol[c.id]||[];
+    col.innerHTML = `<div class="col-head">
+        <div class="name"><span class="dot" style="background:${c.color}"></span>${c.name}</div>
+        <div class="meta">${ids.length} item${ids.length===1?'':'s'} · ${c.note}</div>
+      </div><div class="col-body"></div>`;
+    const body = col.querySelector('.col-body');
+    ids.forEach((id,idx)=>{
+      const it = ITEMS.find(x=>x.id===id); if(!it) return;
+      const card = document.createElement('div');
+      card.className='card'+(state.open[id]?' open':'');
+      card.draggable=true; card.dataset.id=id;
+      card.innerHTML = `
+        <button class="arch" title="Archive (done / dismissed)">✓</button>
+        <div class="top">
+          <span class="num">${idx+1}</span>
+          <span class="title">${esc(it.t)}</span>
+          <span class="eff ${it.e}">${it.e}</span>
+        </div>
+        <div class="desc">${esc(it.d)}</div>
+        <div class="src"><span class="tag">source</span> ${esc(it.s)}</div>`;
+      // expand toggle (ignore clicks on arch + during drag)
+      card.addEventListener('click',e=>{
+        if(e.target.classList.contains('arch')) return;
+        state.open[id]=!state.open[id]; save(); card.classList.toggle('open');
+      });
+      card.querySelector('.arch').addEventListener('click',e=>{
+        e.stopPropagation();
+        if(!state.archived.includes(id)) state.archived.push(id);
+        persistFromDom(); render(); renderArchived();
+      });
+      card.addEventListener('dragstart',e=>{ dragId=id; card.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+      card.addEventListener('dragend',()=>{ dragId=null; card.classList.remove('dragging'); document.querySelectorAll('.drop-line').forEach(d=>d.remove()); });
+      body.appendChild(card);
+    });
+    body.addEventListener('dragover',e=>{
+      e.preventDefault();
+      document.querySelectorAll('.drop-line').forEach(d=>d.remove());
+      const after = cardAfter(body, e.clientY);
+      const line = document.createElement('div'); line.className='drop-line';
+      if(after==null) body.appendChild(line); else body.insertBefore(line, after);
+    });
+    body.addEventListener('drop',e=>{
+      e.preventDefault();
+      const dragged = document.querySelector(`.card[data-id="${dragId}"]`);
+      if(!dragged) return;
+      const after = cardAfter(body, e.clientY);
+      if(after==null) body.appendChild(dragged); else body.insertBefore(dragged, after);
+      document.querySelectorAll('.drop-line').forEach(d=>d.remove());
+      persistFromDom(); render();
+    });
+    board.appendChild(col);
+  });
+}
+
+function cardAfter(body, y){
+  const cards=[...body.querySelectorAll('.card:not(.dragging)')];
+  let res=null, closest=-Infinity;
+  for(const c of cards){
+    const box=c.getBoundingClientRect();
+    const off=y-box.top-box.height/2;
+    if(off<0 && off>closest){ closest=off; res=c; }
+  }
+  return res;
+}
+
+function renderArchived(){
+  const wrap=document.getElementById('archList');
+  const cnt=document.getElementById('archCount');
+  cnt.textContent = state.archived.length?`(${state.archived.length})`:'';
+  wrap.innerHTML='';
+  state.archived.forEach(id=>{
+    const it=ITEMS.find(x=>x.id===id); if(!it) return;
+    const el=document.createElement('div'); el.className='ac';
+    el.textContent='↩ '+it.t;
+    el.title='Restore to its column';
+    el.addEventListener('click',()=>{
+      state.archived = state.archived.filter(x=>x!==id);
+      save(); render(); renderArchived();
+    });
+    wrap.appendChild(el);
+  });
+}
+
+function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+document.getElementById('reset').addEventListener('click',()=>{
+  if(confirm('Reset to the default order and un-archive everything?')){
+    state={order:{},archived:[],open:{}}; save(); render(); renderArchived();
+  }
+});
+document.getElementById('collapseAll').addEventListener('click',()=>{
+  state.open={}; save(); render();
+});
+document.getElementById('archToggle').addEventListener('click',()=>{
+  const l=document.getElementById('archList'); l.classList.toggle('show');
+  const t=document.getElementById('archToggle');
+  t.firstChild.textContent = l.classList.contains('show')?'▾ Archived ':'▸ Archived ';
+});
+
+render(); renderArchived();
+</script>
+</body>
+</html>
