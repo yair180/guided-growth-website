@@ -118,8 +118,8 @@
     <section class="step">
       <span class="kicker explain">The work</span>
       <h1>What we're all building right now</h1>
-      <p class="one">One card per person. Each line is a Claude session on one workstream. Green dots are active.</p>
-      <div class="lanes">
+      <p class="one">One card per person. Each line is a Claude session on one workstream. Green dots are active. This pulls live from the board.</p>
+      <div class="lanes" id="lanes">
         <div class="lane"><div class="who">Yair</div><div class="role">Direction + board</div>
           <div class="b on">Board maintainer</div></div>
         <div class="lane"><div class="who">Yonas</div><div class="role">Voice backend</div>
@@ -132,6 +132,33 @@
           <div class="b on">Branching + CI</div><div class="b on">Release + Android</div></div>
       </div>
       <div class="btnrow"><a class="lbtn" href="/team-projects/" target="_blank">Open the live board <span class="ar">→</span></a></div>
+    </section>
+
+    <!-- FUTURE -->
+    <section class="step">
+      <span class="kicker explain">The future</span>
+      <h1>Where this is going</h1>
+      <p class="one">Same product, three horizons. What we ship now sets up the rest.</p>
+      <div class="pools">
+        <div class="pm free"><div class="h">Now</div><div class="m">founding launch</div><div class="x">Voice, onboarding, and QA solid enough for the first 50 users.</div></div>
+        <div class="pm credit"><div class="h">Next</div><div class="m">depth</div><div class="x">Full voice backbone, multi-coach, async reflection, notifications.</div></div>
+        <div class="pm api"><div class="h">Later</div><div class="m">the vision</div><div class="x">A behavioral operating system: personalization, web and mobile at parity.</div></div>
+      </div>
+    </section>
+
+    <!-- HOW YOU WORK -->
+    <section class="step">
+      <span class="kicker explain">Your job now</span>
+      <h1>You direct, Claude builds, you verify</h1>
+      <p class="one">The shift: you are the director and the QA, not the one typing every line.</p>
+      <div class="card">
+        <ul class="ck">
+          <li>Run <b>3 to 4 Claude sessions</b> at once, one per bucket</li>
+          <li>Per step: <b>write the requirement</b>, then hand the build to Claude</li>
+          <li><b>Verify</b> it on device or in Supabase before you close it</li>
+          <li>The board is your queue, GitLab is the truth, Mattermost is for blockers</li>
+        </ul>
+      </div>
     </section>
 
     <!-- 3 $100 RULE -->
@@ -251,6 +278,18 @@
     sec.querySelectorAll('.tabbody').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === k); });
   }
   document.addEventListener('keydown', function (e) { if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); });
+  function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  (function liveLanes(){
+    var el = document.getElementById('lanes'); if (!el) return;
+    var roles = {Yair:'Direction + board', Yonas:'Voice backend', Mint:'AI layer', Timothy:'Design + QA', Alejandro:'Infra / DevOps'};
+    fetch('/internal/yair-os/team-board.json').then(function(r){return r.json();}).then(function(d){
+      if (!d || !d.people || !d.people.length) return;
+      el.innerHTML = d.people.map(function(p){
+        var bk = (p.projects||[]).map(function(b){ return '<div class="b'+(b.status==='active'?' on':'')+'">'+esc(b.name)+'</div>'; }).join('');
+        return '<div class="lane"><div class="who">'+esc(p.person)+'</div><div class="role">'+esc(roles[p.person]||'')+'</div>'+bk+'</div>';
+      }).join('');
+    }).catch(function(){});
+  })();
   show(0);
 </script>
 </body>
