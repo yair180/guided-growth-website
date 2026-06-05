@@ -256,10 +256,9 @@ const COMPETITORS = [
     { key: 'jomo',       name: 'Jomo',       domain: 'jomo.so' },
   ]},
   { cat: 'Focus & deep work', tier: 'advanced', apps: [
-    { key: 'forest',        name: 'Forest',        domain: 'forestapp.cc' },
-    { key: 'insight_timer', name: 'Insight Timer', domain: 'insighttimer.com' },
-    { key: 'serene',        name: 'Serene',        domain: 'sereneapp.com' },
-    { key: 'elevate',       name: 'Elevate',       domain: 'elevateapp.com' },
+    { key: 'forest',  name: 'Forest',  domain: 'forestapp.cc' },
+    { key: 'serene',  name: 'Serene',  domain: 'sereneapp.com' },
+    { key: 'elevate', name: 'Elevate', domain: 'elevateapp.com' },
   ]},
   { cat: 'Sleep & recovery', tier: 'light', apps: [
     { key: 'sleep_cycle', name: 'Sleep Cycle', domain: 'sleepcycle.com' },
@@ -267,6 +266,15 @@ const COMPETITORS = [
     { key: 'oura',        name: 'Oura',        domain: 'ouraring.com' },
     { key: 'whoop',       name: 'WHOOP',       domain: 'whoop.com' },
     { key: 'breathwrk',   name: 'Breathwrk',   domain: 'breathwrk.com' },
+  ]},
+  // Adjacent (not in the formal scan, but relevant): meditation & mindfulness
+  { cat: 'Meditation & mindfulness', tier: 'light', apps: [
+    { key: 'calm',          name: 'Calm',                   domain: 'calm.com' },
+    { key: 'headspace',     name: 'Headspace',              domain: 'headspace.com' },
+    { key: 'waking_up',     name: 'Waking Up (Sam Harris)', domain: 'wakingup.com' },
+    { key: 'insight_timer', name: 'Insight Timer',          domain: 'insighttimer.com' },
+    { key: 'ten_percent',   name: 'Ten Percent Happier',    domain: 'tenpercent.com' },
+    { key: 'balance',       name: 'Balance',                domain: 'balanceapp.com' },
   ]},
   { cat: 'Nutrition', tier: 'light', apps: [
     { key: 'myfitnesspal', name: 'MyFitnessPal', domain: 'myfitnesspal.com' },
