@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../styles.css" />
-  <link rel="stylesheet" href="founding.css?v=5" />
+  <link rel="stylesheet" href="founding.css?v=6" />
   <script>
     // Public config. Anon key is safe to expose — Row Level Security on
     // `founding_signups` allows INSERT only from the anon role, and reads
@@ -92,7 +92,11 @@
             <input class="input" id="f-name" name="first_name" type="text" autocomplete="given-name" placeholder="Alex" required />
             <label class="fstep__label" for="f-email">Email</label>
             <input class="input" id="f-email" name="email" type="email" autocomplete="email" placeholder="your@email.com" required />
-            <p class="fnd-privacy">🔒 First name only. We never ask your last name, and your answers are kept anonymous.</p>
+            <p class="fstep__subhint">You will get access through TestFlight on iPhone, or Google Play on Android. Please use the email on your Apple ID or your Google account, so your invite reaches you.</p>
+            <div class="fnd-privacy">
+              <span class="fnd-privacy__icon">🔒</span>
+              <span><strong>We are a privacy-first company.</strong> First name only, never your last name. Your email is used only to send your access, and your answers are always anonymized.</span>
+            </div>
             <p class="fstep__error" data-error hidden></p>
           </div>
 
@@ -238,6 +242,6 @@
     <span class="toast__msg"></span>
   </div>
 
-  <script src="founding.js?v=4"></script>
+  <script src="founding.js?v=6"></script>
 </body>
 </html>

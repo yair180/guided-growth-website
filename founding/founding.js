@@ -505,10 +505,9 @@ async function loadSpots() {
 function paintSpots(remaining) {
   if (Number.isNaN(remaining)) return;
   const nav = document.getElementById('spots-nav');
-  const eyebrow = document.getElementById('spots-eyebrow');
-  const label = `${remaining} of 50 spots left`;
-  nav.textContent = label; nav.hidden = false;
-  eyebrow.textContent = `Founding Users · ${label}`;
+  if (!nav) return;
+  nav.textContent = `${remaining} spots left`;
+  nav.hidden = false;
 }
 
 // ---- Overflow waitlist (cap reached) ----

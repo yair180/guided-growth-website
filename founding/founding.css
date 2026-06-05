@@ -212,13 +212,30 @@
 .ctog.is-on { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
 .ctog[data-kind="paid"].is-on { background: var(--color-teal); border-color: var(--color-teal); }
 
-/* ---- Privacy reassurance line ---- */
-.fnd-privacy {
-  margin-top: var(--space-4);
+/* ---- Email delivery sub-hint ---- */
+.fstep__subhint {
+  margin-top: var(--space-3);
   font-size: 13px;
   color: var(--color-ink-faint);
   line-height: 1.5;
 }
+
+/* ---- Privacy callout (prominent) ---- */
+.fnd-privacy {
+  margin-top: var(--space-5);
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-accent-soft);
+  border: 1px solid rgba(19, 91, 236, 0.25);
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-ink);
+}
+.fnd-privacy__icon { font-size: 18px; line-height: 1.4; flex-shrink: 0; }
+.fnd-privacy strong { color: var(--color-accent-dark); font-weight: 800; }
 
 /* ---- Textarea (Laurel cost question) ---- */
 .fnd-textarea {
