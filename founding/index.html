@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../styles.css" />
-  <link rel="stylesheet" href="founding.css?v=6" />
+  <link rel="stylesheet" href="founding.css?v=7" />
   <script>
     // Public config. Anon key is safe to expose — Row Level Security on
     // `founding_signups` allows INSERT only from the anon role, and reads
@@ -87,9 +87,11 @@
           <!-- STEP 1: name + email -->
           <div class="fstep is-active" data-step="0">
             <h3 class="fstep__title">First, who are we welcoming?</h3>
-            <p class="fstep__hint">This is how we send your founding invite, and how your coach greets you.</p>
+            <p class="fstep__hint">Your full name keeps the 50 spots for real people, and your first name is how your coach greets you.</p>
             <label class="fstep__label" for="f-name">First name</label>
             <input class="input" id="f-name" name="first_name" type="text" autocomplete="given-name" placeholder="Alex" required />
+            <label class="fstep__label" for="f-last">Last name</label>
+            <input class="input" id="f-last" name="last_name" type="text" autocomplete="family-name" placeholder="Rivera" required />
             <label class="fstep__label" for="f-email">Email</label>
             <input class="input" id="f-email" name="email" type="email" autocomplete="email" placeholder="your@email.com" required />
             <p class="fstep__subhint">You will get access through TestFlight on iPhone, or Google Play on Android. Please use the email on your Apple ID or your Google account, so your invite reaches you.</p>
@@ -242,6 +244,6 @@
     <span class="toast__msg"></span>
   </div>
 
-  <script src="founding.js?v=6"></script>
+  <script src="founding.js?v=7"></script>
 </body>
 </html>

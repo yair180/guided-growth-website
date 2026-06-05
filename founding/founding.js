@@ -34,6 +34,7 @@ function showToast(msg) {
 // ==========================================================
 const state = {
   first_name: '',
+  last_name: '',
   email: '',
   heard_from: '',
   referred_by_name: '',
@@ -67,7 +68,7 @@ function isValidAge(v) {
 }
 
 const REQUIRED = {
-  0: () => state.first_name.trim() && isValidEmail(state.email.trim()),
+  0: () => state.first_name.trim() && state.last_name.trim() && isValidEmail(state.email.trim()),
   1: () => !!state.heard_from
         && (state.heard_from !== 'friend' || !!state.referred_by_name.trim())
         && (state.heard_from !== 'other'  || !!state.heard_from_other.trim()),
@@ -76,7 +77,7 @@ const REQUIRED = {
   7: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
-  0: 'Please add your name and a valid email.',
+  0: 'Please add your first and last name and a valid email.',
   1: () => state.heard_from === 'friend' ? 'Add your friend’s name so we can thank them.'
         : state.heard_from === 'other'  ? 'Tell us where you heard about us.'
         : 'Pick one so we know where you came from.',
@@ -123,6 +124,7 @@ btnNext.addEventListener('click', () => {
   // pull free-text values just before validating step 0
   if (current === 0) {
     state.first_name = document.getElementById('f-name').value;
+    state.last_name = document.getElementById('f-last').value;
     state.email = document.getElementById('f-email').value;
   }
   if (!validateStep(current)) return;
@@ -139,6 +141,7 @@ function scrollCard() {
 
 // keep state in sync as the user types
 document.getElementById('f-name').addEventListener('input', e => { state.first_name = e.target.value; clearError(0); });
+document.getElementById('f-last').addEventListener('input', e => { state.last_name = e.target.value; clearError(0); });
 document.getElementById('f-email').addEventListener('input', e => { state.email = e.target.value; clearError(0); });
 
 // ==========================================================
@@ -402,6 +405,7 @@ function buildPayload() {
   return {
     email:            state.email.trim().toLowerCase(),
     first_name:       state.first_name.trim(),
+    last_name:        state.last_name.trim(),
     heard_from:       state.heard_from || null,
     referred_by_name: (state.heard_from === 'friend' && state.referred_by_name.trim()) ? state.referred_by_name.trim() : null,
     heard_from_other: (state.heard_from === 'other' && state.heard_from_other.trim()) ? state.heard_from_other.trim() : null,
@@ -450,6 +454,7 @@ async function submitFounding(payload) {
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   state.first_name = document.getElementById('f-name').value;
+  state.last_name = document.getElementById('f-last').value;
   state.email = document.getElementById('f-email').value;
 
   // validate every required step before sending

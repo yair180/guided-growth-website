@@ -13,6 +13,7 @@ create table if not exists public.founding_signups (
   -- Identity + bridge key to the app
   email           text not null unique,
   first_name      text,
+  last_name       text,
 
   -- Attribution (replaces the in-app referral field for founding users)
   heard_from       text,        -- founder_invite | friend | webinar | other
