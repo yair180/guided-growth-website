@@ -39,9 +39,8 @@ const state = {
   referred_by_name: '',
   heard_from_other: '',
   track_level: '',
-  apps_used: [],
+  apps_matrix: {},   // { appKey: { used: bool, paid: bool } }
   apps_other: '',
-  pays_for_apps: '',
   age: '',
   gender: '',
   baseline_score: 5,
@@ -69,8 +68,8 @@ const REQUIRED = {
         && (state.heard_from !== 'friend' || !!state.referred_by_name.trim())
         && (state.heard_from !== 'other'  || !!state.heard_from_other.trim()),
   2: () => !!state.track_level,
-  5: () => isValidAge(state.age),
-  7: () => state.two_week_commit
+  4: () => isValidAge(state.age),
+  6: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
   0: 'Please add your name and a valid email.',
@@ -78,8 +77,8 @@ const REQUIRED_MSG = {
         : state.heard_from === 'other'  ? 'Tell us where you heard about us.'
         : 'Pick one so we know where you came from.',
   2: 'Pick one so we can start you in the right place.',
-  5: 'Please enter your age.',
-  7: 'Check the box to claim your founding spot.'
+  4: 'Please enter your age.',
+  6: 'Check the box to claim your founding spot.'
 };
 
 // ==========================================================
@@ -189,7 +188,7 @@ form.querySelectorAll('.chips').forEach(group => {
 document.getElementById('f-apps-other').addEventListener('input', e => { state.apps_other = e.target.value; });
 document.getElementById('f-referred-by').addEventListener('input', e => { state.referred_by_name = e.target.value; clearError(1); });
 document.getElementById('f-heard-other').addEventListener('input', e => { state.heard_from_other = e.target.value; clearError(1); });
-document.getElementById('f-age').addEventListener('input', e => { state.age = e.target.value; clearError(5); });
+document.getElementById('f-age').addEventListener('input', e => { state.age = e.target.value; clearError(4); });
 
 // ==========================================================
 //   Baseline slider
@@ -213,12 +212,113 @@ document.getElementById('f-commit').addEventListener('change', e => {
 });
 
 // ==========================================================
+//   Competitor matrix (used / paid per app) — the research page
+//   Edit COMPETITORS freely: add/remove categories or apps.
+//   `tier: 'advanced'` apps push the user toward the advanced program.
+//   Logos load from Clearbit by domain, with a favicon fallback.
+// ==========================================================
+const COMPETITORS = [
+  { cat: 'Meditation & calm', tier: 'light', apps: [
+    { key: 'headspace',     name: 'Headspace',     domain: 'headspace.com' },
+    { key: 'calm',          name: 'Calm',          domain: 'calm.com' },
+    { key: 'insight_timer', name: 'Insight Timer', domain: 'insighttimer.com' },
+  ]},
+  { cat: 'Habit tracking', tier: 'advanced', apps: [
+    { key: 'habitica',    name: 'Habitica',    domain: 'habitica.com' },
+    { key: 'streaks',     name: 'Streaks',     domain: 'streaksapp.com' },
+    { key: 'way_of_life', name: 'Way of Life', domain: 'wayoflifeapp.com' },
+  ]},
+  { cat: 'Journaling & reflection', tier: 'advanced', apps: [
+    { key: 'day_one',   name: 'Day One',   domain: 'dayoneapp.com' },
+    { key: 'reflectly', name: 'Reflectly', domain: 'reflectly.app' },
+    { key: 'stoic',     name: 'Stoic',     domain: 'getstoic.com' },
+  ]},
+  { cat: 'AI coaching & companions', tier: 'advanced', apps: [
+    { key: 'rosebud', name: 'Rosebud', domain: 'rosebud.app' },
+    { key: 'wysa',    name: 'Wysa',    domain: 'wysa.com' },
+    { key: 'replika', name: 'Replika', domain: 'replika.com' },
+  ]},
+  { cat: 'Mood & self-care', tier: 'light', apps: [
+    { key: 'daylio',  name: 'Daylio',  domain: 'daylio.net' },
+    { key: 'finch',   name: 'Finch',   domain: 'finchcare.com' },
+    { key: 'moodfit', name: 'Moodfit', domain: 'getmoodfit.com' },
+  ]},
+  { cat: 'Therapy & mental health', tier: 'advanced', apps: [
+    { key: 'betterhelp', name: 'BetterHelp', domain: 'betterhelp.com' },
+    { key: 'talkspace',  name: 'Talkspace',  domain: 'talkspace.com' },
+  ]},
+  { cat: 'Sleep', tier: 'light', apps: [
+    { key: 'sleep_cycle', name: 'Sleep Cycle', domain: 'sleepcycle.com' },
+    { key: 'rise',        name: 'RISE',        domain: 'risescience.com' },
+  ]},
+  { cat: 'Focus & productivity', tier: 'advanced', apps: [
+    { key: 'notion',  name: 'Notion',  domain: 'notion.so' },
+    { key: 'todoist', name: 'Todoist', domain: 'todoist.com' },
+    { key: 'forest',  name: 'Forest',  domain: 'forestapp.cc' },
+  ]},
+  { cat: 'Fitness & body', tier: 'light', apps: [
+    { key: 'strava',       name: 'Strava',       domain: 'strava.com' },
+    { key: 'whoop',        name: 'Whoop',        domain: 'whoop.com' },
+    { key: 'myfitnesspal', name: 'MyFitnessPal', domain: 'myfitnesspal.com' },
+  ]},
+  { cat: 'Behavioral coaching', tier: 'advanced', apps: [
+    { key: 'noom', name: 'Noom', domain: 'noom.com' },
+  ]},
+];
+
+const APP_TIER = {};
+COMPETITORS.forEach(c => c.apps.forEach(a => { APP_TIER[a.key] = c.tier; }));
+
+function logoUrl(domain) { return `https://logo.clearbit.com/${domain}`; }
+
+function renderCompetitorGrid() {
+  const grid = document.getElementById('competitor-grid');
+  if (!grid) return;
+  COMPETITORS.forEach(c => {
+    const sec = document.createElement('div');
+    sec.className = 'cgrid__cat';
+    const h = document.createElement('div');
+    h.className = 'cgrid__cat-label';
+    h.textContent = c.cat;
+    sec.appendChild(h);
+    c.apps.forEach(a => {
+      const row = document.createElement('div');
+      row.className = 'capp';
+      row.innerHTML =
+        `<img class="capp__logo" src="${logoUrl(a.domain)}" alt="" loading="lazy" ` +
+        `onerror="this.onerror=null;this.src='https://www.google.com/s2/favicons?domain=${a.domain}&sz=64';this.classList.add('capp__logo--fallback')" />` +
+        `<span class="capp__name">${a.name}</span>` +
+        `<span class="capp__toggles">` +
+        `<button type="button" class="ctog" data-app="${a.key}" data-kind="used">Used</button>` +
+        `<button type="button" class="ctog" data-app="${a.key}" data-kind="paid">Paid</button>` +
+        `</span>`;
+      sec.appendChild(row);
+    });
+    grid.appendChild(sec);
+  });
+
+  grid.addEventListener('click', e => {
+    const btn = e.target.closest('.ctog');
+    if (!btn) return;
+    const key = btn.dataset.app, kind = btn.dataset.kind;
+    const rec = state.apps_matrix[key] || { used: false, paid: false };
+    rec[kind] = !rec[kind];
+    if (kind === 'paid' && rec.paid) rec.used = true;   // paid implies used
+    if (kind === 'used' && !rec.used) rec.paid = false; // un-used clears paid
+    state.apps_matrix[key] = rec;
+    grid.querySelectorAll(`.ctog[data-app="${key}"]`).forEach(b => {
+      b.classList.toggle('is-on', !!rec[b.dataset.kind]);
+    });
+  });
+}
+
+// ==========================================================
 //   Derived path (beginner vs advanced) — re-derivable from raw
 // ==========================================================
 function derivePath() {
-  const advancedApps = ['notion', 'habit_tracker', 'journaling', 'coaching'];
   const tracks = state.track_level === 'casual' || state.track_level === 'serious';
-  const usesAdvancedApp = (state.apps_used || []).some(a => advancedApps.includes(a));
+  const usesAdvancedApp = Object.entries(state.apps_matrix)
+    .some(([k, v]) => v.used && APP_TIER[k] === 'advanced');
   return (tracks || usesAdvancedApp) ? 'advanced' : 'beginner';
 }
 
@@ -226,7 +326,9 @@ function derivePath() {
 //   Submit
 // ==========================================================
 function buildPayload() {
-  const apps = [...(state.apps_used || [])];
+  const matrix = state.apps_matrix || {};
+  const usedKeys  = Object.entries(matrix).filter(([, v]) => v.used).map(([k]) => k);
+  const paidCount = Object.values(matrix).filter(v => v.paid).length;
   return {
     email:            state.email.trim().toLowerCase(),
     first_name:       state.first_name.trim(),
@@ -234,15 +336,16 @@ function buildPayload() {
     referred_by_name: (state.heard_from === 'friend' && state.referred_by_name.trim()) ? state.referred_by_name.trim() : null,
     heard_from_other: (state.heard_from === 'other' && state.heard_from_other.trim()) ? state.heard_from_other.trim() : null,
     track_level:      state.track_level || null,
-    apps_used:        apps.length ? apps : null,
-    apps_other:       (apps.includes('other') && state.apps_other.trim()) ? state.apps_other.trim() : null,
-    pays_for_apps:    state.pays_for_apps || null,
+    apps_used:        usedKeys.length ? usedKeys : null,                 // flat list of used apps (easy querying)
+    apps_other:       state.apps_other.trim() || null,
+    pays_for_apps:    paidCount === 0 ? 'none' : paidCount === 1 ? 'one' : 'several',
     age:              isValidAge(state.age) ? parseInt(state.age, 10) : null,
     gender:           state.gender || null,
     baseline_score:  state.baseline_skipped ? null : state.baseline_score,
     derived_path:    derivePath(),
     two_week_commit: state.two_week_commit,
     commit_ts:       state.two_week_commit ? new Date().toISOString() : null,
+    research:        { apps_matrix: matrix },                            // full per-app used+paid (+ future Laurel Qs)
     referrer:        document.referrer || null,
     user_agent:      navigator.userAgent.slice(0, 500)
   };
@@ -358,5 +461,6 @@ overflow?.addEventListener('submit', async (e) => {
 });
 
 // ---- init ----
+renderCompetitorGrid();
 render();
 loadSpots();

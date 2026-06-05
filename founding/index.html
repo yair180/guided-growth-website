@@ -131,36 +131,16 @@
             <p class="fstep__error" data-error hidden></p>
           </div>
 
-          <!-- STEP 4: which apps -->
+          <!-- STEP 4: competitor matrix (used / paid per app) -->
           <div class="fstep" data-step="3">
-            <h3 class="fstep__title">Which apps or tools do you use for this?</h3>
-            <p class="fstep__hint">Pick any that apply. Helps us tailor your start.</p>
-            <div class="chips" data-multi data-field="apps_used">
-              <button type="button" class="chip" data-value="none">None</button>
-              <button type="button" class="chip" data-value="notes">Notes app</button>
-              <button type="button" class="chip" data-value="notion">Notion</button>
-              <button type="button" class="chip" data-value="apple_health">Apple Health</button>
-              <button type="button" class="chip" data-value="habit_tracker">A habit tracker</button>
-              <button type="button" class="chip" data-value="journaling">A journaling app</button>
-              <button type="button" class="chip" data-value="meditation">A meditation app</button>
-              <button type="button" class="chip" data-value="coaching">A coaching or therapy app</button>
-              <button type="button" class="chip" data-value="other">Other</button>
-            </div>
-            <input class="input fnd-other" id="f-apps-other" name="apps_other" type="text" placeholder="Which one?" hidden />
+            <h3 class="fstep__title">Which of these have you used before?</h3>
+            <p class="fstep__hint">Tap <strong>Used</strong> for any you have tried, and <strong>Paid</strong> if you ever paid for it. Skip anything you do not recognize.</p>
+            <div id="competitor-grid" class="cgrid"></div>
+            <input class="input fnd-other" id="f-apps-other" name="apps_other" type="text" placeholder="Anything we missed? (optional)" />
           </div>
 
-          <!-- STEP 5: pays -->
+          <!-- STEP 5: age + gender -->
           <div class="fstep" data-step="4">
-            <h3 class="fstep__title">Do you pay for any of them?</h3>
-            <div class="chips chips--stack" data-single data-field="pays_for_apps">
-              <button type="button" class="chip chip--wide" data-value="none">No, all free</button>
-              <button type="button" class="chip chip--wide" data-value="one">Yes, one</button>
-              <button type="button" class="chip chip--wide" data-value="several">Yes, a few</button>
-            </div>
-          </div>
-
-          <!-- STEP 6: age + gender -->
-          <div class="fstep" data-step="5">
             <h3 class="fstep__title">A couple of quick ones.</h3>
             <label class="fstep__label" for="f-age">Age</label>
             <input class="input" id="f-age" name="age" type="number" inputmode="numeric" min="13" max="120" placeholder="e.g. 34" required />
@@ -173,8 +153,8 @@
             <p class="fstep__error" data-error hidden></p>
           </div>
 
-          <!-- STEP 7: baseline -->
-          <div class="fstep" data-step="6">
+          <!-- STEP 6: baseline -->
+          <div class="fstep" data-step="5">
             <h3 class="fstep__title">Right now, how on-track do you feel about your growth?</h3>
             <p class="fstep__hint">Optional. We will ask again in two weeks to see what moved.</p>
             <div class="fnd-slider">
@@ -188,8 +168,8 @@
             </div>
           </div>
 
-          <!-- STEP 8: commit -->
-          <div class="fstep" data-step="7">
+          <!-- STEP 7: commit -->
+          <div class="fstep" data-step="6">
             <h3 class="fstep__title">One last thing.</h3>
             <p class="fstep__hint">Founding users go in with intention. No pressure beyond an honest try.</p>
             <label class="fnd-commit">

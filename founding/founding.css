@@ -164,6 +164,29 @@
 }
 .fnd-other { margin-top: var(--space-4); }
 
+/* ---- Competitor matrix (used / paid per app) ---- */
+.cgrid { margin-top: var(--space-6); max-height: 52vh; overflow-y: auto; padding-right: var(--space-2); }
+.cgrid__cat { margin-bottom: var(--space-5); }
+.cgrid__cat-label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-ink-faint); margin-bottom: var(--space-2);
+  position: sticky; top: 0; background: var(--color-surface); padding: 4px 0;
+}
+.capp { display: flex; align-items: center; gap: var(--space-3); padding: 8px 0; border-bottom: 1px solid var(--color-line); }
+.capp__logo { width: 28px; height: 28px; border-radius: 7px; object-fit: contain; background: var(--color-bg-alt); flex-shrink: 0; }
+.capp__logo--fallback { padding: 5px; }
+.capp__name { flex: 1; font-size: 15px; font-weight: 600; color: var(--color-ink); }
+.capp__toggles { display: flex; gap: 6px; }
+.ctog {
+  padding: 6px 13px; border: 1.5px solid var(--color-line); border-radius: 999px;
+  background: var(--color-surface); color: var(--color-ink-faint);
+  font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.ctog:hover { border-color: var(--color-accent); }
+.ctog.is-on { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+.ctog[data-kind="paid"].is-on { background: var(--color-teal); border-color: var(--color-teal); }
+
 /* ---- Slider ---- */
 .fnd-slider { margin-top: var(--space-8); }
 .fnd-slider input[type="range"] {
