@@ -95,6 +95,25 @@
 .fnd-deal__icon { font-size: 22px; flex-shrink: 0; line-height: 1.4; }
 .fnd-deal__list strong { color: var(--color-ink); }
 
+/* ---- Personal founder letter ---- */
+.fnd-letter {
+  max-width: 640px;
+  margin: var(--space-8) auto 0;
+  padding: var(--space-10);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  text-align: left;
+}
+.fnd-letter p { color: var(--color-ink-soft); line-height: 1.75; font-size: 16px; margin-bottom: var(--space-5); }
+.fnd-letter p:last-child { margin-bottom: 0; }
+.fnd-letter__list { list-style: none; display: grid; gap: var(--space-4); margin: 0 0 var(--space-5); }
+.fnd-letter__list li { position: relative; padding-left: var(--space-6); color: var(--color-ink-soft); line-height: 1.6; }
+.fnd-letter__list li::before { content: ""; position: absolute; left: var(--space-2); top: 10px; width: 6px; height: 6px; border-radius: 999px; background: var(--color-accent); }
+.fnd-letter__sign { margin-top: var(--space-6); font-weight: 700; color: var(--color-ink); line-height: 1.5; }
+.fnd-letter__sign span { display: block; font-weight: 500; color: var(--color-ink-faint); font-size: 14px; }
+
 .fnd-hero__cta { margin-top: var(--space-10); }
 
 /* ---- Form section ---- */
@@ -321,6 +340,7 @@
 @media (max-width: 560px) {
   .fnd-card { padding: var(--space-6); }
   .fnd-deal { padding: var(--space-6); }
+  .fnd-letter { padding: var(--space-6); }
   .fnd-full__form { flex-direction: column; }
   /* primary action goes full-width, Back tucks under it */
   .fnd-nav { flex-direction: column-reverse; align-items: stretch; }
