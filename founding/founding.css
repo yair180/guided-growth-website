@@ -41,6 +41,12 @@
   --space-24: 96px;
 }
 
+/* The shared .btn / .input classes set `display`, which overrides the browser's
+   default [hidden] { display:none }. Without this reset, every button (Back,
+   Continue, Claim) and the conditional inputs show on every step. Restore it
+   so the JS hidden-toggling actually hides things. */
+[hidden] { display: none !important; }
+
 .founding .nav__inner { justify-content: space-between; }
 
 .fnd-badge {
