@@ -276,6 +276,36 @@ const COMPETITORS = [
     { key: 'ten_percent',   name: 'Ten Percent Happier',    domain: 'tenpercent.com' },
     { key: 'balance',       name: 'Balance',                domain: 'balanceapp.com' },
   ]},
+  // Adjacent: AI coaching & journaling — the truest modern competitor to GG
+  { cat: 'AI coaching & journaling', tier: 'advanced', apps: [
+    { key: 'rosebud',  name: 'Rosebud',  domain: 'rosebud.app' },
+    { key: 'wysa',     name: 'Wysa',     domain: 'wysa.com' },
+    { key: 'stoic',    name: 'Stoic',    domain: 'getstoic.com' },
+    { key: 'pi',       name: 'Pi',       domain: 'pi.ai' },
+    { key: 'replika',  name: 'Replika',  domain: 'replika.com' },
+    { key: 'mindsera', name: 'Mindsera', domain: 'mindsera.com' },
+  ]},
+  // Adjacent: coaching & personal growth — the "real coach behind it" positioning
+  { cat: 'Coaching & personal growth', tier: 'advanced', apps: [
+    { key: 'fabulous',   name: 'Fabulous',   domain: 'thefabulous.co' },
+    { key: 'betterup',   name: 'BetterUp',   domain: 'betterup.com' },
+    { key: 'noom',       name: 'Noom',       domain: 'noom.com' },
+    { key: 'mindvalley', name: 'Mindvalley', domain: 'mindvalley.com' },
+    { key: 'centr',      name: 'Centr',      domain: 'centr.com' },
+  ]},
+  // Adjacent: therapy & mental health — the human alternative people pay for
+  { cat: 'Therapy & mental health', tier: 'light', apps: [
+    { key: 'betterhelp', name: 'BetterHelp', domain: 'betterhelp.com' },
+    { key: 'talkspace',  name: 'Talkspace',  domain: 'talkspace.com' },
+    { key: 'cerebral',   name: 'Cerebral',   domain: 'cerebral.com' },
+  ]},
+  // Adjacent: mood & emotional wellbeing — lightweight daily check-in apps
+  { cat: 'Mood & emotional wellbeing', tier: 'light', apps: [
+    { key: 'finch',       name: 'Finch',       domain: 'finchcare.com' },
+    { key: 'how_we_feel', name: 'How We Feel', domain: 'howwefeel.org' },
+    { key: 'moodfit',     name: 'Moodfit',     domain: 'getmoodfit.com' },
+    { key: 'bearable',    name: 'Bearable',    domain: 'bearable.app' },
+  ]},
   { cat: 'Nutrition', tier: 'light', apps: [
     { key: 'myfitnesspal', name: 'MyFitnessPal', domain: 'myfitnesspal.com' },
     { key: 'cal_ai',       name: 'Cal AI',       domain: 'calai.app' },
