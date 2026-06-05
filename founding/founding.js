@@ -41,6 +41,10 @@ const state = {
   track_level: '',
   apps_matrix: {},   // { appKey: { used: bool, paid: bool } }
   apps_other: '',
+  habit: '',           // Laurel Q1: the habit/pattern to change
+  habit_duration: '',  // Laurel Q2: how long it has affected them
+  habit_cost: '',      // Laurel Q3: emotional/physical/financial/relational cost
+  habit_invest: '',    // Laurel Q4: what they'd invest to be free of it
   age: '',
   gender: '',
   baseline_score: 5,
@@ -69,7 +73,7 @@ const REQUIRED = {
         && (state.heard_from !== 'other'  || !!state.heard_from_other.trim()),
   2: () => !!state.track_level,
   4: () => isValidAge(state.age),
-  6: () => state.two_week_commit
+  7: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
   0: 'Please add your name and a valid email.',
@@ -78,7 +82,7 @@ const REQUIRED_MSG = {
         : 'Pick one so we know where you came from.',
   2: 'Pick one so we can start you in the right place.',
   4: 'Please enter your age.',
-  6: 'Check the box to claim your founding spot.'
+  7: 'Check the box to claim your founding spot.'
 };
 
 // ==========================================================
@@ -189,6 +193,9 @@ document.getElementById('f-apps-other').addEventListener('input', e => { state.a
 document.getElementById('f-referred-by').addEventListener('input', e => { state.referred_by_name = e.target.value; clearError(1); });
 document.getElementById('f-heard-other').addEventListener('input', e => { state.heard_from_other = e.target.value; clearError(1); });
 document.getElementById('f-age').addEventListener('input', e => { state.age = e.target.value; clearError(4); });
+document.getElementById('f-habit').addEventListener('input', e => { state.habit = e.target.value; });
+document.getElementById('f-cost').addEventListener('input', e => { state.habit_cost = e.target.value; });
+document.getElementById('f-invest').addEventListener('input', e => { state.habit_invest = e.target.value; });
 
 // ==========================================================
 //   Baseline slider
@@ -217,52 +224,77 @@ document.getElementById('f-commit').addEventListener('change', e => {
 //   `tier: 'advanced'` apps push the user toward the advanced program.
 //   Logos load from Clearbit by domain, with a favicon fallback.
 // ==========================================================
+// The 10 human/marketing categories (the 15 technical research categories
+// collapsed for the investor story), each with the top apps from the
+// canonical scan. tier 'advanced' apps push the user toward the advanced program.
 const COMPETITORS = [
-  { cat: 'Meditation & calm', tier: 'light', apps: [
-    { key: 'headspace',     name: 'Headspace',     domain: 'headspace.com' },
-    { key: 'calm',          name: 'Calm',          domain: 'calm.com' },
-    { key: 'insight_timer', name: 'Insight Timer', domain: 'insighttimer.com' },
-  ]},
-  { cat: 'Habit tracking', tier: 'advanced', apps: [
-    { key: 'habitica',    name: 'Habitica',    domain: 'habitica.com' },
-    { key: 'streaks',     name: 'Streaks',     domain: 'streaksapp.com' },
-    { key: 'way_of_life', name: 'Way of Life', domain: 'wayoflifeapp.com' },
+  { cat: 'Habits', tier: 'advanced', apps: [
+    { key: 'habitica',  name: 'Habitica',           domain: 'habitica.com' },
+    { key: 'streaks',   name: 'Streaks',            domain: 'streaksapp.com' },
+    { key: 'habitify',  name: 'Habitify',           domain: 'habitify.com' },
+    { key: 'atoms',     name: 'Atoms (James Clear)', domain: 'jamesclear.com' },
+    { key: 'routinery', name: 'Routinery',          domain: 'routinery.app' },
   ]},
   { cat: 'Journaling & reflection', tier: 'advanced', apps: [
-    { key: 'day_one',   name: 'Day One',   domain: 'dayoneapp.com' },
-    { key: 'reflectly', name: 'Reflectly', domain: 'reflectly.app' },
-    { key: 'stoic',     name: 'Stoic',     domain: 'getstoic.com' },
+    { key: 'day_one',       name: 'Day One',       domain: 'dayoneapp.com' },
+    { key: 'daylio',        name: 'Daylio',        domain: 'daylio.net' },
+    { key: 'reflectly',     name: 'Reflectly',     domain: 'reflectly.app' },
+    { key: 'journey',       name: 'Journey',       domain: 'journey.cloud' },
+    { key: 'apple_journal', name: 'Apple Journal', domain: 'apple.com' },
+    { key: 'notion',        name: 'Notion',        domain: 'notion.so' },
   ]},
-  { cat: 'AI coaching & companions', tier: 'advanced', apps: [
-    { key: 'rosebud', name: 'Rosebud', domain: 'rosebud.app' },
-    { key: 'wysa',    name: 'Wysa',    domain: 'wysa.com' },
-    { key: 'replika', name: 'Replika', domain: 'replika.com' },
+  { cat: 'Self-tracking & insights', tier: 'advanced', apps: [
+    { key: 'rescuetime', name: 'RescueTime', domain: 'rescuetime.com' },
+    { key: 'rize',       name: 'Rize',       domain: 'rize.io' },
+    { key: 'stayfree',   name: 'StayFree',   domain: 'stayfreeapps.com' },
   ]},
-  { cat: 'Mood & self-care', tier: 'light', apps: [
-    { key: 'daylio',  name: 'Daylio',  domain: 'daylio.net' },
-    { key: 'finch',   name: 'Finch',   domain: 'finchcare.com' },
-    { key: 'moodfit', name: 'Moodfit', domain: 'getmoodfit.com' },
+  { cat: 'Screen time & digital wellbeing', tier: 'light', apps: [
+    { key: 'one_sec',    name: 'One Sec',    domain: 'one-sec.app' },
+    { key: 'opal',       name: 'Opal',       domain: 'opal.so' },
+    { key: 'freedom',    name: 'Freedom',    domain: 'freedom.to' },
+    { key: 'clearspace', name: 'Clearspace', domain: 'getclearspace.com' },
+    { key: 'jomo',       name: 'Jomo',       domain: 'jomo.so' },
   ]},
-  { cat: 'Therapy & mental health', tier: 'advanced', apps: [
-    { key: 'betterhelp', name: 'BetterHelp', domain: 'betterhelp.com' },
-    { key: 'talkspace',  name: 'Talkspace',  domain: 'talkspace.com' },
+  { cat: 'Focus & deep work', tier: 'advanced', apps: [
+    { key: 'forest',        name: 'Forest',        domain: 'forestapp.cc' },
+    { key: 'insight_timer', name: 'Insight Timer', domain: 'insighttimer.com' },
+    { key: 'serene',        name: 'Serene',        domain: 'sereneapp.com' },
+    { key: 'elevate',       name: 'Elevate',       domain: 'elevateapp.com' },
   ]},
-  { cat: 'Sleep', tier: 'light', apps: [
+  { cat: 'Sleep & recovery', tier: 'light', apps: [
     { key: 'sleep_cycle', name: 'Sleep Cycle', domain: 'sleepcycle.com' },
     { key: 'rise',        name: 'RISE',        domain: 'risescience.com' },
+    { key: 'oura',        name: 'Oura',        domain: 'ouraring.com' },
+    { key: 'whoop',       name: 'WHOOP',       domain: 'whoop.com' },
+    { key: 'breathwrk',   name: 'Breathwrk',   domain: 'breathwrk.com' },
   ]},
-  { cat: 'Focus & productivity', tier: 'advanced', apps: [
-    { key: 'notion',  name: 'Notion',  domain: 'notion.so' },
-    { key: 'todoist', name: 'Todoist', domain: 'todoist.com' },
-    { key: 'forest',  name: 'Forest',  domain: 'forestapp.cc' },
-  ]},
-  { cat: 'Fitness & body', tier: 'light', apps: [
-    { key: 'strava',       name: 'Strava',       domain: 'strava.com' },
-    { key: 'whoop',        name: 'Whoop',        domain: 'whoop.com' },
+  { cat: 'Nutrition', tier: 'light', apps: [
     { key: 'myfitnesspal', name: 'MyFitnessPal', domain: 'myfitnesspal.com' },
+    { key: 'cal_ai',       name: 'Cal AI',       domain: 'calai.app' },
+    { key: 'snapcalorie',  name: 'SnapCalorie',  domain: 'snapcalorie.com' },
+    { key: 'foodvisor',    name: 'Foodvisor',    domain: 'foodvisor.io' },
+    { key: 'bitesnap',     name: 'BiteSnap',     domain: 'getbitesnap.com' },
   ]},
-  { cat: 'Behavioral coaching', tier: 'advanced', apps: [
-    { key: 'noom', name: 'Noom', domain: 'noom.com' },
+  { cat: 'Fitness & movement', tier: 'light', apps: [
+    { key: 'strava',        name: 'Strava',             domain: 'strava.com' },
+    { key: 'peloton',       name: 'Peloton',            domain: 'onepeloton.com' },
+    { key: 'nike_training', name: 'Nike Training Club', domain: 'nike.com' },
+    { key: 'fitbod',        name: 'Fitbod',             domain: 'fitbod.me' },
+    { key: 'betterme',      name: 'BetterMe',           domain: 'betterme.world' },
+  ]},
+  { cat: 'Accountability', tier: 'advanced', apps: [
+    { key: 'focusmate',  name: 'Focusmate',  domain: 'focusmate.com' },
+    { key: 'stickk',     name: 'StickK',     domain: 'stickk.com' },
+    { key: 'beeminder',  name: 'Beeminder',  domain: 'beeminder.com' },
+    { key: 'habitshare', name: 'HabitShare', domain: 'habitshareapp.com' },
+    { key: 'heiaheia',   name: 'HeiaHeia',   domain: 'heiaheia.com' },
+  ]},
+  { cat: 'Wearables & biometrics', tier: 'light', apps: [
+    { key: 'apple_health',   name: 'Apple Health',   domain: 'apple.com' },
+    { key: 'fitbit',         name: 'Fitbit',         domain: 'fitbit.com' },
+    { key: 'garmin',         name: 'Garmin',         domain: 'garmin.com' },
+    { key: 'samsung_health', name: 'Samsung Health', domain: 'samsung.com' },
+    { key: 'google_fit',     name: 'Google Fit',     domain: 'google.com' },
   ]},
 ];
 
@@ -345,7 +377,15 @@ function buildPayload() {
     derived_path:    derivePath(),
     two_week_commit: state.two_week_commit,
     commit_ts:       state.two_week_commit ? new Date().toISOString() : null,
-    research:        { apps_matrix: matrix },                            // full per-app used+paid (+ future Laurel Qs)
+    research:        {
+      apps_matrix: matrix,                                              // full per-app used+paid
+      laurel: {                                                         // Laurel's habit-cost-investment research
+        habit:    state.habit.trim() || null,
+        duration: state.habit_duration || null,
+        cost:     state.habit_cost.trim() || null,
+        invest:   state.habit_invest.trim() || null
+      }
+    },
     referrer:        document.referrer || null,
     user_agent:      navigator.userAgent.slice(0, 500)
   };

@@ -187,6 +187,22 @@
 .ctog.is-on { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
 .ctog[data-kind="paid"].is-on { background: var(--color-teal); border-color: var(--color-teal); }
 
+/* ---- Privacy reassurance line ---- */
+.fnd-privacy {
+  margin-top: var(--space-4);
+  font-size: 13px;
+  color: var(--color-ink-faint);
+  line-height: 1.5;
+}
+
+/* ---- Textarea (Laurel cost question) ---- */
+.fnd-textarea {
+  min-height: 88px;
+  resize: vertical;
+  line-height: 1.5;
+  padding-top: 12px;
+}
+
 /* ---- Slider ---- */
 .fnd-slider { margin-top: var(--space-8); }
 .fnd-slider input[type="range"] {
