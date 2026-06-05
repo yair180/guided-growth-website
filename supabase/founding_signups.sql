@@ -15,8 +15,9 @@ create table if not exists public.founding_signups (
   first_name      text,
 
   -- Attribution (replaces the in-app referral field for founding users)
-  heard_from       text,        -- founder_invite | friend
+  heard_from       text,        -- founder_invite | friend | webinar | other
   referred_by_name text,        -- the friend's name when heard_from = 'friend' (required in the UI)
+  heard_from_other text,        -- free text when heard_from = 'other' (required in the UI)
 
   -- Behavioral signal (the rich part)
   track_level     text,        -- none | casual | serious   (drives beginner vs advanced)
@@ -43,7 +44,11 @@ create table if not exists public.founding_signups (
 
   -- Provenance
   referrer        text,
-  user_agent      text
+  user_agent      text,
+
+  -- Evolving market-research answers (Laurel's questions + extras).
+  -- JSONB so adding new questions never requires a schema change.
+  research        jsonb not null default '{}'::jsonb
 );
 
 -- Defense in depth: sane email shape + bounded enums at the DB layer.

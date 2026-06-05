@@ -37,6 +37,7 @@ const state = {
   email: '',
   heard_from: '',
   referred_by_name: '',
+  heard_from_other: '',
   track_level: '',
   apps_used: [],
   apps_other: '',
@@ -64,14 +65,18 @@ function isValidAge(v) {
 
 const REQUIRED = {
   0: () => state.first_name.trim() && isValidEmail(state.email.trim()),
-  1: () => !!state.heard_from && (state.heard_from !== 'friend' || !!state.referred_by_name.trim()),
+  1: () => !!state.heard_from
+        && (state.heard_from !== 'friend' || !!state.referred_by_name.trim())
+        && (state.heard_from !== 'other'  || !!state.heard_from_other.trim()),
   2: () => !!state.track_level,
   5: () => isValidAge(state.age),
   7: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
   0: 'Please add your name and a valid email.',
-  1: () => state.heard_from === 'friend' ? 'Add your friend’s name so we can thank them.' : 'Pick one so we know where you came from.',
+  1: () => state.heard_from === 'friend' ? 'Add your friend’s name so we can thank them.'
+        : state.heard_from === 'other'  ? 'Tell us where you heard about us.'
+        : 'Pick one so we know where you came from.',
   2: 'Pick one so we can start you in the right place.',
   5: 'Please enter your age.',
   7: 'Check the box to claim your founding spot.'
@@ -150,11 +155,13 @@ form.querySelectorAll('.chips').forEach(group => {
         // reveal the friend-name field only when "A friend" is chosen
         if (field === 'heard_from') {
           const ref = document.getElementById('f-referred-by');
-          if (ref) {
-            const isFriend = val === 'friend';
-            ref.hidden = !isFriend;
-            if (isFriend) { ref.focus(); } else { ref.value = ''; state.referred_by_name = ''; }
-          }
+          const oth = document.getElementById('f-heard-other');
+          const isFriend = val === 'friend';
+          const isOther  = val === 'other';
+          if (ref) { ref.hidden = !isFriend; if (!isFriend) { ref.value = ''; state.referred_by_name = ''; } }
+          if (oth) { oth.hidden = !isOther;  if (!isOther)  { oth.value = ''; state.heard_from_other = ''; } }
+          if (isFriend && ref) ref.focus();
+          if (isOther && oth) oth.focus();
         }
       } else {
         // multi-select (apps_used)
@@ -181,6 +188,7 @@ form.querySelectorAll('.chips').forEach(group => {
 
 document.getElementById('f-apps-other').addEventListener('input', e => { state.apps_other = e.target.value; });
 document.getElementById('f-referred-by').addEventListener('input', e => { state.referred_by_name = e.target.value; clearError(1); });
+document.getElementById('f-heard-other').addEventListener('input', e => { state.heard_from_other = e.target.value; clearError(1); });
 document.getElementById('f-age').addEventListener('input', e => { state.age = e.target.value; clearError(5); });
 
 // ==========================================================
@@ -224,6 +232,7 @@ function buildPayload() {
     first_name:       state.first_name.trim(),
     heard_from:       state.heard_from || null,
     referred_by_name: (state.heard_from === 'friend' && state.referred_by_name.trim()) ? state.referred_by_name.trim() : null,
+    heard_from_other: (state.heard_from === 'other' && state.heard_from_other.trim()) ? state.heard_from_other.trim() : null,
     track_level:      state.track_level || null,
     apps_used:        apps.length ? apps : null,
     apps_other:       (apps.includes('other') && state.apps_other.trim()) ? state.apps_other.trim() : null,
