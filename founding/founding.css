@@ -108,6 +108,7 @@
 }
 .fnd-letter p { color: var(--color-ink-soft); line-height: 1.75; font-size: 16px; margin-bottom: var(--space-5); }
 .fnd-letter p:last-child { margin-bottom: 0; }
+.fnd-letter strong { color: var(--color-ink); font-weight: 700; }
 .fnd-letter__list { list-style: none; display: grid; gap: var(--space-4); margin: 0 0 var(--space-5); }
 .fnd-letter__list li { position: relative; padding-left: var(--space-6); color: var(--color-ink-soft); line-height: 1.6; }
 .fnd-letter__list li::before { content: ""; position: absolute; left: var(--space-2); top: 10px; width: 6px; height: 6px; border-radius: 999px; background: var(--color-accent); }
