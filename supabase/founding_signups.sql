@@ -2,6 +2,8 @@
 --   Guided Growth — Founding Users (50) intake
 --   Run this in the Supabase SQL editor (or via migration).
 --   Mirrors the waitlist_signups RLS pattern: anon INSERT only.
+--   NOTE: the 50-cap was upgraded to a list-based, changeable model in
+--   founding_cap_v2.sql. For a fresh install, run this file then that one.
 -- ============================================================
 
 create extension if not exists "pgcrypto";
