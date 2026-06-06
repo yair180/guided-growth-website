@@ -154,7 +154,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .fstep__title { font-size: 22px; font-weight: 800; line-height: 1.3; color: var(--color-ink); }
-.fstep__hint { margin-top: var(--space-3); color: var(--color-ink-faint); font-size: 15px; }
+.fstep__hint { margin-top: var(--space-3); color: var(--color-ink-soft); font-size: 15px; }
 .fstep__label {
   display: block;
   margin: var(--space-6) 0 var(--space-2);
@@ -237,6 +237,23 @@
 }
 .fnd-privacy__icon { font-size: 18px; line-height: 1.4; flex-shrink: 0; }
 .fnd-privacy strong { color: var(--color-accent-dark); font-weight: 800; }
+
+/* ---- Email note: the single most important field, make it impossible to miss ---- */
+.fnd-emailnote {
+  margin-top: var(--space-4);
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4) var(--space-5);
+  background: #FEF3C7;
+  border: 1.5px solid #F59E0B;
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-ink);
+}
+.fnd-emailnote__icon { font-size: 18px; line-height: 1.4; flex-shrink: 0; }
+.fnd-emailnote strong { color: #92400e; font-weight: 800; }
 
 /* ---- Textarea (Laurel cost question) ---- */
 .fnd-textarea {
