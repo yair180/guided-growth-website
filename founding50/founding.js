@@ -345,7 +345,10 @@ const COMPETITORS = [
 const APP_TIER = {};
 COMPETITORS.forEach(c => c.apps.forEach(a => { APP_TIER[a.key] = c.tier; }));
 
-function logoUrl(domain) { return `https://logo.clearbit.com/${domain}`; }
+// Clearbit's free logo API (logo.clearbit.com) was deprecated and no longer
+// resolves, so every logo was silently falling back to a tiny blurry favicon.
+// DuckDuckGo's icon service returns crisp apple-touch-icons and is reliable.
+function logoUrl(domain) { return `https://icons.duckduckgo.com/ip3/${domain}.ico`; }
 
 function renderCompetitorGrid() {
   const grid = document.getElementById('competitor-grid');
@@ -362,7 +365,7 @@ function renderCompetitorGrid() {
       row.className = 'capp';
       row.innerHTML =
         `<img class="capp__logo" src="${logoUrl(a.domain)}" alt="" loading="lazy" ` +
-        `onerror="this.onerror=null;this.src='https://www.google.com/s2/favicons?domain=${a.domain}&sz=64';this.classList.add('capp__logo--fallback')" />` +
+        `onerror="this.onerror=null;this.src='https://www.google.com/s2/favicons?domain=${a.domain}&sz=128';this.classList.add('capp__logo--fallback')" />` +
         `<span class="capp__name">${a.name}</span>` +
         `<span class="capp__toggles">` +
         `<button type="button" class="ctog" data-app="${a.key}" data-kind="used">Used</button>` +
