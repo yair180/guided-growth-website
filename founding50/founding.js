@@ -511,8 +511,38 @@ function paintSpots(remaining) {
   if (Number.isNaN(remaining)) return;
   const nav = document.getElementById('spots-nav');
   if (!nav) return;
-  nav.textContent = `${remaining} spots left`;
+  // Count DOWN from the founding cap to the real remaining, so people SEE
+  // that spots are being taken (50 -> 49 -> 48 ...).
+  const from = Math.max(50, remaining);
+  nav.innerHTML =
+    '<span class="fnd-badge__dot" aria-hidden="true"></span>' +
+    `<span class="fnd-badge__num">${from}</span>spots left`;
   nav.hidden = false;
+  animateSpots(nav.querySelector('.fnd-badge__num'), from, remaining);
+}
+
+function animateSpots(numEl, from, to) {
+  if (!numEl) return;
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || from === to) { numEl.textContent = to; return; }
+  const duration = 1100;
+  const ease = t => 1 - Math.pow(1 - t, 3);   // easeOutCubic — slows near the end
+  const start = performance.now();
+  let last = from;
+  function frame(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const val = Math.round(from + (to - from) * ease(t));
+    if (val !== last) {
+      last = val;
+      numEl.textContent = val;
+      numEl.classList.remove('is-tick');
+      void numEl.offsetWidth;   // restart the tick animation
+      numEl.classList.add('is-tick');
+    }
+    if (t < 1) requestAnimationFrame(frame);
+    else numEl.textContent = to;
+  }
+  requestAnimationFrame(frame);
 }
 
 // ---- Overflow waitlist (cap reached) ----
