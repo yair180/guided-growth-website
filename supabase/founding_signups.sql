@@ -16,6 +16,7 @@ create table if not exists public.founding_signups (
   email           text not null unique,
   first_name      text,
   last_name       text,
+  platform        text,        -- ios | android  (which invite to send: TestFlight vs Google Play)
 
   -- Attribution (replaces the in-app referral field for founding users)
   heard_from       text,        -- founder_invite | friend | webinar | other

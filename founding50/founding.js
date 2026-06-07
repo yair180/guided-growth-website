@@ -36,6 +36,7 @@ const state = {
   first_name: '',
   last_name: '',
   email: '',
+  platform: '',        // ios | android — drives which invite (TestFlight vs Google Play)
   heard_from: '',
   referred_by_name: '',
   heard_from_other: '',
@@ -68,7 +69,7 @@ function isValidAge(v) {
 }
 
 const REQUIRED = {
-  0: () => state.first_name.trim() && state.last_name.trim() && isValidEmail(state.email.trim()),
+  0: () => state.first_name.trim() && state.last_name.trim() && isValidEmail(state.email.trim()) && !!state.platform,
   1: () => !!state.heard_from
         && (state.heard_from !== 'friend' || !!state.referred_by_name.trim())
         && (state.heard_from !== 'other'  || !!state.heard_from_other.trim()),
@@ -77,7 +78,9 @@ const REQUIRED = {
   7: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
-  0: 'Please add your first and last name and a valid email.',
+  0: () => !state.platform
+        ? 'Please choose iPhone or Android so we send the right invite.'
+        : 'Please add your first and last name and a valid email.',
   1: () => state.heard_from === 'friend' ? 'Add your friend’s name so we can thank them.'
         : state.heard_from === 'other'  ? 'Tell us where you heard about us.'
         : 'Pick one so we know where you came from.',
@@ -406,6 +409,7 @@ function buildPayload() {
     email:            state.email.trim().toLowerCase(),
     first_name:       state.first_name.trim(),
     last_name:        state.last_name.trim(),
+    platform:         state.platform || null,   // ios | android
     heard_from:       state.heard_from || null,
     referred_by_name: (state.heard_from === 'friend' && state.referred_by_name.trim()) ? state.referred_by_name.trim() : null,
     heard_from_other: (state.heard_from === 'other' && state.heard_from_other.trim()) ? state.heard_from_other.trim() : null,

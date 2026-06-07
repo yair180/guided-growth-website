@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../styles.css" />
-  <link rel="stylesheet" href="founding.css?v=11" />
+  <link rel="stylesheet" href="founding.css?v=12" />
   <script>
     // Public config. Anon key is safe to expose — Row Level Security on
     // `founding_signups` allows INSERT only from the anon role, and reads
@@ -99,9 +99,22 @@
             <input class="input" id="f-last" name="last_name" type="text" autocomplete="family-name" placeholder="Rivera" required />
             <label class="fstep__label" for="f-email">Email</label>
             <input class="input" id="f-email" name="email" type="email" autocomplete="email" placeholder="your@email.com" required />
+
+            <label class="fstep__label">Which phone will you use Guided Growth on?</label>
+            <div class="chips chips--platform" data-single data-field="platform">
+              <button type="button" class="chip chip--plat" data-value="ios">
+                <span class="chip--plat__title">iPhone</span>
+                <span class="chip--plat__sub">Use your Apple ID email</span>
+              </button>
+              <button type="button" class="chip chip--plat" data-value="android">
+                <span class="chip--plat__title">Android</span>
+                <span class="chip--plat__sub">Use your Google account email</span>
+              </button>
+            </div>
+
             <div class="fnd-emailnote">
               <span class="fnd-emailnote__icon">📱</span>
-              <span><strong>Please use the email tied to your Apple ID (iPhone) or your Google account (Android).</strong></span>
+              <span>We send your invite through <strong>TestFlight</strong> on iPhone or <strong>Google Play</strong> on Android, so please use the email tied to that account.</span>
             </div>
             <div class="fnd-privacy">
               <span class="fnd-privacy__icon">🔒</span>
@@ -252,6 +265,6 @@
     <span class="toast__msg"></span>
   </div>
 
-  <script src="founding.js?v=11"></script>
+  <script src="founding.js?v=12"></script>
 </body>
 </html>
