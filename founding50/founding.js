@@ -73,7 +73,7 @@ const REQUIRED = {
         && (state.heard_from !== 'friend' || !!state.referred_by_name.trim())
         && (state.heard_from !== 'other'  || !!state.heard_from_other.trim()),
   2: () => !!state.track_level,
-  4: () => isValidAge(state.age),
+  4: () => isValidAge(state.age) && !!state.gender,
   7: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
@@ -82,7 +82,7 @@ const REQUIRED_MSG = {
         : state.heard_from === 'other'  ? 'Tell us where you heard about us.'
         : 'Pick one so we know where you came from.',
   2: 'Pick one so we can start you in the right place.',
-  4: 'Please enter your age.',
+  4: 'Please add your age and gender.',
   7: 'Check the box to claim your founding spot.'
 };
 
