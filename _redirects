@@ -1,5 +1,4 @@
-# Vanity links for the 50 Founding Users page (canonical: /founding/)
-/founding      /founding/   302
-/50            /founding/   302
-/founding-50   /founding/   302
-/founding50    /founding/   302
+# Vanity links for the 50 Founding Users page (canonical: /founding50/)
+/founding      /founding50/   301
+/50            /founding50/   301
+/founding-50   /founding50/   301
