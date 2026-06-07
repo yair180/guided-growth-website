@@ -76,6 +76,8 @@ create policy "anon can insert founding signup"
   to anon
   with check (true);
 
+grant insert on table public.founding_signups to anon;
+
 -- ============================================================
 --   Hard cap at 50 active spots (the "50" is a promise).
 --   Counts non-churned rows. Small race window is acceptable at this scale.
