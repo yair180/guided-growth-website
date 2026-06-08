@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../styles.css" />
-  <link rel="stylesheet" href="founding.css?v=15" />
+  <link rel="stylesheet" href="founding.css?v=16" />
   <script>
     // Public config. Anon key is safe to expose — Row Level Security on
     // `founding_signups` allows INSERT only from the anon role, and reads
@@ -176,15 +176,15 @@
             </div>
           </div>
 
-          <!-- STEP 7: Laurel's research (the habit, its cost, what you'd invest) -->
+          <!-- STEP 7: goals (Laurel's questions, framed around goals) -->
           <div class="fstep" data-step="6">
-            <h3 class="fstep__title">The change you want to make</h3>
-            <p class="fstep__hint">Optional, and kept anonymous. The more honest, the more we can help.</p>
+            <h3 class="fstep__title">What are your goals?</h3>
+            <p class="fstep__hint">Optional, and kept private. The more honest you are, the more your coach can help.</p>
 
-            <label class="fstep__label" for="f-habit">What habit or pattern would you want help changing?</label>
-            <input class="input" id="f-habit" name="habit" type="text" placeholder="e.g. late-night scrolling, stress eating, procrastination" />
+            <label class="fstep__label" for="f-habit">What is the main thing you want to change or improve in your life right now?</label>
+            <input class="input" id="f-habit" name="habit" type="text" placeholder="e.g. build a consistent routine, stress less, sleep better, stay focused" />
 
-            <label class="fstep__label">How long has it been affecting you?</label>
+            <label class="fstep__label">How long has it been on your mind?</label>
             <div class="chips" data-single data-field="habit_duration">
               <button type="button" class="chip" data-value="lt6m">Under 6 months</button>
               <button type="button" class="chip" data-value="6-12m">6-12 months</button>
@@ -193,10 +193,10 @@
               <button type="button" class="chip" data-value="most_of_life">Most of my life</button>
             </div>
 
-            <label class="fstep__label" for="f-cost">What has it cost you, emotionally, physically, financially, or relationally?</label>
+            <label class="fstep__label" for="f-cost">What is it costing you to leave it unchanged?</label>
             <textarea class="input fnd-textarea" id="f-cost" name="habit_cost" rows="3" placeholder="Say as much or as little as you like."></textarea>
 
-            <label class="fstep__label" for="f-invest">What would you realistically invest to be free of it for good?</label>
+            <label class="fstep__label" for="f-invest">What would it be worth to you to finally get past it?</label>
             <input class="input" id="f-invest" name="habit_invest" type="text" placeholder="Money, time, effort, whatever feels real." />
           </div>
 
@@ -256,6 +256,6 @@
     <span class="toast__msg"></span>
   </div>
 
-  <script src="founding.js?v=15"></script>
+  <script src="founding.js?v=16"></script>
 </body>
 </html>
