@@ -204,6 +204,7 @@ form.querySelectorAll('.chips').forEach(group => {
 function updateEmailGuidance(platform) {
   const email = document.getElementById('f-email');
   const note  = document.getElementById('emailnote-text');
+  if (email) email.classList.add('input--guide');   // turns the in-box guidance red
   if (platform === 'ios') {
     if (email) email.placeholder = 'Your Apple ID email';
     if (note) note.innerHTML = 'Your invite is delivered through <strong>TestFlight</strong>, so any other email will not reach you.';

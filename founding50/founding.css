@@ -199,7 +199,9 @@
   font-weight: 700;
   color: var(--color-ink-soft);
 }
-.fstep .input { margin-bottom: var(--space-2); }
+.fstep .input { display: block; width: 100%; box-sizing: border-box; margin-bottom: var(--space-2); }
+/* email guidance shown in red inside the box once a platform is picked */
+.fstep .input.input--guide::placeholder { color: #D64545; opacity: 1; }
 .fstep__optional { font-weight: 500; color: var(--color-ink-faint); }
 .fstep__error { color: #D64545; font-size: 14px; font-weight: 600; margin-top: var(--space-3); }
 
