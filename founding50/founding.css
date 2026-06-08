@@ -316,6 +316,14 @@
 .fnd-emailnote__icon { font-size: 18px; line-height: 1.4; flex-shrink: 0; }
 .fnd-emailnote strong { color: #92400e; font-weight: 800; }
 
+/* ---- Email account hint: bold red "which account" cue at the field ---- */
+.email-account-hint {
+  margin-top: var(--space-2);
+  font-size: 15px;
+  font-weight: 800;
+  color: #dc2626;
+}
+
 /* ---- Textarea (Laurel cost question) ---- */
 .fnd-textarea {
   min-height: 88px;
