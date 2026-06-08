@@ -252,13 +252,14 @@
 }
 
 /* ---- Competitor matrix (used / paid per app) ---- */
-.cgrid { margin-top: var(--space-6); max-height: 52vh; overflow-y: auto; padding-right: var(--space-2); }
+.cgrid { margin-top: var(--space-6); }
 .cgrid__cat { margin-bottom: var(--space-5); }
 .cgrid__cat-label {
   font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--color-ink-faint); margin-bottom: var(--space-2);
-  position: sticky; top: 0; background: var(--color-surface); padding: 4px 0;
+  padding: 4px 0;
 }
+.cgrid__end { margin-top: var(--space-4); font-size: 13px; color: var(--color-ink-faint); text-align: center; }
 .capp { display: flex; align-items: center; gap: var(--space-3); padding: 8px 0; border-bottom: 1px solid var(--color-line); }
 .capp__logo { width: 28px; height: 28px; border-radius: 7px; object-fit: contain; background: var(--color-bg-alt); flex-shrink: 0; }
 .capp__logo--fallback { padding: 5px; }

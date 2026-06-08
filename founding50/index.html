@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../styles.css" />
-  <link rel="stylesheet" href="founding.css?v=16" />
+  <link rel="stylesheet" href="founding.css?v=17" />
   <script>
     // Public config. Anon key is safe to expose — Row Level Security on
     // `founding_signups` allows INSERT only from the anon role, and reads
@@ -142,9 +142,10 @@
           <!-- STEP 4: competitor matrix (used / paid per app) -->
           <div class="fstep" data-step="3">
             <h3 class="fstep__title">Which of these have you used before?</h3>
-            <p class="fstep__hint">Tap <strong>Used</strong> for any you have tried, and <strong>Paid</strong> if you ever paid for it. Skip anything you do not recognize.</p>
+            <p class="fstep__hint">Scroll through the whole list and tap <strong>Used</strong> for any you have tried, and <strong>Paid</strong> if you ever paid for it. Skip anything you do not recognize.</p>
             <div id="competitor-grid" class="cgrid"></div>
             <input class="input fnd-other" id="f-apps-other" name="apps_other" type="text" placeholder="Anything we missed? (optional)" />
+            <p class="cgrid__end">That is the whole list. Tap Continue below when you are done.</p>
           </div>
 
           <!-- STEP 5: age + gender -->
@@ -256,6 +257,6 @@
     <span class="toast__msg"></span>
   </div>
 
-  <script src="founding.js?v=16"></script>
+  <script src="founding.js?v=17"></script>
 </body>
 </html>
