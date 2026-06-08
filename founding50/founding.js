@@ -172,6 +172,7 @@ form.querySelectorAll('.chips').forEach(group => {
           if (isFriend && ref) ref.focus();
           if (isOther && oth) oth.focus();
         }
+        if (field === 'platform') updateEmailGuidance(val);
       } else {
         // multi-select (apps_used)
         chip.classList.toggle('is-selected');
@@ -194,6 +195,20 @@ form.querySelectorAll('.chips').forEach(group => {
     });
   });
 });
+
+// Picking iPhone/Android rewrites the email guidance so it is unmistakable
+// which account email to use (the invite is delivered through that store).
+function updateEmailGuidance(platform) {
+  const note  = document.getElementById('emailnote-text');
+  const email = document.getElementById('f-email');
+  if (platform === 'ios') {
+    if (email) email.placeholder = 'the email on your Apple ID';
+    if (note)  note.innerHTML = 'Use the email on your <strong>Apple ID</strong>. Your invite is delivered through <strong>TestFlight</strong>, so any other email will not reach you.';
+  } else if (platform === 'android') {
+    if (email) email.placeholder = 'the email on your Google account';
+    if (note)  note.innerHTML = 'Use the email on your <strong>Google account</strong>. Your invite is delivered through <strong>Google Play</strong>, so any other email will not reach you.';
+  }
+}
 
 document.getElementById('f-apps-other').addEventListener('input', e => { state.apps_other = e.target.value; });
 document.getElementById('f-referred-by').addEventListener('input', e => { state.referred_by_name = e.target.value; clearError(1); });

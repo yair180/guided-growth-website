@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../styles.css" />
-  <link rel="stylesheet" href="founding.css?v=13" />
+  <link rel="stylesheet" href="founding.css?v=14" />
   <script>
     // Public config. Anon key is safe to expose — Row Level Security on
     // `founding_signups` allows INSERT only from the anon role, and reads
@@ -53,23 +53,14 @@
 
       <!-- Personal letter from the founder -->
       <div class="fnd-letter fade-in fade-in--delay-2">
-        <p>If you received this invitation, it means we're connected, either directly or through someone close to Guided Growth. These invitations are personal, sent to people we believe would really benefit from this.</p>
-        <p>Guided Growth is everything I've learned about real change, built into one place. I made it for myself first. Now I want to put it in the hands of people who will genuinely benefit from it, and who can help shape its value and its vision.</p>
-        <p>Whether you've <strong>never</strong> tracked a habit or kept a journal in your life, or you've been doing it for <strong>years</strong>, this is built to meet you where you are. My intention is that you get <strong>real value</strong> from it either way.</p>
-        <p>Over time, this can replace the scattered apps and spreadsheets you use to track your life. Our roadmap covers ten connected areas of well-being, because you're one organism, not ten separate apps. We're not asking you to switch anything now. It's here to add to your life, and leaving your other tools, if and when it feels natural, is exactly what we'd hope for.</p>
-        <p>I'd love for it to give you something real, and to play a part, small or major, in your growth. In appreciation for your participation and feedback, <strong>your access is free</strong> for three months, and <strong>six months</strong> if it's still giving you value. And I want your honest take as you live with it, the good and the rough, so we can shape it together.</p>
-        <p>What I'm asking from you is small, and it's mostly just talking:</p>
-        <ul class="fnd-letter__list">
-          <li>Onboarding is a five-minute chat by <strong>voice</strong>. Prefer not to talk or listen? Tap and type your way through instead, it all works the same.</li>
-          <li>Each morning, a one minute check-in: how you slept, your energy, your mood, and your stress.</li>
-          <li>Each night, a short conversation with your coach about your day and your habits, plus a little journaling. A couple of sentences, or my simple template: what am I proud of, what do I forgive myself for, and what am I grateful for.</li>
-        </ul>
-        <p>Because it's voice-first, you don't even need to hold or look at your phone to have a free-flowing conversation. And it quietly turns into powerful insight over time.</p>
-        <p>Even though this is a mobile app, my intention is to help you use your phone <strong>way less</strong>.</p>
-        <p>All I ask is an honest two weeks. That's about how long it takes to feel the shift: a lot more awareness, and the real beginning of change in the direction you want to go. If it's not for you after that, no pressure and no hard feelings.</p>
-        <p><strong>There are only 50 spots, and that's a real cap.</strong> Each one carries a real cost. What you're getting is a genuinely personal AI coach you talk with in natural conversation, something that only became possible in the last few months, and it is not cheap to run. That's why it's 50 and not 5,000, and it's part of why I ask for an honest two weeks. We won't open more, and I expect them to go fast.</p>
-        <p>So let me be straight with you. If an honest two weeks doesn't genuinely pull at you, if you're not a little curious and excited to go for it, please don't take a spot. 50 is very few, and I want them to go to people who truly want to improve their life. Don't do this as a favor to me or to anyone. Do it because you can see it serving you. That's exactly the kind of person I'm hoping for.</p>
-        <p>Thank you for being here early.</p>
+        <p>A coach in your pocket. Not a chatbot, a real coach. One that knows you, remembers where you have been, and is genuinely <strong>in your corner</strong> as you grow.</p>
+        <p>The big AI tools are brilliant, but they are built for everyone, so they forget you the moment you close them. Guided Growth is the opposite. It is <strong>built around you</strong>, it holds your context, it learns you over time, and it keeps pointing you back at the life you actually want to live.</p>
+        <p>If this invitation reached you, we are connected, directly or through someone close to Guided Growth. I built it for myself first, out of years of coaching, and now I want it in the hands of a small group who will genuinely get value from it and help shape what it becomes. Whether you have <strong>never</strong> tracked a habit or you have done it for <strong>years</strong>, it meets you where you are.</p>
+        <p>What I am asking is small, and it is mostly just talking. A five minute voice onboarding to start (tap and type instead if you prefer), a one minute morning check in, and a short evening conversation with your coach about your day. Because it is voice first, you can do all of it without even looking at your phone.</p>
+        <p>I will be honest: this is early, and a little rough around the edges. That is the whole point of a founding group. We figure it out together, and your honest feedback shapes where it goes. All I ask is an <strong>honest two weeks</strong>, which is about how long it takes to feel the shift.</p>
+        <p>For being here this early, <strong>your access is free</strong> for three months, and six if it is still adding real value to your life.</p>
+        <p>There are only 50 spots, and that is a real cap. Each one is a genuinely personal AI coach you talk with, something that only became possible in the last few months, and it is not cheap to run. That is exactly why it is <strong>50 and not 5,000</strong>.</p>
+        <p>I am not asking for a favor. I am asking only if this genuinely excites you and you believe it will add value to your life. There is something rare about being one of fifty, this early, helping shape what it becomes. If that is you, claim your spot below.</p>
         <p class="fnd-letter__sign">Yair<span>Founder, Guided Growth</span></p>
       </div>
 
@@ -97,9 +88,6 @@
             <input class="input" id="f-name" name="first_name" type="text" autocomplete="given-name" placeholder="Alex" required />
             <label class="fstep__label" for="f-last">Last name</label>
             <input class="input" id="f-last" name="last_name" type="text" autocomplete="family-name" placeholder="Rivera" required />
-            <label class="fstep__label" for="f-email">Email</label>
-            <input class="input" id="f-email" name="email" type="email" autocomplete="email" placeholder="your@email.com" required />
-
             <label class="fstep__label">Which phone will you use Guided Growth on?</label>
             <div class="chips chips--platform" data-single data-field="platform">
               <button type="button" class="chip chip--plat" data-value="ios">
@@ -112,9 +100,11 @@
               </button>
             </div>
 
+            <label class="fstep__label" for="f-email">Email</label>
+            <input class="input" id="f-email" name="email" type="email" autocomplete="email" placeholder="your@email.com" required />
             <div class="fnd-emailnote">
               <span class="fnd-emailnote__icon">📱</span>
-              <span>We send your invite through <strong>TestFlight</strong> on iPhone or <strong>Google Play</strong> on Android, so please use the email tied to that account.</span>
+              <span id="emailnote-text">Pick your phone above, then use the email tied to that account. Your invite comes through <strong>TestFlight</strong> (iPhone) or <strong>Google Play</strong> (Android), and a different email will not reach you.</span>
             </div>
             <div class="fnd-privacy">
               <span class="fnd-privacy__icon">🔒</span>
@@ -265,6 +255,6 @@
     <span class="toast__msg"></span>
   </div>
 
-  <script src="founding.js?v=13"></script>
+  <script src="founding.js?v=14"></script>
 </body>
 </html>
