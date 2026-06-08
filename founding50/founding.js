@@ -49,8 +49,6 @@ const state = {
   habit_invest: '',    // Laurel Q4: what they'd invest to be free of it
   age: '',
   gender: '',
-  baseline_score: 5,
-  baseline_skipped: false,
   two_week_commit: false
 };
 
@@ -75,7 +73,7 @@ const REQUIRED = {
         && (state.heard_from !== 'other'  || !!state.heard_from_other.trim()),
   2: () => !!state.track_level,
   4: () => isValidAge(state.age) && !!state.gender,
-  7: () => state.two_week_commit
+  6: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
   0: () => !state.platform
@@ -86,7 +84,7 @@ const REQUIRED_MSG = {
         : 'Pick one so we know where you came from.',
   2: 'Pick one so we can start you in the right place.',
   4: 'Please add your age and gender.',
-  7: 'Check the box to claim your founding spot.'
+  6: 'Check the box to claim your founding spot.'
 };
 
 // ==========================================================
@@ -217,21 +215,6 @@ document.getElementById('f-age').addEventListener('input', e => { state.age = e.
 document.getElementById('f-habit').addEventListener('input', e => { state.habit = e.target.value; });
 document.getElementById('f-cost').addEventListener('input', e => { state.habit_cost = e.target.value; });
 document.getElementById('f-invest').addEventListener('input', e => { state.habit_invest = e.target.value; });
-
-// ==========================================================
-//   Baseline slider
-// ==========================================================
-const slider = document.getElementById('f-baseline');
-const sliderVal = document.getElementById('baseline-value');
-slider.addEventListener('input', e => {
-  state.baseline_score = parseInt(e.target.value, 10);
-  state.baseline_skipped = false;
-  sliderVal.textContent = e.target.value;
-});
-document.getElementById('baseline-skip').addEventListener('click', () => {
-  state.baseline_skipped = true;
-  if (current < steps.length - 1) { current++; render(); scrollCard(); }
-});
 
 // commit checkbox
 document.getElementById('f-commit').addEventListener('change', e => {
@@ -437,7 +420,7 @@ function buildPayload() {
     pays_for_apps:    paidCount === 0 ? 'none' : paidCount === 1 ? 'one' : 'several',
     age:              isValidAge(state.age) ? parseInt(state.age, 10) : null,
     gender:           state.gender || null,
-    baseline_score:  state.baseline_skipped ? null : state.baseline_score,
+    baseline_score:  null,
     derived_path:    derivePath(),
     two_week_commit: state.two_week_commit,
     commit_ts:       state.two_week_commit ? new Date().toISOString() : null,
