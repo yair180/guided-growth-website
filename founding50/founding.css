@@ -1,5 +1,5 @@
 /* ==========================================================
-   Founding Users page — layered on top of the shared styles.css.
+   Founding Users page - layered on top of the shared styles.css.
    This page was authored against a --color-* / --space-* token
    namespace that styles.css does not define, so this :root block
    supplies those names by mapping onto the shared palette. Without
@@ -227,7 +227,7 @@
 }
 .fnd-other { margin-top: var(--space-4); }
 
-/* ---- Platform picker (iOS / Android) — two-line cards ---- */
+/* ---- Platform picker (iOS / Android) - two-line cards ---- */
 .chips--platform {
   display: grid;
   grid-template-columns: 1fr 1fr;

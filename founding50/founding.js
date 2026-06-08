@@ -1,5 +1,5 @@
 // ==========================================================
-//   GUIDED GROWTH — FOUNDING USERS intake
+//   GUIDED GROWTH - FOUNDING USERS intake
 //   Multi-step questionnaire -> Supabase founding_signups.
 //   Mirrors the main site's anon-INSERT pattern.
 // ==========================================================
@@ -36,7 +36,7 @@ const state = {
   first_name: '',
   last_name: '',
   email: '',
-  platform: '',        // ios | android — drives which invite (TestFlight vs Google Play)
+  platform: '',        // ios | android - drives which invite (TestFlight vs Google Play)
   heard_from: '',
   referred_by_name: '',
   heard_from_other: '',
@@ -82,7 +82,7 @@ const REQUIRED_MSG = {
   0: () => !state.platform
         ? 'Please choose iPhone or Android so we send the right invite.'
         : 'Please add your first and last name and a valid email.',
-  1: () => state.heard_from === 'friend' ? 'Add your friend’s name so we can thank them.'
+  1: () => state.heard_from === 'friend' ? "Add your friend's name so we can thank them."
         : state.heard_from === 'other'  ? 'Tell us where you heard about us.'
         : 'Pick one so we know where you came from.',
   2: 'Pick one so we can start you in the right place.',
@@ -228,7 +228,7 @@ document.getElementById('f-commit').addEventListener('change', e => {
 });
 
 // ==========================================================
-//   Competitor matrix (used / paid per app) — the research page
+//   Competitor matrix (used / paid per app) - the research page
 //   Edit COMPETITORS freely: add/remove categories or apps.
 //   `tier: 'advanced'` apps push the user toward the advanced program.
 //   Logos load from Clearbit by domain, with a favicon fallback.
@@ -285,7 +285,7 @@ const COMPETITORS = [
     { key: 'ten_percent',   name: 'Ten Percent Happier',    domain: 'tenpercent.com' },
     { key: 'balance',       name: 'Balance',                domain: 'balanceapp.com' },
   ]},
-  // Adjacent: AI coaching & journaling — the truest modern competitor to GG
+  // Adjacent: AI coaching & journaling - the truest modern competitor to GG
   { cat: 'AI coaching & journaling', tier: 'advanced', apps: [
     { key: 'rosebud',  name: 'Rosebud',  domain: 'rosebud.app' },
     { key: 'wysa',     name: 'Wysa',     domain: 'wysa.com' },
@@ -294,7 +294,7 @@ const COMPETITORS = [
     { key: 'replika',  name: 'Replika',  domain: 'replika.com' },
     { key: 'mindsera', name: 'Mindsera', domain: 'mindsera.com' },
   ]},
-  // Adjacent: coaching & personal growth — the "real coach behind it" positioning
+  // Adjacent: coaching & personal growth - the "real coach behind it" positioning
   { cat: 'Coaching & personal growth', tier: 'advanced', apps: [
     { key: 'fabulous',   name: 'Fabulous',   domain: 'thefabulous.co' },
     { key: 'betterup',   name: 'BetterUp',   domain: 'betterup.com' },
@@ -302,13 +302,13 @@ const COMPETITORS = [
     { key: 'mindvalley', name: 'Mindvalley', domain: 'mindvalley.com' },
     { key: 'centr',      name: 'Centr',      domain: 'centr.com' },
   ]},
-  // Adjacent: therapy & mental health — the human alternative people pay for
+  // Adjacent: therapy & mental health - the human alternative people pay for
   { cat: 'Therapy & mental health', tier: 'light', apps: [
     { key: 'betterhelp', name: 'BetterHelp', domain: 'betterhelp.com' },
     { key: 'talkspace',  name: 'Talkspace',  domain: 'talkspace.com' },
     { key: 'cerebral',   name: 'Cerebral',   domain: 'cerebral.com' },
   ]},
-  // Adjacent: mood & emotional wellbeing — lightweight daily check-in apps
+  // Adjacent: mood & emotional wellbeing - lightweight daily check-in apps
   { cat: 'Mood & emotional wellbeing', tier: 'light', apps: [
     { key: 'finch',       name: 'Finch',       domain: 'finchcare.com' },
     { key: 'how_we_feel', name: 'How We Feel', domain: 'howwefeel.org' },
@@ -400,7 +400,7 @@ function renderCompetitorGrid() {
     clearError(3);
   });
 
-  // "I haven't used any of these" — a valid answer that clears every toggle
+  // "I haven't used any of these" - a valid answer that clears every toggle
   const noneBtn = document.getElementById('apps-none');
   if (noneBtn) {
     noneBtn.addEventListener('click', () => {
@@ -417,7 +417,7 @@ function renderCompetitorGrid() {
 }
 
 // ==========================================================
-//   Derived path (beginner vs advanced) — re-derivable from raw
+//   Derived path (beginner vs advanced) - re-derivable from raw
 // ==========================================================
 function derivePath() {
   const tracks = state.track_level === 'casual' || state.track_level === 'serious';
@@ -559,7 +559,7 @@ function animateSpots(numEl, from, to) {
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce || from === to) { numEl.textContent = to; return; }
   const duration = 1100;
-  const ease = t => 1 - Math.pow(1 - t, 3);   // easeOutCubic — slows near the end
+  const ease = t => 1 - Math.pow(1 - t, 3);   // easeOutCubic - slows near the end
   const start = performance.now();
   let last = from;
   function frame(now) {
