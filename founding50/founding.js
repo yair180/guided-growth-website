@@ -202,13 +202,13 @@ form.querySelectorAll('.chips').forEach(group => {
 // Picking iPhone/Android rewrites the email guidance so it is unmistakable
 // which account email to use (the invite is delivered through that store).
 function updateEmailGuidance(platform) {
-  const hint = document.getElementById('email-account-hint');
-  const note = document.getElementById('emailnote-text');
+  const email = document.getElementById('f-email');
+  const note  = document.getElementById('emailnote-text');
   if (platform === 'ios') {
-    if (hint) { hint.textContent = 'Use your Apple ID email'; hint.hidden = false; }
+    if (email) email.placeholder = 'Your Apple ID email';
     if (note) note.innerHTML = 'Your invite is delivered through <strong>TestFlight</strong>, so any other email will not reach you.';
   } else if (platform === 'android') {
-    if (hint) { hint.textContent = 'Use your Google account email'; hint.hidden = false; }
+    if (email) email.placeholder = 'Your Google account email';
     if (note) note.innerHTML = 'Your invite is delivered through <strong>Google Play</strong>, so any other email will not reach you.';
   }
 }
