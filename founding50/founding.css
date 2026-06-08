@@ -260,6 +260,7 @@
   padding: 4px 0;
 }
 .cgrid__end { margin-top: var(--space-4); font-size: 13px; color: var(--color-ink-faint); text-align: center; }
+.cgrid__none { width: 100%; margin-top: var(--space-4); text-align: center; }
 .capp { display: flex; align-items: center; gap: var(--space-3); padding: 8px 0; border-bottom: 1px solid var(--color-line); }
 .capp__logo { width: 28px; height: 28px; border-radius: 7px; object-fit: contain; background: var(--color-bg-alt); flex-shrink: 0; }
 .capp__logo--fallback { padding: 5px; }

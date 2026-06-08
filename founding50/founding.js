@@ -42,6 +42,7 @@ const state = {
   heard_from_other: '',
   track_level: '',
   apps_matrix: {},   // { appKey: { used: bool, paid: bool } }
+  apps_none: false,  // explicit "I haven't used any of these"
   apps_other: '',
   habit: '',           // Laurel Q1: the habit/pattern to change
   habit_duration: '',  // Laurel Q2: how long it has affected them
@@ -72,7 +73,9 @@ const REQUIRED = {
         && (state.heard_from !== 'friend' || !!state.referred_by_name.trim())
         && (state.heard_from !== 'other'  || !!state.heard_from_other.trim()),
   2: () => !!state.track_level,
+  3: () => state.apps_none || Object.values(state.apps_matrix).some(v => v.used || v.paid),
   4: () => isValidAge(state.age) && !!state.gender,
+  5: () => !!state.habit.trim() && !!state.habit_duration && !!state.habit_cost.trim() && !!state.habit_invest.trim(),
   6: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
@@ -83,7 +86,9 @@ const REQUIRED_MSG = {
         : state.heard_from === 'other'  ? 'Tell us where you heard about us.'
         : 'Pick one so we know where you came from.',
   2: 'Pick one so we can start you in the right place.',
+  3: 'Tap at least one app, or "I haven\'t used any of these" at the bottom.',
   4: 'Please add your age and gender.',
+  5: 'Please answer all four so your coach can actually help.',
   6: 'Check the box to claim your founding spot.'
 };
 
@@ -212,9 +217,9 @@ document.getElementById('f-apps-other').addEventListener('input', e => { state.a
 document.getElementById('f-referred-by').addEventListener('input', e => { state.referred_by_name = e.target.value; clearError(1); });
 document.getElementById('f-heard-other').addEventListener('input', e => { state.heard_from_other = e.target.value; clearError(1); });
 document.getElementById('f-age').addEventListener('input', e => { state.age = e.target.value; clearError(4); });
-document.getElementById('f-habit').addEventListener('input', e => { state.habit = e.target.value; });
-document.getElementById('f-cost').addEventListener('input', e => { state.habit_cost = e.target.value; });
-document.getElementById('f-invest').addEventListener('input', e => { state.habit_invest = e.target.value; });
+document.getElementById('f-habit').addEventListener('input', e => { state.habit = e.target.value; clearError(5); });
+document.getElementById('f-cost').addEventListener('input', e => { state.habit_cost = e.target.value; clearError(5); });
+document.getElementById('f-invest').addEventListener('input', e => { state.habit_invest = e.target.value; clearError(5); });
 
 // commit checkbox
 document.getElementById('f-commit').addEventListener('change', e => {
@@ -386,7 +391,29 @@ function renderCompetitorGrid() {
     grid.querySelectorAll(`.ctog[data-app="${key}"]`).forEach(b => {
       b.classList.toggle('is-on', !!rec[b.dataset.kind]);
     });
+    // any selection cancels the "I haven't used any of these" answer
+    if (rec.used || rec.paid) {
+      state.apps_none = false;
+      const none = document.getElementById('apps-none');
+      if (none) none.classList.remove('is-selected');
+    }
+    clearError(3);
   });
+
+  // "I haven't used any of these" — a valid answer that clears every toggle
+  const noneBtn = document.getElementById('apps-none');
+  if (noneBtn) {
+    noneBtn.addEventListener('click', () => {
+      const on = !noneBtn.classList.contains('is-selected');
+      noneBtn.classList.toggle('is-selected', on);
+      state.apps_none = on;
+      if (on) {
+        state.apps_matrix = {};
+        grid.querySelectorAll('.ctog.is-on').forEach(b => b.classList.remove('is-on'));
+      }
+      clearError(3);
+    });
+  }
 }
 
 // ==========================================================
@@ -426,6 +453,7 @@ function buildPayload() {
     commit_ts:       state.two_week_commit ? new Date().toISOString() : null,
     research:        {
       apps_matrix: matrix,                                              // full per-app used+paid
+      apps_none:   state.apps_none,                                     // explicitly said "none of these"
       laurel: {                                                         // Laurel's habit-cost-investment research
         habit:    state.habit.trim() || null,
         duration: state.habit_duration || null,
