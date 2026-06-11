@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../styles.css" />
-  <link rel="stylesheet" href="founding.css?v=23" />
+  <link rel="stylesheet" href="founding.css?v=24" />
   <script>
     // Public config. Anon key is safe to expose - Row Level Security on
     // `founding_signups` allows INSERT only from the anon role, and reads
@@ -124,14 +124,19 @@
             <p class="fstep__error" data-error hidden></p>
           </div>
 
-          <!-- STEP 3: track level -->
+          <!-- STEP 3: experience fork (mirrors the app's ONBOARD-FORK--FORM) -->
           <div class="fstep" data-step="2">
-            <h3 class="fstep__title">Do you track your habits or growth today?</h3>
-            <p class="fstep__hint">No wrong answer. It just helps us start you in the right place.</p>
+            <h3 class="fstep__title">Let's build your plan.</h3>
+            <p class="fstep__hint">How much experience do you have with habit tracking?</p>
             <div class="chips chips--stack" data-single data-field="track_level">
-              <button type="button" class="chip chip--wide" data-value="none">No, not really</button>
-              <button type="button" class="chip chip--wide" data-value="casual">Yes, casually</button>
-              <button type="button" class="chip chip--wide" data-value="serious">Yes, seriously</button>
+              <button type="button" class="chip chip--wide chip--exp" data-value="new">
+                <span class="chip--exp__title">I'm new to habit tracking</span>
+                <span class="chip--exp__sub">I'll help you step by step</span>
+              </button>
+              <button type="button" class="chip chip--wide chip--exp" data-value="experienced">
+                <span class="chip--exp__title">I already have experience with habit tracking</span>
+                <span class="chip--exp__sub">Tell me your habits and I'll organize them</span>
+              </button>
             </div>
             <p class="fstep__error" data-error hidden></p>
           </div>
@@ -239,6 +244,6 @@
     <span class="toast__msg"></span>
   </div>
 
-  <script src="founding.js?v=23"></script>
+  <script src="founding.js?v=24"></script>
 </body>
 </html>

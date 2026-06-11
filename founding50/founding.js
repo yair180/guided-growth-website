@@ -419,7 +419,7 @@ function renderCompetitorGrid() {
 //   Derived path (beginner vs advanced) - re-derivable from raw
 // ==========================================================
 function derivePath() {
-  const tracks = state.track_level === 'casual' || state.track_level === 'serious';
+  const tracks = state.track_level === 'experienced';
   const usesAdvancedApp = Object.entries(state.apps_matrix)
     .some(([k, v]) => v.used && APP_TIER[k] === 'advanced');
   return (tracks || usesAdvancedApp) ? 'advanced' : 'beginner';
