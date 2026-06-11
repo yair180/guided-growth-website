@@ -47,7 +47,6 @@ const state = {
   habit: '',           // Laurel Q1: the habit/pattern to change
   habit_duration: '',  // Laurel Q2: how long it has affected them
   habit_cost: '',      // Laurel Q3: emotional/physical/financial/relational cost
-  habit_invest: '',    // Laurel Q4: what they'd invest to be free of it
   age: '',
   gender: '',
   two_week_commit: false
@@ -75,7 +74,7 @@ const REQUIRED = {
   2: () => !!state.track_level,
   3: () => state.apps_none || Object.values(state.apps_matrix).some(v => v.used || v.paid),
   4: () => isValidAge(state.age) && !!state.gender,
-  5: () => !!state.habit.trim() && !!state.habit_duration && !!state.habit_cost.trim() && !!state.habit_invest.trim(),
+  5: () => !!state.habit.trim() && !!state.habit_duration && !!state.habit_cost.trim(),
   6: () => state.two_week_commit
 };
 const REQUIRED_MSG = {
@@ -220,7 +219,6 @@ document.getElementById('f-heard-other').addEventListener('input', e => { state.
 document.getElementById('f-age').addEventListener('input', e => { state.age = e.target.value; clearError(4); });
 document.getElementById('f-habit').addEventListener('input', e => { state.habit = e.target.value; clearError(5); });
 document.getElementById('f-cost').addEventListener('input', e => { state.habit_cost = e.target.value; clearError(5); });
-document.getElementById('f-invest').addEventListener('input', e => { state.habit_invest = e.target.value; clearError(5); });
 
 // commit checkbox
 document.getElementById('f-commit').addEventListener('change', e => {
@@ -458,8 +456,7 @@ function buildPayload() {
       laurel: {                                                         // Laurel's habit-cost-investment research
         habit:    state.habit.trim() || null,
         duration: state.habit_duration || null,
-        cost:     state.habit_cost.trim() || null,
-        invest:   state.habit_invest.trim() || null
+        cost:     state.habit_cost.trim() || null
       }
     },
     referrer:        document.referrer || null,
