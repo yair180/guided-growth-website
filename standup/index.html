@@ -134,9 +134,28 @@ function setCookie(n,v){document.cookie=n+"="+encodeURIComponent(v)+"; Path=/; M
 
 function issLinks(arr){return arr.map(function(i){return '<a class="iss" href="'+ISSUE_BASE+i+'" target="_blank" rel="noopener">#'+esc(i)+'</a>';}).join(", ");}
 
+var STANDUP_DATA_URL="/internal/standup/data";
+var STANDUP_SAVE_URL="/internal/standup/save";
+window.STANDUP={};
 function localKey(person){return "gg-standup-"+TODAY+"-"+person;}
-function loadEntry(person){try{var v=localStorage.getItem(localKey(person));return v?JSON.parse(v):{};}catch(e){return {};}}
-function saveEntry(person,e){try{localStorage.setItem(localKey(person),JSON.stringify(e));}catch(_){}}
+function loadEntry(person){
+  if(window.STANDUP && window.STANDUP[person]) return window.STANDUP[person];
+  try{var v=localStorage.getItem(localKey(person));return v?JSON.parse(v):{};}catch(e){return {};}
+}
+function loadStandup(){
+  return fetch(STANDUP_DATA_URL+"?date="+TODAY,{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){window.STANDUP=(d&&d.entries)||{};})
+    .catch(function(){window.STANDUP=window.STANDUP||{};});
+}
+function saveEntry(person,e){
+  try{localStorage.setItem(localKey(person),JSON.stringify(e));}catch(_){}
+  return fetch(STANDUP_SAVE_URL,{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({date:TODAY,person:person,blocked:e.blocked,confidence:e.confidence,ready:e.ready})})
+    .then(function(r){return r.json().catch(function(){return {ok:false};}).then(function(j){return {ok:r.ok&&!!j.ok,entry:j.entry};});})
+    .then(function(res){ if(res.ok&&res.entry){window.STANDUP[person]=res.entry;} return res; })
+    .catch(function(){return {ok:false};});
+}
 
 function gitlabUser(token){
   return fetch("https://gitlab.com/api/v4/user",{headers:{"PRIVATE-TOKEN":token}})
@@ -144,9 +163,10 @@ function gitlabUser(token){
 }
 
 function load(){
-  return fetch(BOARD_URL,{credentials:"include",cache:"no-store"})
-    .then(function(r){return r.json();})
-    .then(function(b){BOARD=b;return b;});
+  return Promise.all([
+    fetch(BOARD_URL,{credentials:"include",cache:"no-store"}).then(function(r){return r.json();}),
+    loadStandup()
+  ]).then(function(arr){BOARD=arr[0];return BOARD;});
 }
 
 function statusCounts(gs){
@@ -292,7 +312,7 @@ function render(){
   $("body").innerHTML=h;
   wireCards();
 
-  $("foot").innerHTML='This page renders live from the team board (the same source the maintainer session keeps current). Shipped / On now / Next / Need are derived from board step states and GitLab labels, so they update as the board moves. Your confidence and ready toggle save to this browser for now; shared sync is the planned fast-follow.';
+  $("foot").innerHTML='This page renders live from the team board (the same source the maintainer session keeps current). Shipped / On now / Next / Need are derived from board step states and GitLab labels, so they update as the board moves. When you are signed in, your confidence, ready toggle, and need-from-team line save to a shared store the whole team sees; signed out, they fall back to this browser.';
 }
 
 function wireCards(){
@@ -315,7 +335,8 @@ function wireCards(){
     var sv=$("sv-"+ps);if(sv)sv.onclick=function(){
       var segv=(seg&&seg.getAttribute("data-val"))||loadEntry(ps).confidence||confHeuristic(deriveCard(p));
       var e={blocked:($("bl-"+ps)||{}).value||"",confidence:segv,ready:!!($("rd-"+ps)||{}).checked};
-      saveEntry(ps,e);toast("Saved on this device");render();
+      sv.textContent="Saving...";
+      saveEntry(ps,e).then(function(res){ toast(res.ok?"Saved and shared with the team":"Saved on this device (sign in to share)"); render(); });
     };
   });
 }
