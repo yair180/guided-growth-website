@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Guided Growth standup</title>
+<link rel="icon" href="/favicon.png" />
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d2129; --line:#262b35;
+    --txt:#e7e9ee; --mut:#9aa3b2; --dim:#6b7280;
+    --info:#378add; --info-bg:#11243a;
+    --ok:#1d9e75; --ok-bg:#0f261f;
+    --warn:#ef9f27; --warn-bg:#2a2110;
+    --danger:#e24b4a; --danger-bg:#2a1414;
+    --radius:12px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--info);text-decoration:none}
+  .wrap{max-width:1040px;margin:0 auto;padding:22px 18px 80px}
+  header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  h1{font-size:20px;font-weight:600;margin:0}
+  .sub{font-size:12.5px;color:var(--mut);margin-top:3px}
+  .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  button,.btn{font-family:inherit;font-size:13px;color:var(--txt);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  button:hover{border-color:#37404e}
+  button.primary{background:var(--info);border-color:var(--info);color:#fff}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 10px;border-radius:8px;background:var(--panel2);color:var(--mut);border:1px solid var(--line)}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .metric{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .metric .k{font-size:12px;color:var(--mut)}
+  .metric .v{font-size:24px;font-weight:600;margin-top:2px}
+  .risk{border-left:3px solid var(--danger);background:var(--danger-bg);padding:10px 13px;border-radius:0 8px 8px 0;margin-bottom:20px;font-size:13px;color:#f3b4b3}
+  .sectlabel{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--dim);text-transform:uppercase;margin:22px 0 10px}
+  .cards{display:flex;flex-direction:column;gap:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+  .card.you{border-color:var(--info);box-shadow:0 0 0 1px var(--info) inset}
+  .chead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .who{display:flex;align-items:center;gap:10px}
+  .ava{width:30px;height:30px;border-radius:50%;background:var(--info-bg);color:#7fb6f0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:0 0 auto}
+  .who .nm{font-size:14.5px;font-weight:600}
+  .who .ro{font-size:12px;color:var(--mut)}
+  .pill{font-size:11px;padding:3px 10px;border-radius:20px}
+  .pill.ok{background:var(--ok-bg);color:#5dcaa5}
+  .pill.warn{background:var(--warn-bg);color:#f0b860}
+  .pill.slip{background:var(--danger-bg);color:#f09595}
+  .pill.none{background:var(--panel2);color:var(--mut);cursor:pointer;border:1px solid var(--line)}
+  .lines{font-size:13px}
+  .ln{display:flex;gap:8px;padding:2px 0}
+  .ln .tag{flex:0 0 78px;font-size:11.5px;font-weight:600;padding-top:1px}
+  .ln .tag.s{color:#5dcaa5}.ln .tag.n{color:#7fb6f0}.ln .tag.x{color:#9aa3b2}.ln .tag.b{color:#f09595}
+  .ln .bd{color:var(--txt)}
+  .ln .bd.muted{color:var(--mut)}
+  .iss{color:#7fb6f0}
+  .youbar{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line);display:none}
+  .card.you .youbar{display:block}
+  .youbar .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .youbar label{font-size:12px;color:var(--mut);flex:0 0 92px}
+  .youbar input[type=text]{flex:1;min-width:180px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:7px 10px;font-family:inherit;font-size:13px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .seg button{border:0;border-radius:0;background:var(--panel2);padding:6px 11px;font-size:12px;color:var(--mut)}
+  .seg button.sel.ok{background:var(--ok);color:#fff}
+  .seg button.sel.warn{background:var(--warn);color:#1a1303}
+  .seg button.sel.slip{background:var(--danger);color:#fff}
+  .twocol{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;margin-top:12px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+  .panel h3{font-size:13.5px;font-weight:600;margin:0 0 8px;display:flex;align-items:center;gap:7px}
+  .panel .item{font-size:13px;color:var(--mut);padding:2px 0}
+  .panel .item b{color:var(--txt);font-weight:600}
+  ol.dec{margin:0;padding-left:18px;font-size:13px;color:#cfe0f3}
+  ol.dec li{padding:2px 0}
+  .ready{font-size:11px;color:#5dcaa5;display:inline-flex;align-items:center;gap:4px}
+  .modal-bg{position:absolute;inset:0;min-height:100vh;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;max-width:440px;width:100%}
+  .modal h2{font-size:16px;margin:0 0 6px}
+  .modal p{font-size:13px;color:var(--mut);margin:0 0 12px}
+  .modal input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:13px;margin-bottom:12px}
+  .modal .err{color:#f09595;font-size:12.5px;margin-bottom:8px;display:none}
+  .foot{margin-top:26px;font-size:12px;color:var(--dim);line-height:1.6}
+  .loading{color:var(--mut);padding:40px 0;text-align:center}
+  .toast{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ok);color:#04241a;padding:8px 16px;border-radius:8px;font-size:13px;display:none;z-index:60}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Guided Growth standup</h1>
+      <div class="sub" id="sub">Loading the board...</div>
+    </div>
+    <div class="controls">
+      <span class="chip" id="userchip" style="display:none"></span>
+      <button id="signin">Sign in with GitLab</button>
+      <button id="refresh" title="Reload from the board">Refresh</button>
+    </div>
+  </header>
+
+  <div id="body"><div class="loading">Pulling the live board...</div></div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="modal-bg" id="modalbg">
+  <div class="modal">
+    <h2>Sign in with GitLab</h2>
+    <p>Paste a GitLab personal access token with <code>read_api</code> scope. It is used to identify your card and is stored only in your browser. Group members only.</p>
+    <div class="err" id="mErr"></div>
+    <input id="mTok" type="password" placeholder="glpat-..." autocomplete="off" />
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="mCancel">Cancel</button>
+      <button class="primary" id="mGo">Sign in</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var BOARD_URL = "/internal/yair-os/team-board.json";
+var ISSUE_BASE = "https://gitlab.com/guidedgrowth-group/guided-growth-mvp/-/issues/";
+var QA_HARD_GATES = ["103","125"];
+var TODAY = new Date().toISOString().slice(0,10);
+var BOARD=null, ME=null;
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function slug(p){return String(p&&p.person||p&&p.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
+function $(id){return document.getElementById(id);}
+function toast(m){var t=$("toast");t.textContent=m;t.style.display="block";setTimeout(function(){t.style.display="none";},1700);}
+
+function getCookie(n){var m=document.cookie.match(new RegExp("(?:^|; )"+n+"=([^;]*)"));return m?decodeURIComponent(m[1]):null;}
+function setCookie(n,v){document.cookie=n+"="+encodeURIComponent(v)+"; Path=/; Max-Age="+(60*60*24*30)+"; Secure; SameSite=Lax";}
+
+function issLinks(arr){return arr.map(function(i){return '<a class="iss" href="'+ISSUE_BASE+i+'" target="_blank" rel="noopener">#'+esc(i)+'</a>';}).join(", ");}
+
+function localKey(person){return "gg-standup-"+TODAY+"-"+person;}
+function loadEntry(person){try{var v=localStorage.getItem(localKey(person));return v?JSON.parse(v):{};}catch(e){return {};}}
+function saveEntry(person,e){try{localStorage.setItem(localKey(person),JSON.stringify(e));}catch(_){}}
+
+function gitlabUser(token){
+  return fetch("https://gitlab.com/api/v4/user",{headers:{"PRIVATE-TOKEN":token}})
+    .then(function(r){if(!r.ok)throw new Error("bad token");return r.json();});
+}
+
+function load(){
+  return fetch(BOARD_URL,{credentials:"include",cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(b){BOARD=b;return b;});
+}
+
+function statusCounts(gs){
+  var c={todo:0,in_progress:0,in_testing:0,done:0,other:0};
+  Object.keys(gs||{}).forEach(function(k){var s=gs[k];if(c[s]!==undefined)c[s]++;else c.other++;});
+  return c;
+}
+
+function collectSteps(person){
+  var out=[];(person.projects||[]).forEach(function(pr){
+    (pr.steps||[]).forEach(function(st){out.push({st:st,pr:pr});});
+  });return out;
+}
+
+function deriveCard(person){
+  var steps=collectSteps(person);
+  var shipped=[],now=[],next=[],blocked=[];
+  steps.forEach(function(o){
+    var st=o.st,pr=o.pr,iss=st.issue?String(st.issue):null;
+    if(st.state==="done"){if(iss)shipped.push(iss);}
+    else if(st.state==="in-progress"){now.push({t:st.title,i:iss});}
+    else if(st.state==="blocked"){blocked.push({t:st.title,i:iss,why:st.next||st.update||""});}
+    else if(st.state==="todo"){ if(pr.status==="now"||pr.status==="next"||pr.status==="active") next.push({t:st.title,i:iss}); }
+  });
+  return {shipped:shipped, now:now, next:next.slice(0,3), blocked:blocked};
+}
+
+function confHeuristic(card){
+  if(card.blocked.length) return "warn";
+  if(card.now.length) return "ok";
+  return "none";
+}
+
+function pill(state){
+  if(state==="ok")return '<span class="pill ok">on track</span>';
+  if(state==="warn")return '<span class="pill warn">at risk</span>';
+  if(state==="slip")return '<span class="pill slip">slipping</span>';
+  return '<span class="pill none">set yours</span>';
+}
+
+function claudePrompt(person){
+  return "Read my bucket on the GG team board (read_board, or GET guidedgrowthos.com/internal/yair-os/team-board.json, find person \""+person.person+"\"). Pull my OPEN GitLab issues in guided-growth-mvp (token at ~/.config/guided-growth/gitlab-token.txt). Draft my standup card in the four-line format: Shipped since last standup (closed issues / merged MRs with numbers), On now (in-progress step + issue), Next (next queued step), Blocked / need from team. Then suggest a confidence read (on track / at risk / slipping) on my launch-blocking commitment and say why. No em dashes.";
+}
+
+function renderCard(person){
+  var pslug=slug(person);
+  var isMe = ME && person.username && ME.toLowerCase()===String(person.username).toLowerCase();
+  var card=deriveCard(person);
+  var entry=loadEntry(pslug);
+  var conf=entry.confidence||confHeuristic(card);
+  var initials=(person.person||"?").slice(0,2).toUpperCase();
+  var roleShort=(person.role_summary||"").split(/[.:]/)[0].slice(0,70);
+
+  var blockedHtml;
+  if(entry.blocked){blockedHtml='<span class="bd">'+esc(entry.blocked)+'</span>';}
+  else if(card.blocked.length){blockedHtml='<span class="bd">'+card.blocked.map(function(b){return esc(b.t)+(b.i?' (#'+esc(b.i)+')':'');}).join("; ")+'</span>';}
+  else {blockedHtml='<span class="bd muted">nothing blocking</span>';}
+
+  var h='';
+  h+='<div class="card'+(isMe?' you':'')+'" id="card-'+pslug+'">';
+  h+='<div class="chead"><div class="who"><div class="ava">'+esc(initials)+'</div><div><div class="nm">'+esc(person.person)+(isMe?' <span style="color:var(--info);font-size:11px">you</span>':'')+(person.username?'':' <span style="color:var(--dim);font-size:11px">async</span>')+'</div><div class="ro">'+esc(roleShort)+'</div></div></div>';
+  h+='<div style="display:flex;align-items:center;gap:8px">'+(entry.ready?'<span class="ready">ready</span>':'')+'<span data-conf="'+pslug+'">'+pill(conf)+'</span></div></div>';
+
+  h+='<div class="lines">';
+  h+='<div class="ln"><span class="tag s">Shipped</span><span class="bd">'+(card.shipped.length?issLinks(card.shipped.slice(0,8))+(card.shipped.length>8?' +'+(card.shipped.length-8):''):'<span class="muted">nothing closed yet</span>')+'</span></div>';
+  h+='<div class="ln"><span class="tag n">On now</span><span class="bd">'+(card.now.length?card.now.map(function(x){return esc(x.t)+(x.i?' '+issLinks([x.i]):'');}).join("<br>"):'<span class="muted">nothing in progress</span>')+'</span></div>';
+  h+='<div class="ln"><span class="tag x">Next</span><span class="bd muted">'+(card.next.length?card.next.map(function(x){return esc(x.t)+(x.i?' (#'+esc(x.i)+')':'');}).join("<br>"):'queue clear')+'</span></div>';
+  h+='<div class="ln"><span class="tag b">Need</span>'+blockedHtml+'</div>';
+  h+='</div>';
+
+  if(isMe){
+    h+='<div class="youbar">';
+    h+='<div class="row"><label>Need from team</label><input type="text" id="bl-'+pslug+'" value="'+esc(entry.blocked||'')+'" placeholder="who or what you are waiting on" /></div>';
+    h+='<div class="row"><label>Confidence</label><span class="seg" data-seg="'+pslug+'">';
+    h+='<button data-c="ok" class="'+(conf==="ok"?"sel ok":"")+'">on track</button>';
+    h+='<button data-c="warn" class="'+(conf==="warn"?"sel warn":"")+'">at risk</button>';
+    h+='<button data-c="slip" class="'+(conf==="slip"?"sel slip":"")+'">slipping</button>';
+    h+='</span></div>';
+    h+='<div class="row"><label>Ready</label><label style="flex:0 0 auto;color:var(--txt);display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="rd-'+pslug+'" '+(entry.ready?'checked':'')+' style="width:auto"> I have prepped my card</label>';
+    h+='<button id="cl-'+pslug+'" style="margin-left:auto">Fill with my Claude</button>';
+    h+='<button class="primary" id="sv-'+pslug+'">Save</button></div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+function renderQA(){
+  var gs=BOARD.gitlab_status||{};
+  var inTest=Object.keys(gs).filter(function(k){return gs[k]==="in_testing";}).sort(function(a,b){return a-b;});
+  var gates=QA_HARD_GATES.map(function(g){return '#'+g+' '+(gs[g]==="done"?'green':'open');});
+  var h='<div class="panel"><h3>QA</h3>';
+  h+='<div class="item"><b>In testing:</b> '+(inTest.length?issLinks(inTest):'none')+'</div>';
+  h+='<div class="item"><b>Hard gates:</b> '+esc(gates.join(", "))+' (Mint, launch gate)</div>';
+  h+='<div class="item"><b>Approver:</b> Timothy. Fixes route to Yonas</div>';
+  h+='</div>';
+  return h;
+}
+
+function renderWaitsAndDecisions(){
+  var blocked=[];
+  (BOARD.people||[]).forEach(function(p){
+    (p.projects||[]).forEach(function(pr){(pr.steps||[]).forEach(function(st){
+      if(st.state==="blocked") blocked.push({who:p.person,t:st.title,i:st.issue,why:(st.next||st.update||"").split(/\. /)[0].slice(0,140)});
+    });});
+  });
+  var waits='<div class="panel"><h3>Open flags and waits</h3>';
+  if(blocked.length){blocked.slice(0,8).forEach(function(b){waits+='<div class="item"><b>'+esc(b.who)+(b.i?' #'+esc(b.i):'')+':</b> '+esc(b.t)+'</div>';});}
+  else {waits+='<div class="item">no blocked steps on the board</div>';}
+  waits+='</div>';
+  return waits;
+}
+
+function render(){
+  var b=BOARD;
+  var gs=b.gitlab_status||{};
+  var c=statusCounts(gs);
+  var nowIssues={};
+  (b.people||[]).forEach(function(p){(p.projects||[]).forEach(function(pr){if(pr.status==="now"){(pr.steps||[]).forEach(function(st){if(st.issue)nowIssues[st.issue]=gs[String(st.issue)]||"todo";});}});});
+  var blockersOpen=Object.keys(nowIssues).filter(function(k){return nowIssues[k]!=="done";}).length;
+  var gatesGreen=QA_HARD_GATES.filter(function(g){return gs[g]==="done";}).length;
+
+  var updated=b.updated_at?new Date(b.updated_at):null;
+  $("sub").innerHTML=new Date().toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"})+(updated?' &middot; board updated '+updated.toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):'');
+
+  var h='';
+  h+='<div class="metrics">';
+  h+='<div class="metric"><div class="k">Now-phase open</div><div class="v">'+blockersOpen+'</div></div>';
+  h+='<div class="metric"><div class="k">In testing</div><div class="v">'+c.in_testing+'</div></div>';
+  h+='<div class="metric"><div class="k">Hard gates green</div><div class="v">'+gatesGreen+' / '+QA_HARD_GATES.length+'</div></div>';
+  h+='<div class="metric"><div class="k">Closed on board</div><div class="v">'+c.done+'</div></div>';
+  h+='</div>';
+
+  var riskGate=QA_HARD_GATES.filter(function(g){return gs[g]!=="done";});
+  h+='<div class="risk">Biggest risk: confirm the now-phase items above are moving, and the hard gates '+esc(riskGate.map(function(g){return '#'+g;}).join(" + "))+' are on track. Walk the Need lines below first.</div>';
+
+  h+='<div class="sectlabel">Per person</div><div class="cards">';
+  (b.people||[]).forEach(function(p){h+=renderCard(p);});
+  h+='</div>';
+
+  h+='<div class="twocol">'+renderQA()+renderWaitsAndDecisions()+'</div>';
+
+  $("body").innerHTML=h;
+  wireCards();
+
+  $("foot").innerHTML='This page renders live from the team board (the same source the maintainer session keeps current). Shipped / On now / Next / Need are derived from board step states and GitLab labels, so they update as the board moves. Your confidence and ready toggle save to this browser for now; shared sync is the planned fast-follow.';
+}
+
+function wireCards(){
+  (BOARD.people||[]).forEach(function(p){
+    var ps=slug(p);
+    var isMe = ME && p.username && ME.toLowerCase()===String(p.username).toLowerCase();
+    if(!isMe) return;
+    var seg=document.querySelector('[data-seg="'+ps+'"]');
+    if(seg){seg.querySelectorAll("button").forEach(function(btn){btn.onclick=function(){
+      seg.querySelectorAll("button").forEach(function(b){b.className="";});
+      var cc=btn.getAttribute("data-c");btn.className="sel "+cc;
+      var pillSpan=document.querySelector('[data-conf="'+ps+'"]');if(pillSpan)pillSpan.innerHTML=pill(cc);
+      seg.setAttribute("data-val",cc);
+    };});}
+    var cl=$("cl-"+ps);if(cl)cl.onclick=function(){
+      var txt=claudePrompt(p);
+      if(navigator.clipboard)navigator.clipboard.writeText(txt).then(function(){toast("Claude prompt copied");},function(){window.prompt("Copy this prompt:",txt);});
+      else window.prompt("Copy this prompt:",txt);
+    };
+    var sv=$("sv-"+ps);if(sv)sv.onclick=function(){
+      var segv=(seg&&seg.getAttribute("data-val"))||loadEntry(ps).confidence||confHeuristic(deriveCard(p));
+      var e={blocked:($("bl-"+ps)||{}).value||"",confidence:segv,ready:!!($("rd-"+ps)||{}).checked};
+      saveEntry(ps,e);toast("Saved on this device");render();
+    };
+  });
+}
+
+function refreshUserChip(){
+  if(ME){$("userchip").style.display="inline-flex";$("userchip").innerHTML='<span style="color:#7fb6f0">@'+esc(ME)+'</span> &middot; <a href="#" id="signout" style="color:var(--mut)">sign out</a>';$("signin").style.display="none";
+    var so=$("signout");if(so)so.onclick=function(ev){ev.preventDefault();setCookie("gl_token","");document.cookie="gl_token=; Path=/; Max-Age=0";ME=null;refreshUserChip();render();};
+  }else{$("userchip").style.display="none";$("signin").style.display="inline-flex";}
+}
+
+function tryExistingToken(){
+  var t=getCookie("gl_token");
+  if(!t)return Promise.resolve();
+  return gitlabUser(t).then(function(u){ME=u.username;}).catch(function(){});
+}
+
+$("signin").onclick=function(){$("modalbg").style.display="flex";$("mTok").focus();};
+$("mCancel").onclick=function(){$("modalbg").style.display="none";$("mErr").style.display="none";};
+$("modalbg").onclick=function(e){if(e.target===$("modalbg")){$("modalbg").style.display="none";}};
+$("mGo").onclick=function(){
+  var t=$("mTok").value.trim();if(!t){return;}
+  $("mGo").textContent="Checking...";$("mErr").style.display="none";
+  gitlabUser(t).then(function(u){
+    ME=u.username;setCookie("gl_token",t);
+    $("modalbg").style.display="none";$("mTok").value="";$("mGo").textContent="Sign in";
+    refreshUserChip();render();
+    var c=$("card-"+slug({person:"",name:""}));
+    var mine=document.querySelector(".card.you");if(mine)mine.scrollIntoView({behavior:"smooth",block:"center"});
+  }).catch(function(){$("mErr").textContent="That token did not work. Use a GitLab token with read_api scope.";$("mErr").style.display="block";$("mGo").textContent="Sign in";});
+};
+$("refresh").onclick=function(){load().then(render);};
+
+tryExistingToken().then(load).then(function(){refreshUserChip();render();}).catch(function(e){
+  $("body").innerHTML='<div class="loading">Could not load the board. <a href="#" onclick="location.reload()">Retry</a></div>';
+});
+</script>
+</body>
+</html>
