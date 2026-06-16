@@ -151,6 +151,26 @@
 .fnd-letter__list li::before { content: ""; position: absolute; left: var(--space-2); top: 10px; width: 6px; height: 6px; border-radius: 999px; background: var(--color-accent); }
 .fnd-letter__sign { margin-top: var(--space-6); font-weight: 700; color: var(--color-ink); line-height: 1.5; }
 .fnd-letter__sign span { display: block; font-weight: 500; color: var(--color-ink-faint); font-size: 14px; }
+/* Forward-looking "where this is going" block — visually distinct from the
+   letter so the future vision never reads as what the product does today. */
+.fnd-vision {
+  margin: var(--space-5) 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent);
+}
+.fnd-vision__label {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-accent-dark);
+  margin-bottom: var(--space-3);
+}
+.fnd-vision p { margin: 0; color: var(--color-ink-soft); line-height: 1.7; }
+.fnd-vision strong { color: var(--color-accent-dark); }
 
 .fnd-hero__cta { margin-top: var(--space-10); }
 
