@@ -4350,6 +4350,10 @@
             <button type="button" data-squad="product" onclick="rmSetSquad('product')">Product</button>
             <button type="button" data-squad="eng" onclick="rmSetSquad('eng')">Engineering</button>
           </div>
+          <div class="rm-seg" id="rm-group-seg" role="group" aria-label="Group by">
+            <button type="button" class="active" data-group="epic" onclick="rmSetGroup('epic')">By epic</button>
+            <button type="button" data-group="feature" onclick="rmSetGroup('feature')">By feature</button>
+          </div>
           <select class="z7-select rm-assignee-select" id="rm-assignee" onchange="rmSetAssignee(this.value)" title="Filter by assignee" aria-label="Assignee filter">
             <option value="">Anyone</option>
           </select>
@@ -11828,11 +11832,15 @@
       'branching-ci': 'Branching & CI',
     };
 
-    let _rmItems = null, _rmSquad = 'all', _rmAssignee = '', _rmLoading = false;
+    let _rmItems = null, _rmSquad = 'all', _rmAssignee = '', _rmLoading = false, _rmGroup = 'epic';
 
     function epicLabel(slug) {
       if (!slug) return null;
       if (EPIC_NAMES[slug]) return EPIC_NAMES[slug];
+      return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+    function featureLabel(slug) {
+      if (!slug) return null;
       return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
     function esc(s) {
@@ -11844,6 +11852,12 @@
       _rmSquad = sq;
       document.querySelectorAll('#rm-squad-seg button').forEach(b =>
         b.classList.toggle('active', b.dataset.squad === sq));
+      renderRoadmap();
+    };
+    window.rmSetGroup = function (g) {
+      _rmGroup = (g === 'feature') ? 'feature' : 'epic';
+      document.querySelectorAll('#rm-group-seg button').forEach(b =>
+        b.classList.toggle('active', b.dataset.group === _rmGroup));
       renderRoadmap();
     };
     window.rmSetAssignee = function (val) {
@@ -11906,6 +11920,7 @@
       const lane = i.squad === 'product' ? '<span class="rm-lane-dot product">Product</span>'
                  : i.squad === 'eng' ? '<span class="rm-lane-dot eng">Eng</span>' : '';
       const chips = [];
+      if (i.feature) chips.push('<span class="rm-chip" style="border-color:#0d9488;color:#5eead4">' + esc(i.feature) + '</span>');
       if (i.screen) chips.push('<span class="rm-chip">' + esc(i.screen) + '</span>');
       (i.labels || []).filter(l => ['bug','ai-learning','frontend','backend'].includes(l))
         .forEach(l => chips.push('<span class="rm-chip">' + esc(l) + '</span>'));
@@ -11918,16 +11933,18 @@
     }
 
     function colHtml(phase, items) {
-      const byEpic = new Map(), noEpic = [];
+      const useFeature = _rmGroup === 'feature';
+      const byKey = new Map(), noKey = [];
       items.forEach(i => {
-        if (i.epic) { if (!byEpic.has(i.epic)) byEpic.set(i.epic, []); byEpic.get(i.epic).push(i); }
-        else noEpic.push(i);
+        const k = useFeature ? i.feature : i.epic;
+        if (k) { if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(i); }
+        else noKey.push(i);
       });
       let body = '';
-      noEpic.forEach(i => body += cardHtml(i));
-      [...byEpic.keys()].sort().forEach(slug => {
-        body += '<div class="rm-epic-head">' + esc(epicLabel(slug)) + '</div>';
-        byEpic.get(slug).forEach(i => body += cardHtml(i));
+      noKey.forEach(i => body += cardHtml(i));
+      [...byKey.keys()].sort().forEach(slug => {
+        body += '<div class="rm-epic-head">' + esc(useFeature ? featureLabel(slug) : epicLabel(slug)) + '</div>';
+        byKey.get(slug).forEach(i => body += cardHtml(i));
       });
       if (!items.length) body = '<div class="rm-col-empty">Nothing here yet</div>';
       return '<div class="rm-col" data-phase="' + phase.key + '">'
