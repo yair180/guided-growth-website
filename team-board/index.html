@@ -98,6 +98,24 @@
   .menu .mi:hover{background:var(--card-hover);color:var(--text)}
   .menu .av{width:20px;height:20px;border-radius:6px;font-size:10px}
 
+  .ov{position:fixed;inset:0;background:rgba(8,10,14,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:80;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+  .sheet{background:var(--bg);border:1px solid var(--border-strong);border-radius:16px;max-width:680px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+  .sh-head{display:flex;align-items:flex-start;gap:10px;padding:16px 18px 12px;border-bottom:1px solid var(--border)}
+  .sh-title{font-size:16.5px;font-weight:750;line-height:1.35;letter-spacing:-.01em;flex:1}
+  .sh-x{font:inherit;font-size:16px;line-height:1;cursor:pointer;background:transparent;border:0;color:var(--muted);padding:3px 7px;border-radius:7px}
+  .sh-x:hover{background:var(--card-hover);color:var(--text)}
+  .sh-body{padding:14px 18px 18px;max-height:60vh;overflow-y:auto}
+  .sh-meta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px;align-items:center}
+  .sh-shot{display:block;width:100%;max-height:300px;object-fit:contain;border-radius:9px;border:1px solid var(--border);background:var(--bg2);margin:4px 0 13px}
+  .sh-desc{font-size:13px;line-height:1.6;color:var(--text-2);white-space:pre-wrap;word-break:break-word}
+  .sh-sec{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:16px 0 8px}
+  .seg{display:inline-flex;gap:5px;flex-wrap:wrap}
+  .segb{font:inherit;font-size:12px;font-weight:650;cursor:pointer;background:var(--card);border:1px solid var(--border-2);border-radius:8px;padding:5px 12px;color:var(--text-2)}
+  .segb:hover{border-color:var(--accent)}
+  .segb.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .sh-foot{display:flex;align-items:center;gap:10px;padding:12px 18px;border-top:1px solid var(--border);background:var(--colbg);border-radius:0 0 16px 16px}
+  .sh-link{font:inherit;font-size:12.5px;font-weight:650;color:var(--accent-2)}
+  .lblpill{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:5px;padding:2px 6px}
   .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(10px);background:linear-gradient(140deg,var(--accent),var(--accent-2));color:#fff;font-size:13px;font-weight:600;padding:10px 17px;border-radius:11px;box-shadow:0 12px 34px rgba(0,0,0,.4);opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;z-index:90}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   @media(max-width:760px){ .cols{grid-template-columns:1fr 1fr} .screen{display:none} }
@@ -119,10 +137,12 @@
   <div class="chips" id="chips"></div>
   <main id="board"></main>
   <div class="toast" id="toast"></div>
+  <div id="detail"></div>
 
 <script>
   var API_GET='/internal/board/issues.json';
   var API_PUT='/internal/board/update';
+  var API_ISSUE='/internal/board/issue';
   var COLS=['backlog','next','doing','done'];
   var COL_LABEL={backlog:'Backlog',next:'Next',doing:'Doing',done:'Done'};
   var TYPE_LABEL={feature:'Feature',bug:'Bug',ai:'AI-learning'};
@@ -151,12 +171,12 @@
 
   function cardHtml(it,laneKey,col){
     var done=(col==='done');
-    return '<div class="card'+(done?' done-card':'')+'" draggable="true" data-iid="'+it.iid+'" data-lane="'+esc(laneKey)+'" data-col="'+col+'">'
+    return '<div class="card'+(done?' done-card':'')+'" draggable="true" data-iid="'+it.iid+'" data-lane="'+esc(laneKey)+'" data-col="'+col+'" onclick="openDetail(event,'+it.iid+')">'
       +'<div class="crow"><span class="chiptype t-'+esc(it.type)+'">'+esc(TYPE_LABEL[it.type]||it.type)+'</span>'
         +'<span class="pri '+esc(it.priority||'unset')+'" title="priority: '+esc(it.priority||'unset')+'"></span></div>'
       +'<div class="ctitle">'+esc(it.title)+'</div>'
       +(it.thumb?'<img class="thumb" src="'+esc(it.thumb)+'" loading="lazy" alt="screenshot" ondragstart="return false" onerror="this.remove()">':'')
-      +'<div class="cmeta"><a class="iid" href="'+esc(it.web_url)+'" target="_blank" rel="noopener" onmousedown="event.stopPropagation()" ondragstart="return false">#'+it.iid+'</a>'
+      +'<div class="cmeta"><a class="iid" href="'+esc(it.web_url)+'" target="_blank" rel="noopener" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()" ondragstart="return false">#'+it.iid+'</a>'
         +(it.screen?'<span class="screen">'+esc(it.screen)+'</span>':'')
         +'<button class="movebtn" onmousedown="event.stopPropagation()" ondragstart="return false" onclick="openMove(event,'+it.iid+',\''+esc(laneKey)+'\',\''+col+'\')">Move</button></div>'
     +'</div>';
@@ -283,6 +303,53 @@
       .then(function(){setSync('live');})
       .catch(function(){setSync('err');toast('Save failed — reloading from GitLab.');setTimeout(load,1200);});
   }
+
+  /* ===== deep issue detail (click a card) ===== */
+  var DET=null;
+  window.openDetail=function(ev,iid){
+    if(ev&&ev.target&&(ev.target.closest('.movebtn')||ev.target.closest('.iid')))return;
+    var host=document.getElementById('detail');
+    host.innerHTML='<div class="ov" onclick="if(event.target===this)closeDetail()"><div class="sheet"><div class="sh-body" style="padding:40px;text-align:center;color:var(--muted)">Loading #'+iid+'…</div></div></div>';
+    fetch(API_ISSUE+'?iid='+iid,{cache:'no-store'})
+      .then(function(r){return r.json();})
+      .then(function(d){if(d.error)throw new Error(d.error);DET=d;renderDetail(d);})
+      .catch(function(e){host.innerHTML='<div class="ov" onclick="if(event.target===this)closeDetail()"><div class="sheet"><div class="sh-body" style="padding:30px;color:var(--bug)">Could not load #'+iid+': '+esc(e.message)+'</div></div></div>';});
+  };
+  function renderDetail(d){
+    var host=document.getElementById('detail');
+    var pris=['high','medium','low'], types=[['bug','Bug'],['ai','AI-learning'],['feature','Feature']];
+    var priSeg=pris.map(function(p){return '<button class="segb'+(d.priority===p?' on':'')+'" onclick="detailSet(\'priority\',\''+p+'\')">'+p.charAt(0).toUpperCase()+p.slice(1)+'</button>';}).join('');
+    var typeSeg=types.map(function(t){return '<button class="segb'+(d.type===t[0]?' on':'')+'" onclick="detailSet(\'retype\',\''+t[0]+'\')">'+t[1]+'</button>';}).join('');
+    var labelPills=(d.labels||[]).map(function(l){return '<span class="lblpill">'+esc(l)+'</span>';}).join(' ');
+    var asg=(d.assignees&&d.assignees.length)?d.assignees.join(', '):'Unassigned';
+    host.innerHTML='<div class="ov" onclick="if(event.target===this)closeDetail()"><div class="sheet">'
+      +'<div class="sh-head"><div class="sh-title">'+esc(d.title)+'</div><button class="sh-x" onclick="closeDetail()">✕</button></div>'
+      +'<div class="sh-body">'
+        +'<div class="sh-meta"><span class="chiptype t-'+esc(d.type)+'">'+esc(TYPE_LABEL[d.type]||d.type)+'</span>'
+          +'<span class="lblpill">#'+d.iid+'</span>'
+          +(d.screen?'<span class="lblpill">'+esc(d.screen)+'</span>':'')
+          +'<span class="lblpill">'+esc(d.state)+'</span>'
+          +'<span class="lblpill">assignee: '+esc(asg)+'</span></div>'
+        +(d.screenshot?'<img class="sh-shot" src="'+esc(d.screenshot)+'" alt="screenshot" onerror="this.remove()">':'')
+        +'<div class="sh-desc">'+esc(d.description||'(no description)')+'</div>'
+        +'<div class="sh-sec">Priority</div><div class="seg">'+priSeg+'</div>'
+        +'<div class="sh-sec">Type</div><div class="seg">'+typeSeg+'</div>'
+        +'<div class="sh-sec">Labels</div><div style="display:flex;flex-wrap:wrap;gap:5px">'+(labelPills||'<span style="color:var(--faint);font-size:12px">none</span>')+'</div>'
+      +'</div>'
+      +'<div class="sh-foot"><a class="sh-link" href="'+esc(d.web_url)+'" target="_blank" rel="noopener">Open in GitLab &#8599;</a><span class="spacer"></span><button class="actbtn" onclick="closeDetail()">Close</button></div>'
+    +'</div></div>';
+  }
+  window.detailSet=function(op,val){
+    if(!DET)return; var iid=DET.iid;
+    var payload=(op==='priority')?{op:'priority',iid:iid,priority:val}:{op:'retype',iid:iid,itype:val};
+    if(op==='priority')DET.priority=val; else DET.type=val;
+    renderDetail(DET); setSync('saving');
+    fetch(API_PUT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();})
+      .then(function(){setSync('live');toast('Saved to GitLab');})
+      .catch(function(){setSync('err');toast('Save failed');});
+  };
+  window.closeDetail=function(){document.getElementById('detail').innerHTML='';DET=null;load();};
 
   /* ===== theme + toast + boot ===== */
   function applyTheme(t){document.documentElement.classList.toggle('light',t==='light');var b=document.getElementById('themebtn');if(b)b.textContent=(t==='light'?'◑ Light':'◐ Dark');}
