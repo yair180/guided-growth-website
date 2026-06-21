@@ -6670,6 +6670,9 @@
       if (teamView) teamView.classList.toggle('active', level === 8);
       const toolsView = document.getElementById('zoom-9-view');
       if (toolsView) toolsView.classList.toggle('active', level === 9);
+      const boardView = document.getElementById('zoom-10-view');
+      if (boardView) boardView.classList.toggle('active', level === 10);
+      if (level === 10) { var _bf = document.getElementById('z10-frame'); if (_bf && !_bf.getAttribute('src')) _bf.setAttribute('src', '/team-board/'); }
 
       // Cross-zoom round-trip housekeeping: landing back on QA completes the
       // trip (drop the flag); keep the "Back to QA" button in sync otherwise.
