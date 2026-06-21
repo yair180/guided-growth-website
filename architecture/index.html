@@ -667,7 +667,8 @@
     #text-size-ctl .ts-val:hover { color: #fff; }
 
     /* Zoom view containers */
-    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view, #zoom-7-view, #zoom-8-view, #zoom-9-view { display: none; }
+    #zoom-1-view, #zoom-2-view, #zoom-3-view, #zoom-4-view, #zoom-5-view, #zoom-6-view, #zoom-7-view, #zoom-8-view, #zoom-9-view, #zoom-10-view { display: none; }
+    #zoom-10-view.active { display: block; }
     #zoom-1-view.active, #zoom-2-view.active { display: block; }
     #zoom-3-view.active { display: block; }
     #zoom-4-view.active, #zoom-5-view.active { display: flex; flex-direction: column; }
@@ -3122,6 +3123,9 @@
     <button type="button" class="zoom-btn" data-zoom="9" onclick="setZoomLevel(9)" title="Tools — jump to any external tool">
       <span class="zoom-num">7</span>Tools
     </button>
+    <button type="button" class="zoom-btn" data-zoom="10" onclick="setZoomLevel(10)" title="Issue Board — per-person swimlanes of GitLab issues (tasks + QA): drag to prioritize and move across Backlog/Next/Doing/Done">
+      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#7c5cff;margin-right:6px;vertical-align:middle"></span><span class="zoom-num">8</span>Issue Board
+    </button>
     <span style="flex: 1"></span>
     <div id="text-size-ctl" title="Make all text and UI bigger or smaller. Click the percentage to reset to 100%.">
       <button type="button" class="ts-btn" onclick="adjustTextSize(-1)" title="Smaller">A&minus;</button>
@@ -4372,6 +4376,11 @@
     <!-- The real team board (per-person Claude-session buckets with ordered steps) lives at
          /team-projects and is embedded here so it is reachable as a view inside the architecture hub. -->
     <iframe id="z8-frame" title="Mission Control — team project board" style="border:0;width:100%;height:calc(100vh - 41px);display:block;background:#13161d"></iframe>
+  </div>
+
+  <!-- ZOOM 10: ISSUE BOARD (per-person swimlanes of GitLab issues, tasks + QA fused) -->
+  <div id="zoom-10-view">
+    <iframe id="z10-frame" title="Issue Board — per-person GitLab issues" style="border:0;width:100%;height:calc(100vh - 41px);display:block;background:#13161d"></iframe>
   </div>
 
   <!-- ZOOM 9: Tools hub — tile grid for all external tools -->

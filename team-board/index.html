@@ -77,6 +77,7 @@
   .pri{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-left:auto}
   .pri.high{background:var(--pri-high)} .pri.medium{background:var(--pri-med)} .pri.low{background:var(--pri-low)} .pri.unset{background:transparent;border:1px solid var(--border-2)}
   .ctitle{font-size:12.5px;line-height:1.4;color:var(--text);word-break:break-word}
+  .thumb{display:block;width:100%;height:62px;object-fit:cover;border-radius:6px;margin-top:7px;border:1px solid var(--border);background:var(--bg2)}
   .card.done-card .ctitle{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--border-strong)}
   .cmeta{display:flex;align-items:center;gap:7px;margin-top:6px}
   .iid{font-family:var(--mono);font-size:10px;color:var(--accent-2);border:1px solid color-mix(in srgb,var(--accent-2) 30%,transparent);border-radius:5px;padding:1px 5px}
@@ -124,6 +125,7 @@
       +'<div class="crow"><span class="chiptype t-'+esc(it.type)+'">'+esc(TYPE_LABEL[it.type]||it.type)+'</span>'
         +'<span class="pri '+esc(it.priority||'unset')+'" title="priority: '+esc(it.priority||'unset')+'"></span></div>'
       +'<div class="ctitle">'+esc(it.title)+'</div>'
+      +(it.thumb?'<img class="thumb" src="'+esc(it.thumb)+'" loading="lazy" alt="screenshot" ondragstart="return false" onerror="this.remove()">':'')
       +'<div class="cmeta"><a class="iid" href="'+esc(it.web_url)+'" target="_blank" rel="noopener" onmousedown="event.stopPropagation()" ondragstart="return false">#'+it.iid+'</a>'
         +(it.screen?'<span class="screen">'+esc(it.screen)+'</span>':'')+'</div>'
     +'</div>';
@@ -169,28 +171,31 @@
     });
     document.querySelectorAll('.col-body').forEach(function(body){
       body.addEventListener('dragover',function(e){
-        if(!drag||body.dataset.lane!==drag.lane)return; // same-lane only in v1
+        if(!drag)return; // any lane: same lane = reorder/move, other lane = reassign
         e.preventDefault();clearOver();body.classList.add('dragover');
       });
       body.addEventListener('dragleave',function(){body.classList.remove('dragover');});
       body.addEventListener('drop',function(e){
-        if(!drag||body.dataset.lane!==drag.lane){clearOver();return;}
+        if(!drag){clearOver();return;}
         e.preventDefault();
-        var lane=laneByKey(drag.lane);if(!lane){clearOver();return;}
-        var toCol=body.dataset.col, fromCol=drag.col, iid=drag.iid;
-        // pull the card object out of its current column
-        var fromList=lane.columns[fromCol], idxFrom=fromList.findIndex(function(x){return x.iid===iid;});
+        var toLaneKey=body.dataset.lane, toCol=body.dataset.col;
+        var fromLane=laneByKey(drag.lane), toLane=laneByKey(toLaneKey);
+        if(!fromLane||!toLane){clearOver();return;}
+        var fromCol=drag.col, iid=drag.iid;
+        var fromList=fromLane.columns[fromCol], idxFrom=fromList.findIndex(function(x){return x.iid===iid;});
         if(idxFrom<0){clearOver();return;}
         var moved=fromList[idxFrom];
         var insertAt=dropIndex(body,e.clientY);
         fromList.splice(idxFrom,1);
-        // if same column and we removed an earlier item, the index shifts
-        if(fromCol===toCol && idxFrom<insertAt)insertAt--;
-        lane.columns[toCol].splice(insertAt,0,moved);
+        var sameLane=(fromLane===toLane);
+        if(sameLane && fromCol===toCol && idxFrom<insertAt)insertAt--; // self-shift after removal
+        toLane.columns[toCol].splice(insertAt,0,moved);
+        if(!sameLane){ fromLane.count=Math.max(0,fromLane.count-1); toLane.count++; }
         clearOver();drag=null;render();
-        var order=lane.columns[toCol].map(function(x){return x.iid;});
-        if(fromCol===toCol) persist({op:'reorder',lane:lane.key,col:toCol,order:order});
-        else persist({op:'place',lane:lane.key,col:toCol,iid:iid,order:order});
+        var order=toLane.columns[toCol].map(function(x){return x.iid;});
+        if(!sameLane) persist({op:'reassign',lane:toLaneKey,col:toCol,iid:iid,order:order});
+        else if(fromCol===toCol) persist({op:'reorder',lane:toLaneKey,col:toCol,order:order});
+        else persist({op:'place',lane:toLaneKey,col:toCol,iid:iid,order:order});
       });
     });
   }
