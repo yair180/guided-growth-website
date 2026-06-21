@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Issue Board · Guided Growth</title>
+<style>
+  :root{
+    --bg:#13161d; --bg2:#10131a; --card:#1a1f2a; --card-hover:#1f2532; --colbg:#161b24;
+    --border:#2b3340; --border-2:#363f4f; --border-strong:#475063;
+    --text:#eef1f8; --text-2:#c2cad9; --muted:#8893a6; --faint:#525c6e;
+    --accent:#7c5cff; --accent-2:#5b8cff;
+    --feature:#5b8cff; --bug:#ff6b6b; --ai:#a98bff;
+    --backlog:#6b7385; --colnext:#5b8cff; --doing:#f0a93f; --done:#2fc46f;
+    --pri-high:#ff5470; --pri-med:#f0a93f; --pri-low:#6b7385;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  html.light{
+    --bg:#f5f6f9; --bg2:#eef0f5; --card:#ffffff; --card-hover:#f7f8fc; --colbg:#eef0f5;
+    --border:#e2e6ee; --border-2:#d6dbe6; --border-strong:#c2c9d8;
+    --text:#171b24; --text-2:#444d5e; --muted:#6b7385; --faint:#9aa2b4;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+
+  .top{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 90%,transparent);
+    backdrop-filter:saturate(140%) blur(12px);-webkit-backdrop-filter:saturate(140%) blur(12px);
+    border-bottom:1px solid var(--border);padding:12px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:29px;height:29px;border-radius:9px;background:linear-gradient(140deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff}
+  .btxt{font-size:15px;font-weight:750;letter-spacing:-.01em}
+  .bsub{font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+  .spacer{flex:1}
+  .legend{display:flex;gap:11px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+  .lg{display:inline-flex;align-items:center;gap:5px}
+  .lg .sw{width:9px;height:9px;border-radius:3px}
+  .syncind{font-size:11.5px;font-weight:600;border-radius:8px;padding:5px 10px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-2);color:var(--muted)}
+  .syncind .d{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+  .themebtn{font:inherit;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);border:1px solid var(--border-2);border-radius:8px;padding:6px 11px;color:var(--text-2)}
+  .themebtn:hover{border-color:var(--border-strong);color:var(--text)}
+
+  .chips{display:flex;gap:7px;flex-wrap:wrap;padding:14px 22px 2px}
+  .chip{font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 14px;color:var(--text-2);display:inline-flex;align-items:center;gap:7px}
+  .chip:hover{border-color:var(--accent)}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chip .n{font-family:var(--mono);font-size:11px;opacity:.8}
+
+  main{padding:8px 22px 90px}
+  .lane{margin-top:20px}
+  .lane-head{display:flex;align-items:center;gap:10px;margin:0 0 9px;padding:0 2px}
+  .av{width:28px;height:28px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:750;color:#fff}
+  .lname{font-size:15.5px;font-weight:700;letter-spacing:-.01em}
+  .lcount{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+
+  .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .col{background:var(--colbg);border:1px solid var(--border);border-radius:11px;display:flex;flex-direction:column;min-height:70px}
+  .col-head{display:flex;align-items:center;gap:7px;padding:9px 11px 7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .col-head .bar{width:16px;height:3px;border-radius:3px}
+  .col-head .cn{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+  .col.c-backlog .bar{background:var(--backlog)} .col.c-next .bar{background:var(--colnext)}
+  .col.c-doing .bar{background:var(--doing)} .col.c-done .bar{background:var(--done)}
+  .col-body{display:flex;flex-direction:column;gap:7px;padding:0 8px 9px;max-height:62vh;overflow-y:auto;min-height:34px}
+  .col-body.dragover{background:color-mix(in srgb,var(--accent) 9%,transparent);outline:1.5px dashed color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:-3px;border-radius:8px}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px 9px;cursor:grab;position:relative}
+  .card:hover{border-color:var(--border-strong);background:var(--card-hover)}
+  .card.dragging{opacity:.4}
+  .card .crow{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+  .chiptype{font-size:10px;font-weight:700;letter-spacing:.02em;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
+  .t-feature{background:color-mix(in srgb,var(--feature) 18%,transparent);color:var(--feature)}
+  .t-bug{background:color-mix(in srgb,var(--bug) 18%,transparent);color:var(--bug)}
+  .t-ai{background:color-mix(in srgb,var(--ai) 20%,transparent);color:var(--ai)}
+  .pri{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-left:auto}
+  .pri.high{background:var(--pri-high)} .pri.medium{background:var(--pri-med)} .pri.low{background:var(--pri-low)} .pri.unset{background:transparent;border:1px solid var(--border-2)}
+  .ctitle{font-size:12.5px;line-height:1.4;color:var(--text);word-break:break-word}
+  .card.done-card .ctitle{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--border-strong)}
+  .cmeta{display:flex;align-items:center;gap:7px;margin-top:6px}
+  .iid{font-family:var(--mono);font-size:10px;color:var(--accent-2);border:1px solid color-mix(in srgb,var(--accent-2) 30%,transparent);border-radius:5px;padding:1px 5px}
+  .iid:hover{background:color-mix(in srgb,var(--accent-2) 12%,transparent)}
+  .screen{font-size:10px;color:var(--faint);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .empty{font-size:11px;color:var(--faint);font-style:italic;padding:8px 4px;text-align:center}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(10px);background:linear-gradient(140deg,var(--accent),var(--accent-2));color:#fff;font-size:13px;font-weight:600;padding:10px 17px;border-radius:11px;box-shadow:0 12px 34px rgba(0,0,0,.4);opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;z-index:90}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:760px){ .cols{grid-template-columns:1fr 1fr} .screen{display:none} }
+</style></head>
+<body>
+  <header class="top">
+    <div class="brand"><div class="logo">G</div><div><div class="btxt">Issue Board</div><div class="bsub">guided-growth · live from GitLab</div></div></div>
+    <span class="spacer"></span>
+    <div class="legend">
+      <span class="lg"><span class="sw" style="background:var(--feature)"></span>Feature</span>
+      <span class="lg"><span class="sw" style="background:var(--bug)"></span>Bug</span>
+      <span class="lg"><span class="sw" style="background:var(--ai)"></span>AI-learning</span>
+    </div>
+    <span class="syncind" id="syncind"><span class="d"></span>Loading</span>
+    <button class="themebtn" id="themebtn" onclick="toggleTheme()">◐ Theme</button>
+  </header>
+  <div class="chips" id="chips"></div>
+  <main id="board"></main>
+  <div class="toast" id="toast"></div>
+
+<script>
+  var API_GET='/internal/board/issues.json';
+  var API_PUT='/internal/board/update';
+  var COLS=['backlog','next','doing','done'];
+  var COL_LABEL={backlog:'Backlog',next:'Next',doing:'Doing',done:'Done'};
+  var TYPE_LABEL={feature:'Feature',bug:'Bug',ai:'AI-learning'};
+  var AVCOLORS={Yonas:'linear-gradient(140deg,#ff7a59,#ff4d6d)',Mint:'linear-gradient(140deg,#2fc46f,#1fb6a0)',Timothy:'linear-gradient(140deg,#5b8cff,#7c5cff)',Yair:'linear-gradient(140deg,#7c5cff,#5b8cff)',Alejandro:'linear-gradient(140deg,#f0a93f,#ff7a59)',Unassigned:'linear-gradient(140deg,#8893a6,#5a6478)'};
+  var BOARD=null, VIEW='all';
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function avColor(n){return AVCOLORS[n]||'linear-gradient(140deg,#8893a6,#5a6478)';}
+  function avInit(n){return (n||'?').slice(0,1).toUpperCase();}
+  function laneByKey(k){return (BOARD.people||[]).filter(function(p){return p.key===k;})[0];}
+
+  function cardHtml(it,laneKey,col){
+    var done=(col==='done');
+    return '<div class="card'+(done?' done-card':'')+'" draggable="true" data-iid="'+it.iid+'" data-lane="'+esc(laneKey)+'" data-col="'+col+'">'
+      +'<div class="crow"><span class="chiptype t-'+esc(it.type)+'">'+esc(TYPE_LABEL[it.type]||it.type)+'</span>'
+        +'<span class="pri '+esc(it.priority||'unset')+'" title="priority: '+esc(it.priority||'unset')+'"></span></div>'
+      +'<div class="ctitle">'+esc(it.title)+'</div>'
+      +'<div class="cmeta"><a class="iid" href="'+esc(it.web_url)+'" target="_blank" rel="noopener" onmousedown="event.stopPropagation()" ondragstart="return false">#'+it.iid+'</a>'
+        +(it.screen?'<span class="screen">'+esc(it.screen)+'</span>':'')+'</div>'
+    +'</div>';
+  }
+  function laneHtml(p){
+    var cols=COLS.map(function(c){
+      var list=(p.columns[c]||[]);
+      var body=list.length?list.map(function(it){return cardHtml(it,p.key,c);}).join(''):'<div class="empty">empty</div>';
+      return '<div class="col c-'+c+'"><div class="col-head"><span class="bar"></span>'+COL_LABEL[c]+'<span class="cn">'+list.length+'</span></div>'
+        +'<div class="col-body" data-lane="'+esc(p.key)+'" data-col="'+c+'">'+body+'</div></div>';
+    }).join('');
+    return '<section class="lane" data-lane="'+esc(p.key)+'">'
+      +'<div class="lane-head"><span class="av" style="background:'+avColor(p.label)+'">'+esc(avInit(p.label))+'</span>'
+        +'<span class="lname">'+esc(p.label)+'</span><span class="lcount">'+p.count+' issues</span></div>'
+      +'<div class="cols">'+cols+'</div></section>';
+  }
+  function chipsHtml(){
+    function chip(k,l,n){return '<button class="chip'+(VIEW===k?' on':'')+'" onclick="setView(\''+esc(k)+'\')">'+esc(l)+(n!=null?'<span class="n">'+n+'</span>':'')+'</button>';}
+    var out=chip('all','All',null);
+    (BOARD.people||[]).forEach(function(p){out+=chip(p.key,p.label,p.count);});
+    return out;
+  }
+  function render(){
+    if(!BOARD){document.getElementById('board').innerHTML='<p style="color:var(--muted);padding:50px 4px">Loading the board…</p>';return;}
+    document.getElementById('chips').innerHTML=chipsHtml();
+    var ppl=(BOARD.people||[]).filter(function(p){return VIEW==='all'||p.key===VIEW;});
+    document.getElementById('board').innerHTML=ppl.length?ppl.map(laneHtml).join(''):'<p style="color:var(--muted);padding:50px 4px">Nothing here.</p>';
+    wireDrag();
+  }
+
+  /* ===== drag & drop (within a lane: reorder + move across columns) ===== */
+  var drag=null;
+  function clearOver(){document.querySelectorAll('.col-body.dragover').forEach(function(x){x.classList.remove('dragover');});}
+  function dropIndex(body,y){
+    var cards=[].slice.call(body.querySelectorAll('.card:not(.dragging)'));
+    for(var i=0;i<cards.length;i++){var r=cards[i].getBoundingClientRect();if(y < r.top+r.height/2)return i;}
+    return cards.length;
+  }
+  function wireDrag(){
+    document.querySelectorAll('.card').forEach(function(card){
+      card.addEventListener('dragstart',function(e){drag={iid:+card.dataset.iid,lane:card.dataset.lane,col:card.dataset.col};card.classList.add('dragging');try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',card.dataset.iid);}catch(_){}});
+      card.addEventListener('dragend',function(){card.classList.remove('dragging');clearOver();drag=null;});
+    });
+    document.querySelectorAll('.col-body').forEach(function(body){
+      body.addEventListener('dragover',function(e){
+        if(!drag||body.dataset.lane!==drag.lane)return; // same-lane only in v1
+        e.preventDefault();clearOver();body.classList.add('dragover');
+      });
+      body.addEventListener('dragleave',function(){body.classList.remove('dragover');});
+      body.addEventListener('drop',function(e){
+        if(!drag||body.dataset.lane!==drag.lane){clearOver();return;}
+        e.preventDefault();
+        var lane=laneByKey(drag.lane);if(!lane){clearOver();return;}
+        var toCol=body.dataset.col, fromCol=drag.col, iid=drag.iid;
+        // pull the card object out of its current column
+        var fromList=lane.columns[fromCol], idxFrom=fromList.findIndex(function(x){return x.iid===iid;});
+        if(idxFrom<0){clearOver();return;}
+        var moved=fromList[idxFrom];
+        var insertAt=dropIndex(body,e.clientY);
+        fromList.splice(idxFrom,1);
+        // if same column and we removed an earlier item, the index shifts
+        if(fromCol===toCol && idxFrom<insertAt)insertAt--;
+        lane.columns[toCol].splice(insertAt,0,moved);
+        clearOver();drag=null;render();
+        var order=lane.columns[toCol].map(function(x){return x.iid;});
+        if(fromCol===toCol) persist({op:'reorder',lane:lane.key,col:toCol,order:order});
+        else persist({op:'place',lane:lane.key,col:toCol,iid:iid,order:order});
+      });
+    });
+  }
+
+  /* ===== persist ===== */
+  function setSync(state){
+    var el=document.getElementById('syncind');if(!el)return;
+    var c={live:['var(--done)','Synced'],saving:['var(--accent)','Saving…'],err:['var(--bug)','Save failed'],load:['var(--muted)','Loading']}[state]||['var(--muted)','Offline'];
+    el.innerHTML='<span class="d" style="background:'+c[0]+'"></span>'+c[1];
+  }
+  function persist(payload){
+    setSync('saving');
+    fetch(API_PUT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();})
+      .then(function(){setSync('live');})
+      .catch(function(){setSync('err');toast('Save failed — reloading from GitLab.');setTimeout(load,1200);});
+  }
+
+  /* ===== theme + toast + boot ===== */
+  function applyTheme(t){document.documentElement.classList.toggle('light',t==='light');var b=document.getElementById('themebtn');if(b)b.textContent=(t==='light'?'○ Light':'● Dark');}
+  var theme=(location.search.match(/theme=(dark|light)/)||[])[1]||'dark';
+  window.toggleTheme=function(){theme=theme==='light'?'dark':'light';applyTheme(theme);};
+  window.setView=function(k){VIEW=k;render();window.scrollTo(0,0);};
+  var toastT=null;
+  function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},2400);}
+  function load(){
+    setSync('load');
+    fetch(API_GET,{cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();})
+      .then(function(b){if(b.error)throw new Error(b.error);BOARD=b;setSync('live');render();})
+      .catch(function(e){document.getElementById('board').innerHTML='<p style="color:var(--bug);padding:50px 4px">Could not load the board: '+esc(e.message)+'</p>';setSync('err');});
+  }
+  applyTheme(theme);
+  render();
+  load();
+</script>
+</body></html>
