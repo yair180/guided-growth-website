@@ -62,25 +62,25 @@
   .lcount{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
 
   .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .col{background:var(--colbg);border:1px solid var(--border);border-radius:11px;display:flex;flex-direction:column;min-height:70px}
+  .col{background:var(--colbg);border:1px solid var(--border);border-radius:11px;display:flex;flex-direction:column;min-height:180px}
   .col-head{display:flex;align-items:center;gap:7px;padding:9px 11px 7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
   .col-head .bar{width:16px;height:3px;border-radius:3px}
   .col-head .cn{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--faint)}
   .col.c-backlog .bar{background:var(--backlog)} .col.c-next .bar{background:var(--colnext)}
   .col.c-doing .bar{background:var(--doing)} .col.c-done .bar{background:var(--done)}
-  .col-body{display:flex;flex-direction:column;gap:7px;padding:0 8px 9px;max-height:62vh;overflow-y:auto;min-height:34px}
+  .col-body{display:flex;flex-direction:column;gap:7px;padding:0 8px 14px;max-height:62vh;overflow-y:auto;min-height:130px;flex:1}
   .col-body.dragover{background:color-mix(in srgb,var(--accent) 9%,transparent);outline:1.5px dashed color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:-3px;border-radius:8px}
+  .drop-marker{height:4px;border-radius:4px;background:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 18%,transparent);flex:0 0 auto}
 
   .card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px 9px;cursor:grab;position:relative}
   .card:hover{border-color:var(--border-strong);background:var(--card-hover)}
   .card.dragging{opacity:.4}
   .card .crow{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+  .rank{margin-left:auto;font-family:var(--mono);font-size:10.5px;font-weight:750;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:6px;min-width:22px;height:20px;padding:1px 6px;display:inline-flex;align-items:center;justify-content:center}
   .chiptype{font-size:10px;font-weight:700;letter-spacing:.02em;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
   .t-feature{background:color-mix(in srgb,var(--feature) 18%,transparent);color:var(--feature)}
   .t-bug{background:color-mix(in srgb,var(--bug) 18%,transparent);color:var(--bug)}
   .t-ai{background:color-mix(in srgb,var(--ai) 20%,transparent);color:var(--ai)}
-  .pri{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-left:auto}
-  .pri.high{background:var(--pri-high)} .pri.medium{background:var(--pri-med)} .pri.low{background:var(--pri-low)} .pri.unset{background:transparent;border:1px solid var(--border-2)}
   .ctitle{font-size:12.5px;line-height:1.4;color:var(--text);word-break:break-word}
   .thumb{display:block;width:100%;height:62px;object-fit:cover;border-radius:6px;margin-top:7px;border:1px solid var(--border);background:var(--bg2)}
   .card.done-card .ctitle{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -115,7 +115,12 @@
   .segb.on{background:var(--accent);border-color:var(--accent);color:#fff}
   .sh-foot{display:flex;align-items:center;gap:10px;padding:12px 18px;border-top:1px solid var(--border);background:var(--colbg);border-radius:0 0 16px 16px}
   .sh-link{font:inherit;font-size:12.5px;font-weight:650;color:var(--accent-2)}
-  .lblpill{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:5px;padding:2px 6px}
+  .lblpill{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:5px;padding:2px 6px;display:inline-flex;align-items:center;gap:5px}
+  .lblx{font:inherit;font-size:12px;line-height:1;cursor:pointer;background:transparent;border:0;color:var(--faint);padding:0}
+  .lblx:hover{color:var(--bug)}
+  .labelrow{display:flex;flex-wrap:wrap;gap:5px}
+  .labeladd{display:flex;gap:7px;margin-top:8px}
+  .labelin{flex:1;min-width:180px;font:inherit;font-size:12.5px;color:var(--text);background:var(--card);border:1px solid var(--border-2);border-radius:8px;padding:6px 9px}
   .sh-titleinput{flex:1;font:inherit;font-size:16px;font-weight:750;color:var(--text);background:var(--card);border:1px solid var(--border-2);border-radius:8px;padding:6px 9px}
   .sh-edit{width:100%;font:inherit;font-size:13px;line-height:1.5;color:var(--text);background:var(--card);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;resize:vertical;min-height:130px}
   .sh-savebtn{margin-top:8px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;background:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:6px 13px;color:#fff}
@@ -162,6 +167,7 @@
   var BOARD=null, VIEW='all', SHOW='all', AREA='all', CURMENU=null;
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function jsq(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/\r/g,'');}
   function avColor(n){return AVCOLORS[n]||'linear-gradient(140deg,#8893a6,#5a6478)';}
   function avInit(n){return (n||'?').slice(0,1).toUpperCase();}
   function laneByKey(k){return (BOARD.people||[]).filter(function(p){return p.key===k;})[0];}
@@ -181,11 +187,11 @@
     saveCollapsed();render();
   };
 
-  function cardHtml(it,laneKey,col){
+  function cardHtml(it,laneKey,col,rank){
     var done=(col==='done');
     return '<div class="card'+(done?' done-card':'')+'" draggable="true" data-iid="'+it.iid+'" data-lane="'+esc(laneKey)+'" data-col="'+col+'" onclick="openDetail(event,'+it.iid+')">'
       +'<div class="crow"><span class="chiptype t-'+esc(it.type)+'">'+esc(TYPE_LABEL[it.type]||it.type)+'</span>'
-        +'<span class="pri '+esc(it.priority||'unset')+'" title="priority: '+esc(it.priority||'unset')+'"></span></div>'
+        +'<span class="rank" title="rank in column">'+rank+'</span></div>'
       +'<div class="ctitle">'+esc(it.title)+'</div>'
       +(it.thumb?'<img class="thumb" src="'+esc(it.thumb)+'" loading="lazy" alt="screenshot" ondragstart="return false" onerror="this.remove()">':'')
       +'<div class="cmeta"><a class="iid" href="'+esc(it.web_url)+'" target="_blank" rel="noopener" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()" ondragstart="return false">#'+it.iid+'</a>'
@@ -197,7 +203,7 @@
     var fcount=0;
     var cols=COLS.map(function(c){
       var list=(p.columns[c]||[]).filter(function(it){return showMatch(it)&&areaMatch(it);}); fcount+=list.length;
-      var body=list.length?list.map(function(it){return cardHtml(it,p.key,c);}).join(''):'<div class="empty">empty</div>';
+      var body=list.length?list.map(function(it,i){return cardHtml(it,p.key,c,i+1);}).join(''):'<div class="empty">empty</div>';
       return '<div class="col c-'+c+'"><div class="col-head"><span class="bar"></span>'+COL_LABEL[c]+'<span class="cn">'+list.length+'</span></div>'
         +'<div class="col-body" data-lane="'+esc(p.key)+'" data-col="'+c+'">'+body+'</div></div>';
     }).join('');
@@ -265,11 +271,18 @@
 
   /* ===== drag & drop: within a lane only (reorder + move across columns) ===== */
   var drag=null;
-  function clearOver(){document.querySelectorAll('.col-body.dragover').forEach(function(x){x.classList.remove('dragover');});}
+  var marker=document.createElement('div'); marker.className='drop-marker';
+  function clearOver(){document.querySelectorAll('.col-body.dragover').forEach(function(x){x.classList.remove('dragover');}); if(marker.parentNode)marker.parentNode.removeChild(marker);}
   function dropIndex(body,y){
     var cards=[].slice.call(body.querySelectorAll('.card:not(.dragging)'));
     for(var i=0;i<cards.length;i++){var r=cards[i].getBoundingClientRect();if(y < r.top+r.height/2)return i;}
     return cards.length;
+  }
+  function showDropMarker(body,y){
+    var idx=dropIndex(body,y), cards=[].slice.call(body.querySelectorAll('.card:not(.dragging)'));
+    var ref=cards[idx]||null;
+    if(!ref&&cards.length===0)ref=body.querySelector('.empty');
+    body.insertBefore(marker,ref);
   }
   function wireDrag(){
     document.querySelectorAll('.card').forEach(function(card){
@@ -279,7 +292,7 @@
     document.querySelectorAll('.col-body').forEach(function(body){
       body.addEventListener('dragover',function(e){
         if(!drag||body.dataset.lane!==drag.lane)return; // cross-lane drag disabled, use Move
-        e.preventDefault();clearOver();body.classList.add('dragover');
+        e.preventDefault();clearOver();body.classList.add('dragover');showDropMarker(body,e.clientY);
       });
       body.addEventListener('dragleave',function(){body.classList.remove('dragover');});
       body.addEventListener('drop',function(e){
@@ -314,7 +327,7 @@
     fetch(API_PUT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();})
       .then(function(){setSync('live');})
-      .catch(function(){setSync('err');toast('Save failed — reloading from GitLab.');setTimeout(load,1200);});
+      .catch(function(){setSync('err');toast('Save failed, reloading from GitLab.');setTimeout(load,1200);});
   }
 
   /* ===== deep issue detail (click a card) ===== */
@@ -333,7 +346,7 @@
     var pris=['high','medium','low'], types=[['bug','Bug'],['ai','AI-learning'],['feature','Feature']];
     var priSeg=pris.map(function(p){return '<button class="segb'+(d.priority===p?' on':'')+'" onclick="detailSet(\'priority\',\''+p+'\')">'+p.charAt(0).toUpperCase()+p.slice(1)+'</button>';}).join('');
     var typeSeg=types.map(function(t){return '<button class="segb'+(d.type===t[0]?' on':'')+'" onclick="detailSet(\'retype\',\''+t[0]+'\')">'+t[1]+'</button>';}).join('');
-    var labelPills=(d.labels||[]).map(function(l){return '<span class="lblpill">'+esc(l)+'</span>';}).join(' ');
+    var labelPills=(d.labels||[]).map(function(l){return '<span class="lblpill">'+esc(l)+'<button class="lblx" title="Remove label" onclick="editLabel(null,\''+jsq(l)+'\')">x</button></span>';}).join(' ');
     var asg=(d.assignees&&d.assignees.length)?d.assignees.join(', '):'Unassigned';
     var notes=(d.notes||[]).map(function(n){return '<div class="sh-note"><div class="sh-notemeta">'+esc(n.author||'')+' · '+esc((n.created_at||'').slice(0,10))+'</div><div class="sh-notebody">'+esc(n.body||'')+'</div></div>';}).join('');
     host.innerHTML='<div class="ov" onclick="if(event.target===this)closeDetail()"><div class="sheet">'
@@ -349,7 +362,9 @@
         +'<button class="sh-savebtn" onclick="saveEdits()">Save title + description</button>'
         +'<div class="sh-sec">Priority</div><div class="seg">'+priSeg+'</div>'
         +'<div class="sh-sec">Type</div><div class="seg">'+typeSeg+'</div>'
-        +'<div class="sh-sec">Labels</div><div style="display:flex;flex-wrap:wrap;gap:5px">'+(labelPills||'<span style="color:var(--faint);font-size:12px">none</span>')+'</div>'
+        +'<div class="sh-sec">Labels</div><div class="labelrow">'+(labelPills||'<span style="color:var(--faint);font-size:12px">none</span>')+'</div>'
+        +'<div class="labeladd"><input id="sh-label-in" class="labelin" placeholder="Add label" onkeydown="if(event.key===\'Enter\')addLabelFromInput()">'
+          +'<button class="actbtn" onclick="addLabelFromInput()">Add</button></div>'
         +'<div class="sh-sec">Comments</div>'+(notes||'<div style="font-size:12px;color:var(--faint)">No comments yet.</div>')
         +'<textarea id="sh-comment-in" class="sh-edit" style="min-height:60px;margin-top:8px" placeholder="Add a comment..."></textarea>'
         +'<button class="sh-savebtn" onclick="postComment()">Comment</button>'
@@ -366,6 +381,26 @@
       .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();})
       .then(function(){setSync('live');toast('Saved to GitLab');})
       .catch(function(){setSync('err');toast('Save failed');});
+  };
+  window.addLabelFromInput=function(){
+    var el=document.getElementById('sh-label-in'); var l=((el&&el.value)||'').trim();
+    if(!l)return;
+    if(l.indexOf(',')>=0){toast('Add one label at a time');return;}
+    editLabel(l,null);
+  };
+  window.editLabel=function(add,remove){
+    if(!DET)return;
+    var labels=(DET.labels||[]).slice();
+    if(add&&labels.indexOf(add)<0)labels.push(add);
+    if(remove)labels=labels.filter(function(l){return l!==remove;});
+    DET.labels=labels;
+    if(add&&add.indexOf('priority::')===0)DET.priority=add.replace('priority::','')||'unset';
+    if(remove&&remove.indexOf('priority::')===0)DET.priority='unset';
+    renderDetail(DET); setSync('saving');
+    fetch(API_PUT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'labels',iid:DET.iid,add:add,remove:remove})})
+      .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();})
+      .then(function(){setSync('live');toast('Labels saved');})
+      .catch(function(){setSync('err');toast('Label save failed');openDetail(null,DET.iid);});
   };
   window.saveEdits=function(){
     if(!DET)return;
