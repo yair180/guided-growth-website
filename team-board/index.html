@@ -116,6 +116,13 @@
   .sh-foot{display:flex;align-items:center;gap:10px;padding:12px 18px;border-top:1px solid var(--border);background:var(--colbg);border-radius:0 0 16px 16px}
   .sh-link{font:inherit;font-size:12.5px;font-weight:650;color:var(--accent-2)}
   .lblpill{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:5px;padding:2px 6px}
+  .sh-titleinput{flex:1;font:inherit;font-size:16px;font-weight:750;color:var(--text);background:var(--card);border:1px solid var(--border-2);border-radius:8px;padding:6px 9px}
+  .sh-edit{width:100%;font:inherit;font-size:13px;line-height:1.5;color:var(--text);background:var(--card);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;resize:vertical;min-height:130px}
+  .sh-savebtn{margin-top:8px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;background:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:6px 13px;color:#fff}
+  .sh-savebtn:hover{filter:brightness(1.08)}
+  .sh-note{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 10px;margin-top:6px}
+  .sh-notemeta{font-size:10px;color:var(--faint);font-family:var(--mono);margin-bottom:3px}
+  .sh-notebody{font-size:12.5px;color:var(--text-2);white-space:pre-wrap;word-break:break-word}
   .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(10px);background:linear-gradient(140deg,var(--accent),var(--accent-2));color:#fff;font-size:13px;font-weight:600;padding:10px 17px;border-radius:11px;box-shadow:0 12px 34px rgba(0,0,0,.4);opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;z-index:90}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   @media(max-width:760px){ .cols{grid-template-columns:1fr 1fr} .screen{display:none} }
@@ -144,6 +151,8 @@
   var API_GET='/internal/board/issues.json';
   var API_PUT='/internal/board/update';
   var API_ISSUE='/internal/board/issue';
+  var API_EDIT='/internal/board/issue-edit';
+  var API_NOTE='/internal/board/issue-note';
   var COLS=['backlog','next','doing','done'];
   var COL_LABEL={backlog:'Backlog',next:'Next',doing:'Doing',done:'Done'};
   var TYPE_LABEL={feature:'Feature',bug:'Bug',ai:'AI-learning'};
@@ -326,8 +335,9 @@
     var typeSeg=types.map(function(t){return '<button class="segb'+(d.type===t[0]?' on':'')+'" onclick="detailSet(\'retype\',\''+t[0]+'\')">'+t[1]+'</button>';}).join('');
     var labelPills=(d.labels||[]).map(function(l){return '<span class="lblpill">'+esc(l)+'</span>';}).join(' ');
     var asg=(d.assignees&&d.assignees.length)?d.assignees.join(', '):'Unassigned';
+    var notes=(d.notes||[]).map(function(n){return '<div class="sh-note"><div class="sh-notemeta">'+esc(n.author||'')+' · '+esc((n.created_at||'').slice(0,10))+'</div><div class="sh-notebody">'+esc(n.body||'')+'</div></div>';}).join('');
     host.innerHTML='<div class="ov" onclick="if(event.target===this)closeDetail()"><div class="sheet">'
-      +'<div class="sh-head"><div class="sh-title">'+esc(d.title)+'</div><button class="sh-x" onclick="closeDetail()">✕</button></div>'
+      +'<div class="sh-head"><input id="sh-title-in" class="sh-titleinput" value="'+esc(d.title)+'"><button class="sh-x" onclick="closeDetail()">✕</button></div>'
       +'<div class="sh-body">'
         +'<div class="sh-meta"><span class="chiptype t-'+esc(d.type)+'">'+esc(TYPE_LABEL[d.type]||d.type)+'</span>'
           +'<span class="lblpill">#'+d.iid+'</span>'
@@ -335,10 +345,14 @@
           +'<span class="lblpill">'+esc(d.state)+'</span>'
           +'<span class="lblpill">assignee: '+esc(asg)+'</span></div>'
         +(d.screenshot?'<img class="sh-shot" src="'+esc(d.screenshot)+'" alt="screenshot" onerror="this.remove()">':'')
-        +'<div class="sh-desc">'+esc(d.description||'(no description)')+'</div>'
+        +'<div class="sh-sec">Description</div><textarea id="sh-desc-in" class="sh-edit">'+esc(d.description||'')+'</textarea>'
+        +'<button class="sh-savebtn" onclick="saveEdits()">Save title + description</button>'
         +'<div class="sh-sec">Priority</div><div class="seg">'+priSeg+'</div>'
         +'<div class="sh-sec">Type</div><div class="seg">'+typeSeg+'</div>'
         +'<div class="sh-sec">Labels</div><div style="display:flex;flex-wrap:wrap;gap:5px">'+(labelPills||'<span style="color:var(--faint);font-size:12px">none</span>')+'</div>'
+        +'<div class="sh-sec">Comments</div>'+(notes||'<div style="font-size:12px;color:var(--faint)">No comments yet.</div>')
+        +'<textarea id="sh-comment-in" class="sh-edit" style="min-height:60px;margin-top:8px" placeholder="Add a comment..."></textarea>'
+        +'<button class="sh-savebtn" onclick="postComment()">Comment</button>'
       +'</div>'
       +'<div class="sh-foot"><a class="sh-link" href="'+esc(d.web_url)+'" target="_blank" rel="noopener">Open in GitLab &#8599;</a><span class="spacer"></span><button class="actbtn" onclick="closeDetail()">Close</button></div>'
     +'</div></div>';
