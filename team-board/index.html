@@ -367,6 +367,24 @@
       .then(function(){setSync('live');toast('Saved to GitLab');})
       .catch(function(){setSync('err');toast('Save failed');});
   };
+  window.saveEdits=function(){
+    if(!DET)return;
+    var t=document.getElementById('sh-title-in').value, ds=document.getElementById('sh-desc-in').value;
+    setSync('saving');
+    fetch(API_EDIT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({iid:DET.iid,title:t,description:ds})})
+      .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();})
+      .then(function(){setSync('live');DET.title=t;DET.description=ds;toast('Saved to GitLab');})
+      .catch(function(){setSync('err');toast('Save failed');});
+  };
+  window.postComment=function(){
+    if(!DET)return;
+    var el=document.getElementById('sh-comment-in'); var b=((el&&el.value)||'').trim(); if(!b)return;
+    setSync('saving');
+    fetch(API_NOTE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({iid:DET.iid,body:b})})
+      .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();})
+      .then(function(){setSync('live');toast('Comment added');openDetail(null,DET.iid);})
+      .catch(function(){setSync('err');toast('Comment failed');});
+  };
   window.closeDetail=function(){document.getElementById('detail').innerHTML='';DET=null;load();};
 
   /* ===== theme + toast + boot ===== */
