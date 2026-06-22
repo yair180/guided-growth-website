@@ -112,7 +112,7 @@ function beatById(id){return flow.filter(function(b){return b.id===id;})[0];}
 function renderBeats(){
   document.getElementById('beats').innerHTML=flow.map(function(b,i){
     return '<div class="beat'+(b.id===sel?' sel':'')+'" draggable="true" data-id="'+b.id+'" onclick="pick('+b.id+')">'
-      +'<span class="grip">&#8942;</span><span class="bn">'+esc(b.name)+'</span><span class="badge">'+i+1+'</span></div>';
+      +'<span class="grip">&#8942;</span><span class="bn">'+esc(b.name)+'</span><span class="badge">'+(i+1)+'</span></div>';
   }).join('');
   wireDrag();
 }
