@@ -4466,7 +4466,7 @@
     // issue (merge/related) or another finding in this queue (internal). Keyed by
     // finding id. Lets Timothy avoid re-filing duplicates. No GitLab writes here —
     // the merge-write action is a separate (held) step.
-    const QA_GL_ISSUE_URL = (iid) => 'https://gitlab.com/guidedgrowth-group/guided-growth-mvp/-/issues/' + iid;
+    const QA_GL_ISSUE_URL = (iid) => 'https://gitlab.guidedgrowthapp.com/guidedgrowth-group/guided-growth-mvp/-/issues/' + iid;
     const QA_DUP_MAP = {
       'MOBAI-2026-05-27-F24': { kind: 'related',  issue: 88 },
       'VID-850a247c-001':     { kind: 'related',  issue: 88 },
@@ -4484,7 +4484,7 @@
       'MOBAI-2026-05-27-F27': { kind: 'related',  issue: 88, note: 'Vapi-reset symptom; kept as its own AI Learning per the reconciliation.' },
     };
 
-    // gg-spec is a PRIVATE repo, so the absolute gitlab.com /-/raw/ screenshot
+    // gg-spec is a PRIVATE repo, so the absolute gitlab.guidedgrowthapp.com /-/raw/ screenshot
     // URLs in findings 302 to sign-in (403) for a logged-out dashboard viewer.
     // Route them through the worker image proxy, which streams the bytes with
     // the worker's PAT (no viewer auth). Non-gg-spec URLs pass through untouched.
@@ -6802,7 +6802,7 @@
     }
     function liveRepoLink(repo, branch) {
       if (!repo || !LIVE_GITLAB_REPOS.has(repo)) return null;
-      const base = 'https://gitlab.com/guidedgrowth-group/' + encodeURIComponent(repo);
+      const base = 'https://gitlab.guidedgrowthapp.com/guidedgrowth-group/' + encodeURIComponent(repo);
       if (branch) return base + '/-/tree/' + encodeURIComponent(branch);
       return base;
     }
@@ -11342,8 +11342,8 @@
     // GitLab web bases for "Open in GitLab" links (browser can't know these from
     // the worker's tree/file responses, so keep them in sync with the projects).
     const GL_REPO_WEB = {
-      'gg-mvp': 'https://gitlab.com/guidedgrowth-group/guided-growth-mvp',
-      'gg-spec': 'https://gitlab.com/guidedgrowth-group/gg-spec'
+      'gg-mvp': 'https://gitlab.guidedgrowthapp.com/guidedgrowth-group/guided-growth-mvp',
+      'gg-spec': 'https://gitlab.guidedgrowthapp.com/guidedgrowth-group/gg-spec'
     };
     let _glRepoProject = 'gg-mvp';
     let _glRepoRef = 'main';
@@ -11760,7 +11760,7 @@
     }
 
     // QA (zoom 6) -> GitLab (zoom 7): open an issue in the in-page GitLab view
-    // instead of opening gitlab.com in a new browser tab. A modifier/middle
+    // instead of opening gitlab.guidedgrowthapp.com in a new browser tab. A modifier/middle
     // click still follows the href to the real site (escape hatch).
     function qaOpenIssue(iid, ev) {
       if (ev && (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button === 1)) return true;

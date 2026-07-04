@@ -119,7 +119,7 @@
 
 <script>
 var BOARD_URL = "/internal/yair-os/team-board.json";
-var ISSUE_BASE = "https://gitlab.com/guidedgrowth-group/guided-growth-mvp/-/issues/";
+var ISSUE_BASE = "https://gitlab.guidedgrowthapp.com/guidedgrowth-group/guided-growth-mvp/-/issues/";
 var QA_HARD_GATES = ["103","125"];
 var TODAY = new Date().toISOString().slice(0,10);
 var BOARD=null, ME=null;
@@ -158,7 +158,7 @@ function saveEntry(person,e){
 }
 
 function gitlabUser(token){
-  return fetch("https://gitlab.com/api/v4/user",{headers:{"PRIVATE-TOKEN":token}})
+  return fetch("https://gitlab.guidedgrowthapp.com/api/v4/user",{headers:{"PRIVATE-TOKEN":token}})
     .then(function(r){if(!r.ok)throw new Error("bad token");return r.json();});
 }
 
