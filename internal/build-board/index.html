@@ -73,6 +73,9 @@
   .inline-note { font-size: 12px; color: #2456c7; margin-top: 8px; }
   .inline-risk { font-size: 12px; color: #b45309; margin-top: 4px; }
 
+  .feed-item { font-size: 13px; padding: 5px 0 5px 15px; position: relative; line-height: 1.45; color: #55606f; border-left: 2px solid #e9edf3; }
+  .feed-item.latest { color: #1c2430; font-weight: 500; border-left-color: #2456c7; }
+
   footer { margin-top: 24px; font-size: 11px; color: #9aa4b2; }
   footer a { color: #9aa4b2; }
 </style>
@@ -95,6 +98,11 @@
       <h2>Waiting on Yair</h2>
       <div id="waitingOnYair"><span class="empty">nothing pending</span></div>
     </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:18px;">
+    <h2>Build activity (live feed, newest first)</h2>
+    <div id="feed"><span class="empty">no posts yet</span></div>
   </div>
 
   <div class="pipeline" id="pipeline"></div>
@@ -138,6 +146,12 @@ function render(data) {
   waitEl.innerHTML = waitItems.length
     ? waitItems.map(w => `<div class="wait-item"><span class="status">${esc(w.status || '')}</span>${esc(w.item)}</div>`).join('')
     : '<span class="empty">nothing pending</span>';
+
+  const feedEl = document.getElementById('feed');
+  const recent = data.recent || [];
+  feedEl.innerHTML = recent.length
+    ? recent.map((m, i) => `<div class="feed-item${i === 0 ? ' latest' : ''}">${esc(m)}</div>`).join('')
+    : '<span class="empty">no posts yet</span>';
 
   const pipeEl = document.getElementById('pipeline');
   pipeEl.innerHTML = (data.phases || []).map(p => {
