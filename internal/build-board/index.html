@@ -27,6 +27,17 @@
   .build-tab { flex:none; padding:9px 12px; border:0; border-bottom:3px solid transparent; color:var(--muted); background:transparent; cursor:pointer; font-weight:700; font-size:13px; }
   .build-tab:hover { color:var(--blue); }
   .build-tab.active { color:var(--blue); border-bottom-color:var(--blue); }
+  .tab-empty { padding:9px 12px; }
+  .archive { margin:0 0 14px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  .archive summary { cursor:pointer; padding:10px 13px; color:var(--muted); font-size:12px; font-weight:700; }
+  .archive-list { padding:0 13px 12px; }
+  .archive-item { display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px solid var(--line); }
+  .archive-item.selected { color:var(--blue); }
+  .archive-open { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:inherit; background:none; border:0; padding:0; cursor:pointer; text-align:left; font-weight:700; }
+  .archive-open:hover { color:var(--blue); }
+  .archive-action { flex:none; border:1px solid var(--line); border-radius:6px; color:var(--blue); background:var(--panel); padding:4px 7px; cursor:pointer; font-size:11px; font-weight:700; }
+  .registry-action { margin:0 0 14px; padding:10px 12px; border:1px solid var(--amber); border-radius:9px; background:var(--amber-bg); color:var(--amber); font-size:12px; line-height:1.45; }
+  .control:disabled { cursor:not-allowed; color:var(--muted); border-color:var(--line); opacity:.65; }
   .headline { margin:0 0 14px; padding:13px 15px; border:1px solid var(--line); border-radius:10px; background:var(--panel2); color:var(--ink); line-height:1.5; }
   .phase-nav { display:grid; grid-template-columns:repeat(auto-fit, minmax(122px,1fr)); gap:8px; margin:0 0 16px; }
   .phase-card { text-align:left; cursor:pointer; padding:10px; border:1px solid var(--line); border-radius:9px; background:var(--panel); color:var(--ink); }
@@ -84,9 +95,11 @@
 <div class="wrap">
   <header>
     <div><h1>Build Command Center</h1><div class="status-line"><span class="dot" id="freshDot"></span><span id="syncedText">loading</span></div></div>
-    <div class="controls"><button class="control" id="themeToggle" type="button">Dark</button><button class="control" id="expandAll" type="button">Expand all</button><button class="control" id="collapseAll" type="button">Collapse all</button><button class="control" id="refreshButton" type="button">Refresh</button></div>
+    <div class="controls"><button class="control" id="themeToggle" type="button">Dark</button><button class="control" id="expandAll" type="button">Expand all</button><button class="control" id="collapseAll" type="button">Collapse all</button><button class="control" id="archiveBuild" type="button">Archive build</button><button class="control" id="refreshButton" type="button">Refresh</button></div>
   </header>
   <nav class="build-tabs" id="buildTabs" aria-label="Live builds"></nav>
+  <details class="archive" id="archivePanel" hidden><summary id="archiveSummary">Archive (0)</summary><div class="archive-list" id="archiveList"></div></details>
+  <div class="registry-action" id="registryAction" role="status" hidden></div>
   <main id="buildContent">
     <div class="headline" id="headline"></div>
     <div class="phase-nav" id="phaseNav"></div>
@@ -95,28 +108,26 @@
     <div id="zones"></div>
   </main>
   <section class="zone skeptic collapsed" id="skepticPanel"><button class="zone-head" type="button"><span class="chev">›</span>The skeptic panel <span class="zone-count">5</span></button><div class="zone-body"><ol class="skeptic-list"><li><span class="auditor">The Decision Auditor (Terra)</span><span class="attack">attacks the choice</span></li><li><span class="auditor">The Claims Verifier (Terra)</span><span class="attack">attacks every done, works, or green claim against a real signal</span></li><li><span class="auditor">The Scope Auditor (Terra)</span><span class="attack">attacks asked-vs-built</span></li><li><span class="auditor">The Provenance Auditor (Terra)</span><span class="attack">attacks staleness</span></li><li><span class="auditor">The Generalist (Fable, cross-model)</span><span class="attack">runs all four from the other model family</span></li></ol></div></section>
-  <footer id="footerText">Polls the active build every 15 seconds while this tab is visible.</footer>
+  <footer id="footerText">Polls the build registry and active build every 15 seconds while this tab is visible.</footer>
 </div>
 <script>
-  // Add a build by adding one entry here. A missing endpoint is shown as "no data yet".
-  const buildFeeds = [
-    { id:'onboarding', name:'Onboarding', feed:'/conductor-status' },
-    { id:'azure-conductor', name:'Azure conductor', feed:'/azure-conductor-status' }
-  ];
+  const registryFeed = '/builds-registry.json';
   const statusText = { done:'Done', 'in-flight':'Live now', planned:'Next', active:'Live now', pending:'Next' };
   const pollEveryMs = 15000;
-  let activeBuildId = localStorage.getItem('buildActiveTab') || buildFeeds[0].id;
+  let registryBuilds = [];
+  let activeBuildId = localStorage.getItem('buildActiveTab') || '';
   let pollTimer = null;
   let freshnessTimer = null;
   let polling = false;
   let requestController = null;
+  let registryError = '';
   const buildState = JSON.parse(localStorage.getItem('buildBoardState') || '{}');
   const feedData = new Map();
   const feedErrors = new Map();
 
-  if (!buildFeeds.some(build => build.id === activeBuildId)) activeBuildId = buildFeeds[0].id;
-
-  function activeBuild() { return buildFeeds.find(build => build.id === activeBuildId); }
+  function activeBuild() { return registryBuilds.find(build => build.id === activeBuildId); }
+  function activeBuilds() { return registryBuilds.filter(build => build.status === 'active'); }
+  function archivedBuilds() { return registryBuilds.filter(build => build.status === 'archived'); }
   function stateFor(buildId) {
     if (!buildState[buildId]) buildState[buildId] = { openSteps:[], zones:{ done:true, live:false, next:false } };
     return buildState[buildId];
@@ -157,10 +168,36 @@
     const hours = Math.floor(minutes / 60);
     return `${hours} hour${hours === 1 ? '' : 's'} ${minutes % 60} minute${minutes % 60 === 1 ? '' : 's'}`;
   }
+  function normalizeRegistry(payload) {
+    const entries = Array.isArray(payload) ? payload : payload && Array.isArray(payload.builds) ? payload.builds : null;
+    if (!entries) throw new Error('Registry must be an array of build entries.');
+    const seen = new Set();
+    return entries.reduce((builds, entry) => {
+      const id = value(entry && entry.id).trim();
+      const title = value(entry && entry.title).trim();
+      const feed = value(entry && entry.feed).trim();
+      const status = value(entry && entry.status).trim();
+      if (!id || !title || !feed || !['active','archived'].includes(status) || seen.has(id)) return builds;
+      seen.add(id);
+      builds.push({ id, title, feed, status });
+      return builds;
+    }, []);
+  }
+  function applyRegistry(payload) {
+    registryBuilds = normalizeRegistry(payload);
+    if (!registryBuilds.length) activeBuildId = '';
+    else if (!registryBuilds.some(build => build.id === activeBuildId)) activeBuildId = activeBuilds()[0]?.id || registryBuilds[0].id;
+    saveState();
+  }
   function updateConnection() {
     const dot = document.getElementById('freshDot');
     const text = document.getElementById('syncedText');
     const build = activeBuild();
+    if (!build) {
+      dot.className = `dot${registryError ? ' reconnecting' : ''}`;
+      text.textContent = registryError || 'loading build registry';
+      return;
+    }
     const data = feedData.get(build.id);
     const error = feedErrors.get(build.id);
     if (!data) {
@@ -173,31 +210,54 @@
     text.textContent = freshness.text;
   }
   function renderTabs() {
-    document.getElementById('buildTabs').innerHTML = buildFeeds.map(build => `<button class="build-tab${build.id === activeBuildId ? ' active' : ''}" type="button" role="tab" aria-selected="${build.id === activeBuildId}" data-build-id="${esc(build.id)}">${esc(build.name)}</button>`).join('');
+    const builds = activeBuilds();
+    document.getElementById('buildTabs').innerHTML = builds.length ? builds.map(build => `<button class="build-tab${build.id === activeBuildId ? ' active' : ''}" type="button" role="tab" aria-selected="${build.id === activeBuildId}" data-build-id="${esc(build.id)}">${esc(build.title)}</button>`).join('') : '<span class="empty tab-empty">No active builds</span>';
     document.querySelectorAll('.build-tab').forEach(tab => tab.onclick = () => selectBuild(tab.dataset.buildId));
+    const archiveButton = document.getElementById('archiveBuild');
+    archiveButton.disabled = !activeBuild() || activeBuild().status !== 'active';
+  }
+  function renderArchive() {
+    const builds = archivedBuilds();
+    const archive = document.getElementById('archivePanel');
+    const summary = document.getElementById('archiveSummary');
+    const list = document.getElementById('archiveList');
+    summary.textContent = `Archive (${builds.length})`;
+    archive.hidden = !builds.length;
+    list.innerHTML = builds.map(build => `<div class="archive-item${build.id === activeBuildId ? ' selected' : ''}"><button class="archive-open" type="button" data-archive-build-id="${esc(build.id)}">${esc(build.title)}</button><button class="archive-action" type="button" data-registry-id="${esc(build.id)}" data-registry-status="active">Restore</button></div>`).join('');
+    document.querySelectorAll('[data-archive-build-id]').forEach(button => button.onclick = () => selectBuild(button.dataset.archiveBuildId));
+    document.querySelectorAll('[data-registry-id]').forEach(button => button.onclick = () => requestRegistryChange(button.dataset.registryId, button.dataset.registryStatus));
+  }
+  function renderNoBuilds() {
+    document.getElementById('headline').textContent = registryError || 'No builds are listed in the registry.';
+    document.getElementById('phaseNav').innerHTML = '';
+    document.getElementById('liveNow').innerHTML = '<span class="empty">add an active or archived build to the registry</span>';
+    document.getElementById('waitingOnYair').innerHTML = '<span class="empty">nothing pending</span>';
+    document.getElementById('feed').innerHTML = '<span class="empty">no activity yet</span>';
+    document.getElementById('zones').innerHTML = '';
+    document.getElementById('footerText').textContent = 'Polling the build registry every 15 seconds while this tab is visible.';
   }
   function renderNoData(build) {
-    document.getElementById('headline').textContent = `${build.name} has no status data yet.`;
+    document.getElementById('headline').textContent = `${build.title} has no status data yet.`;
     document.getElementById('phaseNav').innerHTML = '';
     document.getElementById('liveNow').innerHTML = '<span class="empty">waiting for this build to publish its feed</span>';
     document.getElementById('waitingOnYair').innerHTML = '<span class="empty">nothing pending</span>';
     document.getElementById('feed').innerHTML = '<span class="empty">no activity yet</span>';
     document.getElementById('zones').innerHTML = '';
-    document.getElementById('footerText').textContent = `Polling ${build.feed} every 15 seconds while this tab is visible.`;
+    document.getElementById('footerText').textContent = `Polling the registry and ${build.feed} every 15 seconds while this tab is visible.`;
   }
   function render(data) {
     const build = activeBuild();
     const state = stateFor(build.id);
     const openSteps = new Set(state.openSteps);
-    document.getElementById('headline').textContent = field(data.headline, ['text','message','title']) || 'No headline yet.';
     const phases = Array.isArray(data.phases) ? data.phases : [];
+    document.getElementById('headline').textContent = field(data.headline, ['text','message','title']) || `${build.title} is reporting.`;
     document.getElementById('phaseNav').innerHTML = phases.map((phase, index) => {
-      const bucket = phaseBucket(phase);
+      const kind = phaseBucket(phase);
       const title = field(phase.title, ['text','name']) || `Phase ${index + 1}`;
       const status = field(phase.status, ['text','state']) || 'planned';
-      return `<button class="phase-card ${bucket}" type="button" data-target="${phaseId(index)}"><span class="phase-num">P${index + 1}</span><span class="phase-card-title">${esc(title)}</span><span class="phase-card-state">${esc(statusText[status] || 'Next')}</span></button>`;
+      return `<button class="phase-card ${kind === 'live' ? 'in-flight' : kind}" type="button" data-phase-id="${phaseId(index)}"><span class="phase-num">P${index + 1}</span><span class="phase-card-title">${esc(title)}</span><span class="phase-card-state">${esc(statusText[status] || 'Next')}</span></button>`;
     }).join('');
-    document.querySelectorAll('.phase-card').forEach(card => card.onclick = () => document.getElementById(card.dataset.target)?.scrollIntoView({ behavior:'smooth', block:'start' }));
+    document.querySelectorAll('[data-phase-id]').forEach(button => button.onclick = () => document.getElementById(button.dataset.phaseId)?.scrollIntoView({ behavior:'smooth', block:'center' }));
 
     const live = phases.flatMap(phase => Array.isArray(phase.liveNow) ? phase.liveNow : []);
     document.getElementById('liveNow').innerHTML = live.length ? live.map(item => {
@@ -224,7 +284,7 @@
       if (!phasesInGroup.length) return '';
       return `<section class="zone ${kind}${state.zones[kind] ? ' collapsed' : ''}" data-zone="${kind}"><button class="zone-head" type="button"><span class="chev">›</span>${kind === 'live' ? '<span class="pulse"></span>' : ''}${labels[kind]} <span class="zone-count">${phasesInGroup.length}</span></button><div class="zone-body">${phasesInGroup.map(({ phase, index }) => phaseHtml(phase, index, kind, openSteps)).join('')}</div></section>`;
     }).join('');
-    document.getElementById('footerText').textContent = `Polling ${build.feed} every 15 seconds while this tab is visible.`;
+    document.getElementById('footerText').textContent = `Polling the registry and ${build.feed} every 15 seconds while this tab is visible.`;
     bindInteractions();
   }
   function phaseHtml(phase, index, kind, openSteps) {
@@ -261,24 +321,31 @@
   }
   function renderActiveBuild() {
     renderTabs();
+    renderArchive();
     const build = activeBuild();
-    const data = feedData.get(build.id);
-    if (data) render(data); else renderNoData(build);
+    if (!build) renderNoBuilds();
+    else {
+      const data = feedData.get(build.id);
+      if (data) render(data); else renderNoData(build);
+    }
     updateConnection();
   }
   function schedulePoll(delay = pollEveryMs) {
     window.clearTimeout(pollTimer);
-    if (!document.hidden) pollTimer = window.setTimeout(pollActiveFeed, delay);
+    if (!document.hidden) pollTimer = window.setTimeout(poll, delay);
   }
   function tickFreshness() { updateConnection(); }
-  async function pollActiveFeed() {
-    if (document.hidden || polling) return;
+  async function fetchRegistry(signal) {
+    const response = await fetch(`${registryFeed}?_=${Date.now()}`, { cache:'no-store', signal });
+    if (!response.ok) throw new Error(`Registry HTTP ${response.status}`);
+    applyRegistry(await response.json());
+    registryError = '';
+  }
+  async function fetchActiveFeed(signal) {
     const build = activeBuild();
-    polling = true;
-    requestController?.abort();
-    requestController = new AbortController();
+    if (!build) return;
     try {
-      const response = await fetch(`${build.feed}${build.feed.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache:'no-store', signal:requestController.signal });
+      const response = await fetch(`${build.feed}${build.feed.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache:'no-store', signal });
       if (response.status === 404) {
         feedData.delete(build.id);
         feedErrors.set(build.id, 'missing');
@@ -290,29 +357,48 @@
       }
     } catch (error) {
       if (error.name !== 'AbortError') feedErrors.set(build.id, 'unavailable');
+    }
+  }
+  async function poll() {
+    if (document.hidden || polling) return;
+    polling = true;
+    requestController?.abort();
+    requestController = new AbortController();
+    try {
+      await fetchRegistry(requestController.signal);
+      await fetchActiveFeed(requestController.signal);
+    } catch (error) {
+      if (error.name !== 'AbortError') registryError = 'reconnecting to build registry';
     } finally {
       polling = false;
-      if (activeBuildId === build.id) {
-        renderActiveBuild();
-        schedulePoll();
-      } else {
-        pollActiveFeed();
-      }
+      renderActiveBuild();
+      schedulePoll();
     }
   }
   function selectBuild(buildId) {
-    if (buildId === activeBuildId || !buildFeeds.some(build => build.id === buildId)) return;
+    if (buildId === activeBuildId || !registryBuilds.some(build => build.id === buildId)) return;
     activeBuildId = buildId;
     saveState();
     renderActiveBuild();
     window.clearTimeout(pollTimer);
-    pollActiveFeed();
+    poll();
+  }
+  function requestRegistryChange(buildId, status) {
+    const build = registryBuilds.find(entry => entry.id === buildId);
+    if (!build) return;
+    const action = `Set ${buildId}.status to "${status}" in ${registryFeed}, commit, and push.`;
+    const panel = document.getElementById('registryAction');
+    panel.hidden = false;
+    panel.textContent = `Static-site registry action: ${action} The visible board updates on its next 15-second poll.`;
+    navigator.clipboard?.writeText(action).catch(() => {});
   }
   function setTheme(theme) { document.documentElement.dataset.theme = theme; localStorage.setItem('buildTheme', theme); document.getElementById('themeToggle').textContent = theme === 'dark' ? 'Light' : 'Dark'; }
   setTheme(localStorage.getItem('buildTheme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   document.getElementById('themeToggle').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
   document.getElementById('expandAll').onclick = () => {
-    const state = stateFor(activeBuildId);
+    const build = activeBuild();
+    if (!build) return;
+    const state = stateFor(build.id);
     state.zones = { done:false, live:false, next:false };
     document.querySelectorAll('.build-step, .task').forEach(element => { element.classList.add('open'); state.openSteps.push(element.dataset.id); });
     state.openSteps = [...new Set(state.openSteps)];
@@ -321,26 +407,29 @@
     renderActiveBuild();
   };
   document.getElementById('collapseAll').onclick = () => {
-    const state = stateFor(activeBuildId);
+    const build = activeBuild();
+    if (!build) return;
+    const state = stateFor(build.id);
     state.zones = { done:true, live:true, next:true };
     state.openSteps = [];
     document.getElementById('skepticPanel').classList.add('collapsed');
     saveState();
     renderActiveBuild();
   };
-  document.getElementById('refreshButton').onclick = () => { window.clearTimeout(pollTimer); pollActiveFeed(); };
+  document.getElementById('refreshButton').onclick = () => { window.clearTimeout(pollTimer); poll(); };
+  document.getElementById('archiveBuild').onclick = () => requestRegistryChange(activeBuildId, 'archived');
   document.querySelector('#skepticPanel > .zone-head').onclick = function() { this.parentElement.classList.toggle('collapsed'); };
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       window.clearTimeout(pollTimer);
       requestController?.abort();
     } else {
-      pollActiveFeed();
+      poll();
     }
   });
   freshnessTimer = window.setInterval(tickFreshness, pollEveryMs);
   renderActiveBuild();
-  pollActiveFeed();
+  poll();
 </script>
 </body>
 </html>

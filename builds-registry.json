@@ -1,0 +1,14 @@
+[
+  {
+    "id": "onboarding",
+    "title": "Onboarding",
+    "feed": "/conductor-status",
+    "status": "active"
+  },
+  {
+    "id": "azure-conductor",
+    "title": "Azure conductor",
+    "feed": "/azure-conductor-status",
+    "status": "active"
+  }
+]
