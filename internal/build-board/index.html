@@ -6,197 +6,160 @@
 <title>Onboarding Build</title>
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
 <style>
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #f7f8fa; color: #1c2430;
-  }
-  a { color: #2456c7; }
-  .wrap { max-width: 780px; margin: 0 auto; padding: 28px 20px 60px; }
-
-  header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
-  header h1 { font-size: 20px; margin: 0; font-weight: 700; }
-  .synced { font-size: 12px; color: #7a8494; display: flex; align-items: center; gap: 8px; }
-  .refresh-btn { background: #2456c7; color: #fff; border: none; border-radius: 7px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .refresh-btn:hover { background: #1c46a3; }
-  .refresh-btn:active { transform: translateY(1px); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #9aa4b2; display: inline-block; }
-  .dot.fresh { background: #2fa96b; }
-  .dot.stale { background: #d97706; }
-
-  .headline {
-    background: #eef2fb; border: 1px solid #dbe3f6; border-radius: 10px;
-    padding: 14px 16px; font-size: 14px; line-height: 1.5; color: #223055; margin: 16px 0;
-  }
-
-  .row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
-  .panel {
-    flex: 1; min-width: 260px; background: #fff; border: 1px solid #e4e8ef; border-radius: 10px;
-    padding: 12px 14px;
-  }
-  .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #7a8494; margin: 0 0 8px; }
-  .panel .empty { font-size: 13px; color: #9aa4b2; }
-  .live-item { font-size: 13px; margin-bottom: 6px; line-height: 1.4; }
-  .live-item .session { color: #7a8494; font-size: 11px; }
-  .wait-item { font-size: 13px; margin-bottom: 6px; line-height: 1.4; }
-  .wait-item .status { font-size: 11px; color: #b45309; font-weight: 600; text-transform: uppercase; margin-right: 6px; }
-
-  .pipeline { display: flex; flex-direction: column; gap: 10px; }
-  .phase {
-    background: #fff; border: 1px solid #e4e8ef; border-left-width: 4px; border-radius: 10px;
-    padding: 12px 16px;
-  }
-  .phase.done { border-left-color: #2fa96b; }
-  .phase.in-flight { border-left-color: #2456c7; }
-  .phase.todo { border-left-color: #d0d5dd; }
-  .phase-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .phase-title { font-size: 14px; font-weight: 600; }
-  .phase-goal { font-size: 12px; color: #7a8494; margin-top: 2px; }
-  .pill { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
-  .pill.done { background: #e3f6ec; color: #1c7a4d; }
-  .pill.in-flight { background: #e6edfc; color: #2456c7; }
-  .pill.todo { background: #f1f2f4; color: #7a8494; }
-  .pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #2456c7; margin-right: 5px; animation: pulse 1.4s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-
-  .steps { list-style: none; margin: 10px 0 0; padding: 0; }
-  .steps li { font-size: 13px; padding: 3px 0 3px 22px; position: relative; line-height: 1.4; }
-  .steps li::before {
-    content: ''; position: absolute; left: 0; top: 6px; width: 13px; height: 13px; border-radius: 4px;
-    border: 1.5px solid #c3cad6;
-  }
-  .steps li.done { color: #7a8494; text-decoration: line-through; }
-  .steps li.done::before { background: #2fa96b; border-color: #2fa96b; }
-  .steps li.done::after {
-    content: ''; position: absolute; left: 4px; top: 8px; width: 5px; height: 8px;
-    border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(45deg);
-  }
-
-  .inline-note { font-size: 12px; color: #2456c7; margin-top: 8px; }
-  .inline-risk { font-size: 12px; color: #b45309; margin-top: 4px; }
-
-  .feed-item { font-size: 13px; padding: 5px 0 5px 15px; position: relative; line-height: 1.45; color: #55606f; border-left: 2px solid #e9edf3; }
-  .feed-item.latest { color: #1c2430; font-weight: 500; border-left-color: #2456c7; }
-
-  footer { margin-top: 24px; font-size: 11px; color: #9aa4b2; }
-  footer a { color: #9aa4b2; }
+  :root { --bg:#f7f8fa; --panel:#fff; --panel2:#eef2fb; --ink:#1c2430; --muted:#667085; --line:#dfe4ec; --blue:#2456c7; --blue-bg:#e8efff; --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fff4dd; --red:#b42318; }
+  html[data-theme="dark"] { --bg:#10151d; --panel:#171d27; --panel2:#202a3a; --ink:#edf2f8; --muted:#9aa7b7; --line:#344050; --blue:#8db2ff; --blue-bg:#172b52; --green:#64d896; --green-bg:#123a29; --amber:#f5bd5e; --amber-bg:#3b2d10; --red:#ff8c86; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  button { font:inherit; }
+  .wrap { max-width:900px; margin:0 auto; padding:26px 18px 60px; }
+  header { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  h1 { margin:0; font-size:22px; letter-spacing:-.02em; }
+  .status-line { margin-top:3px; display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); display:inline-block; }
+  .dot.live { background:var(--green); }
+  .dot.reconnecting { background:var(--amber); animation:pulse 1.2s infinite; }
+  .controls { display:flex; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
+  .control { color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:6px 9px; cursor:pointer; font-size:12px; }
+  .control:hover { border-color:var(--blue); color:var(--blue); }
+  .headline { margin:16px 0 14px; padding:13px 15px; border:1px solid var(--line); border-radius:10px; background:var(--panel2); color:var(--ink); line-height:1.5; }
+  .phase-nav { display:grid; grid-template-columns:repeat(auto-fit, minmax(122px,1fr)); gap:8px; margin:0 0 16px; }
+  .phase-card { text-align:left; cursor:pointer; padding:10px; border:1px solid var(--line); border-radius:9px; background:var(--panel); color:var(--ink); }
+  .phase-card:hover { border-color:var(--blue); }
+  .phase-card.done { border-top:3px solid var(--green); }
+  .phase-card.in-flight { border-top:3px solid var(--amber); }
+  .phase-card.planned { border-top:3px solid var(--blue); }
+  .phase-num { display:block; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.06em; }
+  .phase-card-title { display:block; margin-top:3px; font-weight:650; font-size:12px; line-height:1.25; }
+  .phase-card-state { display:block; margin-top:5px; color:var(--muted); font-size:11px; }
+  .summary { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+  .mini-panel { border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:11px 13px; }
+  .mini-panel h2 { margin:0 0 7px; color:var(--muted); font-size:11px; letter-spacing:.07em; text-transform:uppercase; }
+  .live-item, .wait-item, .feed-item { font-size:13px; line-height:1.4; }
+  .live-item + .live-item, .wait-item + .wait-item { margin-top:8px; }
+  .session, .wait-status { font-size:11px; color:var(--muted); margin-top:2px; }
+  .wait-status { color:var(--amber); text-transform:uppercase; font-weight:700; letter-spacing:.04em; }
+  .empty { color:var(--muted); font-size:13px; }
+  .feed { margin-bottom:14px; }
+  .feed-item { border-left:2px solid var(--line); padding:4px 0 4px 10px; color:var(--muted); }
+  .feed-item.latest { border-left-color:var(--blue); color:var(--ink); font-weight:600; }
+  .zone { margin-bottom:12px; border:1px solid var(--line); border-radius:11px; overflow:hidden; background:var(--panel); }
+  .zone.done { border-color:var(--green); } .zone.live { border-color:var(--amber); } .zone.next { border-color:var(--blue); }
+  .zone-head { width:100%; border:0; padding:11px 13px; display:flex; align-items:center; gap:9px; text-align:left; cursor:pointer; color:var(--ink); background:var(--panel); font-size:12px; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }
+  .zone.done .zone-head { background:var(--green-bg); color:var(--green); } .zone.live .zone-head { background:var(--amber-bg); color:var(--amber); } .zone.next .zone-head { background:var(--blue-bg); color:var(--blue); }
+  .chev { display:inline-block; transition:transform .15s; font-size:16px; line-height:1; }
+  .zone:not(.collapsed) > .zone-head .chev, .build-step.open .step-chev { transform:rotate(90deg); }
+  .zone-count { color:var(--muted); font-size:11px; }
+  .pulse { width:8px; height:8px; border-radius:50%; background:currentColor; animation:pulse 1.25s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.28; } }
+  .zone-body { padding:10px 11px; }
+  .zone.collapsed .zone-body { display:none; }
+  .build-step { border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--panel); margin-bottom:8px; scroll-margin-top:16px; }
+  .build-step.done { border-left:3px solid var(--green); } .build-step.in-flight { border-left:3px solid var(--amber); } .build-step.planned { border-left:3px solid var(--blue); }
+  .step-row { width:100%; padding:10px 11px; border:0; background:transparent; color:var(--ink); cursor:pointer; display:flex; align-items:center; gap:9px; text-align:left; }
+  .phase-tag { color:var(--muted); font-size:11px; font-weight:750; white-space:nowrap; }
+  .step-title { flex:1; font-size:14px; font-weight:650; }
+  .state-pill { border-radius:999px; padding:2px 7px; font-size:10px; text-transform:uppercase; letter-spacing:.04em; font-weight:750; white-space:nowrap; }
+  .state-pill.done { color:var(--green); background:var(--green-bg); } .state-pill.in-flight { color:var(--amber); background:var(--amber-bg); } .state-pill.planned { color:var(--blue); background:var(--blue-bg); }
+  .step-chev { color:var(--muted); transition:transform .15s; }
+  .step-detail { display:none; padding:0 12px 12px 31px; }
+  .build-step.open .step-detail { display:block; }
+  .goal { color:var(--muted); margin:0 0 8px; font-size:13px; }
+  .task-list { list-style:none; padding:0; margin:0; }
+  .task { border-top:1px solid var(--line); }
+  .task-button { width:100%; border:0; background:transparent; color:var(--ink); display:flex; align-items:center; gap:8px; padding:7px 0; cursor:pointer; text-align:left; }
+  .task-mark { flex:none; width:15px; height:15px; border:1px solid var(--muted); border-radius:4px; display:grid; place-items:center; color:transparent; font-size:11px; }
+  .task.done .task-mark { color:#fff; background:var(--green); border-color:var(--green); }
+  .task-text { flex:1; font-size:13px; } .task.done .task-text { color:var(--muted); text-decoration:line-through; }
+  .task-caret { color:var(--muted); transition:transform .15s; } .task.open .task-caret { transform:rotate(90deg); }
+  .task-extra { display:none; padding:0 0 8px 23px; color:var(--muted); font-size:12px; } .task.open .task-extra { display:block; }
+  .inline-note, .risk { margin-top:8px; font-size:12px; padding:7px 9px; border-radius:6px; }
+  .inline-note { background:var(--amber-bg); color:var(--amber); } .risk { background:color-mix(in srgb, var(--red) 10%, transparent); color:var(--red); }
+  .skeptic .zone-head { background:var(--panel2); color:var(--ink); }
+  .skeptic-list { margin:0; padding:0; list-style:none; }
+  .skeptic-list li { padding:8px 0; border-top:1px solid var(--line); font-size:13px; }
+  .skeptic-list li:first-child { border-top:0; }
+  .auditor { display:block; font-weight:700; } .attack { color:var(--muted); }
+  footer { margin-top:18px; color:var(--muted); font-size:11px; }
+  @media (max-width:600px) { .summary { grid-template-columns:1fr; } .controls { justify-content:flex-start; } .phase-nav { grid-template-columns:repeat(2,1fr); } .phase-tag, .state-pill { font-size:9px; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Onboarding Build</h1>
-    <div class="synced">
-      <span class="dot" id="freshDot"></span><span id="syncedText">loading</span>
-      <button class="refresh-btn" onclick="hardRefresh()" title="Force a full refresh">&#8635; Refresh</button>
-    </div>
+    <div><h1>Onboarding Build</h1><div class="status-line"><span class="dot" id="freshDot"></span><span id="syncedText">loading</span></div></div>
+    <div class="controls"><button class="control" id="themeToggle" type="button">Dark</button><button class="control" id="expandAll" type="button">Expand all</button><button class="control" id="collapseAll" type="button">Collapse all</button><button class="control" id="refreshButton" type="button">Refresh</button></div>
   </header>
-
   <div class="headline" id="headline"></div>
-
-  <div class="row">
-    <div class="panel">
-      <h2>Live now</h2>
-      <div id="liveNow"><span class="empty">nothing in flight</span></div>
-    </div>
-    <div class="panel">
-      <h2>Waiting on Yair</h2>
-      <div id="waitingOnYair"><span class="empty">nothing pending</span></div>
-    </div>
-  </div>
-
-  <div class="panel" style="margin-bottom:18px;">
-    <h2>Build activity (live feed, newest first)</h2>
-    <div id="feed"><span class="empty">no posts yet</span></div>
-  </div>
-
-  <div class="pipeline" id="pipeline"></div>
-
-  <footer>polls the build feed every 15s &middot; <a href="/internal/conductor">full conductor board</a></footer>
+  <div class="phase-nav" id="phaseNav"></div>
+  <div class="summary"><div class="mini-panel"><h2>Live now</h2><div id="liveNow"><span class="empty">nothing in flight</span></div></div><div class="mini-panel"><h2>Waiting on Yair</h2><div id="waitingOnYair"><span class="empty">nothing pending</span></div></div></div>
+  <div class="mini-panel feed"><h2>Build activity</h2><div id="feed"><span class="empty">no posts yet</span></div></div>
+  <div id="zones"></div>
+  <section class="zone skeptic collapsed" id="skepticPanel"><button class="zone-head" type="button"><span class="chev">›</span>The skeptic panel <span class="zone-count">5</span></button><div class="zone-body"><ol class="skeptic-list"><li><span class="auditor">The Decision Auditor (Terra)</span><span class="attack">attacks the choice</span></li><li><span class="auditor">The Claims Verifier (Terra)</span><span class="attack">attacks every done, works, or green claim against a real signal</span></li><li><span class="auditor">The Scope Auditor (Terra)</span><span class="attack">attacks asked-vs-built</span></li><li><span class="auditor">The Provenance Auditor (Terra)</span><span class="attack">attacks staleness</span></li><li><span class="auditor">The Generalist (Fable, cross-model)</span><span class="attack">runs all four from the other model family</span></li></ol></div></section>
+  <footer>Polls every 15s while healthy. Data: /conductor-status.</footer>
 </div>
-
 <script>
-function esc(s) { return String(s == null ? '' : s).replace(/</g, '&lt;'); }
-
-function statusLabel(st) {
-  if (st === 'done') return 'Done';
-  if (st === 'in-flight') return 'In progress';
-  return 'To do';
-}
-
-function renderFreshness(updated) {
-  const dot = document.getElementById('freshDot');
-  const text = document.getElementById('syncedText');
-  if (!updated) { dot.className = 'dot stale'; text.textContent = 'no data yet'; return; }
-  const ms = Date.now() - new Date(updated).getTime();
-  dot.className = 'dot ' + (ms < 5 * 60 * 1000 ? 'fresh' : 'stale');
-  const mins = Math.round(ms / 60000);
-  text.textContent = mins <= 1 ? 'updated just now' : `updated ${mins}m ago`;
-}
-
-function render(data) {
-  if (!data) return;
-  renderFreshness(data.updated);
-  document.getElementById('headline').textContent = data.headline || '';
-
-  const liveEl = document.getElementById('liveNow');
-  const liveItems = [];
-  (data.phases || []).forEach(p => (p.liveNow || []).forEach(l => liveItems.push(l)));
-  liveEl.innerHTML = liveItems.length
-    ? liveItems.map(l => `<div class="live-item">${esc(l.what)}${l.session ? `<div class="session">${esc(l.session)}</div>` : ''}</div>`).join('')
-    : '<span class="empty">nothing in flight</span>';
-
-  const waitEl = document.getElementById('waitingOnYair');
-  const waitItems = data.waitingOnYair || [];
-  waitEl.innerHTML = waitItems.length
-    ? waitItems.map(w => `<div class="wait-item"><span class="status">${esc(w.status || '')}</span>${esc(w.item)}</div>`).join('')
-    : '<span class="empty">nothing pending</span>';
-
-  const feedEl = document.getElementById('feed');
-  const recent = data.recent || [];
-  feedEl.innerHTML = recent.length
-    ? recent.map((m, i) => `<div class="feed-item${i === 0 ? ' latest' : ''}">${esc(m)}</div>`).join('')
-    : '<span class="empty">no posts yet</span>';
-
-  const pipeEl = document.getElementById('pipeline');
-  pipeEl.innerHTML = (data.phases || []).map(p => {
-    const steps = (p.steps || []).map(s => `<li class="${s.done ? 'done' : ''}">${esc(s.text)}</li>`).join('');
-    const live = (p.liveNow || []).map(l => `<div class="inline-note">${esc(l.what)}</div>`).join('');
-    const risks = (p.risks || []).map(r => `<div class="inline-risk">${esc(r)}</div>`).join('');
-    const pulse = p.status === 'in-flight' ? '<span class="pulse"></span>' : '';
-    return `<div class="phase ${esc(p.status)}">
-      <div class="phase-head">
-        <div>
-          <div class="phase-title">${esc(p.title)}</div>
-          ${p.goal ? `<div class="phase-goal">${esc(p.goal)}</div>` : ''}
-        </div>
-        <span class="pill ${esc(p.status)}">${pulse}${statusLabel(p.status)}</span>
-      </div>
-      ${steps ? `<ul class="steps">${steps}</ul>` : ''}
-      ${live}${risks}
-    </div>`;
-  }).join('');
-}
-
-let failCount = 0;
-function poll() {
-  fetch('/conductor-status', { cache: 'no-store' })
-    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(d => { failCount = 0; render(d); })
-    .catch(() => {
-      failCount++;
-      const dot = document.getElementById('freshDot');
-      const text = document.getElementById('syncedText');
-      dot.className = 'dot stale';
-      text.textContent = 'reconnecting (attempt ' + failCount + '), hit Refresh if stuck';
-    });
-}
-
-function hardRefresh() { location.reload(); }
-
-poll();
-setInterval(poll, 15000);
+  const statusText = { done:'Done', 'in-flight':'Live now', planned:'Next' };
+  let latestData = null;
+  let pollTimer = null;
+  let failCount = 0;
+  let polling = false;
+  const openSteps = new Set(JSON.parse(localStorage.getItem('buildOpenSteps') || '[]'));
+  const zoneState = JSON.parse(localStorage.getItem('buildZoneState') || 'null') || { done:true, live:false, next:false };
+  function value(v) { return ['string','number','boolean'].includes(typeof v) ? String(v) : ''; }
+  function esc(v) { return value(v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
+  function phaseBucket(p) { return p && p.status === 'done' ? 'done' : p && p.status === 'in-flight' ? 'live' : 'next'; }
+  function saveState() { localStorage.setItem('buildOpenSteps', JSON.stringify([...openSteps])); localStorage.setItem('buildZoneState', JSON.stringify(zoneState)); }
+  function updateConnection(state, updated, retryMs) {
+    const dot = document.getElementById('freshDot'), text = document.getElementById('syncedText');
+    if (state === 'reconnecting') { dot.className = 'dot reconnecting'; text.textContent = `reconnecting, retrying in ${Math.round(retryMs / 1000)}s`; return; }
+    dot.className = 'dot live';
+    const date = updated ? new Date(updated) : null;
+    const age = date && !Number.isNaN(date.getTime()) ? Math.max(0, Math.round((Date.now() - date.getTime()) / 60000)) : null;
+    text.textContent = age === null || age <= 1 ? 'live and synced' : `live, data updated ${age}m ago`;
+  }
+  function render(data) {
+    latestData = data;
+    document.getElementById('headline').textContent = value(data.headline);
+    const phases = Array.isArray(data.phases) ? data.phases : [];
+    document.getElementById('phaseNav').innerHTML = phases.map((p, i) => { const b = phaseBucket(p); return `<button class="phase-card ${b}" type="button" data-target="phase-${i}"><span class="phase-num">P${i + 1}</span><span class="phase-card-title">${esc(p.title)}</span><span class="phase-card-state">${esc(statusText[p.status] || 'Next')}</span></button>`; }).join('');
+    document.querySelectorAll('.phase-card').forEach(card => card.onclick = () => document.getElementById(card.dataset.target)?.scrollIntoView({behavior:'smooth', block:'start'}));
+    const live = []; phases.forEach(p => Array.isArray(p.liveNow) && p.liveNow.forEach(l => live.push(l)));
+    document.getElementById('liveNow').innerHTML = live.length ? live.map(l => `<div class="live-item">${esc(l && l.what)}${value(l && l.session) ? `<div class="session">${esc(l.session)}</div>` : ''}</div>`).join('') : '<span class="empty">nothing in flight</span>';
+    const waiting = Array.isArray(data.waitingOnYair) ? data.waitingOnYair : [];
+    document.getElementById('waitingOnYair').innerHTML = waiting.length ? waiting.map(w => `<div class="wait-item">${value(w && w.status) ? `<div class="wait-status">${esc(w.status)}</div>` : ''}${esc(w && w.item)}</div>`).join('') : '<span class="empty">nothing pending</span>';
+    const recent = Array.isArray(data.recent) ? data.recent : [];
+    document.getElementById('feed').innerHTML = recent.length ? recent.map((m, i) => `<div class="feed-item${i === 0 ? ' latest' : ''}">${esc(m)}</div>`).join('') : '<span class="empty">no posts yet</span>';
+    const groups = { done:[], live:[], next:[] }; phases.forEach((p, i) => groups[phaseBucket(p)].push({p, i}));
+    const labels = { done:'Done', live:'Live now', next:'Next, in order' };
+    document.getElementById('zones').innerHTML = ['done','live','next'].map(kind => { const list = groups[kind]; if (!list.length) return ''; return `<section class="zone ${kind}${zoneState[kind] ? ' collapsed' : ''}" data-zone="${kind}"><button class="zone-head" type="button"><span class="chev">›</span>${kind === 'live' ? '<span class="pulse"></span>' : ''}${labels[kind]} <span class="zone-count">${list.length}</span></button><div class="zone-body">${list.map(({p,i}) => phaseHtml(p,i,kind)).join('')}</div></section>`; }).join('');
+    bindInteractions();
+  }
+  function phaseHtml(p, i, kind) {
+    const id = `phase-${i}`, open = openSteps.has(id) ? ' open' : '', steps = Array.isArray(p.steps) ? p.steps : [], notes = Array.isArray(p.liveNow) ? p.liveNow : [], risks = Array.isArray(p.risks) ? p.risks : [];
+    return `<article id="${id}" class="build-step ${kind}${open}" data-id="${id}"><button class="step-row" type="button"><span class="phase-tag">P${i + 1}</span><span class="step-title">${esc(p.title)}</span><span class="state-pill ${kind}">${esc(statusText[p.status] || 'Next')}</span><span class="step-chev">›</span></button><div class="step-detail">${value(p.goal) ? `<p class="goal">${esc(p.goal)}</p>` : ''}<ul class="task-list">${steps.map((s, si) => taskHtml(s, `${id}-task-${si}`)).join('')}</ul>${notes.map(l => `<div class="inline-note">${esc(l && l.what)}${value(l && l.session) ? ` (${esc(l.session)})` : ''}</div>`).join('')}${risks.map(r => `<div class="risk">${esc(r)}</div>`).join('')}</div></article>`;
+  }
+  function taskHtml(s, id) { const done = !!(s && s.done), open = openSteps.has(id) ? ' open' : ''; return `<li class="task${done ? ' done' : ''}${open}" data-id="${id}"><button class="task-button" type="button"><span class="task-mark">✓</span><span class="task-text">${esc(s && s.text)}</span><span class="task-caret">›</span></button><div class="task-extra">${done ? 'Completed.' : 'Pending.'}</div></li>`; }
+  function bindInteractions() {
+    document.querySelectorAll('.zone > .zone-head').forEach(button => button.onclick = () => { const zone = button.parentElement, key = zone.dataset.zone; zone.classList.toggle('collapsed'); zoneState[key] = zone.classList.contains('collapsed'); saveState(); });
+    document.querySelectorAll('.build-step > .step-row').forEach(button => button.onclick = () => { const step = button.parentElement, id = step.dataset.id; step.classList.toggle('open'); step.classList.contains('open') ? openSteps.add(id) : openSteps.delete(id); saveState(); });
+    document.querySelectorAll('.task-button').forEach(button => button.onclick = () => { const task = button.parentElement, id = task.dataset.id; task.classList.toggle('open'); task.classList.contains('open') ? openSteps.add(id) : openSteps.delete(id); saveState(); });
+    document.querySelector('#skepticPanel > .zone-head').onclick = function(){ this.parentElement.classList.toggle('collapsed'); };
+  }
+  function schedule(ms) { window.clearTimeout(pollTimer); pollTimer = window.setTimeout(poll, ms); }
+  async function poll() {
+    if (polling) return; polling = true;
+    try { const response = await fetch('/conductor-status', {cache:'no-store'}); if (!response.ok) throw new Error(String(response.status)); const data = await response.json(); failCount = 0; render(data); updateConnection('live', data.updated); schedule(15000); }
+    catch (_) { failCount += 1; const backoff = Math.min(3000 * Math.pow(2, failCount - 1), 20000); updateConnection('reconnecting', null, backoff); schedule(backoff); }
+    finally { polling = false; }
+  }
+  function setTheme(theme) { document.documentElement.dataset.theme = theme; localStorage.setItem('buildTheme', theme); document.getElementById('themeToggle').textContent = theme === 'dark' ? 'Light' : 'Dark'; }
+  setTheme(localStorage.getItem('buildTheme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  document.getElementById('themeToggle').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  document.getElementById('expandAll').onclick = () => { ['done','live','next'].forEach(k => zoneState[k] = false); document.querySelectorAll('.build-step, .task').forEach(el => { el.classList.add('open'); openSteps.add(el.dataset.id); }); document.getElementById('skepticPanel').classList.remove('collapsed'); saveState(); if (latestData) render(latestData); };
+  document.getElementById('collapseAll').onclick = () => { ['done','live','next'].forEach(k => zoneState[k] = true); openSteps.clear(); document.getElementById('skepticPanel').classList.add('collapsed'); saveState(); if (latestData) render(latestData); };
+  document.getElementById('refreshButton').onclick = () => { window.clearTimeout(pollTimer); poll(); };
+  poll();
 </script>
 </body>
 </html>
