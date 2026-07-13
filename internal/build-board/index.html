@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Onboarding Build</title>
+<title>Build Command Center</title>
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
 <style>
   :root { --bg:#f7f8fa; --panel:#fff; --panel2:#eef2fb; --ink:#1c2430; --muted:#667085; --line:#dfe4ec; --blue:#2456c7; --blue-bg:#e8efff; --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fff4dd; --red:#b42318; }
@@ -16,13 +16,18 @@
   header { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
   h1 { margin:0; font-size:22px; letter-spacing:-.02em; }
   .status-line { margin-top:3px; display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); display:inline-block; }
-  .dot.live { background:var(--green); }
-  .dot.reconnecting { background:var(--amber); animation:pulse 1.2s infinite; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); display:inline-block; flex:none; }
+  .dot.fresh { background:var(--green); }
+  .dot.stale, .dot.reconnecting { background:var(--amber); }
+  .dot.reconnecting { animation:pulse 1.2s infinite; }
   .controls { display:flex; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
   .control { color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:6px 9px; cursor:pointer; font-size:12px; }
   .control:hover { border-color:var(--blue); color:var(--blue); }
-  .headline { margin:16px 0 14px; padding:13px 15px; border:1px solid var(--line); border-radius:10px; background:var(--panel2); color:var(--ink); line-height:1.5; }
+  .build-tabs { display:flex; gap:8px; margin:18px 0 14px; border-bottom:1px solid var(--line); overflow-x:auto; }
+  .build-tab { flex:none; padding:9px 12px; border:0; border-bottom:3px solid transparent; color:var(--muted); background:transparent; cursor:pointer; font-weight:700; font-size:13px; }
+  .build-tab:hover { color:var(--blue); }
+  .build-tab.active { color:var(--blue); border-bottom-color:var(--blue); }
+  .headline { margin:0 0 14px; padding:13px 15px; border:1px solid var(--line); border-radius:10px; background:var(--panel2); color:var(--ink); line-height:1.5; }
   .phase-nav { display:grid; grid-template-columns:repeat(auto-fit, minmax(122px,1fr)); gap:8px; margin:0 0 16px; }
   .phase-card { text-align:left; cursor:pointer; padding:10px; border:1px solid var(--line); border-radius:9px; background:var(--panel); color:var(--ink); }
   .phase-card:hover { border-color:var(--blue); }
@@ -49,30 +54,21 @@
   .zone.done .zone-head { background:var(--green-bg); color:var(--green); } .zone.live .zone-head { background:var(--amber-bg); color:var(--amber); } .zone.next .zone-head { background:var(--blue-bg); color:var(--blue); }
   .chev { display:inline-block; transition:transform .15s; font-size:16px; line-height:1; }
   .zone:not(.collapsed) > .zone-head .chev, .build-step.open .step-chev { transform:rotate(90deg); }
-  .zone-count { color:var(--muted); font-size:11px; }
-  .pulse { width:8px; height:8px; border-radius:50%; background:currentColor; animation:pulse 1.25s infinite; }
-  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.28; } }
-  .zone-body { padding:10px 11px; }
-  .zone.collapsed .zone-body { display:none; }
-  .build-step { border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--panel); margin-bottom:8px; scroll-margin-top:16px; }
-  .build-step.done { border-left:3px solid var(--green); } .build-step.in-flight { border-left:3px solid var(--amber); } .build-step.planned { border-left:3px solid var(--blue); }
-  .step-row { width:100%; padding:10px 11px; border:0; background:transparent; color:var(--ink); cursor:pointer; display:flex; align-items:center; gap:9px; text-align:left; }
-  .phase-tag { color:var(--muted); font-size:11px; font-weight:750; white-space:nowrap; }
-  .step-title { flex:1; font-size:14px; font-weight:650; }
-  .state-pill { border-radius:999px; padding:2px 7px; font-size:10px; text-transform:uppercase; letter-spacing:.04em; font-weight:750; white-space:nowrap; }
-  .state-pill.done { color:var(--green); background:var(--green-bg); } .state-pill.in-flight { color:var(--amber); background:var(--amber-bg); } .state-pill.planned { color:var(--blue); background:var(--blue-bg); }
-  .step-chev { color:var(--muted); transition:transform .15s; }
-  .step-detail { display:none; padding:0 12px 12px 31px; }
-  .build-step.open .step-detail { display:block; }
-  .goal { color:var(--muted); margin:0 0 8px; font-size:13px; }
-  .task-list { list-style:none; padding:0; margin:0; }
-  .task { border-top:1px solid var(--line); }
-  .task-button { width:100%; border:0; background:transparent; color:var(--ink); display:flex; align-items:center; gap:8px; padding:7px 0; cursor:pointer; text-align:left; }
-  .task-mark { flex:none; width:15px; height:15px; border:1px solid var(--muted); border-radius:4px; display:grid; place-items:center; color:transparent; font-size:11px; }
-  .task.done .task-mark { color:#fff; background:var(--green); border-color:var(--green); }
-  .task-text { flex:1; font-size:13px; } .task.done .task-text { color:var(--muted); text-decoration:line-through; }
-  .task-caret { color:var(--muted); transition:transform .15s; } .task.open .task-caret { transform:rotate(90deg); }
-  .task-extra { display:none; padding:0 0 8px 23px; color:var(--muted); font-size:12px; } .task.open .task-extra { display:block; }
+  .zone-body { padding:4px 12px 10px; } .zone.collapsed .zone-body { display:none; }
+  .zone-count { margin-left:auto; opacity:.75; }
+  .pulse { width:7px; height:7px; border-radius:50%; background:currentColor; animation:pulse 1.2s infinite; }
+  @keyframes pulse { 50% { opacity:.35; } }
+  .build-step { border-bottom:1px solid var(--line); } .build-step:last-child { border-bottom:0; }
+  .step-row { width:100%; display:grid; grid-template-columns:auto 1fr auto auto; gap:9px; align-items:center; padding:10px 0; border:0; background:transparent; color:var(--ink); text-align:left; cursor:pointer; }
+  .phase-tag, .state-pill { border-radius:999px; padding:2px 6px; font-size:10px; font-weight:750; white-space:nowrap; }
+  .phase-tag { background:var(--panel2); color:var(--muted); } .state-pill.done { background:var(--green-bg); color:var(--green); } .state-pill.live { background:var(--amber-bg); color:var(--amber); } .state-pill.next { background:var(--blue-bg); color:var(--blue); }
+  .step-title { font-weight:650; } .step-chev, .task-caret { color:var(--muted); font-size:17px; line-height:1; transition:transform .15s; }
+  .step-detail { display:none; padding:0 0 12px 0; } .build-step.open .step-detail { display:block; }
+  .goal { margin:0 0 9px; color:var(--muted); }
+  .task-list { list-style:none; margin:0; padding:0; }
+  .task { border-top:1px solid var(--line); } .task-button { width:100%; border:0; background:transparent; color:var(--ink); cursor:pointer; display:grid; grid-template-columns:auto 1fr auto; gap:8px; padding:8px 0; text-align:left; }
+  .task-mark { color:var(--muted); font-weight:750; } .task.done .task-mark { color:var(--green); } .task.done .task-text { color:var(--muted); text-decoration:line-through; }
+  .task.open .task-caret { transform:rotate(90deg); } .task-extra { display:none; padding:0 0 8px 23px; color:var(--muted); font-size:12px; } .task.open .task-extra { display:block; }
   .inline-note, .risk { margin-top:8px; font-size:12px; padding:7px 9px; border-radius:6px; }
   .inline-note { background:var(--amber-bg); color:var(--amber); } .risk { background:color-mix(in srgb, var(--red) 10%, transparent); color:var(--red); }
   .skeptic .zone-head { background:var(--panel2); color:var(--ink); }
@@ -87,79 +83,264 @@
 <body>
 <div class="wrap">
   <header>
-    <div><h1>Onboarding Build</h1><div class="status-line"><span class="dot" id="freshDot"></span><span id="syncedText">loading</span></div></div>
+    <div><h1>Build Command Center</h1><div class="status-line"><span class="dot" id="freshDot"></span><span id="syncedText">loading</span></div></div>
     <div class="controls"><button class="control" id="themeToggle" type="button">Dark</button><button class="control" id="expandAll" type="button">Expand all</button><button class="control" id="collapseAll" type="button">Collapse all</button><button class="control" id="refreshButton" type="button">Refresh</button></div>
   </header>
-  <div class="headline" id="headline"></div>
-  <div class="phase-nav" id="phaseNav"></div>
-  <div class="summary"><div class="mini-panel"><h2>Live now</h2><div id="liveNow"><span class="empty">nothing in flight</span></div></div><div class="mini-panel"><h2>Waiting on Yair</h2><div id="waitingOnYair"><span class="empty">nothing pending</span></div></div></div>
-  <div class="mini-panel feed"><h2>Build activity</h2><div id="feed"><span class="empty">no posts yet</span></div></div>
-  <div id="zones"></div>
+  <nav class="build-tabs" id="buildTabs" aria-label="Live builds"></nav>
+  <main id="buildContent">
+    <div class="headline" id="headline"></div>
+    <div class="phase-nav" id="phaseNav"></div>
+    <div class="summary"><div class="mini-panel"><h2>Live now</h2><div id="liveNow"><span class="empty">nothing in flight</span></div></div><div class="mini-panel"><h2>Waiting on Yair</h2><div id="waitingOnYair"><span class="empty">nothing pending</span></div></div></div>
+    <div class="mini-panel feed"><h2>Build activity</h2><div id="feed"><span class="empty">no posts yet</span></div></div>
+    <div id="zones"></div>
+  </main>
   <section class="zone skeptic collapsed" id="skepticPanel"><button class="zone-head" type="button"><span class="chev">›</span>The skeptic panel <span class="zone-count">5</span></button><div class="zone-body"><ol class="skeptic-list"><li><span class="auditor">The Decision Auditor (Terra)</span><span class="attack">attacks the choice</span></li><li><span class="auditor">The Claims Verifier (Terra)</span><span class="attack">attacks every done, works, or green claim against a real signal</span></li><li><span class="auditor">The Scope Auditor (Terra)</span><span class="attack">attacks asked-vs-built</span></li><li><span class="auditor">The Provenance Auditor (Terra)</span><span class="attack">attacks staleness</span></li><li><span class="auditor">The Generalist (Fable, cross-model)</span><span class="attack">runs all four from the other model family</span></li></ol></div></section>
-  <footer>Polls every 15s while healthy. Data: /conductor-status.</footer>
+  <footer id="footerText">Polls the active build every 15 seconds while this tab is visible.</footer>
 </div>
 <script>
-  const statusText = { done:'Done', 'in-flight':'Live now', planned:'Next' };
-  let latestData = null;
+  // Add a build by adding one entry here. A missing endpoint is shown as "no data yet".
+  const buildFeeds = [
+    { id:'onboarding', name:'Onboarding', feed:'/conductor-status' },
+    { id:'azure-conductor', name:'Azure conductor', feed:'/azure-conductor-status' }
+  ];
+  const statusText = { done:'Done', 'in-flight':'Live now', planned:'Next', active:'Live now', pending:'Next' };
+  const pollEveryMs = 15000;
+  let activeBuildId = localStorage.getItem('buildActiveTab') || buildFeeds[0].id;
   let pollTimer = null;
-  let failCount = 0;
+  let freshnessTimer = null;
   let polling = false;
-  const openSteps = new Set(JSON.parse(localStorage.getItem('buildOpenSteps') || '[]'));
-  const zoneState = JSON.parse(localStorage.getItem('buildZoneState') || 'null') || { done:true, live:false, next:false };
-  function value(v) { return ['string','number','boolean'].includes(typeof v) ? String(v) : ''; }
-  function esc(v) { return value(v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
-  function phaseBucket(p) { return p && p.status === 'done' ? 'done' : p && p.status === 'in-flight' ? 'live' : 'next'; }
-  function saveState() { localStorage.setItem('buildOpenSteps', JSON.stringify([...openSteps])); localStorage.setItem('buildZoneState', JSON.stringify(zoneState)); }
-  function updateConnection(state, updated, retryMs) {
-    const dot = document.getElementById('freshDot'), text = document.getElementById('syncedText');
-    if (state === 'reconnecting') { dot.className = 'dot reconnecting'; text.textContent = `reconnecting, retrying in ${Math.round(retryMs / 1000)}s`; return; }
-    dot.className = 'dot live';
-    const date = updated ? new Date(updated) : null;
-    const age = date && !Number.isNaN(date.getTime()) ? Math.max(0, Math.round((Date.now() - date.getTime()) / 60000)) : null;
-    text.textContent = age === null || age <= 1 ? 'live and synced' : `live, data updated ${age}m ago`;
+  let requestController = null;
+  const buildState = JSON.parse(localStorage.getItem('buildBoardState') || '{}');
+  const feedData = new Map();
+  const feedErrors = new Map();
+
+  if (!buildFeeds.some(build => build.id === activeBuildId)) activeBuildId = buildFeeds[0].id;
+
+  function activeBuild() { return buildFeeds.find(build => build.id === activeBuildId); }
+  function stateFor(buildId) {
+    if (!buildState[buildId]) buildState[buildId] = { openSteps:[], zones:{ done:true, live:false, next:false } };
+    return buildState[buildId];
+  }
+  function saveState() { localStorage.setItem('buildBoardState', JSON.stringify(buildState)); localStorage.setItem('buildActiveTab', activeBuildId); }
+  function value(input) { return ['string','number','boolean'].includes(typeof input) ? String(input) : ''; }
+  function field(input, keys, depth = 0) {
+    const direct = value(input);
+    if (direct) return direct;
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return '';
+    for (const key of keys) {
+      const resolved = value(input[key]);
+      if (resolved) return resolved;
+      if (depth < 2) {
+        const nested = field(input[key], ['text','value','label','name','message','title'], depth + 1);
+        if (nested) return nested;
+      }
+    }
+    return '';
+  }
+  function esc(input) { return value(input).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char])); }
+  function phaseBucket(phase) {
+    const status = field(phase && phase.status, ['text','state']) || 'planned';
+    return status === 'done' ? 'done' : ['in-flight','active'].includes(status) ? 'live' : 'next';
+  }
+  function phaseId(index) { return `${activeBuildId}-phase-${index}`; }
+  function relativeFreshness(updated) {
+    const timestamp = updated ? new Date(updated).getTime() : NaN;
+    if (Number.isNaN(timestamp)) return { state:'stale', text:'no update time in feed' };
+    const seconds = Math.round((Date.now() - timestamp) / 1000);
+    if (seconds < -30) return { state:'stale', text:`feed clock is ${relativeTime(-seconds)} ahead` };
+    return { state:seconds < 120 ? 'fresh' : 'stale', text:`updated ${relativeTime(Math.max(0, seconds))} ago` };
+  }
+  function relativeTime(seconds) {
+    if (seconds < 60) return 'just now';
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours} hour${hours === 1 ? '' : 's'} ${minutes % 60} minute${minutes % 60 === 1 ? '' : 's'}`;
+  }
+  function updateConnection() {
+    const dot = document.getElementById('freshDot');
+    const text = document.getElementById('syncedText');
+    const build = activeBuild();
+    const data = feedData.get(build.id);
+    const error = feedErrors.get(build.id);
+    if (!data) {
+      dot.className = `dot${error === 'missing' ? '' : ' reconnecting'}`;
+      text.textContent = error === 'missing' ? 'no data yet' : error ? 'reconnecting to feed' : 'loading feed';
+      return;
+    }
+    const freshness = relativeFreshness(data.updated);
+    dot.className = `dot ${freshness.state}`;
+    text.textContent = freshness.text;
+  }
+  function renderTabs() {
+    document.getElementById('buildTabs').innerHTML = buildFeeds.map(build => `<button class="build-tab${build.id === activeBuildId ? ' active' : ''}" type="button" role="tab" aria-selected="${build.id === activeBuildId}" data-build-id="${esc(build.id)}">${esc(build.name)}</button>`).join('');
+    document.querySelectorAll('.build-tab').forEach(tab => tab.onclick = () => selectBuild(tab.dataset.buildId));
+  }
+  function renderNoData(build) {
+    document.getElementById('headline').textContent = `${build.name} has no status data yet.`;
+    document.getElementById('phaseNav').innerHTML = '';
+    document.getElementById('liveNow').innerHTML = '<span class="empty">waiting for this build to publish its feed</span>';
+    document.getElementById('waitingOnYair').innerHTML = '<span class="empty">nothing pending</span>';
+    document.getElementById('feed').innerHTML = '<span class="empty">no activity yet</span>';
+    document.getElementById('zones').innerHTML = '';
+    document.getElementById('footerText').textContent = `Polling ${build.feed} every 15 seconds while this tab is visible.`;
   }
   function render(data) {
-    latestData = data;
-    document.getElementById('headline').textContent = value(data.headline);
+    const build = activeBuild();
+    const state = stateFor(build.id);
+    const openSteps = new Set(state.openSteps);
+    document.getElementById('headline').textContent = field(data.headline, ['text','message','title']) || 'No headline yet.';
     const phases = Array.isArray(data.phases) ? data.phases : [];
-    document.getElementById('phaseNav').innerHTML = phases.map((p, i) => { const b = phaseBucket(p); return `<button class="phase-card ${b}" type="button" data-target="phase-${i}"><span class="phase-num">P${i + 1}</span><span class="phase-card-title">${esc(p.title)}</span><span class="phase-card-state">${esc(statusText[p.status] || 'Next')}</span></button>`; }).join('');
-    document.querySelectorAll('.phase-card').forEach(card => card.onclick = () => document.getElementById(card.dataset.target)?.scrollIntoView({behavior:'smooth', block:'start'}));
-    const live = []; phases.forEach(p => Array.isArray(p.liveNow) && p.liveNow.forEach(l => live.push(l)));
-    document.getElementById('liveNow').innerHTML = live.length ? live.map(l => `<div class="live-item">${esc(l && l.what)}${value(l && l.session) ? `<div class="session">${esc(l.session)}</div>` : ''}</div>`).join('') : '<span class="empty">nothing in flight</span>';
+    document.getElementById('phaseNav').innerHTML = phases.map((phase, index) => {
+      const bucket = phaseBucket(phase);
+      const title = field(phase.title, ['text','name']) || `Phase ${index + 1}`;
+      const status = field(phase.status, ['text','state']) || 'planned';
+      return `<button class="phase-card ${bucket}" type="button" data-target="${phaseId(index)}"><span class="phase-num">P${index + 1}</span><span class="phase-card-title">${esc(title)}</span><span class="phase-card-state">${esc(statusText[status] || 'Next')}</span></button>`;
+    }).join('');
+    document.querySelectorAll('.phase-card').forEach(card => card.onclick = () => document.getElementById(card.dataset.target)?.scrollIntoView({ behavior:'smooth', block:'start' }));
+
+    const live = phases.flatMap(phase => Array.isArray(phase.liveNow) ? phase.liveNow : []);
+    document.getElementById('liveNow').innerHTML = live.length ? live.map(item => {
+      const what = field(item, ['what','text','message','item','title']);
+      const session = field(item && item.session, ['name','text']);
+      return `<div class="live-item">${esc(what)}${session ? `<div class="session">${esc(session)}</div>` : ''}</div>`;
+    }).join('') : '<span class="empty">nothing in flight</span>';
+
     const waiting = Array.isArray(data.waitingOnYair) ? data.waitingOnYair : [];
-    document.getElementById('waitingOnYair').innerHTML = waiting.length ? waiting.map(w => `<div class="wait-item">${value(w && w.status) ? `<div class="wait-status">${esc(w.status)}</div>` : ''}${esc(w && w.item)}</div>`).join('') : '<span class="empty">nothing pending</span>';
+    document.getElementById('waitingOnYair').innerHTML = waiting.length ? waiting.map(item => {
+      const status = field(item && item.status, ['text','state']);
+      const description = field(item, ['item','what','text','message','title']);
+      return `<div class="wait-item">${status ? `<div class="wait-status">${esc(status)}</div>` : ''}${esc(description)}</div>`;
+    }).join('') : '<span class="empty">nothing pending</span>';
+
     const recent = Array.isArray(data.recent) ? data.recent : [];
-    document.getElementById('feed').innerHTML = recent.length ? recent.map((m, i) => `<div class="feed-item${i === 0 ? ' latest' : ''}">${esc(m)}</div>`).join('') : '<span class="empty">no posts yet</span>';
-    const groups = { done:[], live:[], next:[] }; phases.forEach((p, i) => groups[phaseBucket(p)].push({p, i}));
+    document.getElementById('feed').innerHTML = recent.length ? recent.map((item, index) => `<div class="feed-item${index === 0 ? ' latest' : ''}">${esc(field(item, ['text','message','what','item','title']))}</div>`).join('') : '<span class="empty">no posts yet</span>';
+
+    const groups = { done:[], live:[], next:[] };
+    phases.forEach((phase, index) => groups[phaseBucket(phase)].push({ phase, index }));
     const labels = { done:'Done', live:'Live now', next:'Next, in order' };
-    document.getElementById('zones').innerHTML = ['done','live','next'].map(kind => { const list = groups[kind]; if (!list.length) return ''; return `<section class="zone ${kind}${zoneState[kind] ? ' collapsed' : ''}" data-zone="${kind}"><button class="zone-head" type="button"><span class="chev">›</span>${kind === 'live' ? '<span class="pulse"></span>' : ''}${labels[kind]} <span class="zone-count">${list.length}</span></button><div class="zone-body">${list.map(({p,i}) => phaseHtml(p,i,kind)).join('')}</div></section>`; }).join('');
+    document.getElementById('zones').innerHTML = ['done','live','next'].map(kind => {
+      const phasesInGroup = groups[kind];
+      if (!phasesInGroup.length) return '';
+      return `<section class="zone ${kind}${state.zones[kind] ? ' collapsed' : ''}" data-zone="${kind}"><button class="zone-head" type="button"><span class="chev">›</span>${kind === 'live' ? '<span class="pulse"></span>' : ''}${labels[kind]} <span class="zone-count">${phasesInGroup.length}</span></button><div class="zone-body">${phasesInGroup.map(({ phase, index }) => phaseHtml(phase, index, kind, openSteps)).join('')}</div></section>`;
+    }).join('');
+    document.getElementById('footerText').textContent = `Polling ${build.feed} every 15 seconds while this tab is visible.`;
     bindInteractions();
   }
-  function phaseHtml(p, i, kind) {
-    const id = `phase-${i}`, open = openSteps.has(id) ? ' open' : '', steps = Array.isArray(p.steps) ? p.steps : [], notes = Array.isArray(p.liveNow) ? p.liveNow : [], risks = Array.isArray(p.risks) ? p.risks : [];
-    return `<article id="${id}" class="build-step ${kind}${open}" data-id="${id}"><button class="step-row" type="button"><span class="phase-tag">P${i + 1}</span><span class="step-title">${esc(p.title)}</span><span class="state-pill ${kind}">${esc(statusText[p.status] || 'Next')}</span><span class="step-chev">›</span></button><div class="step-detail">${value(p.goal) ? `<p class="goal">${esc(p.goal)}</p>` : ''}<ul class="task-list">${steps.map((s, si) => taskHtml(s, `${id}-task-${si}`)).join('')}</ul>${notes.map(l => `<div class="inline-note">${esc(l && l.what)}${value(l && l.session) ? ` (${esc(l.session)})` : ''}</div>`).join('')}${risks.map(r => `<div class="risk">${esc(r)}</div>`).join('')}</div></article>`;
+  function phaseHtml(phase, index, kind, openSteps) {
+    const id = phaseId(index);
+    const steps = Array.isArray(phase.steps) ? phase.steps : [];
+    const notes = Array.isArray(phase.liveNow) ? phase.liveNow : [];
+    const risks = Array.isArray(phase.risks) ? phase.risks : [];
+    const title = field(phase.title, ['text','name']) || `Phase ${index + 1}`;
+    const goal = field(phase.goal, ['text','message','what']);
+    const phaseStatus = field(phase.status, ['text','state']) || 'planned';
+    return `<article id="${id}" class="build-step ${kind}${openSteps.has(id) ? ' open' : ''}" data-id="${id}"><button class="step-row" type="button"><span class="phase-tag">P${index + 1}</span><span class="step-title">${esc(title)}</span><span class="state-pill ${kind}">${esc(statusText[phaseStatus] || 'Next')}</span><span class="step-chev">›</span></button><div class="step-detail">${goal ? `<p class="goal">${esc(goal)}</p>` : ''}<ul class="task-list">${steps.map((step, stepIndex) => taskHtml(step, `${id}-task-${stepIndex}`, openSteps)).join('')}</ul>${notes.map(note => `<div class="inline-note">${esc(field(note, ['what','text','message','item','title']))}${field(note && note.session, ['name','text']) ? ` (${esc(field(note.session, ['name','text']))})` : ''}</div>`).join('')}${risks.map(risk => `<div class="risk">${esc(field(risk, ['text','message','what','item','title']))}</div>`).join('')}</div></article>`;
   }
-  function taskHtml(s, id) { const done = !!(s && s.done), open = openSteps.has(id) ? ' open' : ''; return `<li class="task${done ? ' done' : ''}${open}" data-id="${id}"><button class="task-button" type="button"><span class="task-mark">✓</span><span class="task-text">${esc(s && s.text)}</span><span class="task-caret">›</span></button><div class="task-extra">${done ? 'Completed.' : 'Pending.'}</div></li>`; }
+  function taskHtml(task, id, openSteps) {
+    const done = !!(task && task.done);
+    const text = field(task, ['text','what','item','title','message']);
+    return `<li class="task${done ? ' done' : ''}${openSteps.has(id) ? ' open' : ''}" data-id="${id}"><button class="task-button" type="button"><span class="task-mark">✓</span><span class="task-text">${esc(text)}</span><span class="task-caret">›</span></button><div class="task-extra">${done ? 'Completed.' : 'Pending.'}</div></li>`;
+  }
   function bindInteractions() {
-    document.querySelectorAll('.zone > .zone-head').forEach(button => button.onclick = () => { const zone = button.parentElement, key = zone.dataset.zone; zone.classList.toggle('collapsed'); zoneState[key] = zone.classList.contains('collapsed'); saveState(); });
-    document.querySelectorAll('.build-step > .step-row').forEach(button => button.onclick = () => { const step = button.parentElement, id = step.dataset.id; step.classList.toggle('open'); step.classList.contains('open') ? openSteps.add(id) : openSteps.delete(id); saveState(); });
-    document.querySelectorAll('.task-button').forEach(button => button.onclick = () => { const task = button.parentElement, id = task.dataset.id; task.classList.toggle('open'); task.classList.contains('open') ? openSteps.add(id) : openSteps.delete(id); saveState(); });
-    document.querySelector('#skepticPanel > .zone-head').onclick = function(){ this.parentElement.classList.toggle('collapsed'); };
+    const state = stateFor(activeBuildId);
+    document.querySelectorAll('.zone > .zone-head').forEach(button => button.onclick = () => {
+      const zone = button.parentElement;
+      zone.classList.toggle('collapsed');
+      state.zones[zone.dataset.zone] = zone.classList.contains('collapsed');
+      saveState();
+    });
+    document.querySelectorAll('.build-step > .step-row, .task-button').forEach(button => button.onclick = () => {
+      const item = button.parentElement;
+      item.classList.toggle('open');
+      const openSteps = new Set(state.openSteps);
+      item.classList.contains('open') ? openSteps.add(item.dataset.id) : openSteps.delete(item.dataset.id);
+      state.openSteps = [...openSteps];
+      saveState();
+    });
   }
-  function schedule(ms) { window.clearTimeout(pollTimer); pollTimer = window.setTimeout(poll, ms); }
-  async function poll() {
-    if (polling) return; polling = true;
-    try { const response = await fetch('/conductor-status', {cache:'no-store'}); if (!response.ok) throw new Error(String(response.status)); const data = await response.json(); failCount = 0; render(data); updateConnection('live', data.updated); schedule(15000); }
-    catch (_) { failCount += 1; const backoff = Math.min(3000 * Math.pow(2, failCount - 1), 20000); updateConnection('reconnecting', null, backoff); schedule(backoff); }
-    finally { polling = false; }
+  function renderActiveBuild() {
+    renderTabs();
+    const build = activeBuild();
+    const data = feedData.get(build.id);
+    if (data) render(data); else renderNoData(build);
+    updateConnection();
+  }
+  function schedulePoll(delay = pollEveryMs) {
+    window.clearTimeout(pollTimer);
+    if (!document.hidden) pollTimer = window.setTimeout(pollActiveFeed, delay);
+  }
+  function tickFreshness() { updateConnection(); }
+  async function pollActiveFeed() {
+    if (document.hidden || polling) return;
+    const build = activeBuild();
+    polling = true;
+    requestController?.abort();
+    requestController = new AbortController();
+    try {
+      const response = await fetch(`${build.feed}${build.feed.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache:'no-store', signal:requestController.signal });
+      if (response.status === 404) {
+        feedData.delete(build.id);
+        feedErrors.set(build.id, 'missing');
+      } else if (!response.ok) {
+        throw new Error(String(response.status));
+      } else {
+        feedData.set(build.id, await response.json());
+        feedErrors.delete(build.id);
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') feedErrors.set(build.id, 'unavailable');
+    } finally {
+      polling = false;
+      if (activeBuildId === build.id) {
+        renderActiveBuild();
+        schedulePoll();
+      } else {
+        pollActiveFeed();
+      }
+    }
+  }
+  function selectBuild(buildId) {
+    if (buildId === activeBuildId || !buildFeeds.some(build => build.id === buildId)) return;
+    activeBuildId = buildId;
+    saveState();
+    renderActiveBuild();
+    window.clearTimeout(pollTimer);
+    pollActiveFeed();
   }
   function setTheme(theme) { document.documentElement.dataset.theme = theme; localStorage.setItem('buildTheme', theme); document.getElementById('themeToggle').textContent = theme === 'dark' ? 'Light' : 'Dark'; }
   setTheme(localStorage.getItem('buildTheme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   document.getElementById('themeToggle').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-  document.getElementById('expandAll').onclick = () => { ['done','live','next'].forEach(k => zoneState[k] = false); document.querySelectorAll('.build-step, .task').forEach(el => { el.classList.add('open'); openSteps.add(el.dataset.id); }); document.getElementById('skepticPanel').classList.remove('collapsed'); saveState(); if (latestData) render(latestData); };
-  document.getElementById('collapseAll').onclick = () => { ['done','live','next'].forEach(k => zoneState[k] = true); openSteps.clear(); document.getElementById('skepticPanel').classList.add('collapsed'); saveState(); if (latestData) render(latestData); };
-  document.getElementById('refreshButton').onclick = () => { window.clearTimeout(pollTimer); poll(); };
-  poll();
+  document.getElementById('expandAll').onclick = () => {
+    const state = stateFor(activeBuildId);
+    state.zones = { done:false, live:false, next:false };
+    document.querySelectorAll('.build-step, .task').forEach(element => { element.classList.add('open'); state.openSteps.push(element.dataset.id); });
+    state.openSteps = [...new Set(state.openSteps)];
+    document.getElementById('skepticPanel').classList.remove('collapsed');
+    saveState();
+    renderActiveBuild();
+  };
+  document.getElementById('collapseAll').onclick = () => {
+    const state = stateFor(activeBuildId);
+    state.zones = { done:true, live:true, next:true };
+    state.openSteps = [];
+    document.getElementById('skepticPanel').classList.add('collapsed');
+    saveState();
+    renderActiveBuild();
+  };
+  document.getElementById('refreshButton').onclick = () => { window.clearTimeout(pollTimer); pollActiveFeed(); };
+  document.querySelector('#skepticPanel > .zone-head').onclick = function() { this.parentElement.classList.toggle('collapsed'); };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      window.clearTimeout(pollTimer);
+      requestController?.abort();
+    } else {
+      pollActiveFeed();
+    }
+  });
+  freshnessTimer = window.setInterval(tickFreshness, pollEveryMs);
+  renderActiveBuild();
+  pollActiveFeed();
 </script>
 </body>
 </html>
