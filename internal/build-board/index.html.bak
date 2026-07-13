@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onboarding Build</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f7f8fa; color: #1c2430;
+  }
+  a { color: #2456c7; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+  header h1 { font-size: 20px; margin: 0; font-weight: 700; }
+  .synced { font-size: 12px; color: #7a8494; display: flex; align-items: center; gap: 8px; }
+  .refresh-btn { background: #2456c7; color: #fff; border: none; border-radius: 7px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .refresh-btn:hover { background: #1c46a3; }
+  .refresh-btn:active { transform: translateY(1px); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #9aa4b2; display: inline-block; }
+  .dot.fresh { background: #2fa96b; }
+  .dot.stale { background: #d97706; }
+
+  .headline {
+    background: #eef2fb; border: 1px solid #dbe3f6; border-radius: 10px;
+    padding: 14px 16px; font-size: 14px; line-height: 1.5; color: #223055; margin: 16px 0;
+  }
+
+  .row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+  .panel {
+    flex: 1; min-width: 260px; background: #fff; border: 1px solid #e4e8ef; border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #7a8494; margin: 0 0 8px; }
+  .panel .empty { font-size: 13px; color: #9aa4b2; }
+  .live-item { font-size: 13px; margin-bottom: 6px; line-height: 1.4; }
+  .live-item .session { color: #7a8494; font-size: 11px; }
+  .wait-item { font-size: 13px; margin-bottom: 6px; line-height: 1.4; }
+  .wait-item .status { font-size: 11px; color: #b45309; font-weight: 600; text-transform: uppercase; margin-right: 6px; }
+
+  .pipeline { display: flex; flex-direction: column; gap: 10px; }
+  .phase {
+    background: #fff; border: 1px solid #e4e8ef; border-left-width: 4px; border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .phase.done { border-left-color: #2fa96b; }
+  .phase.in-flight { border-left-color: #2456c7; }
+  .phase.todo { border-left-color: #d0d5dd; }
+  .phase-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .phase-title { font-size: 14px; font-weight: 600; }
+  .phase-goal { font-size: 12px; color: #7a8494; margin-top: 2px; }
+  .pill { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+  .pill.done { background: #e3f6ec; color: #1c7a4d; }
+  .pill.in-flight { background: #e6edfc; color: #2456c7; }
+  .pill.todo { background: #f1f2f4; color: #7a8494; }
+  .pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #2456c7; margin-right: 5px; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+  .steps { list-style: none; margin: 10px 0 0; padding: 0; }
+  .steps li { font-size: 13px; padding: 3px 0 3px 22px; position: relative; line-height: 1.4; }
+  .steps li::before {
+    content: ''; position: absolute; left: 0; top: 6px; width: 13px; height: 13px; border-radius: 4px;
+    border: 1.5px solid #c3cad6;
+  }
+  .steps li.done { color: #7a8494; text-decoration: line-through; }
+  .steps li.done::before { background: #2fa96b; border-color: #2fa96b; }
+  .steps li.done::after {
+    content: ''; position: absolute; left: 4px; top: 8px; width: 5px; height: 8px;
+    border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(45deg);
+  }
+
+  .inline-note { font-size: 12px; color: #2456c7; margin-top: 8px; }
+  .inline-risk { font-size: 12px; color: #b45309; margin-top: 4px; }
+
+  .feed-item { font-size: 13px; padding: 5px 0 5px 15px; position: relative; line-height: 1.45; color: #55606f; border-left: 2px solid #e9edf3; }
+  .feed-item.latest { color: #1c2430; font-weight: 500; border-left-color: #2456c7; }
+
+  footer { margin-top: 24px; font-size: 11px; color: #9aa4b2; }
+  footer a { color: #9aa4b2; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Onboarding Build</h1>
+    <div class="synced">
+      <span class="dot" id="freshDot"></span><span id="syncedText">loading</span>
+      <button class="refresh-btn" onclick="hardRefresh()" title="Force a full refresh">&#8635; Refresh</button>
+    </div>
+  </header>
+
+  <div class="headline" id="headline"></div>
+
+  <div class="row">
+    <div class="panel">
+      <h2>Live now</h2>
+      <div id="liveNow"><span class="empty">nothing in flight</span></div>
+    </div>
+    <div class="panel">
+      <h2>Waiting on Yair</h2>
+      <div id="waitingOnYair"><span class="empty">nothing pending</span></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:18px;">
+    <h2>Build activity (live feed, newest first)</h2>
+    <div id="feed"><span class="empty">no posts yet</span></div>
+  </div>
+
+  <div class="pipeline" id="pipeline"></div>
+
+  <footer>polls the build feed every 15s &middot; <a href="/internal/conductor">full conductor board</a></footer>
+</div>
+
+<script>
+function esc(s) { return String(s == null ? '' : s).replace(/</g, '&lt;'); }
+
+function statusLabel(st) {
+  if (st === 'done') return 'Done';
+  if (st === 'in-flight') return 'In progress';
+  return 'To do';
+}
+
+function renderFreshness(updated) {
+  const dot = document.getElementById('freshDot');
+  const text = document.getElementById('syncedText');
+  if (!updated) { dot.className = 'dot stale'; text.textContent = 'no data yet'; return; }
+  const ms = Date.now() - new Date(updated).getTime();
+  dot.className = 'dot ' + (ms < 5 * 60 * 1000 ? 'fresh' : 'stale');
+  const mins = Math.round(ms / 60000);
+  text.textContent = mins <= 1 ? 'updated just now' : `updated ${mins}m ago`;
+}
+
+function render(data) {
+  if (!data) return;
+  renderFreshness(data.updated);
+  document.getElementById('headline').textContent = data.headline || '';
+
+  const liveEl = document.getElementById('liveNow');
+  const liveItems = [];
+  (data.phases || []).forEach(p => (p.liveNow || []).forEach(l => liveItems.push(l)));
+  liveEl.innerHTML = liveItems.length
+    ? liveItems.map(l => `<div class="live-item">${esc(l.what)}${l.session ? `<div class="session">${esc(l.session)}</div>` : ''}</div>`).join('')
+    : '<span class="empty">nothing in flight</span>';
+
+  const waitEl = document.getElementById('waitingOnYair');
+  const waitItems = data.waitingOnYair || [];
+  waitEl.innerHTML = waitItems.length
+    ? waitItems.map(w => `<div class="wait-item"><span class="status">${esc(w.status || '')}</span>${esc(w.item)}</div>`).join('')
+    : '<span class="empty">nothing pending</span>';
+
+  const feedEl = document.getElementById('feed');
+  const recent = data.recent || [];
+  feedEl.innerHTML = recent.length
+    ? recent.map((m, i) => `<div class="feed-item${i === 0 ? ' latest' : ''}">${esc(m)}</div>`).join('')
+    : '<span class="empty">no posts yet</span>';
+
+  const pipeEl = document.getElementById('pipeline');
+  pipeEl.innerHTML = (data.phases || []).map(p => {
+    const steps = (p.steps || []).map(s => `<li class="${s.done ? 'done' : ''}">${esc(s.text)}</li>`).join('');
+    const live = (p.liveNow || []).map(l => `<div class="inline-note">${esc(l.what)}</div>`).join('');
+    const risks = (p.risks || []).map(r => `<div class="inline-risk">${esc(r)}</div>`).join('');
+    const pulse = p.status === 'in-flight' ? '<span class="pulse"></span>' : '';
+    return `<div class="phase ${esc(p.status)}">
+      <div class="phase-head">
+        <div>
+          <div class="phase-title">${esc(p.title)}</div>
+          ${p.goal ? `<div class="phase-goal">${esc(p.goal)}</div>` : ''}
+        </div>
+        <span class="pill ${esc(p.status)}">${pulse}${statusLabel(p.status)}</span>
+      </div>
+      ${steps ? `<ul class="steps">${steps}</ul>` : ''}
+      ${live}${risks}
+    </div>`;
+  }).join('');
+}
+
+let failCount = 0;
+function poll() {
+  fetch('/conductor-status', { cache: 'no-store' })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => { failCount = 0; render(d); })
+    .catch(() => {
+      failCount++;
+      const dot = document.getElementById('freshDot');
+      const text = document.getElementById('syncedText');
+      dot.className = 'dot stale';
+      text.textContent = 'reconnecting (attempt ' + failCount + '), hit Refresh if stuck';
+    });
+}
+
+function hardRefresh() { location.reload(); }
+
+poll();
+setInterval(poll, 15000);
+</script>
+</body>
+</html>
