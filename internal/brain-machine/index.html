@@ -125,7 +125,7 @@
 
   <section class="lane">
     <div class="lhead"><h1>Execution</h1><span class="n" id="exen"></span></div>
-    <div class="lsub">Per-build verification panels, rolled up by what they gate.</div>
+    <div class="lsub">Verification panels (skeptic gates and build checks), rolled up by what they check.</div>
     <div class="stbar" id="exestat"></div>
     <div id="execution"></div>
   </section>
@@ -279,6 +279,7 @@
     if (s.green) bits.push(`<span class="g">${s.green} passed</span>`);
     if (s.red) bits.push(`<span class="r">${s.red} failed</span>`);
     if (s.deciding) bits.push(`<span class="a">${s.deciding} deciding</span>`);
+    if (s.tokens) bits.push(`${fmtTokens(s.tokens)}`);
     if (s.disk) bits.push(`${fmtBytes(s.disk)} on disk`);
     document.getElementById('exestat').innerHTML = bits.join('');
     const host = document.getElementById('execution');
