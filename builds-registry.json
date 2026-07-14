@@ -10,5 +10,11 @@
     "title": "Azure conductor",
     "feed": "/azure-conductor-status",
     "status": "active"
+  },
+  {
+    "id": "voice-pipeline",
+    "title": "Voice pipeline",
+    "feed": "/voice-conductor-status",
+    "status": "active"
   }
 ]
