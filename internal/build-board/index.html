@@ -107,6 +107,7 @@
     <div class="mini-panel feed"><h2>Build activity</h2><div id="feed"><span class="empty">no posts yet</span></div></div>
     <div id="zones"></div>
   </main>
+  <div id="embedHost" hidden></div>
   <section class="zone skeptic collapsed" id="skepticPanel"><button class="zone-head" type="button"><span class="chev">›</span>The skeptic panel <span class="zone-count">5</span></button><div class="zone-body"><ol class="skeptic-list"><li><span class="auditor">The Decision Auditor (Terra)</span><span class="attack">attacks the choice</span></li><li><span class="auditor">The Claims Verifier (Terra)</span><span class="attack">attacks every done, works, or green claim against a real signal</span></li><li><span class="auditor">The Scope Auditor (Terra)</span><span class="attack">attacks asked-vs-built</span></li><li><span class="auditor">The Provenance Auditor (Terra)</span><span class="attack">attacks staleness</span></li><li><span class="auditor">The Generalist (Fable, cross-model)</span><span class="attack">runs all four from the other model family</span></li></ol></div></section>
   <footer id="footerText">Polls the build registry and active build every 15 seconds while this tab is visible.</footer>
 </div>
@@ -176,10 +177,11 @@
       const id = value(entry && entry.id).trim();
       const title = value(entry && entry.title).trim();
       const feed = value(entry && entry.feed).trim();
+      const embed = value(entry && entry.embed).trim();
       const status = value(entry && entry.status).trim();
-      if (!id || !title || !feed || !['active','archived'].includes(status) || seen.has(id)) return builds;
+      if (!id || !title || (!feed && !embed) || !['active','archived'].includes(status) || seen.has(id)) return builds;
       seen.add(id);
-      builds.push({ id, title, feed, status });
+      builds.push({ id, title, feed, embed, status });
       return builds;
     }, []);
   }
@@ -196,6 +198,11 @@
     if (!build) {
       dot.className = `dot${registryError ? ' reconnecting' : ''}`;
       text.textContent = registryError || 'loading build registry';
+      return;
+    }
+    if (build.embed) {
+      dot.className = 'dot';
+      text.textContent = 'embedded live cockpit';
       return;
     }
     const data = feedData.get(build.id);
@@ -323,12 +330,33 @@
     renderTabs();
     renderArchive();
     const build = activeBuild();
+    const isEmbed = !!(build && build.embed);
+    document.getElementById('buildContent').hidden = isEmbed;
+    document.getElementById('embedHost').hidden = !isEmbed;
+    document.getElementById('skepticPanel').hidden = isEmbed;   // phase-build context, not the cockpit
+    if (!isEmbed) { const host = document.getElementById('embedHost'); if (host.firstChild) host.innerHTML = ''; }
     if (!build) renderNoBuilds();
+    else if (isEmbed) renderEmbed(build);
     else {
       const data = feedData.get(build.id);
       if (data) render(data); else renderNoData(build);
     }
     updateConnection();
+  }
+  function renderEmbed(build) {
+    const host = document.getElementById('embedHost');
+    let frame = document.getElementById('embedFrame');
+    if (!frame || frame.dataset.embedId !== build.id) {
+      const theme = document.documentElement.dataset.theme || 'light';
+      const src = `${build.embed}${build.embed.includes('?') ? '&' : '?'}theme=${theme}`;
+      host.innerHTML = `<iframe id="embedFrame" title="${esc(build.title)} cockpit" data-embed-id="${esc(build.id)}" src="${esc(src)}" style="width:100%;border:0;height:520px;display:block"></iframe>`;
+      document.getElementById('embedFrame').addEventListener('load', postThemeToEmbed);
+    }
+    document.getElementById('footerText').textContent = `Showing the live ${build.title} cockpit (embedded). It refreshes itself every few seconds while this tab is visible.`;
+  }
+  function postThemeToEmbed() {
+    const frame = document.getElementById('embedFrame');
+    if (frame && frame.contentWindow) frame.contentWindow.postMessage({ type: 'gg-theme', theme: document.documentElement.dataset.theme || 'light' }, '*');
   }
   function schedulePoll(delay = pollEveryMs) {
     window.clearTimeout(pollTimer);
@@ -344,6 +372,7 @@
   async function fetchActiveFeed(signal) {
     const build = activeBuild();
     if (!build) return;
+    if (build.embed) return;   // embed builds render an iframe cockpit; no board-side feed to poll
     try {
       const response = await fetch(`${build.feed}${build.feed.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache:'no-store', signal });
       if (response.status === 404) {
@@ -392,7 +421,14 @@
     panel.textContent = `Static-site registry action: ${action} The visible board updates on its next 15-second poll.`;
     navigator.clipboard?.writeText(action).catch(() => {});
   }
-  function setTheme(theme) { document.documentElement.dataset.theme = theme; localStorage.setItem('buildTheme', theme); document.getElementById('themeToggle').textContent = theme === 'dark' ? 'Light' : 'Dark'; }
+  function setTheme(theme) { document.documentElement.dataset.theme = theme; localStorage.setItem('buildTheme', theme); document.getElementById('themeToggle').textContent = theme === 'dark' ? 'Light' : 'Dark'; postThemeToEmbed(); }
+  window.addEventListener('message', (event) => {
+    const payload = event.data;
+    if (payload && payload.type === 'gg-embed-height' && Number.isFinite(payload.height)) {
+      const frame = document.getElementById('embedFrame');
+      if (frame) frame.style.height = `${Math.max(240, Math.ceil(payload.height) + 8)}px`;
+    }
+  });
   setTheme(localStorage.getItem('buildTheme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   document.getElementById('themeToggle').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
   document.getElementById('expandAll').onclick = () => {

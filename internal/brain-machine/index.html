@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brain Machine</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<style>
+  /* Palette matches the Build Command Center (build-board) so the embedded tab
+     reads as one surface. Standalone it follows prefers-color-scheme; embedded,
+     the parent stamps html[data-theme] and wins in both directions. */
+  :root { --bg:#f7f8fa; --panel:#fff; --panel2:#eef2fb; --ink:#1c2430; --muted:#667085; --line:#dfe4ec; --blue:#2456c7; --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fff4dd; --red:#b42318; --red-bg:#fdecea; --gray:#8b95a5; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --bg:#10151d; --panel:#171d27; --panel2:#202a3a; --ink:#edf2f8; --muted:#9aa7b7; --line:#344050; --blue:#8db2ff; --green:#64d896; --green-bg:#123a29; --amber:#f5bd5e; --amber-bg:#3b2d10; --red:#ff8c86; --red-bg:#3a1714; --gray:#6b7686; } }
+  html[data-theme="dark"] { --bg:#10151d; --panel:#171d27; --panel2:#202a3a; --ink:#edf2f8; --muted:#9aa7b7; --line:#344050; --blue:#8db2ff; --green:#64d896; --green-bg:#123a29; --amber:#f5bd5e; --amber-bg:#3b2d10; --red:#ff8c86; --red-bg:#3a1714; --gray:#6b7686; }
+  html[data-theme="light"] { --bg:#f7f8fa; --panel:#fff; --panel2:#eef2fb; --ink:#1c2430; --muted:#667085; --line:#dfe4ec; --blue:#2456c7; --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fff4dd; --red:#b42318; --red-bg:#fdecea; --gray:#8b95a5; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width:900px; margin:0 auto; padding:4px 2px 18px; }
+  .sub { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; margin:2px 0 14px; flex-wrap:wrap; }
+  .fdot { width:8px; height:8px; border-radius:50%; background:var(--gray); display:inline-block; flex:none; }
+  .fdot.fresh { background:var(--green); } .fdot.stale { background:var(--amber); } .fdot.down { background:var(--red); }
+  .fdot.stale, .fdot.down { animation:pulse 1.3s infinite; }
+  .banner { display:none; margin:0 0 14px; padding:10px 13px; border-radius:9px; font-size:13px; line-height:1.45; }
+  .banner.show { display:block; }
+  .banner.warn { background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); }
+  .banner.down { background:var(--red-bg); color:var(--red); border:1px solid var(--red); }
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+  .tile { border:1px solid var(--line); background:var(--panel); border-radius:11px; padding:11px 13px; }
+  .tile .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .tile .v { font-size:22px; font-weight:750; margin-top:3px; letter-spacing:-.02em; }
+  .tile .s { font-size:11px; color:var(--muted); margin-top:2px; }
+  .card { border:1px solid var(--line); background:var(--panel); border-radius:12px; padding:13px 15px; margin-bottom:14px; }
+  .card h2 { margin:0 0 10px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
+  .card h2 .count { color:var(--ink); }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .row:last-child { border:0; }
+  .sdot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; vertical-align:middle; }
+  .task { font-family:ui-monospace, "SF Mono", Menlo, monospace; font-size:12px; color:var(--muted); word-break:break-word; text-align:right; }
+  .empty { color:var(--muted); font-size:13px; }
+  .committee { padding:12px 0; border-bottom:1px solid var(--line); } .committee:last-child { border:0; }
+  .ctop { margin-bottom:9px; font-size:13px; line-height:1.4; }
+  .ctopic { font-weight:700; } .cround { color:var(--muted); font-size:12px; margin-left:6px; }
+  .lights { display:flex; flex-wrap:wrap; gap:14px 18px; align-items:center; }
+  .cmem { display:flex; align-items:center; gap:7px; }
+  .mlight { width:14px; height:14px; border-radius:50%; display:inline-block; flex:0 0 auto; }
+  .pulsing { animation:pulse 1.4s infinite; }
+  .mlabel { font-size:13px; }
+  details { margin-top:10px; } summary { cursor:pointer; font-size:12px; color:var(--muted); }
+  details .rnd { margin:9px 0; } details .rnd .rn { color:var(--muted); font-size:11px; margin-bottom:5px; display:block; }
+  @keyframes pulse { 50% { opacity:.35; } }
+  @media (max-width:620px) { .grid { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sub"><span class="fdot" id="fdot"></span><span id="subline">connecting to the brain box…</span></div>
+  <div class="banner" id="banner"></div>
+  <div class="grid" id="tiles"></div>
+  <div class="card"><h2>Services</h2><div id="svc"><span class="empty">—</span></div></div>
+  <div class="card"><h2>Live agents · <span class="count" id="agc">0</span></h2><div id="agents"><span class="empty">—</span></div></div>
+  <div class="card"><h2>Committees · <span class="count" id="cmc">0</span></h2><div id="committees"><span class="empty">—</span></div></div>
+</div>
+<script>
+  // ---- theme: URL param (embedded) or prefers-color-scheme (standalone) ----
+  const urlTheme = new URLSearchParams(location.search).get('theme');
+  if (urlTheme === 'dark' || urlTheme === 'light') document.documentElement.dataset.theme = urlTheme;
+  window.addEventListener('message', (e) => {
+    const d = e.data;
+    if (d && d.type === 'gg-theme' && (d.theme === 'dark' || d.theme === 'light')) {
+      document.documentElement.dataset.theme = d.theme;
+    }
+  });
+
+  const FEED = '/brain-status';
+  const POLL_MS = 5000;
+  let timer = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+  // color ramp: below warn = green (ok), warn..bad = amber, >= bad = red
+  function ramp(v, warn, bad) { return v >= bad ? 'var(--red)' : v >= warn ? 'var(--amber)' : 'var(--green)'; }
+
+  // committee member traffic light (lifted from the box dashboard):
+  // thinking (not done) = amber + pulse; green verdict = green; red = red; else neutral gray.
+  function mlight(m) {
+    let c = 'var(--gray)', pulse = '';
+    if (m.status !== 'done') { c = 'var(--amber)'; pulse = ' pulsing'; }
+    else if (m.verdict === 'green') c = 'var(--green)';
+    else if (m.verdict === 'red') c = 'var(--red)';
+    const tip = esc(m.comment || m.status || '');
+    return `<span class="cmem" title="${tip}"><span class="mlight${pulse}" style="background:${c}"></span><span class="mlabel">${esc(m.role)}</span></span>`;
+  }
+  function roundLights(r) { return (r.members || []).map(mlight).join(''); }
+
+  function postHeight() {
+    try { parent.postMessage({ type: 'gg-embed-height', height: document.documentElement.scrollHeight }, '*'); } catch (e) {}
+  }
+  function ageSeconds(ts) { const t = ts ? Date.parse(ts) : NaN; return Number.isNaN(t) ? Infinity : Math.round((Date.now() - t) / 1000); }
+
+  function renderEmpty() {
+    document.getElementById('fdot').className = 'fdot down';
+    document.getElementById('subline').textContent = 'no data — the brain box is not reporting';
+    const b = document.getElementById('banner'); b.className = 'banner down show';
+    b.textContent = 'The brain box (gg-qa-vm) has not posted a status in the last 10 minutes. It is paused, offline, or the status service is down.';
+    document.getElementById('tiles').innerHTML = '';
+    document.getElementById('svc').innerHTML = '<span class="empty">—</span>';
+    document.getElementById('agents').innerHTML = '<span class="empty">—</span>';
+    document.getElementById('committees').innerHTML = '<span class="empty">—</span>';
+    postHeight();
+  }
+
+  function render(s) {
+    const age = ageSeconds(s.ts);
+    const fdot = document.getElementById('fdot');
+    const banner = document.getElementById('banner');
+    if (age > 120) { fdot.className = 'fdot down'; banner.className = 'banner down show'; banner.textContent = `Last status is ${age}s old — the box status feed may be stalled or the box paused.`; }
+    else if (age > 45) { fdot.className = 'fdot stale'; banner.className = 'banner warn show'; banner.textContent = `Last status is ${age}s old (feed usually refreshes every 15s).`; }
+    else { fdot.className = 'fdot fresh'; banner.className = 'banner'; }
+
+    const upd = (s.ts || '').slice(11, 19);
+    document.getElementById('subline').textContent = `${esc(s.box || 'box')} · ${esc(s.uptime || '')} · ${esc(s.cores || '?')} cores · updated ${upd}Z`;
+
+    const load0 = Array.isArray(s.load) && s.load.length ? Number(s.load[0]) : 0;
+    const cores = Number(s.cores) || 1;
+    const memPct = (s.mem && Number(s.mem.pct)) || 0;
+    const diskPct = parseInt(s.disk_pct, 10) || 0;
+    const agents = Number(s.live_agent_count) || 0;
+    const tiles = [
+      ['Load', load0.toFixed(2), `of ${cores} cores`, ramp(load0 / cores, 0.9, 1.8)],
+      ['Memory', memPct + '%', `${(s.mem && s.mem.used_mb) || 0} / ${(s.mem && s.mem.total_mb) || 0} MB`, ramp(memPct, 70, 85)],
+      ['Disk', esc(s.disk_pct || '—'), '', ramp(diskPct, 80, 90)],
+      ['Live agents', agents, '', ramp(agents, 12, 18)],
+    ];
+    document.getElementById('tiles').innerHTML = tiles.map(t =>
+      `<div class="tile"><div class="k">${t[0]}</div><div class="v" style="color:${t[3]}">${t[1]}</div><div class="s">${esc(t[2])}</div></div>`).join('');
+
+    const services = s.services || {};
+    const svcEntries = Object.entries(services);
+    document.getElementById('svc').innerHTML = svcEntries.length ? svcEntries.map(([k, v]) =>
+      `<div class="row"><span><span class="sdot" style="background:${v ? 'var(--green)' : 'var(--red)'}"></span>${esc(k)}</span><span style="color:${v ? 'var(--muted)' : 'var(--red)'}">${v ? 'up' : 'DOWN'}</span></div>`).join('') : '<span class="empty">no services reported</span>';
+
+    document.getElementById('agc').textContent = agents;
+    const la = Array.isArray(s.live_agents) ? s.live_agents : [];
+    document.getElementById('agents').innerHTML = la.length ? la.map(a =>
+      `<div class="row"><span class="empty">pid ${esc(a.pid)}</span><span class="task">${esc(a.task)}</span></div>`).join('') : '<span class="empty">idle</span>';
+
+    const committees = Array.isArray(s.committees) ? s.committees : [];
+    document.getElementById('cmc').textContent = committees.length;
+    document.getElementById('committees').innerHTML = committees.length ? committees.map(cm => {
+      const rounds = Array.isArray(cm.rounds) ? cm.rounds : [];
+      const cur = rounds[rounds.length - 1];
+      const prev = rounds.slice(0, -1);
+      const prevHtml = prev.length
+        ? `<details><summary>${prev.length} previous round${prev.length === 1 ? '' : 's'}</summary>${prev.map(r => `<div class="rnd"><span class="rn">round ${esc(r.n)}</span><div class="lights">${roundLights(r)}</div></div>`).join('')}</details>`
+        : '';
+      return `<div class="committee"><div class="ctop"><span class="ctopic">${esc(cm.topic)}</span><span class="cround">round ${rounds.length}</span></div><div class="lights">${cur ? roundLights(cur) : '<span class="empty">no round yet</span>'}</div>${prevHtml}</div>`;
+    }).join('') : '<div class="empty">no committees running</div>';
+
+    postHeight();
+  }
+
+  async function tick() {
+    try {
+      const r = await fetch(`${FEED}?_=${Date.now()}`, { cache: 'no-store' });
+      if (!r.ok) throw new Error(String(r.status));
+      const s = await r.json();
+      if (!s || !s.box) renderEmpty(); else render(s);
+    } catch (e) {
+      document.getElementById('fdot').className = 'fdot down';
+      document.getElementById('subline').textContent = 'reconnecting to the brain feed…';
+      postHeight();
+    }
+  }
+
+  function schedule() { clearTimeout(timer); if (!document.hidden) timer = setTimeout(loop, POLL_MS); }
+  async function loop() { await tick(); schedule(); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(timer); else loop(); });
+  window.addEventListener('resize', postHeight);
+  loop();
+</script>
+</body>
+</html>
