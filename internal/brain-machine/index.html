@@ -6,155 +6,321 @@
 <title>Brain Machine</title>
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
 <style>
-  /* Palette matches the Build Command Center (build-board) so the embedded tab
-     reads as one surface. Standalone it follows prefers-color-scheme; embedded,
-     the parent stamps html[data-theme] and wins in both directions. */
-  :root { --bg:#f7f8fa; --panel:#fff; --panel2:#eef2fb; --ink:#1c2430; --muted:#667085; --line:#dfe4ec; --blue:#2456c7; --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fff4dd; --red:#b42318; --red-bg:#fdecea; --gray:#8b95a5; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --bg:#10151d; --panel:#171d27; --panel2:#202a3a; --ink:#edf2f8; --muted:#9aa7b7; --line:#344050; --blue:#8db2ff; --green:#64d896; --green-bg:#123a29; --amber:#f5bd5e; --amber-bg:#3b2d10; --red:#ff8c86; --red-bg:#3a1714; --gray:#6b7686; } }
-  html[data-theme="dark"] { --bg:#10151d; --panel:#171d27; --panel2:#202a3a; --ink:#edf2f8; --muted:#9aa7b7; --line:#344050; --blue:#8db2ff; --green:#64d896; --green-bg:#123a29; --amber:#f5bd5e; --amber-bg:#3b2d10; --red:#ff8c86; --red-bg:#3a1714; --gray:#6b7686; }
-  html[data-theme="light"] { --bg:#f7f8fa; --panel:#fff; --panel2:#eef2fb; --ink:#1c2430; --muted:#667085; --line:#dfe4ec; --blue:#2456c7; --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fff4dd; --red:#b42318; --red-bg:#fdecea; --gray:#8b95a5; }
+  /* Palette matches the Build Command Center. Traffic-light semantics (green
+     approve / red reject / amber deciding) are the ONLY saturated color; every-
+     thing else is tinted neutral. Standalone follows prefers-color-scheme; embedded,
+     the parent stamps html[data-theme] and wins. */
+  :root {
+    --bg:#f7f8fa; --panel:#fff; --ink:#1c2430; --ink2:#39434f; --muted:#6a7484; --faint:#98a1b0;
+    --line:#e4e8ef; --line2:#eef1f6; --blue:#2456c7;
+    --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fdf0d6; --red:#b42318; --red-bg:#fdece9; --gray:#9aa3b2;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme]) {
+    --bg:#10151d; --panel:#161c26; --ink:#edf2f8; --ink2:#c7d0dc; --muted:#8b97a8; --faint:#5b6676;
+    --line:#2a3441; --line2:#20293400; --blue:#8db2ff;
+    --green:#5fd493; --green-bg:#12331f; --amber:#f2bd63; --amber-bg:#3a2c10; --red:#ff8f88; --red-bg:#3a1a17; --gray:#5f6b7b;
+  } }
+  html[data-theme="dark"] {
+    --bg:#10151d; --panel:#161c26; --ink:#edf2f8; --ink2:#c7d0dc; --muted:#8b97a8; --faint:#5b6676;
+    --line:#2a3441; --line2:#20293400; --blue:#8db2ff;
+    --green:#5fd493; --green-bg:#12331f; --amber:#f2bd63; --amber-bg:#3a2c10; --red:#ff8f88; --red-bg:#3a1a17; --gray:#5f6b7b;
+  }
+  html[data-theme="light"] {
+    --bg:#f7f8fa; --panel:#fff; --ink:#1c2430; --ink2:#39434f; --muted:#6a7484; --faint:#98a1b0;
+    --line:#e4e8ef; --line2:#eef1f6; --blue:#2456c7;
+    --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fdf0d6; --red:#b42318; --red-bg:#fdece9; --gray:#9aa3b2;
+  }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  .wrap { max-width:900px; margin:0 auto; padding:4px 2px 18px; }
-  .sub { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; margin:2px 0 14px; flex-wrap:wrap; }
-  .fdot { width:8px; height:8px; border-radius:50%; background:var(--gray); display:inline-block; flex:none; }
-  .fdot.fresh { background:var(--green); } .fdot.stale { background:var(--amber); } .fdot.down { background:var(--red); }
-  .fdot.stale, .fdot.down { animation:pulse 1.3s infinite; }
-  .banner { display:none; margin:0 0 14px; padding:10px 13px; border-radius:9px; font-size:13px; line-height:1.45; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:860px; margin:0 auto; padding:2px 2px 20px; }
+
+  /* status + vitals: quiet furniture, not content */
+  .statusbar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+  .fdot { width:8px; height:8px; border-radius:50%; background:var(--gray); flex:none; }
+  .fdot.fresh { background:var(--green); }
+  .fdot.lagging { background:var(--amber); animation:pulse 1.6s infinite; }
+  .fdot.paused, .fdot.down { background:var(--gray); }
+  .fdot.down { background:var(--red); animation:pulse 1.4s infinite; }
+  .statusbar .box { color:var(--ink2); font-weight:600; }
+  .svc { margin-left:auto; display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); cursor:default; }
+  .svc .sdot { width:7px; height:7px; border-radius:50%; background:var(--green); flex:none; }
+  .svc.bad .sdot { background:var(--red); }
+  .vitals { margin-top:5px; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 14px; }
+  .vitals b { color:var(--ink2); font-weight:600; }
+  .vitals .warn { color:var(--amber); } .vitals .crit { color:var(--red); }
+
+  /* committees: the hero */
+  .chead { display:flex; align-items:baseline; gap:9px; margin:22px 0 2px; }
+  .chead h1 { margin:0; font-size:16px; font-weight:700; letter-spacing:-.01em; }
+  .chead .n { font-size:12px; color:var(--muted); font-weight:600; }
+  .scope { margin:0 0 6px; font-size:11.5px; color:var(--faint); line-height:1.45; }
+  .list { border-top:1px solid var(--line); }
+  .cm { border-bottom:1px solid var(--line); padding:15px 2px; cursor:pointer; }
+  .cm-top { display:flex; align-items:flex-start; gap:10px; }
+  .verdict { flex:none; font-size:10.5px; font-weight:750; letter-spacing:.05em; padding:3px 8px; border-radius:6px; white-space:nowrap; margin-top:1px; }
+  .verdict.green { background:var(--green-bg); color:var(--green); }
+  .verdict.red { background:var(--red-bg); color:var(--red); }
+  .verdict.deciding { background:var(--amber-bg); color:var(--amber); animation:breathe 1.7s ease-in-out infinite; }
+  .verdict.mixed { background:var(--amber-bg); color:var(--amber); }
+  .verdict.pending { background:var(--line2); color:var(--muted); border:1px solid var(--line); }
+  .cbody { min-width:0; flex:1; }
+  .ctopic { font-size:15px; font-weight:600; line-height:1.36; color:var(--ink); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .cm.open .ctopic { display:block; -webkit-line-clamp:unset; }
+  .cmeta { margin-top:5px; font-size:11px; color:var(--muted); display:flex; flex-wrap:wrap; gap:2px 10px; }
+  .cmeta .src { color:var(--faint); }
+  .caret { flex:none; color:var(--faint); font-size:15px; line-height:1.3; transition:transform .18s ease; margin-top:1px; }
+  .cm.open .caret { transform:rotate(90deg); }
+
+  /* current-round lights (collapsed) */
+  .lights { display:flex; flex-wrap:wrap; gap:8px 15px; align-items:center; margin-top:11px; }
+  .cmem { display:inline-flex; align-items:center; gap:7px; font-size:12px; }
+  .mlight { width:9px; height:9px; border-radius:50%; flex:none; background:var(--gray); }
+  .mlight.green { background:var(--green); } .mlight.red { background:var(--red); }
+  .mlight.thinking { background:var(--amber); animation:pulse 1.4s infinite; }
+  .mrole { color:var(--muted); font-weight:500; }
+
+  /* expanded: per-round breakdown + member comments */
+  .rounds { margin-top:13px; border-top:1px dashed var(--line); padding-top:11px; display:none; }
+  .cm.open .rounds { display:block; }
+  .round { margin-bottom:12px; } .round:last-child { margin-bottom:0; }
+  .rlabel { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:700; margin-bottom:7px; }
+  .rlabel .cur { color:var(--blue); }
+  .rmem { padding:2px 0; }
+  .rmem-head { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; }
+  .rmem-head .mrole { color:var(--ink2); font-weight:600; }
+  .rmem-head .vtag { font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; }
+  .rmem-head .vtag.green { color:var(--green); } .rmem-head .vtag.red { color:var(--red); } .rmem-head .vtag.thinking { color:var(--amber); }
+  .mcomment { display:none; margin:6px 0 4px 17px; padding:9px 11px; background:var(--bg); border:1px solid var(--line); border-radius:8px; font-size:12.5px; line-height:1.5; color:var(--ink2); white-space:pre-wrap; word-break:break-word; max-height:280px; overflow:auto; }
+  .rmem.open .mcomment { display:block; }
+  .rmem .tcaret { color:var(--faint); font-size:12px; transition:transform .15s; display:inline-block; }
+  .rmem.open .tcaret { transform:rotate(90deg); }
+
+  .empty { color:var(--muted); font-size:13px; padding:16px 2px; }
+  .banner { display:none; margin:12px 0 0; padding:9px 12px; border-radius:8px; font-size:12.5px; line-height:1.45; }
   .banner.show { display:block; }
-  .banner.warn { background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); }
-  .banner.down { background:var(--red-bg); color:var(--red); border:1px solid var(--red); }
-  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
-  .tile { border:1px solid var(--line); background:var(--panel); border-radius:11px; padding:11px 13px; }
-  .tile .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
-  .tile .v { font-size:22px; font-weight:750; margin-top:3px; letter-spacing:-.02em; }
-  .tile .s { font-size:11px; color:var(--muted); margin-top:2px; }
-  .card { border:1px solid var(--line); background:var(--panel); border-radius:12px; padding:13px 15px; margin-bottom:14px; }
-  .card h2 { margin:0 0 10px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; }
-  .card h2 .count { color:var(--ink); }
-  .row { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
-  .row:last-child { border:0; }
-  .sdot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; vertical-align:middle; }
-  .task { font-family:ui-monospace, "SF Mono", Menlo, monospace; font-size:12px; color:var(--muted); word-break:break-word; text-align:right; }
-  .empty { color:var(--muted); font-size:13px; }
-  .committee { padding:12px 0; border-bottom:1px solid var(--line); } .committee:last-child { border:0; }
-  .ctop { margin-bottom:9px; font-size:13px; line-height:1.4; }
-  .ctopic { font-weight:700; } .cround { color:var(--muted); font-size:12px; margin-left:6px; }
-  .lights { display:flex; flex-wrap:wrap; gap:14px 18px; align-items:center; }
-  .cmem { display:flex; align-items:center; gap:7px; }
-  .mlight { width:14px; height:14px; border-radius:50%; display:inline-block; flex:0 0 auto; }
-  .pulsing { animation:pulse 1.4s infinite; }
-  .mlabel { font-size:13px; }
-  details { margin-top:10px; } summary { cursor:pointer; font-size:12px; color:var(--muted); }
-  details .rnd { margin:9px 0; } details .rnd .rn { color:var(--muted); font-size:11px; margin-bottom:5px; display:block; }
-  @keyframes pulse { 50% { opacity:.35; } }
-  @media (max-width:620px) { .grid { grid-template-columns:repeat(2,1fr); } }
+  .banner.warn { background:var(--amber-bg); color:var(--amber); }
+  .banner.paused { background:var(--line2); color:var(--muted); border:1px solid var(--line); }
+
+  @keyframes pulse { 50% { opacity:.32; } }
+  @keyframes breathe { 50% { opacity:.55; } }
+  @media (max-width:560px) { .ctopic { font-size:14px; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="sub"><span class="fdot" id="fdot"></span><span id="subline">connecting to the brain box…</span></div>
+  <div class="statusbar">
+    <span class="fdot" id="fdot"></span>
+    <span id="subline">connecting to the brain box</span>
+    <span class="svc" id="svc" hidden><span class="sdot"></span><span id="svctext"></span></span>
+  </div>
+  <div class="vitals" id="vitals"></div>
   <div class="banner" id="banner"></div>
-  <div class="grid" id="tiles"></div>
-  <div class="card"><h2>Services</h2><div id="svc"><span class="empty">—</span></div></div>
-  <div class="card"><h2>Live agents · <span class="count" id="agc">0</span></h2><div id="agents"><span class="empty">—</span></div></div>
-  <div class="card"><h2>Committees · <span class="count" id="cmc">0</span></h2><div id="committees"><span class="empty">—</span></div></div>
+
+  <div class="chead"><h1>Committees</h1><span class="n" id="ccount"></span></div>
+  <p class="scope" id="scope"></p>
+  <div id="committees"></div>
 </div>
 <script>
-  // ---- theme: URL param (embedded) or prefers-color-scheme (standalone) ----
+  // theme: URL param (embedded) or prefers-color-scheme (standalone)
   const urlTheme = new URLSearchParams(location.search).get('theme');
   if (urlTheme === 'dark' || urlTheme === 'light') document.documentElement.dataset.theme = urlTheme;
   window.addEventListener('message', (e) => {
     const d = e.data;
-    if (d && d.type === 'gg-theme' && (d.theme === 'dark' || d.theme === 'light')) {
-      document.documentElement.dataset.theme = d.theme;
-    }
+    if (d && d.type === 'gg-theme' && (d.theme === 'dark' || d.theme === 'light')) document.documentElement.dataset.theme = d.theme;
   });
 
   const FEED = '/brain-status';
   const POLL_MS = 5000;
-  let timer = null;
+  let timer = null, lastHeight = 0;
+  const openState = {};   // committee id -> bool, member key -> bool (persist expand across polls)
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
-  // color ramp: below warn = green (ok), warn..bad = amber, >= bad = red
-  function ramp(v, warn, bad) { return v >= bad ? 'var(--red)' : v >= warn ? 'var(--amber)' : 'var(--green)'; }
-
-  // committee member traffic light (lifted from the box dashboard):
-  // thinking (not done) = amber + pulse; green verdict = green; red = red; else neutral gray.
-  function mlight(m) {
-    let c = 'var(--gray)', pulse = '';
-    if (m.status !== 'done') { c = 'var(--amber)'; pulse = ' pulsing'; }
-    else if (m.verdict === 'green') c = 'var(--green)';
-    else if (m.verdict === 'red') c = 'var(--red)';
-    const tip = esc(m.comment || m.status || '');
-    return `<span class="cmem" title="${tip}"><span class="mlight${pulse}" style="background:${c}"></span><span class="mlabel">${esc(m.role)}</span></span>`;
+  function rel(sec) {
+    if (sec < 10) return 'just now';
+    if (sec < 60) return `${sec}s ago`;
+    const m = Math.round(sec / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    return `${h}h ${m % 60}m ago`;
   }
-  function roundLights(r) { return (r.members || []).map(mlight).join(''); }
-
-  function postHeight() {
-    try { parent.postMessage({ type: 'gg-embed-height', height: document.documentElement.scrollHeight }, '*'); } catch (e) {}
+  function relStarted(iso) {
+    const t = iso ? Date.parse(iso) : NaN;
+    if (Number.isNaN(t)) return '';
+    const sec = Math.max(0, Math.round((Date.now() - t) / 1000));
+    if (sec < 60) return 'just started';
+    const m = Math.round(sec / 60);
+    if (m < 60) return `started ${m}m ago`;
+    const h = Math.floor(m / 60);
+    return `started ${h}h ${m % 60}m ago`;
   }
   function ageSeconds(ts) { const t = ts ? Date.parse(ts) : NaN; return Number.isNaN(t) ? Infinity : Math.round((Date.now() - t) / 1000); }
 
-  function renderEmpty() {
-    document.getElementById('fdot').className = 'fdot down';
-    document.getElementById('subline').textContent = 'no data — the brain box is not reporting';
-    const b = document.getElementById('banner'); b.className = 'banner down show';
-    b.textContent = 'The brain box (gg-qa-vm) has not posted a status in the last 10 minutes. It is paused, offline, or the status service is down.';
-    document.getElementById('tiles').innerHTML = '';
-    document.getElementById('svc').innerHTML = '<span class="empty">—</span>';
-    document.getElementById('agents').innerHTML = '<span class="empty">—</span>';
-    document.getElementById('committees').innerHTML = '<span class="empty">—</span>';
-    postHeight();
+  // one committee verdict from its latest round. any thinking = DECIDING; else any red = RED;
+  // all green = GREEN; anything else = MIXED. no members yet = QUEUED.
+  function verdictOf(c) {
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    const last = rounds[rounds.length - 1];
+    const members = last && Array.isArray(last.members) ? last.members : [];
+    if (!members.length) return { key: 'pending', label: 'QUEUED' };
+    if (members.some(m => m.status !== 'done')) return { key: 'deciding', label: 'DECIDING' };
+    if (members.some(m => m.verdict === 'red')) return { key: 'red', label: 'RED' };
+    if (members.every(m => m.verdict === 'green')) return { key: 'green', label: 'GREEN' };
+    return { key: 'mixed', label: 'SPLIT' };
+  }
+  function memberClass(m) { return m.status !== 'done' ? 'thinking' : (m.verdict === 'green' ? 'green' : m.verdict === 'red' ? 'red' : ''); }
+  function memberTag(m) { return m.status !== 'done' ? 'thinking' : (m.verdict || ''); }
+
+  function postHeight() {
+    const h = Math.ceil(document.documentElement.scrollHeight);
+    if (Math.abs(h - lastHeight) < 2) return;   // diff to avoid parent resize thrash
+    lastHeight = h;
+    try { parent.postMessage({ type: 'gg-embed-height', height: h }, '*'); } catch (e) {}
+  }
+
+  function renderVitalsAndStatus(s, age) {
+    const fdot = document.getElementById('fdot');
+    const banner = document.getElementById('banner');
+    let fresh;
+    if (age < 60) { fdot.className = 'fdot fresh'; banner.className = 'banner'; }
+    else if (age < 300) { fdot.className = 'fdot lagging'; banner.className = 'banner'; }
+    else { fdot.className = 'fdot paused'; banner.className = 'banner paused show'; banner.textContent = `The brain box has not reported for ${rel(age)}. It is likely paused for cost or offline. Showing the last snapshot.`; }
+    document.getElementById('subline').innerHTML =
+      `<span class="box">${esc(s.box || 'box')}</span> · ${esc(s.uptime || '')} · ${age < 300 ? 'updated ' + rel(age) : 'last seen ' + rel(age)}`;
+
+    // services: invisible unless something is down (owner does not care when healthy)
+    const svc = s.services || {};
+    const entries = Object.entries(svc);
+    const down = entries.filter(([, v]) => !v).map(([k]) => k);
+    const svcEl = document.getElementById('svc');
+    if (down.length) {
+      svcEl.hidden = false; svcEl.className = 'svc bad';
+      document.getElementById('svctext').textContent = `${down.join(', ')} down`;
+      svcEl.title = entries.map(([k, v]) => `${k}: ${v ? 'up' : 'DOWN'}`).join('\n');
+    } else if (entries.length) {
+      svcEl.hidden = false; svcEl.className = 'svc';
+      document.getElementById('svctext').textContent = 'systems ok';
+      svcEl.title = entries.map(([k]) => `${k}: up`).join('\n');
+    } else { svcEl.hidden = true; }
+
+    // vitals: one quiet line
+    const load0 = Array.isArray(s.load) && s.load.length ? Number(s.load[0]) : 0;
+    const cores = Number(s.cores) || 1;
+    const loadCls = load0 / cores >= 1.8 ? 'crit' : load0 / cores >= 0.9 ? 'warn' : '';
+    const memPct = (s.mem && Number(s.mem.pct)) || 0;
+    const memCls = memPct >= 85 ? 'crit' : memPct >= 70 ? 'warn' : '';
+    const diskPct = parseInt(s.disk_pct, 10) || 0;
+    const diskCls = diskPct >= 90 ? 'crit' : diskPct >= 80 ? 'warn' : '';
+    const agents = Number(s.live_agent_count) || 0;
+    const monitorUp = svc.monitor === true;
+    const agentText = agents > 0 ? `<b>${agents}</b> agent${agents === 1 ? '' : 's'} working`
+      : (monitorUp ? 'agents idle' : 'agents unknown (monitor down)');
+    document.getElementById('vitals').innerHTML =
+      `<span class="${loadCls}">load <b>${load0.toFixed(2)}</b> / ${cores}</span>` +
+      `<span class="${memCls}">mem <b>${memPct}%</b></span>` +
+      `<span class="${diskCls}">disk <b>${esc(s.disk_pct || '?')}</b></span>` +
+      `<span>${agentText}</span>`;
+  }
+
+  function memberLightsHtml(members) {
+    return members.map(m => `<span class="cmem"><span class="mlight ${memberClass(m)}"></span><span class="mrole">${esc(m.role)}</span></span>`).join('');
+  }
+  function roundsHtml(c) {
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    return rounds.map((r, i) => {
+      const cur = i === rounds.length - 1;
+      const members = Array.isArray(r.members) ? r.members : [];
+      const mem = members.map((m, j) => {
+        const key = `${c.id}:${r.n}:${j}`;
+        const tag = memberTag(m);
+        const hasComment = m.comment && String(m.comment).trim();
+        return `<div class="rmem${openState[key] ? ' open' : ''}" data-mkey="${esc(key)}">` +
+          `<span class="rmem-head"${hasComment ? '' : ' style="cursor:default"'}>` +
+          `<span class="mlight ${memberClass(m)}"></span>` +
+          `<span class="mrole">${esc(m.role)}</span>` +
+          `<span class="vtag ${memberClass(m)}">${esc(tag)}</span>` +
+          (hasComment ? `<span class="tcaret">&rsaquo;</span>` : '') +
+          `</span>` +
+          (hasComment ? `<div class="mcomment">${esc(m.comment)}</div>` : '') +
+          `</div>`;
+      }).join('');
+      return `<div class="round"><div class="rlabel">Round ${esc(r.n)}${cur ? ' <span class="cur">(current)</span>' : ''}</div>${mem}</div>`;
+    }).join('');
+  }
+  function committeeHtml(c) {
+    const v = verdictOf(c);
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    const cur = rounds[rounds.length - 1];
+    const members = cur && Array.isArray(cur.members) ? cur.members : [];
+    const open = !!openState[c.id];
+    const meta = [
+      rounds.length ? `round ${rounds.length}` : 'not started',
+      `${members.length} member${members.length === 1 ? '' : 's'}`,
+      relStarted(c.created),
+    ].filter(Boolean);
+    return `<div class="cm${open ? ' open' : ''}" data-cid="${esc(c.id)}">` +
+      `<div class="cm-top">` +
+        `<span class="verdict ${v.key}">${v.label}</span>` +
+        `<div class="cbody">` +
+          `<div class="ctopic">${esc(c.topic)}</div>` +
+          `<div class="cmeta">${meta.map((x, i) => `<span${i === 2 ? ' class="src"' : ''}>${esc(x)}</span>`).join('')}</div>` +
+          (!open && members.length ? `<div class="lights">${memberLightsHtml(members)}</div>` : '') +
+        `</div>` +
+        `<span class="caret">&rsaquo;</span>` +
+      `</div>` +
+      `<div class="rounds">${roundsHtml(c)}</div>` +
+    `</div>`;
+  }
+
+  function bindCommittees() {
+    document.querySelectorAll('.cm').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        if (ev.target.closest('.rmem-head')) return;   // member clicks handled below
+        const id = el.dataset.cid;
+        openState[id] = !openState[id];
+        el.classList.toggle('open');
+        postHeight();
+      });
+    });
+    document.querySelectorAll('.rmem-head').forEach(h => {
+      h.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const row = h.closest('.rmem');
+        if (!row.querySelector('.mcomment')) return;
+        openState[row.dataset.mkey] = !openState[row.dataset.mkey];
+        row.classList.toggle('open');
+        postHeight();
+      });
+    });
   }
 
   function render(s) {
     const age = ageSeconds(s.ts);
-    const fdot = document.getElementById('fdot');
-    const banner = document.getElementById('banner');
-    if (age > 120) { fdot.className = 'fdot down'; banner.className = 'banner down show'; banner.textContent = `Last status is ${age}s old — the box status feed may be stalled or the box paused.`; }
-    else if (age > 45) { fdot.className = 'fdot stale'; banner.className = 'banner warn show'; banner.textContent = `Last status is ${age}s old (feed usually refreshes every 15s).`; }
-    else { fdot.className = 'fdot fresh'; banner.className = 'banner'; }
-
-    const upd = (s.ts || '').slice(11, 19);
-    document.getElementById('subline').textContent = `${esc(s.box || 'box')} · ${esc(s.uptime || '')} · ${esc(s.cores || '?')} cores · updated ${upd}Z`;
-
-    const load0 = Array.isArray(s.load) && s.load.length ? Number(s.load[0]) : 0;
-    const cores = Number(s.cores) || 1;
-    const memPct = (s.mem && Number(s.mem.pct)) || 0;
-    const diskPct = parseInt(s.disk_pct, 10) || 0;
-    const agents = Number(s.live_agent_count) || 0;
-    const tiles = [
-      ['Load', load0.toFixed(2), `of ${cores} cores`, ramp(load0 / cores, 0.9, 1.8)],
-      ['Memory', memPct + '%', `${(s.mem && s.mem.used_mb) || 0} / ${(s.mem && s.mem.total_mb) || 0} MB`, ramp(memPct, 70, 85)],
-      ['Disk', esc(s.disk_pct || '—'), '', ramp(diskPct, 80, 90)],
-      ['Live agents', agents, '', ramp(agents, 12, 18)],
-    ];
-    document.getElementById('tiles').innerHTML = tiles.map(t =>
-      `<div class="tile"><div class="k">${t[0]}</div><div class="v" style="color:${t[3]}">${t[1]}</div><div class="s">${esc(t[2])}</div></div>`).join('');
-
-    const services = s.services || {};
-    const svcEntries = Object.entries(services);
-    document.getElementById('svc').innerHTML = svcEntries.length ? svcEntries.map(([k, v]) =>
-      `<div class="row"><span><span class="sdot" style="background:${v ? 'var(--green)' : 'var(--red)'}"></span>${esc(k)}</span><span style="color:${v ? 'var(--muted)' : 'var(--red)'}">${v ? 'up' : 'DOWN'}</span></div>`).join('') : '<span class="empty">no services reported</span>';
-
-    document.getElementById('agc').textContent = agents;
-    const la = Array.isArray(s.live_agents) ? s.live_agents : [];
-    document.getElementById('agents').innerHTML = la.length ? la.map(a =>
-      `<div class="row"><span class="empty">pid ${esc(a.pid)}</span><span class="task">${esc(a.task)}</span></div>`).join('') : '<span class="empty">idle</span>';
-
+    renderVitalsAndStatus(s, age);
     const committees = Array.isArray(s.committees) ? s.committees : [];
-    document.getElementById('cmc').textContent = committees.length;
-    document.getElementById('committees').innerHTML = committees.length ? committees.map(cm => {
-      const rounds = Array.isArray(cm.rounds) ? cm.rounds : [];
-      const cur = rounds[rounds.length - 1];
-      const prev = rounds.slice(0, -1);
-      const prevHtml = prev.length
-        ? `<details><summary>${prev.length} previous round${prev.length === 1 ? '' : 's'}</summary>${prev.map(r => `<div class="rnd"><span class="rn">round ${esc(r.n)}</span><div class="lights">${roundLights(r)}</div></div>`).join('')}</details>`
-        : '';
-      return `<div class="committee"><div class="ctop"><span class="ctopic">${esc(cm.topic)}</span><span class="cround">round ${rounds.length}</span></div><div class="lights">${cur ? roundLights(cur) : '<span class="empty">no round yet</span>'}</div>${prevHtml}</div>`;
-    }).join('') : '<div class="empty">no committees running</div>';
+    document.getElementById('ccount').textContent = committees.length ? `${committees.length} on the box` : '';
+    document.getElementById('scope').textContent = committees.length
+      ? 'Committees this brain box has run. System-wide panels (skeptic gates, build reviews) are not in this feed yet.'
+      : '';
+    const host = document.getElementById('committees');
+    if (!committees.length) {
+      host.innerHTML = '<div class="empty">No committees running on the box right now. This is normal, not a fault. The box spins one up when a real decision needs a panel.</div>';
+    } else {
+      host.innerHTML = '<div class="list">' + committees.map(committeeHtml).join('') + '</div>';
+      bindCommittees();
+    }
+    postHeight();
+  }
 
+  function renderEmpty() {
+    document.getElementById('fdot').className = 'fdot down';
+    document.getElementById('subline').textContent = 'the brain box is not reporting';
+    document.getElementById('svc').hidden = true;
+    document.getElementById('vitals').innerHTML = '';
+    const b = document.getElementById('banner'); b.className = 'banner paused show';
+    b.textContent = 'No status from the brain box in the last 10 minutes. It is paused, offline, or the status service is down.';
+    document.getElementById('ccount').textContent = '';
+    document.getElementById('scope').textContent = '';
+    document.getElementById('committees').innerHTML = '';
     postHeight();
   }
 
@@ -166,11 +332,10 @@
       if (!s || !s.box) renderEmpty(); else render(s);
     } catch (e) {
       document.getElementById('fdot').className = 'fdot down';
-      document.getElementById('subline').textContent = 'reconnecting to the brain feed…';
+      document.getElementById('subline').textContent = 'reconnecting to the brain feed';
       postHeight();
     }
   }
-
   function schedule() { clearTimeout(timer); if (!document.hidden) timer = setTimeout(loop, POLL_MS); }
   async function loop() { await tick(); schedule(); }
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(timer); else loop(); });
