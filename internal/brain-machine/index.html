@@ -275,12 +275,12 @@
     const s = stat || {};
     document.getElementById('exen').textContent = s.total ? `${s.total} on record` : '';
     const bits = [];
-    if (s.today) bits.push(`<b>${s.today}</b> today`);
+    if (s.today) bits.push(`<span><b>${s.today}</b> ran today</span>`);
     if (s.green) bits.push(`<span class="g">${s.green} passed</span>`);
     if (s.red) bits.push(`<span class="r">${s.red} failed</span>`);
     if (s.deciding) bits.push(`<span class="a">${s.deciding} deciding</span>`);
-    if (s.tokens) bits.push(`${fmtTokens(s.tokens)}`);
-    if (s.disk) bits.push(`${fmtBytes(s.disk)} on disk`);
+    if (s.tokens) bits.push(`<span>${fmtTokens(s.tokens)}</span>`);
+    if (s.disk) bits.push(`<span>${fmtBytes(s.disk)} on disk</span>`);
     document.getElementById('exestat').innerHTML = bits.join('');
     const host = document.getElementById('execution');
     if (!arr.length) { host.innerHTML = '<div class="empty">No execution panels in the recent window. They stream in during a build wave.</div>'; return; }
