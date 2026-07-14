@@ -163,6 +163,7 @@
     return (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
   }
   function fmtCost(u) { if (u == null || isNaN(u) || u === 0) return ''; return u < 0.01 ? '<$0.01' : '$' + Number(u).toFixed(2); }
+  function fmtTokens(n) { if (n == null || isNaN(n) || n === 0) return ''; if (n < 1000) return n + ' tok'; if (n < 1e6) return Math.round(n / 1000) + 'K tok'; return (n / 1e6).toFixed(1) + 'M tok'; }
 
   function memberClass(m) { return m.status !== 'done' ? 'thinking' : (m.verdict === 'green' ? 'green' : m.verdict === 'red' ? 'red' : ''); }
   function memberTag(m) { return m.status !== 'done' ? 'thinking' : (m.verdict || ''); }
@@ -207,7 +208,7 @@
     const cur = rounds[rounds.length - 1];
     const members = cur && Array.isArray(cur.members) ? cur.members : [];
     const open = !!openState[c.id];
-    const res = [fmtBytes(c.disk_bytes), fmtCost(c.cost_usd)].filter(Boolean).join(' · ');
+    const res = [fmtTokens(c.tokens), fmtBytes(c.disk_bytes), fmtCost(c.cost_usd)].filter(Boolean).join(' · ');
     const meta = [
       rounds.length ? `round ${rounds.length}` : 'queued',
       `${members.length} member${members.length === 1 ? '' : 's'}`,
