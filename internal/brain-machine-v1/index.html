@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brain Machine — Ops Deck</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<style>
+  :root {
+    --mono: ui-monospace, "SF Mono", "Roboto Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    /* light (default) */
+    --bg:#eef1f4; --bg2:#e6eaee; --panel:#f6f7f9; --panel-edge:#d8dde4;
+    --ink:#1b232c; --ink2:#3c4653; --muted:#69737f; --faint:#98a1ac;
+    --line:#d8dde4; --line2:#e2e6eb;
+    --accent:#3f7d80; --accent-dim:rgba(63,125,128,.14);
+    --green:#1f8f5c; --green-bg:#dff3e8;
+    --amber:#9a6400; --amber-bg:#fbeecb;
+    --red:#c23628; --red-bg:#fbe4e1;
+    --gray:#9aa3ad;
+    --glow-rgb:154,100,0;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme]) {
+    --bg:#0b0f14; --bg2:#0e131a; --panel:#11161d; --panel-edge:#1f2932;
+    --ink:#dbe3ea; --ink2:#aeb9c6; --muted:#7c8896; --faint:#4d5763;
+    --line:#202932; --line2:#171e26;
+    --accent:#7fb0b3; --accent-dim:rgba(127,176,179,.16);
+    --green:#35d488; --green-bg:rgba(53,212,136,.12);
+    --amber:#f2b544; --amber-bg:rgba(242,181,68,.14);
+    --red:#ff6259; --red-bg:rgba(255,98,89,.14);
+    --gray:#59606b;
+    --glow-rgb:242,181,68;
+  } }
+  html[data-theme="dark"] {
+    --bg:#0b0f14; --bg2:#0e131a; --panel:#11161d; --panel-edge:#1f2932;
+    --ink:#dbe3ea; --ink2:#aeb9c6; --muted:#7c8896; --faint:#4d5763;
+    --line:#202932; --line2:#171e26;
+    --accent:#7fb0b3; --accent-dim:rgba(127,176,179,.16);
+    --green:#35d488; --green-bg:rgba(53,212,136,.12);
+    --amber:#f2b544; --amber-bg:rgba(242,181,68,.14);
+    --red:#ff6259; --red-bg:rgba(255,98,89,.14);
+    --gray:#59606b;
+    --glow-rgb:242,181,68;
+  }
+  html[data-theme="light"] {
+    --bg:#eef1f4; --bg2:#e6eaee; --panel:#f6f7f9; --panel-edge:#d8dde4;
+    --ink:#1b232c; --ink2:#3c4653; --muted:#69737f; --faint:#98a1ac;
+    --line:#d8dde4; --line2:#e2e6eb;
+    --accent:#3f7d80; --accent-dim:rgba(63,125,128,.14);
+    --green:#1f8f5c; --green-bg:#dff3e8;
+    --amber:#9a6400; --amber-bg:#fbeecb;
+    --red:#c23628; --red-bg:#fbe4e1;
+    --gray:#9aa3ad;
+    --glow-rgb:154,100,0;
+  }
+  * { box-sizing:border-box; }
+  html, body { background:var(--bg); }
+  body {
+    margin:0; color:var(--ink); font:13px/1.5 var(--sans); -webkit-font-smoothing:antialiased;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(127,140,150,.05) 0px, rgba(127,140,150,.05) 1px, transparent 1px, transparent 3px);
+    background-attachment:local;
+  }
+  .deck { max-width:1240px; margin:0 auto; padding:10px 12px 28px; }
+  .m { font-family:var(--mono); }
+
+  /* ---------- topline ---------- */
+  .topline {
+    display:flex; flex-wrap:wrap; align-items:center; gap:5px 14px;
+    padding:8px 10px; border:1px solid var(--panel-edge); border-radius:3px; background:var(--panel);
+  }
+  .beacon { position:relative; width:8px; height:8px; border-radius:50%; background:var(--gray); flex:none; }
+  .beacon.fresh { background:var(--green); } .beacon.fresh::after { content:''; position:absolute; inset:-5px; border-radius:50%; border:1px solid var(--green); opacity:.55; animation:ring 2.2s ease-out infinite; }
+  .beacon.lagging { background:var(--amber); animation:blink 1.5s infinite; }
+  .beacon.paused { background:var(--gray); }
+  .beacon.down { background:var(--red); animation:blink 1.1s infinite; }
+  .boxid { font-family:var(--mono); font-weight:700; letter-spacing:.04em; color:var(--ink2); font-size:12px; }
+  .tl-sep { color:var(--faint); font-family:var(--mono); font-size:11px; }
+  .tl-sub { font-family:var(--mono); font-size:11.5px; color:var(--muted); }
+  .vline { margin-left:auto; display:flex; flex-wrap:wrap; gap:3px 13px; font-family:var(--mono); font-size:11.5px; color:var(--muted); }
+  .vline b { color:var(--ink2); font-weight:700; } .vline .warn { color:var(--amber); } .vline .crit { color:var(--red); }
+  .svcflag { font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.04em; color:var(--red); background:var(--red-bg); border:1px solid var(--red); padding:2px 7px; border-radius:2px; }
+
+  .banner { display:none; margin-top:7px; padding:8px 11px; border-radius:2px; font-size:12px; line-height:1.5; border:1px solid var(--line); background:var(--panel); color:var(--muted); }
+  .banner.show { display:block; }
+  .banner .tag { font-family:var(--mono); font-weight:700; color:var(--amber); margin-right:6px; }
+
+  /* ---------- live zone ---------- */
+  .live-zone {
+    margin-top:12px; border:1px solid var(--line); border-radius:3px; background:var(--panel);
+    padding:11px 13px 13px; transition:border-color .3s ease;
+  }
+  .live-zone.active { border-color:rgba(var(--glow-rgb),.55); animation:liveglow 2.6s ease-in-out infinite; }
+  .live-head { display:flex; align-items:center; gap:9px; }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--faint); flex:none; }
+  .live-zone.active .live-dot { background:var(--amber); animation:blink 1.3s infinite; }
+  .live-tag { font-family:var(--mono); font-size:11px; font-weight:800; letter-spacing:.14em; color:var(--ink2); }
+  .live-zone.active .live-tag { color:var(--amber); }
+  .live-count { font-family:var(--mono); font-size:11px; color:var(--muted); }
+  .live-hint { margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--faint); }
+  .live-body { margin-top:10px; }
+  .live-empty { padding:16px 4px; text-align:center; color:var(--faint); font-size:12.5px; }
+  .live-row { display:flex; flex-wrap:wrap; gap:9px; }
+  .live-card { flex:1 1 300px; min-width:260px; }
+
+  /* ---------- columns ---------- */
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; align-items:start; }
+  @media (max-width:860px) { .cols { grid-template-columns:1fr; } }
+
+  .sec-head { display:flex; align-items:center; gap:8px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  .sec-bar { width:3px; height:13px; background:var(--accent); flex:none; border-radius:1px; }
+  .sec-title { font-family:var(--mono); font-size:11.5px; font-weight:800; letter-spacing:.13em; color:var(--ink2); text-transform:uppercase; }
+  .sec-n { font-family:var(--mono); font-size:11px; color:var(--muted); }
+  .sec-sub { margin:6px 0 2px; font-size:11px; color:var(--faint); line-height:1.5; }
+  .stbar { margin:6px 0 2px; font-family:var(--mono); font-size:11px; color:var(--muted); display:flex; flex-wrap:wrap; gap:3px 11px; }
+  .stbar b { color:var(--ink2); } .stbar .g { color:var(--green); } .stbar .r { color:var(--red); } .stbar .a { color:var(--amber); }
+  .list { margin-top:2px; }
+
+  /* ---------- committee card (shared: decision / compact-in-group / live) ---------- */
+  .cm { border-bottom:1px solid var(--line); padding:10px 2px; cursor:pointer; }
+  .list > .cm:last-child { border-bottom:none; }
+  .cm--live { border:1px solid var(--line); border-radius:2px; background:var(--bg2); padding:9px 11px; }
+  .cm-top { display:flex; align-items:flex-start; gap:9px; }
+  .verdict { flex:none; font-family:var(--mono); font-size:10px; font-weight:800; letter-spacing:.06em; padding:2.5px 7px; border-radius:2px; white-space:nowrap; margin-top:1px; }
+  .verdict.green { background:var(--green-bg); color:var(--green); }
+  .verdict.red { background:var(--red-bg); color:var(--red); }
+  .verdict.deciding { background:var(--amber-bg); color:var(--amber); animation:breathe 1.7s ease-in-out infinite; }
+  .verdict.split { background:var(--amber-bg); color:var(--amber); }
+  .verdict.pending { background:var(--line2); color:var(--muted); border:1px solid var(--line); }
+  .verdict.sm { font-size:9px; padding:2px 6px; }
+  .cbody { min-width:0; flex:1; }
+  .ctopic { font-size:13.5px; font-weight:600; line-height:1.4; color:var(--ink); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .cm.compact .ctopic { font-size:12.5px; -webkit-line-clamp:1; }
+  .cm.open .ctopic { display:block; -webkit-line-clamp:unset; }
+  .cmeta { margin-top:5px; font-family:var(--mono); font-size:10.5px; color:var(--muted); display:flex; flex-wrap:wrap; gap:2px 9px; }
+  .cmeta .src { color:var(--faint); } .cmeta .res { color:var(--faint); margin-left:auto; }
+  .caret { flex:none; color:var(--faint); font-size:14px; line-height:1.3; transition:transform .18s ease; margin-top:1px; }
+  .cm.open .caret, .grp.open .caret { transform:rotate(90deg); }
+  .lights { display:flex; flex-wrap:wrap; gap:7px 13px; align-items:center; margin-top:9px; }
+  .cmem { display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10.5px; }
+  .mlight { width:8px; height:8px; border-radius:50%; flex:none; background:var(--gray); }
+  .mlight.green { background:var(--green); } .mlight.red { background:var(--red); } .mlight.thinking { background:var(--amber); animation:blink 1.4s infinite; }
+  .mrole { color:var(--muted); font-weight:500; text-transform:uppercase; letter-spacing:.02em; }
+  .rounds { margin-top:11px; border-top:1px dashed var(--line); padding-top:9px; display:none; }
+  .cm.open .rounds { display:block; }
+  .round { margin-bottom:10px; } .round:last-child { margin-bottom:0; }
+  .rlabel { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--faint); font-weight:700; margin-bottom:6px; }
+  .rlabel .cur { color:var(--accent); }
+  .rmem-head { display:inline-flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; cursor:pointer; padding:2px 0; }
+  .rmem-head .mrole { color:var(--ink2); font-weight:600; }
+  .rmem-head .vtag { font-size:9.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; }
+  .rmem-head .vtag.green { color:var(--green); } .rmem-head .vtag.red { color:var(--red); } .rmem-head .vtag.thinking { color:var(--amber); }
+  .mcomment { display:none; margin:5px 0 4px 16px; padding:9px 11px; background:var(--bg); border:1px solid var(--line); border-radius:2px; font-family:var(--sans); font-size:12px; line-height:1.55; color:var(--ink2); white-space:pre-wrap; word-break:break-word; max-height:260px; overflow:auto; }
+  .rmem.open .mcomment { display:block; }
+  .rmem .tcaret { color:var(--faint); font-size:11px; transition:transform .15s; display:inline-block; }
+  .rmem.open .tcaret { transform:rotate(90deg); }
+
+  /* ---------- execution groups ---------- */
+  .grp { border-bottom:1px solid var(--line); padding:9px 2px; cursor:pointer; }
+  .list > .grp:last-child { border-bottom:none; }
+  .grp-top { display:flex; align-items:center; gap:9px; }
+  .grp-name { font-family:var(--mono); font-size:12px; font-weight:650; color:var(--ink); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .grp-counts { margin-left:auto; display:inline-flex; gap:8px; font-family:var(--mono); font-size:10.5px; color:var(--muted); white-space:nowrap; }
+  .grp-counts .g { color:var(--green); } .grp-counts .r { color:var(--red); } .grp-counts .a { color:var(--amber); }
+  .grp-items { display:none; margin-top:7px; padding-left:2px; border-left:2px solid var(--line2); } .grp.open .grp-items { display:block; }
+
+  .empty { color:var(--faint); font-size:12px; padding:12px 2px; }
+
+  @keyframes blink { 50% { opacity:.3; } }
+  @keyframes breathe { 50% { opacity:.5; } }
+  @keyframes ring { 0% { transform:scale(.5); opacity:.7; } 100% { transform:scale(1.8); opacity:0; } }
+  @keyframes liveglow { 0%,100% { box-shadow:0 0 0 rgba(var(--glow-rgb),0); } 50% { box-shadow:0 0 22px rgba(var(--glow-rgb),.22); } }
+  @media (max-width:560px) { .ctopic { font-size:13px; } .vline { width:100%; margin-left:0; } }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <div class="topline">
+    <span class="beacon" id="beacon"></span>
+    <span class="boxid" id="boxid">BRAIN BOX</span>
+    <span class="tl-sep">//</span>
+    <span class="tl-sub" id="tlsub">connecting</span>
+    <span class="vline" id="vline"></span>
+    <span class="svcflag" id="svcflag" hidden></span>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <section class="live-zone" id="liveZone">
+    <div class="live-head">
+      <span class="live-dot" id="liveDot"></span>
+      <span class="live-tag">LIVE</span>
+      <span class="live-count" id="liveCount"></span>
+      <span class="live-hint" id="liveHint"></span>
+    </div>
+    <div class="live-body" id="liveBody"></div>
+  </section>
+
+  <div class="cols">
+    <section class="col">
+      <div class="sec-head"><span class="sec-bar"></span><span class="sec-title">Decisions</span><span class="sec-n" id="decn"></span></div>
+      <div class="sec-sub" id="decsub"></div>
+      <div class="list" id="decisions"></div>
+    </section>
+
+    <section class="col">
+      <div class="sec-head"><span class="sec-bar"></span><span class="sec-title">Execution</span><span class="sec-n" id="exen"></span></div>
+      <div class="sec-sub">Verification panels, skeptic gates and build checks, rolled up by what they gate.</div>
+      <div class="stbar" id="exestat"></div>
+      <div class="list" id="execution"></div>
+    </section>
+  </div>
+
+</div>
+<script>
+  const urlTheme = new URLSearchParams(location.search).get('theme');
+  if (urlTheme === 'dark' || urlTheme === 'light') document.documentElement.dataset.theme = urlTheme;
+  window.addEventListener('message', (e) => {
+    const d = e.data;
+    if (d && d.type === 'gg-theme' && (d.theme === 'dark' || d.theme === 'light')) document.documentElement.dataset.theme = d.theme;
+  });
+
+  const POLL_MS = 6000;
+  let timer = null, lastHeight = 0;
+  const openState = {};
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+  function rel(sec) {
+    if (sec < 10) return 'just now';
+    if (sec < 60) return `${sec}s ago`;
+    const m = Math.round(sec / 60); if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60); return `${h}h ${m % 60}m ago`;
+  }
+  function relStarted(iso) {
+    const t = iso ? Date.parse(iso) : NaN; if (Number.isNaN(t)) return '';
+    const sec = Math.max(0, Math.round((Date.now() - t) / 1000));
+    if (sec < 60) return 'just now'; const m = Math.round(sec / 60);
+    if (m < 60) return `${m}m ago`; const h = Math.floor(m / 60); return `${h}h ${m % 60}m ago`;
+  }
+  function ageSeconds(ts) { const t = ts ? Date.parse(ts) : NaN; return Number.isNaN(t) ? Infinity : Math.round((Date.now() - t) / 1000); }
+  function fmtBytes(n) {
+    if (n == null || isNaN(n)) return '';
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return Math.round(n / 1024) + ' KB';
+    return (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
+  }
+  function fmtCost(u) { if (u == null || isNaN(u) || u === 0) return ''; return u < 0.01 ? '<$0.01' : '$' + Number(u).toFixed(2); }
+  function fmtTokens(n) { if (n == null || isNaN(n) || n === 0) return ''; if (n < 1000) return n + ' tok'; if (n < 1e6) return Math.round(n / 1000) + 'K tok'; return (n / 1e6).toFixed(1) + 'M tok'; }
+
+  function memberClass(m) { return m.status !== 'done' ? 'thinking' : (m.verdict === 'green' ? 'green' : m.verdict === 'red' ? 'red' : ''); }
+  function memberTag(m) { return m.status !== 'done' ? 'thinking' : (m.verdict || ''); }
+  function verdictKey(c) {
+    if (c.verdict === 'green' || c.verdict === 'red' || c.verdict === 'split') return c.verdict;
+    if (c.status === 'deciding' || c.verdict === 'deciding') return 'deciding';
+    return 'pending';
+  }
+  function verdictLabel(k) { return { green:'GREEN', red:'RED', split:'SPLIT', deciding:'DECIDING', pending:'QUEUED' }[k] || 'QUEUED'; }
+  function isLive(c) {
+    if (c.status === 'deciding') return true;
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    const cur = rounds[rounds.length - 1];
+    const members = cur && Array.isArray(cur.members) ? cur.members : [];
+    return members.some(m => m.status !== 'done');
+  }
+  function activityTs(c) { return Date.parse(c.updated || c.created || 0) || 0; }
+
+  function postHeight() {
+    const h = Math.ceil(document.documentElement.scrollHeight);
+    if (Math.abs(h - lastHeight) < 2) return;
+    lastHeight = h;
+    try { parent.postMessage({ type: 'gg-embed-height', height: h }, '*'); } catch (e) {}
+  }
+
+  function memberLightsHtml(members) {
+    return members.map(m => `<span class="cmem"><span class="mlight ${memberClass(m)}"></span><span class="mrole">${esc(m.role)}</span></span>`).join('');
+  }
+  function roundsHtml(c) {
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    return rounds.map((r, i) => {
+      const cur = i === rounds.length - 1;
+      const members = Array.isArray(r.members) ? r.members : [];
+      const mem = members.map((m, j) => {
+        const key = `${c.id}:${r.n}:${j}`;
+        const has = m.comment && String(m.comment).trim();
+        return `<div class="rmem${openState[key] ? ' open' : ''}" data-mkey="${esc(key)}">` +
+          `<span class="rmem-head"${has ? '' : ' style="cursor:default"'}>` +
+          `<span class="mlight ${memberClass(m)}"></span><span class="mrole">${esc(m.role)}</span>` +
+          `<span class="vtag ${memberClass(m)}">${esc(memberTag(m))}</span>` +
+          (has ? `<span class="tcaret">&rsaquo;</span>` : '') + `</span>` +
+          (has ? `<div class="mcomment">${esc(m.comment)}</div>` : '') + `</div>`;
+      }).join('');
+      return `<div class="round"><div class="rlabel">ROUND ${esc(r.n)}${cur ? ' <span class="cur">(current)</span>' : ''}</div>${mem}</div>`;
+    }).join('');
+  }
+  function committeeHtml(c, opts) {
+    opts = opts || {};
+    const compact = !!opts.compact, live = !!opts.live;
+    const k = verdictKey(c);
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    const cur = rounds[rounds.length - 1];
+    const members = cur && Array.isArray(cur.members) ? cur.members : [];
+    const open = !!openState[c.id];
+    const res = [fmtTokens(c.tokens), fmtBytes(c.disk_bytes), fmtCost(c.cost_usd)].filter(Boolean).join(' · ');
+    const meta = [
+      rounds.length ? `RND ${rounds.length}` : 'QUEUED',
+      `${members.length} MEM`,
+      relStarted(c.created).toUpperCase(),
+      c.source && c.source !== 'brain-box' ? c.source.toUpperCase() : '',
+      live && c.gating ? c.gating.toUpperCase() : '',
+    ].filter(Boolean);
+    const cls = ['cm']; if (compact) cls.push('compact'); if (live) cls.push('cm--live'); if (open) cls.push('open');
+    return `<div class="${cls.join(' ')}" data-cid="${esc(c.id)}">` +
+      `<div class="cm-top"><span class="verdict ${k}${compact ? ' sm' : ''}">${verdictLabel(k)}</span>` +
+        `<div class="cbody"><div class="ctopic">${esc(c.topic)}</div>` +
+          `<div class="cmeta">${meta.map(x => `<span>${esc(x)}</span>`).join('')}${res ? `<span class="res">${esc(res)}</span>` : ''}</div>` +
+          (!open && members.length ? `<div class="lights">${memberLightsHtml(members)}</div>` : '') +
+        `</div><span class="caret">&rsaquo;</span></div>` +
+      `<div class="rounds">${roundsHtml(c)}</div></div>`;
+  }
+
+  function renderTopline(s) {
+    const age = ageSeconds(s.ts);
+    const beacon = document.getElementById('beacon');
+    const banner = document.getElementById('banner');
+    if (age < 60) { beacon.className = 'beacon fresh'; banner.className = 'banner'; }
+    else if (age < 300) { beacon.className = 'beacon lagging'; banner.className = 'banner'; }
+    else { beacon.className = 'beacon paused'; banner.className = 'banner show'; banner.innerHTML = `<span class="tag">NOTICE</span>the brain box has not reported for ${esc(rel(age))}. likely paused for cost, or offline. committees below are from the ledger and stay accurate.`; }
+    document.getElementById('boxid').textContent = (s.box || 'BRAIN BOX').toUpperCase();
+    document.getElementById('tlsub').textContent = `${s.uptime || ''}${s.uptime ? '  //  ' : ''}${age < 300 ? 'sync ' + rel(age) : 'last seen ' + rel(age)}`;
+
+    const svc = s.services || {}, entries = Object.entries(svc);
+    const down = entries.filter(([, v]) => !v).map(([k]) => k);
+    const flag = document.getElementById('svcflag');
+    if (down.length) { flag.hidden = false; flag.textContent = down.join(', ').toUpperCase() + ' DOWN'; flag.title = entries.map(([k, v]) => `${k}: ${v ? 'up' : 'DOWN'}`).join('\n'); }
+    else flag.hidden = true;
+
+    const load0 = Array.isArray(s.load) && s.load.length ? Number(s.load[0]) : 0;
+    const cores = Number(s.cores) || 1;
+    const memPct = (s.mem && Number(s.mem.pct)) || 0;
+    const diskPct = parseInt(s.disk_pct, 10) || 0;
+    const agents = Number(s.live_agent_count) || 0;
+    const monitorUp = svc.monitor === true;
+    const at = agents > 0 ? `<b>${agents}</b> agent${agents === 1 ? '' : 's'} live` : (monitorUp ? 'agents idle' : 'agents unk');
+    const tasks = Array.isArray(s.live_agents) ? s.live_agents.map(a => a.task).filter(Boolean).join('\n') : '';
+    document.getElementById('vline').innerHTML =
+      `<span class="${load0 / cores >= 1.8 ? 'crit' : load0 / cores >= 0.9 ? 'warn' : ''}">LOAD <b>${load0.toFixed(2)}</b>/${cores}</span>` +
+      `<span class="${memPct >= 85 ? 'crit' : memPct >= 70 ? 'warn' : ''}">MEM <b>${memPct}%</b></span>` +
+      `<span class="${diskPct >= 90 ? 'crit' : diskPct >= 80 ? 'warn' : ''}">DISK <b>${esc(s.disk_pct || '?')}</b></span>` +
+      `<span title="${esc(tasks)}">${at}</span>`;
+  }
+  function renderToplineDown() {
+    document.getElementById('beacon').className = 'beacon down';
+    document.getElementById('boxid').textContent = 'BRAIN BOX';
+    document.getElementById('tlsub').textContent = 'not reporting';
+    document.getElementById('svcflag').hidden = true;
+    document.getElementById('vline').innerHTML = '';
+  }
+
+  function renderLive(decisions, execution) {
+    const all = [].concat(decisions.map(c => ({ c, from:'decision' })), execution.map(c => ({ c, from:'execution' })))
+      .filter(x => isLive(x.c));
+    all.sort((a, b) => activityTs(b.c) - activityTs(a.c));
+    const zone = document.getElementById('liveZone');
+    const body = document.getElementById('liveBody');
+    const hint = document.getElementById('liveHint');
+    document.getElementById('liveDot').className = 'live-dot';
+    if (!all.length) {
+      zone.className = 'live-zone';
+      document.getElementById('liveCount').textContent = '';
+      hint.textContent = '';
+      body.innerHTML = '<div class="live-empty">nothing deliberating right now, live panels surface here</div>';
+      return;
+    }
+    zone.className = 'live-zone active';
+    document.getElementById('liveCount').textContent = `${all.length} in progress`;
+    hint.textContent = 'click a panel for round-by-round reasoning';
+    body.innerHTML = '<div class="live-row">' + all.map(x => `<div class="live-card">${committeeHtml(x.c, { live:true })}</div>`).join('') + '</div>';
+  }
+
+  function renderDecisions(list) {
+    const arr = Array.isArray(list) ? list : [];
+    document.getElementById('decn').textContent = arr.length ? `${arr.length}` : '';
+    document.getElementById('decsub').textContent = arr.length ? 'panels convened to make a call. each shown in full.' : '';
+    const host = document.getElementById('decisions');
+    host.innerHTML = arr.length
+      ? arr.map(c => committeeHtml(c, {})).join('')
+      : '<div class="empty">no decision committees on record yet. one appears when a real choice needs a panel.</div>';
+    return arr;
+  }
+
+  function renderExecution(list, stat) {
+    const arr = Array.isArray(list) ? list : [];
+    const s = stat || {};
+    document.getElementById('exen').textContent = s.total ? `${s.total} on record` : '';
+    const bits = [];
+    if (s.today) bits.push(`<span><b>${s.today}</b> today</span>`);
+    if (s.green) bits.push(`<span class="g">${s.green} pass</span>`);
+    if (s.red) bits.push(`<span class="r">${s.red} fail</span>`);
+    if (s.deciding) bits.push(`<span class="a">${s.deciding} live</span>`);
+    if (s.tokens) bits.push(`<span>${fmtTokens(s.tokens)}</span>`);
+    if (s.disk) bits.push(`<span>${fmtBytes(s.disk)} disk</span>`);
+    document.getElementById('exestat').innerHTML = bits.join('');
+    const host = document.getElementById('execution');
+    if (!arr.length) { host.innerHTML = '<div class="empty">no execution panels in the recent window. they stream in during a build wave.</div>'; return arr; }
+    const groups = {};
+    arr.forEach(c => { const g = c.gating || 'ungrouped'; (groups[g] = groups[g] || []).push(c); });
+    const rows = Object.entries(groups).map(([g, items]) => {
+      let green = 0, red = 0, dec = 0;
+      items.forEach(c => { const k = verdictKey(c); if (k === 'green') green++; else if (k === 'red') red++; else if (k === 'deciding') dec++; });
+      const gid = 'grp:' + g;
+      const counts = [green ? `<span class="g">${green} pass</span>` : '', red ? `<span class="r">${red} fail</span>` : '', dec ? `<span class="a">${dec} live</span>` : ''].filter(Boolean).join('');
+      return `<div class="grp${openState[gid] ? ' open' : ''}" data-gid="${esc(gid)}">` +
+        `<div class="grp-top"><span class="grp-name">${esc(g)}</span><span class="grp-counts">${counts}</span><span class="caret">&rsaquo;</span></div>` +
+        `<div class="grp-items">${items.map(c => committeeHtml(c, { compact:true })).join('')}</div></div>`;
+    }).join('');
+    host.innerHTML = rows;
+    return arr;
+  }
+
+  function bindAll() {
+    document.querySelectorAll('.grp').forEach(el => {
+      el.querySelector('.grp-top').addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const id = el.dataset.gid; openState[id] = !openState[id]; el.classList.toggle('open'); postHeight();
+      });
+    });
+    document.querySelectorAll('.cm').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        if (ev.target.closest('.rmem-head')) return;
+        const id = el.dataset.cid; openState[id] = !openState[id]; el.classList.toggle('open'); postHeight();
+      });
+    });
+    document.querySelectorAll('.rmem-head').forEach(h => {
+      h.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const row = h.closest('.rmem'); if (!row.querySelector('.mcomment')) return;
+        openState[row.dataset.mkey] = !openState[row.dataset.mkey]; row.classList.toggle('open'); postHeight();
+      });
+    });
+  }
+
+  async function fetchJson(url) {
+    const r = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json();
+  }
+  async function tick() {
+    const [bs, cf] = await Promise.allSettled([fetchJson('/brain-status'), fetchJson('/committee-feed')]);
+    if (bs.status === 'fulfilled' && bs.value && bs.value.box) renderTopline(bs.value); else renderToplineDown();
+    if (cf.status === 'fulfilled' && cf.value) {
+      const decisions = renderDecisions(cf.value.decisions);
+      const execution = renderExecution(cf.value.execution, cf.value.stats && cf.value.stats.execution);
+      renderLive(decisions, execution);
+    } else {
+      document.getElementById('decisions').innerHTML = '<div class="empty">committee ledger unavailable, reconnecting.</div>';
+      renderLive([], []);
+    }
+    bindAll();
+    postHeight();
+  }
+  function schedule() { clearTimeout(timer); if (!document.hidden) timer = setTimeout(loop, POLL_MS); }
+  async function loop() { await tick(); schedule(); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(timer); else loop(); });
+  window.addEventListener('resize', postHeight);
+  loop();
+</script>
+</body>
+</html>

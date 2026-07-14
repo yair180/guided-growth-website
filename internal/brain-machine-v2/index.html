@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brain Machine</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<style>
+  :root {
+    --serif: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --bg:#f9f7f3; --ink:#242119; --ink2:#4a463d; --muted:#79735f; --faint:#a89f8a;
+    --line:#e6e0d0; --line2:#efe9db; --accent:#57647c;
+    --green:#2f7d54; --red:#b3402f; --amber:#a97a1f; --gray:#a39c8a;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme]) {
+    --bg:#16171a; --ink:#e9e4d9; --ink2:#c3bcac; --muted:#948c77; --faint:#5c5748;
+    --line:#312d24; --line2:#211f18; --accent:#9fb0c9;
+    --green:#63b189; --red:#e08a7d; --amber:#dcac52; --gray:#6a6455;
+  } }
+  html[data-theme="dark"] {
+    --bg:#16171a; --ink:#e9e4d9; --ink2:#c3bcac; --muted:#948c77; --faint:#5c5748;
+    --line:#312d24; --line2:#211f18; --accent:#9fb0c9;
+    --green:#63b189; --red:#e08a7d; --amber:#dcac52; --gray:#6a6455;
+  }
+  html[data-theme="light"] {
+    --bg:#f9f7f3; --ink:#242119; --ink2:#4a463d; --muted:#79735f; --faint:#a89f8a;
+    --line:#e6e0d0; --line2:#efe9db; --accent:#57647c;
+    --green:#2f7d54; --red:#b3402f; --amber:#a97a1f; --gray:#a39c8a;
+  }
+  * { box-sizing:border-box; }
+  html, body { background:var(--bg); }
+  body { margin:0; color:var(--ink); font:15px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:720px; margin:0 auto; padding:6px 28px 56px; }
+  @media (max-width:600px) { .wrap { padding:6px 18px 44px; } }
+
+  /* masthead */
+  .masthead { padding:34px 0 0; }
+  .kicker { font:700 10.5px/1 var(--sans); letter-spacing:.15em; text-transform:uppercase; color:var(--faint); margin:0 0 11px; }
+  .masthead h1 { font-family:var(--serif); font-weight:600; font-size:31px; letter-spacing:-.01em; margin:0 0 10px; color:var(--ink); }
+  @media (max-width:600px) { .masthead h1 { font-size:26px; } }
+  .byline { font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .fdot { width:7px; height:7px; border-radius:50%; background:var(--gray); flex:none; }
+  .fdot.fresh { background:var(--green); } .fdot.lagging { background:var(--amber); animation:pulse 1.6s infinite; }
+  .fdot.paused { background:var(--gray); } .fdot.down { background:var(--red); animation:pulse 1.4s infinite; }
+  .byline .box { color:var(--ink2); font-weight:600; }
+
+  .hr { border:0; border-top:1px solid var(--line); margin:18px 0 0; }
+
+  .vline { margin-top:12px; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 16px; }
+  .vline b { color:var(--ink2); font-weight:600; }
+  .vline .warn { color:var(--amber); } .vline .crit { color:var(--red); }
+  .svcline { margin-top:8px; font-size:12px; color:var(--red); display:none; align-items:center; gap:7px; }
+  .svcline.show { display:flex; }
+  .svcline .sdot { width:6px; height:6px; border-radius:50%; background:var(--red); flex:none; }
+  .banner { display:none; margin-top:16px; padding-top:13px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted); font-style:italic; line-height:1.55; }
+  .banner.show { display:block; }
+
+  /* live zone */
+  .live-zone { margin:34px 0 46px; border:1px solid var(--line); border-radius:2px; padding:26px 24px 22px; }
+  .live-head { display:flex; align-items:center; justify-content:center; gap:9px; }
+  .live-pulse { width:7px; height:7px; border-radius:50%; background:var(--faint); flex:none; animation:breathe 3.4s ease-in-out infinite; }
+  .live-zone.active .live-pulse { background:var(--amber); animation-duration:1.6s; }
+  .live-label { font:700 11px/1 var(--sans); letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+  .live-count { font-size:11.5px; color:var(--faint); }
+  .live-empty { text-align:center; color:var(--faint); font-size:13px; font-style:italic; padding:20px 12px 2px; font-family:var(--serif); }
+  .live-body { margin-top:2px; }
+  .live-body .cm:first-child { border-top:1px solid var(--line); margin-top:16px; padding-top:16px; }
+  .live-body .cm:last-child { border-bottom:0; }
+
+  /* sections */
+  .section { margin-top:50px; }
+  .sec-head { display:flex; align-items:baseline; gap:10px; }
+  .sec-head h2 { font-family:var(--serif); font-size:21px; font-weight:600; margin:0; color:var(--ink); }
+  .sec-count { font-size:12px; color:var(--faint); font-weight:600; }
+  .sec-sub { margin:5px 0 8px; font-size:12.5px; color:var(--faint); font-style:italic; line-height:1.5; max-width:52ch; }
+  .stbar { margin:4px 0 8px; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:3px 13px; }
+  .stbar b { color:var(--ink2); font-weight:600; } .stbar .g { color:var(--green); } .stbar .r { color:var(--red); } .stbar .a { color:var(--amber); }
+  .list { border-top:1px solid var(--line); }
+
+  /* a committee block (decisions, and expanded execution items) */
+  .cm { border-bottom:1px solid var(--line); padding:16px 1px; cursor:pointer; }
+  .cm.compact { padding:11px 1px; }
+  .cm-top { display:flex; align-items:flex-start; gap:12px; }
+  .verdict { display:inline-flex; align-items:center; gap:6px; flex:none; margin-top:3px; }
+  .verdict .vdot { width:8px; height:8px; border-radius:50%; background:var(--gray); flex:none; }
+  .verdict .vtxt { font:700 10px/1 var(--sans); letter-spacing:.09em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+  .verdict.green .vdot { background:var(--green); } .verdict.green .vtxt { color:var(--green); }
+  .verdict.red .vdot { background:var(--red); } .verdict.red .vtxt { color:var(--red); }
+  .verdict.deciding .vdot { background:var(--amber); animation:pulse 1.4s infinite; } .verdict.deciding .vtxt { color:var(--amber); }
+  .verdict.split .vdot { background:var(--amber); } .verdict.split .vtxt { color:var(--amber); }
+  .verdict.pending .vdot { background:var(--gray); } .verdict.pending .vtxt { color:var(--faint); }
+  .verdict.sm .vtxt { font-size:9.5px; }
+  .cbody { min-width:0; flex:1; }
+  .ctopic { font-family:var(--serif); font-size:16.5px; font-weight:500; line-height:1.5; color:var(--ink); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .cm.compact .ctopic { font-size:14.5px; -webkit-line-clamp:1; }
+  .cm.open .ctopic { display:block; -webkit-line-clamp:unset; }
+  .cmeta { margin-top:6px; font-size:11px; color:var(--muted); display:flex; flex-wrap:wrap; gap:2px 11px; font-family:var(--sans); }
+  .cmeta .src { color:var(--faint); } .cmeta .res { color:var(--faint); }
+  .caret { flex:none; color:var(--faint); font-size:15px; line-height:1.3; transition:transform .18s ease; margin-top:2px; }
+  .cm.open .caret, .grp.open .caret { transform:rotate(90deg); }
+  .lights { display:flex; flex-wrap:wrap; gap:8px 15px; align-items:center; margin-top:12px; }
+  .cmem { display:inline-flex; align-items:center; gap:7px; font-size:12px; font-family:var(--sans); }
+  .mlight { width:8px; height:8px; border-radius:50%; flex:none; background:var(--gray); }
+  .mlight.green { background:var(--green); } .mlight.red { background:var(--red); } .mlight.thinking { background:var(--amber); animation:pulse 1.4s infinite; }
+  .mrole { color:var(--muted); font-weight:500; }
+  .rounds { margin-top:14px; border-top:1px dashed var(--line); padding-top:12px; display:none; }
+  .cm.open .rounds { display:block; }
+  .round { margin-bottom:13px; } .round:last-child { margin-bottom:0; }
+  .rlabel { font:700 10.5px/1 var(--sans); text-transform:uppercase; letter-spacing:.07em; color:var(--faint); margin-bottom:8px; }
+  .rlabel .cur { color:var(--accent); }
+  .rmem-head { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-family:var(--sans); cursor:pointer; padding:2px 0; }
+  .rmem-head .mrole { color:var(--ink2); font-weight:600; }
+  .rmem-head .vtag { font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; }
+  .rmem-head .vtag.green { color:var(--green); } .rmem-head .vtag.red { color:var(--red); } .rmem-head .vtag.thinking { color:var(--amber); }
+  .mcomment { display:none; margin:7px 0 5px 17px; padding:2px 0 2px 14px; border-left:2px solid var(--line); font-family:var(--serif); font-size:13.5px; line-height:1.62; color:var(--ink2); white-space:pre-wrap; word-break:break-word; max-height:280px; overflow:auto; }
+  .rmem.open .mcomment { display:block; }
+  .rmem .tcaret { color:var(--faint); font-size:12px; transition:transform .15s; display:inline-block; }
+  .rmem.open .tcaret { transform:rotate(90deg); }
+
+  /* execution groups */
+  .grp { border-bottom:1px solid var(--line); padding:12px 1px; cursor:pointer; }
+  .grp-top { display:flex; align-items:center; gap:10px; }
+  .grp-name { font-size:13.5px; font-weight:650; color:var(--ink2); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:var(--sans); }
+  .grp-counts { margin-left:auto; display:inline-flex; gap:9px; font-size:11.5px; color:var(--muted); white-space:nowrap; }
+  .grp-counts .g { color:var(--green); } .grp-counts .r { color:var(--red); } .grp-counts .a { color:var(--amber); }
+  .grp-items { display:none; margin-top:9px; } .grp.open .grp-items { display:block; }
+
+  .empty { color:var(--faint); font-size:13px; font-style:italic; font-family:var(--serif); padding:16px 1px; }
+
+  @keyframes pulse { 50% { opacity:.3; } }
+  @keyframes breathe { 50% { opacity:.42; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">Ops cockpit</div>
+    <h1>Brain Machine</h1>
+    <div class="byline">
+      <span class="fdot" id="fdot"></span>
+      <span id="subline">connecting to the brain box</span>
+    </div>
+    <hr class="hr">
+    <div class="vline" id="vitals"></div>
+    <div class="svcline" id="svc"><span class="sdot"></span><span id="svctext"></span></div>
+    <div class="banner" id="banner"></div>
+  </header>
+
+  <section class="live-zone" id="liveZone">
+    <div class="live-head">
+      <span class="live-pulse" id="livePulse"></span>
+      <span class="live-label">Live now</span>
+      <span class="live-count" id="liveCount"></span>
+    </div>
+    <div class="live-body" id="liveBody"></div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head"><h2>Decisions</h2><span class="sec-count" id="decn"></span></div>
+    <div class="sec-sub" id="decsub"></div>
+    <div id="decisions"></div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head"><h2>Execution</h2><span class="sec-count" id="exen"></span></div>
+    <div class="sec-sub">Verification panels, skeptic gates and build checks, rolled up by what they check.</div>
+    <div class="stbar" id="exestat"></div>
+    <div id="execution"></div>
+  </section>
+
+</div>
+<script>
+  const urlTheme = new URLSearchParams(location.search).get('theme');
+  if (urlTheme === 'dark' || urlTheme === 'light') document.documentElement.dataset.theme = urlTheme;
+  window.addEventListener('message', (e) => {
+    const d = e.data;
+    if (d && d.type === 'gg-theme' && (d.theme === 'dark' || d.theme === 'light')) document.documentElement.dataset.theme = d.theme;
+  });
+
+  const POLL_MS = 6000;
+  let timer = null, lastHeight = 0;
+  const openState = {};
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+  function rel(sec) {
+    if (sec < 10) return 'just now';
+    if (sec < 60) return `${sec}s ago`;
+    const m = Math.round(sec / 60); if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60); return `${h}h ${m % 60}m ago`;
+  }
+  function relStarted(iso) {
+    const t = iso ? Date.parse(iso) : NaN; if (Number.isNaN(t)) return '';
+    const sec = Math.max(0, Math.round((Date.now() - t) / 1000));
+    if (sec < 60) return 'just now'; const m = Math.round(sec / 60);
+    if (m < 60) return `${m}m ago`; const h = Math.floor(m / 60); return `${h}h ${m % 60}m ago`;
+  }
+  function ageSeconds(ts) { const t = ts ? Date.parse(ts) : NaN; return Number.isNaN(t) ? Infinity : Math.round((Date.now() - t) / 1000); }
+  function fmtBytes(n) {
+    if (n == null || isNaN(n)) return '';
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return Math.round(n / 1024) + ' KB';
+    return (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
+  }
+  function fmtCost(u) { if (u == null || isNaN(u) || u === 0) return ''; return u < 0.01 ? '<$0.01' : '$' + Number(u).toFixed(2); }
+  function fmtTokens(n) { if (n == null || isNaN(n) || n === 0) return ''; if (n < 1000) return n + ' tok'; if (n < 1e6) return Math.round(n / 1000) + 'K tok'; return (n / 1e6).toFixed(1) + 'M tok'; }
+
+  function memberClass(m) { return m.status !== 'done' ? 'thinking' : (m.verdict === 'green' ? 'green' : m.verdict === 'red' ? 'red' : ''); }
+  function memberTag(m) { return m.status !== 'done' ? 'thinking' : (m.verdict || ''); }
+  function verdictKey(c) {
+    if (c.verdict === 'green' || c.verdict === 'red' || c.verdict === 'split') return c.verdict;
+    if (c.status === 'deciding' || c.verdict === 'deciding') return 'deciding';
+    return 'pending';
+  }
+  function verdictLabel(k) { return { green:'Green', red:'Red', split:'Split', deciding:'Deciding', pending:'Queued' }[k] || 'Queued'; }
+  function isLive(c) {
+    if (verdictKey(c) === 'deciding') return true;
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    const last = rounds[rounds.length - 1];
+    if (last && Array.isArray(last.members) && last.members.some(m => m && m.status && m.status !== 'done')) return true;
+    return false;
+  }
+
+  function postHeight() {
+    const h = Math.ceil(document.documentElement.scrollHeight);
+    if (Math.abs(h - lastHeight) < 2) return;
+    lastHeight = h;
+    try { parent.postMessage({ type: 'gg-embed-height', height: h }, '*'); } catch (e) {}
+  }
+
+  function memberLightsHtml(members) {
+    return members.map(m => `<span class="cmem"><span class="mlight ${memberClass(m)}"></span><span class="mrole">${esc(m.role)}</span></span>`).join('');
+  }
+  function roundsHtml(c) {
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    return rounds.map((r, i) => {
+      const cur = i === rounds.length - 1;
+      const members = Array.isArray(r.members) ? r.members : [];
+      const mem = members.map((m, j) => {
+        const key = `${c.id}:${r.n}:${j}`;
+        const has = m.comment && String(m.comment).trim();
+        return `<div class="rmem${openState[key] ? ' open' : ''}" data-mkey="${esc(key)}">` +
+          `<span class="rmem-head"${has ? '' : ' style="cursor:default"'}>` +
+          `<span class="mlight ${memberClass(m)}"></span><span class="mrole">${esc(m.role)}</span>` +
+          `<span class="vtag ${memberClass(m)}">${esc(memberTag(m))}</span>` +
+          (has ? `<span class="tcaret">&rsaquo;</span>` : '') + `</span>` +
+          (has ? `<div class="mcomment">${esc(m.comment)}</div>` : '') + `</div>`;
+      }).join('');
+      return `<div class="round"><div class="rlabel">Round ${esc(r.n)}${cur ? ' <span class="cur">(current)</span>' : ''}</div>${mem}</div>`;
+    }).join('');
+  }
+  function committeeHtml(c, compact) {
+    const k = verdictKey(c);
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    const cur = rounds[rounds.length - 1];
+    const members = cur && Array.isArray(cur.members) ? cur.members : [];
+    const open = !!openState[c.id];
+    const res = [fmtTokens(c.tokens), fmtBytes(c.disk_bytes), fmtCost(c.cost_usd)].filter(Boolean).join(' · ');
+    const meta = [
+      rounds.length ? `round ${rounds.length}` : 'queued',
+      `${members.length} member${members.length === 1 ? '' : 's'}`,
+      relStarted(c.created),
+      c.source && c.source !== 'brain-box' ? c.source : '',
+    ].filter(Boolean);
+    return `<div class="cm${compact ? ' compact' : ''}${open ? ' open' : ''}" data-cid="${esc(c.id)}">` +
+      `<div class="cm-top"><span class="verdict ${k}${compact ? ' sm' : ''}"><span class="vdot"></span><span class="vtxt">${verdictLabel(k)}</span></span>` +
+        `<div class="cbody"><div class="ctopic">${esc(c.topic)}</div>` +
+          `<div class="cmeta">${meta.map((x, i) => `<span${i === 3 ? ' class="src"' : ''}>${esc(x)}</span>`).join('')}${res ? `<span class="res">${esc(res)}</span>` : ''}</div>` +
+          (!open && members.length ? `<div class="lights">${memberLightsHtml(members)}</div>` : '') +
+        `</div><span class="caret">&rsaquo;</span></div>` +
+      `<div class="rounds">${roundsHtml(c)}</div></div>`;
+  }
+
+  function renderVitals(s) {
+    const age = ageSeconds(s.ts);
+    const fdot = document.getElementById('fdot');
+    const banner = document.getElementById('banner');
+    if (age < 60) { fdot.className = 'fdot fresh'; banner.className = 'banner'; }
+    else if (age < 300) { fdot.className = 'fdot lagging'; banner.className = 'banner'; }
+    else { fdot.className = 'fdot paused'; banner.className = 'banner show'; banner.textContent = `The brain box has not reported for ${rel(age)}. It is likely paused for cost or offline. Committees below are from the ledger and stay accurate.`; }
+    document.getElementById('subline').innerHTML = `<span class="box">${esc(s.box || 'box')}</span> · ${esc(s.uptime || '')} · ${age < 300 ? 'updated ' + rel(age) : 'last seen ' + rel(age)}`;
+
+    const svc = s.services || {}, entries = Object.entries(svc);
+    const down = entries.filter(([, v]) => !v).map(([k]) => k);
+    const svcEl = document.getElementById('svc');
+    if (down.length) { svcEl.classList.add('show'); document.getElementById('svctext').textContent = `${down.join(', ')} down`; svcEl.title = entries.map(([k, v]) => `${k}: ${v ? 'up' : 'DOWN'}`).join('\n'); }
+    else svcEl.classList.remove('show');
+
+    const load0 = Array.isArray(s.load) && s.load.length ? Number(s.load[0]) : 0;
+    const cores = Number(s.cores) || 1;
+    const memPct = (s.mem && Number(s.mem.pct)) || 0;
+    const diskPct = parseInt(s.disk_pct, 10) || 0;
+    const agents = Number(s.live_agent_count) || 0;
+    const monitorUp = svc.monitor === true;
+    const at = agents > 0 ? `<b>${agents}</b> agent${agents === 1 ? '' : 's'} working` : (monitorUp ? 'agents idle' : 'agents unknown');
+    document.getElementById('vitals').innerHTML =
+      `<span class="${load0 / cores >= 1.8 ? 'crit' : load0 / cores >= 0.9 ? 'warn' : ''}">load <b>${load0.toFixed(2)}</b> / ${cores}</span>` +
+      `<span class="${memPct >= 85 ? 'crit' : memPct >= 70 ? 'warn' : ''}">mem <b>${memPct}%</b></span>` +
+      `<span class="${diskPct >= 90 ? 'crit' : diskPct >= 80 ? 'warn' : ''}">disk <b>${esc(s.disk_pct || '?')}</b></span>` +
+      `<span>${at}</span>`;
+  }
+  function renderVitalsDown() {
+    document.getElementById('fdot').className = 'fdot down';
+    document.getElementById('subline').textContent = 'the brain box is not reporting';
+    document.getElementById('svc').classList.remove('show');
+    document.getElementById('vitals').innerHTML = '';
+  }
+
+  function renderDecisions(list) {
+    const arr = Array.isArray(list) ? list : [];
+    document.getElementById('decn').textContent = arr.length ? `${arr.length}` : '';
+    document.getElementById('decsub').textContent = arr.length ? 'Panels convened to make a call. Each is shown in full.' : '';
+    const host = document.getElementById('decisions');
+    host.innerHTML = arr.length
+      ? '<div class="list">' + arr.map(c => committeeHtml(c, false)).join('') + '</div>'
+      : '<div class="empty">No decision committees on record yet. One appears when a real choice needs a panel.</div>';
+  }
+
+  function renderExecution(list, stat) {
+    const arr = Array.isArray(list) ? list : [];
+    const s = stat || {};
+    document.getElementById('exen').textContent = s.total ? `${s.total} on record` : '';
+    const bits = [];
+    if (s.today) bits.push(`<span><b>${s.today}</b> ran today</span>`);
+    if (s.green) bits.push(`<span class="g">${s.green} passed</span>`);
+    if (s.red) bits.push(`<span class="r">${s.red} failed</span>`);
+    if (s.deciding) bits.push(`<span class="a">${s.deciding} deciding</span>`);
+    if (s.tokens) bits.push(`<span>${fmtTokens(s.tokens)}</span>`);
+    if (s.disk) bits.push(`<span>${fmtBytes(s.disk)} on disk</span>`);
+    document.getElementById('exestat').innerHTML = bits.join('');
+    const host = document.getElementById('execution');
+    if (!arr.length) { host.innerHTML = '<div class="empty">No execution panels in the recent window. They stream in during a build wave.</div>'; return; }
+    // group recent execution committees by what they gate
+    const groups = {};
+    arr.forEach(c => { const g = c.gating || 'ungrouped'; (groups[g] = groups[g] || []).push(c); });
+    const rows = Object.entries(groups).map(([g, items]) => {
+      let green = 0, red = 0, dec = 0;
+      items.forEach(c => { const k = verdictKey(c); if (k === 'green') green++; else if (k === 'red') red++; else if (k === 'deciding') dec++; });
+      const gid = 'grp:' + g;
+      const counts = [green ? `<span class="g">${green} pass</span>` : '', red ? `<span class="r">${red} fail</span>` : '', dec ? `<span class="a">${dec} live</span>` : ''].filter(Boolean).join('');
+      return `<div class="grp${openState[gid] ? ' open' : ''}" data-gid="${esc(gid)}">` +
+        `<div class="grp-top"><span class="grp-name">${esc(g)}</span><span class="grp-counts">${counts}</span><span class="caret">&rsaquo;</span></div>` +
+        `<div class="grp-items">${items.map(c => committeeHtml(c, true)).join('')}</div></div>`;
+    }).join('');
+    host.innerHTML = '<div class="list">' + rows + '</div>';
+  }
+
+  function renderLive(decisions, execution) {
+    const all = [].concat(Array.isArray(decisions) ? decisions : [], Array.isArray(execution) ? execution : []);
+    const live = all.filter(isLive);
+    const zone = document.getElementById('liveZone');
+    const body = document.getElementById('liveBody');
+    const count = document.getElementById('liveCount');
+    if (live.length) {
+      zone.classList.add('active');
+      count.textContent = live.length === 1 ? '1 in progress' : `${live.length} in progress`;
+      body.innerHTML = live.map(c => committeeHtml(c, false)).join('');
+    } else {
+      zone.classList.remove('active');
+      count.textContent = '';
+      body.innerHTML = '<div class="live-empty">Nothing deliberating right now. Live panels surface here.</div>';
+    }
+  }
+  function renderLiveUnavailable() {
+    const zone = document.getElementById('liveZone');
+    zone.classList.remove('active');
+    document.getElementById('liveCount').textContent = '';
+    document.getElementById('liveBody').innerHTML = '<div class="live-empty">Feed unavailable, reconnecting. Live panels surface here once restored.</div>';
+  }
+
+  function bindAll() {
+    document.querySelectorAll('.grp').forEach(el => {
+      el.querySelector('.grp-top').addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const id = el.dataset.gid; openState[id] = !openState[id]; el.classList.toggle('open'); postHeight();
+      });
+    });
+    document.querySelectorAll('.cm').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        if (ev.target.closest('.rmem-head')) return;
+        const id = el.dataset.cid; openState[id] = !openState[id]; el.classList.toggle('open'); postHeight();
+      });
+    });
+    document.querySelectorAll('.rmem-head').forEach(h => {
+      h.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const row = h.closest('.rmem'); if (!row.querySelector('.mcomment')) return;
+        openState[row.dataset.mkey] = !openState[row.dataset.mkey]; row.classList.toggle('open'); postHeight();
+      });
+    });
+  }
+
+  async function fetchJson(url) {
+    const r = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json();
+  }
+  async function tick() {
+    const [bs, cf] = await Promise.allSettled([fetchJson('/brain-status'), fetchJson('/committee-feed')]);
+    if (bs.status === 'fulfilled' && bs.value && bs.value.box) renderVitals(bs.value); else renderVitalsDown();
+    if (cf.status === 'fulfilled' && cf.value) {
+      renderDecisions(cf.value.decisions);
+      renderExecution(cf.value.execution, cf.value.stats && cf.value.stats.execution);
+      renderLive(cf.value.decisions, cf.value.execution);
+    } else {
+      document.getElementById('decisions').innerHTML = '<div class="empty">Committee ledger unavailable, reconnecting.</div>';
+      renderLiveUnavailable();
+    }
+    bindAll();
+    postHeight();
+  }
+  function schedule() { clearTimeout(timer); if (!document.hidden) timer = setTimeout(loop, POLL_MS); }
+  async function loop() { await tick(); schedule(); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(timer); else loop(); });
+  window.addEventListener('resize', postHeight);
+  loop();
+</script>
+</body>
+</html>
