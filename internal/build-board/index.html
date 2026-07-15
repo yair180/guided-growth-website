@@ -13,6 +13,7 @@
   body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   button { font:inherit; }
   .wrap { max-width:900px; margin:0 auto; padding:26px 18px 60px; }
+  body.embed-wide .wrap { max-width:1200px; }   /* embed cockpits (e.g. the Brain Machine board) want more width */
   header { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
   h1 { margin:0; font-size:22px; letter-spacing:-.02em; }
   .status-line { margin-top:3px; display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
@@ -331,6 +332,7 @@
     renderArchive();
     const build = activeBuild();
     const isEmbed = !!(build && build.embed);
+    document.body.classList.toggle('embed-wide', isEmbed);
     document.getElementById('buildContent').hidden = isEmbed;
     document.getElementById('embedHost').hidden = !isEmbed;
     document.getElementById('skepticPanel').hidden = isEmbed;   // phase-build context, not the cockpit
