@@ -47,11 +47,20 @@
   .summ b { color:var(--ink2); font-weight:600; } .summ .g { color:var(--green); } .summ .r { color:var(--red); } .summ .a { color:var(--amber); }
 
   /* three lifecycle columns */
-  .board { display:grid; grid-template-columns: 1fr 1.35fr 1.15fr; align-items:start; margin-top:14px; gap:0; }
+  .board { display:grid; grid-template-columns: 1.05fr 1fr; align-items:start; margin-top:12px; gap:0; }
   .col { min-width:0; padding:0 15px; }
-  .col-planned { padding-left:2px; }
-  .col-live { border-left:1px solid var(--line); border-right:1px solid var(--line); background:var(--wash); border-radius:3px; }
-  .col-done { padding-right:2px; }
+  .col-live { padding-left:2px; border-right:1px solid var(--line); background:var(--wash); border-radius:3px; }
+  .col-done { padding-right:2px; padding-left:16px; }
+  /* Planned: a thin strip, not a column (it is nearly always empty) */
+  .planned-strip { margin-top:12px; padding:7px 11px; border:1px solid var(--line); border-radius:8px; background:var(--wash); font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:7px 11px; flex-wrap:wrap; }
+  .planned-strip .plabel { font-size:10px; font-weight:750; letter-spacing:.09em; text-transform:uppercase; color:var(--ink2); }
+  .planned-strip .pchip { font-size:11px; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:2px 7px; }
+  .dtoggle { font:inherit; font-size:11px; font-weight:600; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:3px 9px; cursor:pointer; white-space:nowrap; }
+  .dtoggle.active { background:var(--blue); color:var(--panel); border-color:var(--blue); }
+  .dtoggle:hover { border-color:var(--blue); }
+  .dgroup-label { font-size:9.5px; font-weight:750; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); padding:9px 2px 2px; }
+  .sess-head { display:flex; align-items:baseline; gap:7px; padding:9px 2px 3px; font-size:10px; font-weight:750; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); border-top:1px solid var(--line); }
+  .sess-head .sc { color:var(--muted); font-family:var(--mono); font-weight:600; }
   .col-head { display:flex; align-items:center; gap:8px; padding:2px 0 9px; border-bottom:1px solid var(--line); }
   .col-title { font-size:11px; font-weight:750; letter-spacing:.1em; text-transform:uppercase; color:var(--ink2); display:flex; align-items:center; gap:7px; }
   .livedot { width:7px; height:7px; border-radius:50%; background:var(--gray); }
@@ -135,11 +144,8 @@
   <div class="summ" id="summ"></div>
   <div class="banner" id="banner"></div>
 
+  <div class="planned-strip" id="planned-strip"></div>
   <div class="board">
-    <section class="col col-planned">
-      <div class="col-head"><span class="col-title">Planned</span><span class="col-count" id="cnt-planned"></span></div>
-      <div class="col-body" id="planned"></div>
-    </section>
     <section class="col col-live">
       <div class="col-head"><span class="col-title"><span class="livedot" id="livedot"></span>Live</span><span class="col-count" id="cnt-live"></span></div>
       <div class="col-body" id="live"></div>
@@ -151,6 +157,7 @@
         <button class="dchip" data-f="green" type="button">Passed <span class="dc" data-c="green">0</span></button>
         <button class="dchip" data-f="red" type="button">Failed <span class="dc" data-c="red">0</span></button>
         <button class="dchip" data-f="split" type="button">Split <span class="dc" data-c="split">0</span></button>
+        <button class="dtoggle" id="groupToggle" type="button">Group by session</button>
         <input class="dsearch" id="dsearch" type="search" placeholder="search" aria-label="search done committees">
       </div>
       <div class="col-body" id="done"></div>
@@ -268,11 +275,9 @@
   // column (100+ mostly-static rows) does not rebuild every poll. That keeps the
   // live board smooth and never yanks a card out from under you mid-read.
   const lastHtml = {};
+  function setHtmlCached(id, html) { if (lastHtml[id] === html) return; lastHtml[id] = html; document.getElementById(id).innerHTML = html; }
   function renderColumn(id, list, emptyMsg) {
-    const html = list.length ? list.map(committeeHtml).join('') : `<div class="empty">${esc(emptyMsg)}</div>`;
-    if (lastHtml[id] === html) return;
-    lastHtml[id] = html;
-    document.getElementById(id).innerHTML = html;
+    setHtmlCached(id, list.length ? list.map(committeeHtml).join('') : `<div class="empty">${esc(emptyMsg)}</div>`);
   }
 
   // One delegated click handler for the whole board (survives partial re-renders,
@@ -294,11 +299,16 @@
       renderDoneList(); postHeight();
     }));
     document.getElementById('dsearch').addEventListener('input', () => { renderDoneList(); postHeight(); });
+    document.getElementById('groupToggle').addEventListener('click', (e) => {
+      groupBySession = !groupBySession;
+      e.currentTarget.classList.toggle('active', groupBySession);
+      renderDoneList(); postHeight();
+    });
   }
 
   // Done column filter (verdict chips + search). The chips + input live in static
   // HTML so a poll never steals search focus; only the counts and list update.
-  let doneFilter = 'all', allDone = [];
+  let doneFilter = 'all', groupBySession = false, allDone = [];
   function updateDoneCounts() {
     const c = { all: allDone.length, green: 0, red: 0, split: 0 };
     allDone.forEach(x => { const k = verdictKey(x); if (k === 'green' || k === 'red' || k === 'split') c[k]++; });
@@ -307,7 +317,21 @@
   function renderDoneList() {
     const q = (document.getElementById('dsearch').value || '').toLowerCase().trim();
     const filtered = allDone.filter(c => (doneFilter === 'all' || verdictKey(c) === doneFilter) && (!q || nameOf(c).toLowerCase().includes(q)));
-    renderColumn('done', filtered, allDone.length ? 'No committees match this filter.' : 'No resolved committees yet.');
+    if (!filtered.length) { setHtmlCached('done', `<div class="empty">${allDone.length ? 'No committees match this filter.' : 'No resolved committees yet.'}</div>`); return; }
+    let html;
+    if (groupBySession) {
+      const groups = {};
+      filtered.forEach(c => { const s = c.session || 'unassigned'; (groups[s] = groups[s] || []).push(c); });
+      html = Object.entries(groups).sort((a, b) => b[1].length - a[1].length).map(([s, items]) =>
+        `<div class="sess-head">${esc(s)} <span class="sc">${items.length}</span></div>` + items.map(committeeHtml).join('')).join('');
+    } else {
+      // pin the rare real decisions above the flood of verification checks
+      const decisions = filtered.filter(c => c.type === 'decision');
+      const checks = filtered.filter(c => c.type !== 'decision');
+      html = (decisions.length ? `<div class="dgroup-label">Decisions</div>` + decisions.map(committeeHtml).join('') : '') +
+             (checks.length ? (decisions.length ? `<div class="dgroup-label">Verification checks</div>` : '') + checks.map(committeeHtml).join('') : '');
+    }
+    setHtmlCached('done', html);
   }
 
   function renderVitals(s) {
@@ -352,12 +376,12 @@
     const planned = uniq.filter(c => c.status === 'planned' || c.status === 'pending').sort(byUpdated);
     const live = uniq.filter(c => c.status === 'deciding').sort(byUpdated);
     const done = uniq.filter(c => c.status === 'done' || (c.status !== 'deciding' && c.status !== 'planned' && c.status !== 'pending')).sort(byUpdated);
-    document.getElementById('cnt-planned').textContent = planned.length || '';
+    const ps = document.getElementById('planned-strip');
+    ps.innerHTML = `<span class="plabel">Planned</span>` + (planned.length ? planned.map(c => `<span class="pchip">${esc(nameOf(c))}</span>`).join('') : `<span>nothing queued right now</span>`);
     document.getElementById('cnt-live').textContent = live.length ? `${live.length} live` : '';
     const totalDone = (feed.stats && feed.stats.execution && feed.stats.decision) ? (feed.stats.decision.total || 0) + (feed.stats.execution.total || 0) : done.length;
     document.getElementById('cnt-done').textContent = done.length < totalDone ? `${done.length} of ${totalDone}` : `${totalDone} total`;
     document.getElementById('livedot').className = live.length ? 'livedot on' : 'livedot';
-    renderColumn('planned', planned, 'Nothing queued. A committee shows here before it starts deliberating.');
     renderColumn('live', live, 'Nothing deliberating right now. Live committees surface here the moment one convenes.');
     allDone = done; updateDoneCounts(); renderDoneList();
     renderSummary(feed.stats);
