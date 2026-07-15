@@ -174,7 +174,7 @@
   function currentMembers(c) { const r = Array.isArray(c.rounds) ? c.rounds : []; const last = r[r.length - 1]; return last && Array.isArray(last.members) ? last.members : []; }
 
   // strip a trailing [tag] off the topic to use as a grade chip; keep the name clean
-  function nameOf(c) { return String(c.topic || 'committee').replace(/\s*\[[^\]]+\]\s*$/, '').trim() || 'committee'; }
+  function nameOf(c) { if (c.name) return String(c.name); return String(c.topic || 'committee').replace(/\s*\[[^\]]+\]\s*$/, '').trim() || 'committee'; }
   function gradeOf(c) {
     const m = String(c.topic || '').match(/\[([^\]]+)\]\s*$/);
     const g = m ? m[1].toLowerCase() : '';
