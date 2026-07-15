@@ -342,7 +342,8 @@
     const done = uniq.filter(c => c.status === 'done' || (c.status !== 'deciding' && c.status !== 'planned' && c.status !== 'pending')).sort(byUpdated);
     document.getElementById('cnt-planned').textContent = planned.length || '';
     document.getElementById('cnt-live').textContent = live.length ? `${live.length} live` : '';
-    document.getElementById('cnt-done').textContent = (feed.stats && feed.stats.execution && feed.stats.decision) ? `${(feed.stats.decision.total || 0) + (feed.stats.execution.total || 0)} total` : done.length;
+    const totalDone = (feed.stats && feed.stats.execution && feed.stats.decision) ? (feed.stats.decision.total || 0) + (feed.stats.execution.total || 0) : done.length;
+    document.getElementById('cnt-done').textContent = done.length < totalDone ? `${done.length} of ${totalDone}` : `${totalDone} total`;
     document.getElementById('livedot').className = live.length ? 'livedot on' : 'livedot';
     renderColumn('planned', planned, 'Nothing queued. A committee shows here before it starts deliberating.');
     renderColumn('live', live, 'Nothing deliberating right now. Live committees surface here the moment one convenes.');
