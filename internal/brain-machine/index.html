@@ -238,21 +238,30 @@
     `</div>`;
   }
 
+  // Only rewrite a column's DOM when its content actually changed, so the Done
+  // column (100+ mostly-static rows) does not rebuild every poll. That keeps the
+  // live board smooth and never yanks a card out from under you mid-read.
+  const lastHtml = {};
   function renderColumn(id, list, emptyMsg) {
-    const host = document.getElementById(id);
-    host.innerHTML = list.length ? list.map(committeeHtml).join('') : `<div class="empty">${emptyMsg}</div>`;
+    const html = list.length ? list.map(committeeHtml).join('') : `<div class="empty">${esc(emptyMsg)}</div>`;
+    if (lastHtml[id] === html) return;
+    lastHtml[id] = html;
+    document.getElementById(id).innerHTML = html;
   }
 
-  function bind() {
-    document.querySelectorAll('.cm > .cm-line').forEach(line => line.addEventListener('click', () => {
-      const cm = line.parentElement; const id = cm.dataset.cid;
-      openState[id] = !openState[id]; cm.classList.toggle('open'); postHeight();
-    }));
-    document.querySelectorAll('.mem > .mem-line').forEach(line => line.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const mem = line.parentElement; if (!mem.querySelector('.mfull')) return;
-      openState[mem.dataset.mkey] = !openState[mem.dataset.mkey]; mem.classList.toggle('open'); postHeight();
-    }));
+  // One delegated click handler for the whole board (survives partial re-renders,
+  // never double-binds). Expand/collapse is a class toggle, no re-render needed.
+  function bindOnce() {
+    document.querySelector('.board').addEventListener('click', (ev) => {
+      const memLine = ev.target.closest('.mem-line');
+      if (memLine) {
+        const mem = memLine.parentElement;
+        if (mem && mem.querySelector('.mfull')) { openState[mem.dataset.mkey] = !openState[mem.dataset.mkey]; mem.classList.toggle('open'); postHeight(); }
+        return;
+      }
+      const cmLine = ev.target.closest('.cm-line');
+      if (cmLine) { const cm = cmLine.parentElement; openState[cm.dataset.cid] = !openState[cm.dataset.cid]; cm.classList.toggle('open'); postHeight(); }
+    });
   }
 
   function renderVitals(s) {
@@ -305,7 +314,6 @@
     renderColumn('live', live, 'Nothing deliberating right now. Live committees surface here the moment one convenes.');
     renderColumn('done', done, 'No resolved committees yet.');
     renderSummary(feed.stats);
-    bind();
   }
 
   async function fetchJson(url) { const r = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(String(r.status)); return r.json(); }
@@ -319,6 +327,7 @@
   async function loop() { await tick(); schedule(); }
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(timer); else loop(); });
   window.addEventListener('resize', postHeight);
+  bindOnce();
   loop();
 </script>
 </body>
