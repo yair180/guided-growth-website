@@ -3,132 +3,178 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brain Machine</title>
+<title>Brain Machine · Board</title>
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
 <style>
   :root {
-    --bg:#f7f8fa; --panel:#fff; --ink:#1c2430; --ink2:#39434f; --muted:#6a7484; --faint:#98a1b0;
+    --bg:#f7f8fa; --panel:#fff; --wash:#f0f2f6; --ink:#1c2430; --ink2:#39434f; --muted:#6a7484; --faint:#98a1b0;
     --line:#e4e8ef; --line2:#eef1f6; --blue:#2456c7;
     --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fdf0d6; --red:#b42318; --red-bg:#fdece9; --gray:#9aa3b2;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme]) {
-    --bg:#10151d; --panel:#161c26; --ink:#edf2f8; --ink2:#c7d0dc; --muted:#8b97a8; --faint:#5b6676;
+    --bg:#10151d; --panel:#161c26; --wash:#131a24; --ink:#edf2f8; --ink2:#c7d0dc; --muted:#8b97a8; --faint:#5b6676;
     --line:#2a3441; --line2:#1b2430; --blue:#8db2ff;
     --green:#5fd493; --green-bg:#12331f; --amber:#f2bd63; --amber-bg:#3a2c10; --red:#ff8f88; --red-bg:#3a1a17; --gray:#5f6b7b;
   } }
   html[data-theme="dark"] {
-    --bg:#10151d; --panel:#161c26; --ink:#edf2f8; --ink2:#c7d0dc; --muted:#8b97a8; --faint:#5b6676;
+    --bg:#10151d; --panel:#161c26; --wash:#131a24; --ink:#edf2f8; --ink2:#c7d0dc; --muted:#8b97a8; --faint:#5b6676;
     --line:#2a3441; --line2:#1b2430; --blue:#8db2ff;
     --green:#5fd493; --green-bg:#12331f; --amber:#f2bd63; --amber-bg:#3a2c10; --red:#ff8f88; --red-bg:#3a1a17; --gray:#5f6b7b;
   }
   html[data-theme="light"] {
-    --bg:#f7f8fa; --panel:#fff; --ink:#1c2430; --ink2:#39434f; --muted:#6a7484; --faint:#98a1b0;
+    --bg:#f7f8fa; --panel:#fff; --wash:#f0f2f6; --ink:#1c2430; --ink2:#39434f; --muted:#6a7484; --faint:#98a1b0;
     --line:#e4e8ef; --line2:#eef1f6; --blue:#2456c7;
     --green:#1c7a4d; --green-bg:#e3f6ec; --amber:#a15c00; --amber-bg:#fdf0d6; --red:#b42318; --red-bg:#fdece9; --gray:#9aa3b2;
   }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing:antialiased; }
-  .wrap { max-width:860px; margin:0 auto; padding:2px 2px 22px; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 var(--sans); -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1180px; margin:0 auto; padding:12px 14px 26px; }
 
-  .statusbar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+  /* ---- top strip: box vitals, secondary and compact ---- */
+  .topstrip { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; padding:0 2px 10px; border-bottom:1px solid var(--line); }
   .fdot { width:8px; height:8px; border-radius:50%; background:var(--gray); flex:none; }
   .fdot.fresh { background:var(--green); } .fdot.lagging { background:var(--amber); animation:pulse 1.6s infinite; }
   .fdot.paused { background:var(--gray); } .fdot.down { background:var(--red); animation:pulse 1.4s infinite; }
-  .statusbar .box { color:var(--ink2); font-weight:600; }
-  .svc { margin-left:auto; display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); }
-  .svc .sdot { width:7px; height:7px; border-radius:50%; background:var(--green); flex:none; }
-  .svc.bad .sdot { background:var(--red); }
-  .vitals { margin-top:5px; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 14px; }
-  .vitals b { color:var(--ink2); font-weight:600; } .vitals .warn { color:var(--amber); } .vitals .crit { color:var(--red); }
+  .topstrip .box { color:var(--ink2); font-weight:650; }
+  .topstrip .sub { color:var(--muted); font-size:12px; }
+  .topvitals { margin-left:auto; display:flex; flex-wrap:wrap; gap:3px 13px; font-size:11.5px; color:var(--muted); font-family:var(--mono); }
+  .topvitals b { color:var(--ink2); font-weight:600; } .topvitals .warn { color:var(--amber); } .topvitals .crit { color:var(--red); }
+  .svc { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--red); background:var(--red-bg); padding:3px 8px; border-radius:6px; font-family:var(--sans); }
+  .svc .sdot { width:6px; height:6px; border-radius:50%; background:var(--red); flex:none; }
+  .banner { display:none; margin:10px 2px 0; padding:9px 12px; border-radius:8px; font-size:12.5px; line-height:1.45; background:var(--line2); color:var(--muted); border:1px solid var(--line); }
+  .banner.show { display:block; }
 
-  /* lane headers */
-  .lane { margin-top:24px; }
-  .lhead { display:flex; align-items:baseline; gap:9px; }
-  .lhead h1 { margin:0; font-size:16px; font-weight:700; letter-spacing:-.01em; }
-  .lhead .n { font-size:12px; color:var(--muted); font-weight:600; }
-  .lsub { margin:2px 0 4px; font-size:11.5px; color:var(--faint); line-height:1.45; }
-  .stbar { margin:3px 0 6px; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:3px 12px; }
-  .stbar b { color:var(--ink2); font-weight:600; } .stbar .g { color:var(--green); } .stbar .r { color:var(--red); } .stbar .a { color:var(--amber); }
+  /* ---- three column board ---- */
+  .board { display:grid; grid-template-columns: 1fr 1.2fr 1fr; align-items:start; margin-top:16px; }
+  .col { min-width:0; padding:0 16px; }
+  .col-decisions { padding-left:2px; }
+  .col-live { border-left:1px solid var(--line); border-right:1px solid var(--line); background:var(--wash); border-radius:2px; }
+  .col-execution { padding-right:2px; }
+
+  .col-head { display:flex; align-items:baseline; gap:8px; padding:2px 0 10px; margin-bottom:6px; border-bottom:1px solid var(--line); }
+  .col-title { font-size:11px; font-weight:750; letter-spacing:.09em; text-transform:uppercase; color:var(--ink2); display:flex; align-items:center; gap:7px; white-space:nowrap; }
+  .livedot { width:7px; height:7px; border-radius:50%; background:var(--gray); flex:none; }
+  .livedot.on { background:var(--amber); animation:pulse 1.3s infinite; }
+  .col-count { font-size:11px; color:var(--muted); font-weight:600; margin-left:auto; }
+  .col-sub { font-size:11.5px; color:var(--faint); line-height:1.45; margin:0 0 8px; }
+  .stbar { margin:0 0 10px; font-size:11.5px; color:var(--muted); font-family:var(--mono); display:flex; flex-wrap:wrap; gap:3px 11px; }
+  .stbar .g { color:var(--green); } .stbar .r { color:var(--red); } .stbar .a { color:var(--amber); }
+
   .list { border-top:1px solid var(--line); }
+  .col-live .list { border-top:none; }
 
-  /* a committee block (decisions, and expanded execution items) */
-  .cm { border-bottom:1px solid var(--line); padding:14px 2px; cursor:pointer; }
-  .cm.compact { padding:10px 2px; }
-  .cm-top { display:flex; align-items:flex-start; gap:10px; }
+  /* ---- a panel (decision / execution item) ---- */
+  .panel { border-bottom:1px solid var(--line); padding:13px 0; cursor:pointer; }
+  .panel.compact { padding:9px 0; }
+  .col-live .panel { border-bottom:none; margin-bottom:12px; padding:14px; border-radius:10px; border:1px solid var(--line); background:var(--panel); }
+  .col-live .panel:last-child { margin-bottom:0; }
+  .panel.live-active { border-color:var(--amber); animation:liveglow 2.4s ease-in-out infinite; }
+  .panel-top { display:flex; align-items:flex-start; gap:10px; }
   .verdict { flex:none; font-size:10.5px; font-weight:750; letter-spacing:.05em; padding:3px 8px; border-radius:6px; white-space:nowrap; margin-top:1px; }
   .verdict.green { background:var(--green-bg); color:var(--green); }
   .verdict.red { background:var(--red-bg); color:var(--red); }
   .verdict.deciding { background:var(--amber-bg); color:var(--amber); animation:breathe 1.7s ease-in-out infinite; }
-  .verdict.split, .verdict.mixed { background:var(--amber-bg); color:var(--amber); }
+  .verdict.split { background:var(--amber-bg); color:var(--amber); }
   .verdict.pending { background:var(--line2); color:var(--muted); border:1px solid var(--line); }
   .verdict.sm { font-size:9.5px; padding:2px 6px; }
-  .cbody { min-width:0; flex:1; }
-  .ctopic { font-size:15px; font-weight:600; line-height:1.36; color:var(--ink); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .cm.compact .ctopic { font-size:13.5px; -webkit-line-clamp:1; }
-  .cm.open .ctopic { display:block; -webkit-line-clamp:unset; }
-  .cmeta { margin-top:5px; font-size:11px; color:var(--muted); display:flex; flex-wrap:wrap; gap:2px 10px; }
-  .cmeta .src { color:var(--faint); } .cmeta .res { color:var(--faint); }
-  .caret { flex:none; color:var(--faint); font-size:15px; line-height:1.3; transition:transform .18s ease; margin-top:1px; }
-  .cm.open .caret, .grp.open .caret { transform:rotate(90deg); }
-  .lights { display:flex; flex-wrap:wrap; gap:8px 15px; align-items:center; margin-top:11px; }
-  .cmem { display:inline-flex; align-items:center; gap:7px; font-size:12px; }
-  .mlight { width:9px; height:9px; border-radius:50%; flex:none; background:var(--gray); }
+  .pbody { min-width:0; flex:1; }
+  .lanepill { font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin-bottom:3px; }
+  .ptopic { font-size:14.5px; font-weight:600; line-height:1.36; color:var(--ink); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .col-live .ptopic { font-size:16px; }
+  .panel.compact .ptopic { font-size:13px; -webkit-line-clamp:1; }
+  .panel.open .ptopic { display:block; -webkit-line-clamp:unset; }
+  .pmeta { margin-top:5px; font-size:11px; color:var(--muted); display:flex; flex-wrap:wrap; gap:2px 10px; }
+  .pmeta .src, .pmeta .gate { color:var(--faint); }
+  .pmeta .res { font-family:var(--mono); color:var(--faint); }
+  .caret { flex:none; color:var(--faint); font-size:14px; line-height:1.3; transition:transform .18s ease; margin-top:1px; }
+  .panel.open .caret, .grp.open .caret { transform:rotate(90deg); }
+  .lights { display:flex; flex-wrap:wrap; gap:7px 14px; align-items:center; margin-top:10px; }
+  .cmem { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; }
+  .mlight { width:8px; height:8px; border-radius:50%; flex:none; background:var(--gray); }
   .mlight.green { background:var(--green); } .mlight.red { background:var(--red); } .mlight.thinking { background:var(--amber); animation:pulse 1.4s infinite; }
   .mrole { color:var(--muted); font-weight:500; }
-  .rounds { margin-top:13px; border-top:1px dashed var(--line); padding-top:11px; display:none; }
-  .cm.open .rounds { display:block; }
-  .round { margin-bottom:12px; } .round:last-child { margin-bottom:0; }
-  .rlabel { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:700; margin-bottom:7px; }
+  .rounds { margin-top:12px; border-top:1px dashed var(--line); padding-top:10px; display:none; }
+  .panel.open .rounds { display:block; }
+  .round { margin-bottom:11px; } .round:last-child { margin-bottom:0; }
+  .rlabel { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:700; margin-bottom:6px; }
   .rlabel .cur { color:var(--blue); }
-  .rmem-head { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; padding:2px 0; }
+  .rmem-head { display:inline-flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; padding:2px 0; }
   .rmem-head .mrole { color:var(--ink2); font-weight:600; }
-  .rmem-head .vtag { font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; }
+  .rmem-head .vtag { font-size:9.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; }
   .rmem-head .vtag.green { color:var(--green); } .rmem-head .vtag.red { color:var(--red); } .rmem-head .vtag.thinking { color:var(--amber); }
-  .mcomment { display:none; margin:5px 0 4px 17px; padding:9px 11px; background:var(--bg); border:1px solid var(--line); border-radius:8px; font-size:12.5px; line-height:1.5; color:var(--ink2); white-space:pre-wrap; word-break:break-word; max-height:260px; overflow:auto; }
+  .mcomment { display:none; margin:5px 0 4px 16px; padding:9px 11px; background:var(--bg); border:1px solid var(--line); border-radius:8px; font-size:12px; line-height:1.5; color:var(--ink2); white-space:pre-wrap; word-break:break-word; max-height:240px; overflow:auto; }
+  .col-live .mcomment { background:var(--wash); }
   .rmem.open .mcomment { display:block; }
-  .rmem .tcaret { color:var(--faint); font-size:12px; transition:transform .15s; display:inline-block; }
+  .rmem .tcaret { color:var(--faint); font-size:11px; transition:transform .15s; display:inline-block; }
   .rmem.open .tcaret { transform:rotate(90deg); }
 
-  /* execution groups */
-  .grp { border-bottom:1px solid var(--line); padding:11px 2px; cursor:pointer; }
-  .grp-top { display:flex; align-items:center; gap:10px; }
-  .grp-name { font-size:13.5px; font-weight:650; color:var(--ink); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .grp-counts { margin-left:auto; display:inline-flex; gap:9px; font-size:11.5px; color:var(--muted); white-space:nowrap; }
+  /* ---- execution groups ---- */
+  .grp { border-bottom:1px solid var(--line); padding:10px 0; cursor:pointer; }
+  .grp-top { display:flex; align-items:center; gap:9px; }
+  .grp-name { font-size:13px; font-weight:650; color:var(--ink); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .grp-counts { margin-left:auto; display:inline-flex; gap:8px; font-size:11px; font-family:var(--mono); color:var(--muted); white-space:nowrap; }
   .grp-counts .g { color:var(--green); } .grp-counts .r { color:var(--red); } .grp-counts .a { color:var(--amber); }
-  .grp-items { display:none; margin-top:8px; } .grp.open .grp-items { display:block; }
+  .grp-items { display:none; margin-top:7px; } .grp.open .grp-items { display:block; }
 
-  .empty { color:var(--muted); font-size:13px; padding:14px 2px; }
-  .banner { display:none; margin:12px 0 0; padding:9px 12px; border-radius:8px; font-size:12.5px; line-height:1.45; }
-  .banner.show { display:block; }
-  .banner.paused { background:var(--line2); color:var(--muted); border:1px solid var(--line); }
+  .empty { color:var(--muted); font-size:12.5px; padding:12px 0; line-height:1.5; }
+  .live-empty { color:var(--muted); font-size:12.5px; padding:20px 6px; line-height:1.55; text-align:center; border:1px dashed var(--line); border-radius:10px; }
 
   @keyframes pulse { 50% { opacity:.32; } }
   @keyframes breathe { 50% { opacity:.55; } }
-  @media (max-width:560px) { .ctopic { font-size:14px; } }
+  @keyframes liveglow { 0%,100% { box-shadow:0 0 0 0 var(--amber-bg); } 50% { box-shadow:0 0 0 5px var(--amber-bg); } }
+
+  @media (max-width:900px) {
+    .board { grid-template-columns:1fr; }
+    .col { padding:0 2px; }
+    .col-live { border-left:none; border-right:none; padding:12px 10px; order:1; }
+    .col-decisions { order:2; margin-top:22px; }
+    .col-execution { order:3; margin-top:22px; }
+    .topvitals { margin-left:0; width:100%; }
+  }
+  @media (max-width:560px) { .ptopic { font-size:13.5px; } .col-live .ptopic { font-size:15px; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="statusbar">
+  <div class="topstrip">
     <span class="fdot" id="fdot"></span>
     <span id="subline">connecting to the brain box</span>
     <span class="svc" id="svc" hidden><span class="sdot"></span><span id="svctext"></span></span>
+    <span class="topvitals" id="vitals"></span>
   </div>
-  <div class="vitals" id="vitals"></div>
   <div class="banner" id="banner"></div>
 
-  <section class="lane">
-    <div class="lhead"><h1>Decisions</h1><span class="n" id="decn"></span></div>
-    <div class="lsub" id="decsub"></div>
-    <div id="decisions"></div>
-  </section>
+  <div class="board">
+    <section class="col col-decisions">
+      <div class="col-head">
+        <span class="col-title">Decisions</span>
+        <span class="col-count" id="decn"></span>
+      </div>
+      <div class="col-sub" id="decsub"></div>
+      <div id="decisions"></div>
+    </section>
 
-  <section class="lane">
-    <div class="lhead"><h1>Execution</h1><span class="n" id="exen"></span></div>
-    <div class="lsub">Verification panels (skeptic gates and build checks), rolled up by what they check.</div>
-    <div class="stbar" id="exestat"></div>
-    <div id="execution"></div>
-  </section>
+    <section class="col col-live">
+      <div class="col-head">
+        <span class="col-title"><span class="livedot" id="livedot"></span>Live</span>
+        <span class="col-count" id="liven"></span>
+      </div>
+      <div class="col-sub">Committees deliberating right now. This lane always stays visible.</div>
+      <div id="live"></div>
+    </section>
+
+    <section class="col col-execution">
+      <div class="col-head">
+        <span class="col-title">Execution</span>
+        <span class="col-count" id="exen"></span>
+      </div>
+      <div class="col-sub">Verification panels (skeptic gates and build checks), rolled up by what they gate.</div>
+      <div class="stbar" id="exestat"></div>
+      <div id="execution"></div>
+    </section>
+  </div>
 </div>
 <script>
   const urlTheme = new URLSearchParams(location.search).get('theme');
@@ -168,11 +214,20 @@
   function memberClass(m) { return m.status !== 'done' ? 'thinking' : (m.verdict === 'green' ? 'green' : m.verdict === 'red' ? 'red' : ''); }
   function memberTag(m) { return m.status !== 'done' ? 'thinking' : (m.verdict || ''); }
   function verdictKey(c) {
-    if (c.verdict === 'green' || c.verdict === 'red' || c.verdict === 'split') return c.verdict;
     if (c.status === 'deciding' || c.verdict === 'deciding') return 'deciding';
+    if (c.verdict === 'green' || c.verdict === 'red' || c.verdict === 'split') return c.verdict;
     return 'pending';
   }
   function verdictLabel(k) { return { green:'GREEN', red:'RED', split:'SPLIT', deciding:'DECIDING', pending:'QUEUED' }[k] || 'QUEUED'; }
+
+  // a committee is "live" if it's actively deciding, or its current round still has a thinking member
+  function isLive(c) {
+    if (verdictKey(c) === 'deciding') return true;
+    const rounds = Array.isArray(c.rounds) ? c.rounds : [];
+    const cur = rounds[rounds.length - 1];
+    if (cur && Array.isArray(cur.members) && cur.members.some(m => m.status !== 'done')) return true;
+    return false;
+  }
 
   function postHeight() {
     const h = Math.ceil(document.documentElement.scrollHeight);
@@ -202,12 +257,16 @@
       return `<div class="round"><div class="rlabel">Round ${esc(r.n)}${cur ? ' <span class="cur">(current)</span>' : ''}</div>${mem}</div>`;
     }).join('');
   }
-  function committeeHtml(c, compact) {
+
+  // opts: { compact, live, laneTag }
+  function panelHtml(c, opts) {
+    opts = opts || {};
     const k = verdictKey(c);
     const rounds = Array.isArray(c.rounds) ? c.rounds : [];
     const cur = rounds[rounds.length - 1];
     const members = cur && Array.isArray(cur.members) ? cur.members : [];
-    const open = !!openState[c.id];
+    const defaultOpen = !!opts.live;
+    const open = openState[c.id] === undefined ? defaultOpen : openState[c.id];
     const res = [fmtTokens(c.tokens), fmtBytes(c.disk_bytes), fmtCost(c.cost_usd)].filter(Boolean).join(' · ');
     const meta = [
       rounds.length ? `round ${rounds.length}` : 'queued',
@@ -215,29 +274,30 @@
       relStarted(c.created),
       c.source && c.source !== 'brain-box' ? c.source : '',
     ].filter(Boolean);
-    return `<div class="cm${compact ? ' compact' : ''}${open ? ' open' : ''}" data-cid="${esc(c.id)}">` +
-      `<div class="cm-top"><span class="verdict ${k}${compact ? ' sm' : ''}">${verdictLabel(k)}</span>` +
-        `<div class="cbody"><div class="ctopic">${esc(c.topic)}</div>` +
-          `<div class="cmeta">${meta.map((x, i) => `<span${i === 3 ? ' class="src"' : ''}>${esc(x)}</span>`).join('')}${res ? `<span class="res">${esc(res)}</span>` : ''}</div>` +
+    const gateTag = c.gating && (opts.live || opts.showGate) ? `<span class="gate">gates ${esc(c.gating)}</span>` : '';
+    const lane = opts.laneTag ? `<div class="lanepill">${esc(opts.laneTag)}</div>` : '';
+    return `<div class="panel${opts.compact ? ' compact' : ''}${open ? ' open' : ''}${opts.live && k === 'deciding' ? ' live-active' : ''}" data-cid="${esc(c.id)}">` +
+      `<div class="panel-top"><span class="verdict ${k}${opts.compact ? ' sm' : ''}">${verdictLabel(k)}</span>` +
+        `<div class="pbody">${lane}<div class="ptopic">${esc(c.topic)}</div>` +
+          `<div class="pmeta">${meta.map((x, i) => `<span${i === 3 ? ' class="src"' : ''}>${esc(x)}</span>`).join('')}${gateTag}${res ? `<span class="res">${esc(res)}</span>` : ''}</div>` +
           (!open && members.length ? `<div class="lights">${memberLightsHtml(members)}</div>` : '') +
         `</div><span class="caret">&rsaquo;</span></div>` +
       `<div class="rounds">${roundsHtml(c)}</div></div>`;
   }
 
-  function renderVitals(s) {
+  function renderTopStrip(s) {
     const age = ageSeconds(s.ts);
     const fdot = document.getElementById('fdot');
     const banner = document.getElementById('banner');
     if (age < 60) { fdot.className = 'fdot fresh'; banner.className = 'banner'; }
     else if (age < 300) { fdot.className = 'fdot lagging'; banner.className = 'banner'; }
-    else { fdot.className = 'fdot paused'; banner.className = 'banner paused show'; banner.textContent = `The brain box has not reported for ${rel(age)}. It is likely paused for cost or offline. Committees below are from the ledger and stay accurate.`; }
-    document.getElementById('subline').innerHTML = `<span class="box">${esc(s.box || 'box')}</span> · ${esc(s.uptime || '')} · ${age < 300 ? 'updated ' + rel(age) : 'last seen ' + rel(age)}`;
+    else { fdot.className = 'fdot paused'; banner.className = 'banner show'; banner.textContent = `The brain box has not reported for ${rel(age)}. It is likely paused for cost or offline. Committees below are from the ledger and stay accurate.`; }
+    document.getElementById('subline').innerHTML = `<span class="box">${esc(s.box || 'box')}</span> <span class="sub">· ${esc(s.uptime || '')} · ${age < 300 ? 'updated ' + rel(age) : 'last seen ' + rel(age)}</span>`;
 
     const svc = s.services || {}, entries = Object.entries(svc);
     const down = entries.filter(([, v]) => !v).map(([k]) => k);
     const svcEl = document.getElementById('svc');
-    if (down.length) { svcEl.hidden = false; svcEl.className = 'svc bad'; document.getElementById('svctext').textContent = `${down.join(', ')} down`; svcEl.title = entries.map(([k, v]) => `${k}: ${v ? 'up' : 'DOWN'}`).join('\n'); }
-    else if (entries.length) { svcEl.hidden = false; svcEl.className = 'svc'; document.getElementById('svctext').textContent = 'systems ok'; svcEl.title = entries.map(([k]) => `${k}: up`).join('\n'); }
+    if (down.length) { svcEl.hidden = false; document.getElementById('svctext').textContent = `${down.join(', ')} down`; svcEl.title = entries.map(([k, v]) => `${k}: ${v ? 'up' : 'DOWN'}`).join('\n'); }
     else svcEl.hidden = true;
 
     const load0 = Array.isArray(s.load) && s.load.length ? Number(s.load[0]) : 0;
@@ -248,25 +308,40 @@
     const monitorUp = svc.monitor === true;
     const at = agents > 0 ? `<b>${agents}</b> agent${agents === 1 ? '' : 's'} working` : (monitorUp ? 'agents idle' : 'agents unknown');
     document.getElementById('vitals').innerHTML =
-      `<span class="${load0 / cores >= 1.8 ? 'crit' : load0 / cores >= 0.9 ? 'warn' : ''}">load <b>${load0.toFixed(2)}</b> / ${cores}</span>` +
+      `<span class="${load0 / cores >= 1.8 ? 'crit' : load0 / cores >= 0.9 ? 'warn' : ''}">load <b>${load0.toFixed(2)}</b>/${cores}</span>` +
       `<span class="${memPct >= 85 ? 'crit' : memPct >= 70 ? 'warn' : ''}">mem <b>${memPct}%</b></span>` +
       `<span class="${diskPct >= 90 ? 'crit' : diskPct >= 80 ? 'warn' : ''}">disk <b>${esc(s.disk_pct || '?')}</b></span>` +
       `<span>${at}</span>`;
   }
-  function renderVitalsDown() {
+  function renderTopStripDown() {
     document.getElementById('fdot').className = 'fdot down';
     document.getElementById('subline').textContent = 'the brain box is not reporting';
     document.getElementById('svc').hidden = true;
     document.getElementById('vitals').innerHTML = '';
   }
 
+  function renderLive(items) {
+    const host = document.getElementById('live');
+    const dot = document.getElementById('livedot');
+    const n = document.getElementById('liven');
+    if (!items.length) {
+      dot.className = 'livedot';
+      n.textContent = '';
+      host.innerHTML = '<div class="live-empty">Nothing deliberating right now.<br>Live panels surface here the moment a committee convenes.</div>';
+      return;
+    }
+    dot.className = 'livedot on';
+    n.textContent = `${items.length} live`;
+    host.innerHTML = items.map(c => panelHtml(c, { live: true, laneTag: c._lane === 'execution' ? 'Execution check' : 'Decision', showGate: true })).join('');
+  }
+
   function renderDecisions(list) {
     const arr = Array.isArray(list) ? list : [];
     document.getElementById('decn').textContent = arr.length ? `${arr.length}` : '';
-    document.getElementById('decsub').textContent = arr.length ? 'Panels convened to make a call. Each is shown in full.' : '';
+    document.getElementById('decsub').textContent = arr.length ? 'Panels that made a call. Each shown in full, click to expand reasoning.' : '';
     const host = document.getElementById('decisions');
     host.innerHTML = arr.length
-      ? '<div class="list">' + arr.map(c => committeeHtml(c, false)).join('') + '</div>'
+      ? '<div class="list">' + arr.map(c => panelHtml(c, {})).join('') + '</div>'
       : '<div class="empty">No decision committees on record yet. One appears when a real choice needs a panel.</div>';
   }
 
@@ -275,16 +350,15 @@
     const s = stat || {};
     document.getElementById('exen').textContent = s.total ? `${s.total} on record` : '';
     const bits = [];
-    if (s.today) bits.push(`<span><b>${s.today}</b> ran today</span>`);
+    if (s.today) bits.push(`<span><b>${s.today}</b> today</span>`);
     if (s.green) bits.push(`<span class="g">${s.green} passed</span>`);
     if (s.red) bits.push(`<span class="r">${s.red} failed</span>`);
-    if (s.deciding) bits.push(`<span class="a">${s.deciding} deciding</span>`);
+    if (s.deciding) bits.push(`<span class="a">${s.deciding} live</span>`);
     if (s.tokens) bits.push(`<span>${fmtTokens(s.tokens)}</span>`);
-    if (s.disk) bits.push(`<span>${fmtBytes(s.disk)} on disk</span>`);
+    if (s.disk) bits.push(`<span>${fmtBytes(s.disk)}</span>`);
     document.getElementById('exestat').innerHTML = bits.join('');
     const host = document.getElementById('execution');
     if (!arr.length) { host.innerHTML = '<div class="empty">No execution panels in the recent window. They stream in during a build wave.</div>'; return; }
-    // group recent execution committees by what they gate
     const groups = {};
     arr.forEach(c => { const g = c.gating || 'ungrouped'; (groups[g] = groups[g] || []).push(c); });
     const rows = Object.entries(groups).map(([g, items]) => {
@@ -294,7 +368,7 @@
       const counts = [green ? `<span class="g">${green} pass</span>` : '', red ? `<span class="r">${red} fail</span>` : '', dec ? `<span class="a">${dec} live</span>` : ''].filter(Boolean).join('');
       return `<div class="grp${openState[gid] ? ' open' : ''}" data-gid="${esc(gid)}">` +
         `<div class="grp-top"><span class="grp-name">${esc(g)}</span><span class="grp-counts">${counts}</span><span class="caret">&rsaquo;</span></div>` +
-        `<div class="grp-items">${items.map(c => committeeHtml(c, true)).join('')}</div></div>`;
+        `<div class="grp-items">${items.map(c => panelHtml(c, { compact: true })).join('')}</div></div>`;
     }).join('');
     host.innerHTML = '<div class="list">' + rows + '</div>';
   }
@@ -306,10 +380,10 @@
         const id = el.dataset.gid; openState[id] = !openState[id]; el.classList.toggle('open'); postHeight();
       });
     });
-    document.querySelectorAll('.cm').forEach(el => {
+    document.querySelectorAll('.panel').forEach(el => {
       el.addEventListener('click', (ev) => {
         if (ev.target.closest('.rmem-head')) return;
-        const id = el.dataset.cid; openState[id] = !openState[id]; el.classList.toggle('open'); postHeight();
+        const id = el.dataset.cid; openState[id] = !el.classList.contains('open'); el.classList.toggle('open'); postHeight();
       });
     });
     document.querySelectorAll('.rmem-head').forEach(h => {
@@ -328,9 +402,21 @@
   }
   async function tick() {
     const [bs, cf] = await Promise.allSettled([fetchJson('/brain-status'), fetchJson('/committee-feed')]);
-    if (bs.status === 'fulfilled' && bs.value && bs.value.box) renderVitals(bs.value); else renderVitalsDown();
-    if (cf.status === 'fulfilled' && cf.value) { renderDecisions(cf.value.decisions); renderExecution(cf.value.execution, cf.value.stats && cf.value.stats.execution); }
-    else { document.getElementById('decisions').innerHTML = '<div class="empty">Committee ledger unavailable, reconnecting.</div>'; }
+    if (bs.status === 'fulfilled' && bs.value && bs.value.box) renderTopStrip(bs.value); else renderTopStripDown();
+    if (cf.status === 'fulfilled' && cf.value) {
+      const decisions = Array.isArray(cf.value.decisions) ? cf.value.decisions : [];
+      const execution = Array.isArray(cf.value.execution) ? cf.value.execution : [];
+      const liveDecisions = decisions.filter(isLive).map(c => Object.assign({}, c, { _lane: 'decision' }));
+      const liveExecution = execution.filter(isLive).map(c => Object.assign({}, c, { _lane: 'execution' }));
+      const live = liveDecisions.concat(liveExecution).sort((a, b) => Date.parse(b.created || 0) - Date.parse(a.created || 0));
+      renderLive(live);
+      renderDecisions(decisions.filter(c => !isLive(c)));
+      renderExecution(execution.filter(c => !isLive(c)), cf.value.stats && cf.value.stats.execution);
+    } else {
+      renderLive([]);
+      document.getElementById('decisions').innerHTML = '<div class="empty">Committee ledger unavailable, reconnecting.</div>';
+      document.getElementById('execution').innerHTML = '';
+    }
     bindAll();
     postHeight();
   }
