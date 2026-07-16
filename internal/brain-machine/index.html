@@ -442,17 +442,14 @@
     const seen = new Set(); const uniq = all.filter(c => c && c.id && !seen.has(c.id) && seen.add(c.id));
     const byUpdated = (a, b) => String(b.updated || '').localeCompare(String(a.updated || ''));
     const liveAll = uniq.filter(c => c.status === 'deciding');
-    const activeLive = liveAll.filter(c => !isStalled(c)).sort(byUpdated);
-    const stalledLive = liveAll.filter(c => isStalled(c)).sort(byUpdated);
-    const live = activeLive.concat(stalledLive);
-    const done = uniq.filter(c => c.status === 'done' || (c.status !== 'deciding' && c.status !== 'planned' && c.status !== 'pending')).sort(byUpdated);
-    const liveParts = [];
-    if (activeLive.length) liveParts.push(`${activeLive.length} live`);
-    if (stalledLive.length) liveParts.push(`${stalledLive.length} stalled`);
-    document.getElementById('cnt-live').textContent = liveParts.join(' · ');
+    const live = liveAll.filter(c => !isStalled(c)).sort(byUpdated);        // only genuinely live
+    const stalledLive = liveAll.filter(c => isStalled(c)).sort(byUpdated);  // dead: they go to Done as history
+    const doneBase = uniq.filter(c => c.status === 'done' || (c.status !== 'deciding' && c.status !== 'planned' && c.status !== 'pending'));
+    const done = doneBase.concat(stalledLive).sort(byUpdated);
+    document.getElementById('cnt-live').textContent = live.length ? `${live.length} live` : 'idle';
     const totalDone = (feed.stats && feed.stats.execution && feed.stats.decision) ? (feed.stats.decision.total || 0) + (feed.stats.execution.total || 0) : done.length;
     document.getElementById('cnt-done').textContent = done.length < totalDone ? `${done.length} of ${totalDone}` : `${totalDone} total`;
-    document.getElementById('livedot').className = activeLive.length ? 'livedot on' : 'livedot';
+    document.getElementById('livedot').className = live.length ? 'livedot on' : 'livedot';
     renderColumn('live', live, 'Nothing deliberating right now. Live committees surface here the moment one convenes.');
     allDone = done; updateDoneCounts(); renderDoneList();
     renderSummary(feed.stats);
@@ -460,6 +457,19 @@
 
   // ---- PLANS: actor-per-stage + committee cadence ----
   const ACTORS = ['ai', 'human', 'mix'];
+  // a node's effective status (parent = roll of its steps). Used to drop not-started (planned) stages.
+  function nodeEff(n) {
+    const steps = Array.isArray(n.steps) ? n.steps : [];
+    if (steps.length) {
+      const cs = steps.map(nodeEff);
+      if (cs.some(s => s === 'stalled' || s === 'blocked')) return 'blocked';
+      if (cs.some(s => s === 'doing')) return 'doing';
+      if (cs.every(s => s === 'done')) return 'done';
+      if (cs.some(s => s === 'done')) return 'doing';
+      return 'todo';
+    }
+    return ['todo', 'doing', 'done', 'blocked', 'stalled'].includes(n.status) ? n.status : 'todo';
+  }
   function actorRollup(stages) {
     const c = { ai: 0, human: 0, mix: 0 }; let n = 0;
     const walk = (arr) => (Array.isArray(arr) ? arr : []).forEach(s => {
@@ -485,18 +495,22 @@
     const note = s.note ? `<span class="snote" title="${esc(s.note)}">${esc(s.note)}</span>` : '';
     const row = `<div class="stage"><span class="actor ${actor}">${actor}</span><span class="sdotp ${st}"></span>` +
       `<span class="sname ${st === 'done' ? 'done' : ''}">${esc(s.name || '')}</span>${gate}${note}</div>`;
-    const sub = isParent ? `<div class="substeps">${steps.map(x => stageRow(x, cbyId)).join('')}</div>` : '';
+    const subSteps = steps.filter(x => nodeEff(x) !== 'todo');   // hide not-started child steps too
+    const sub = subSteps.length ? `<div class="substeps">${subSteps.map(x => stageRow(x, cbyId)).join('')}</div>` : '';
     return row + sub;
   }
   function planCard(p, cbyId) {
     const st = ['planned', 'live', 'done', 'stalled'].includes(p.status) ? p.status : 'planned';
-    const { c, n } = actorRollup(p.stages);
+    // only show live + done stages; hide not-started (planned) ones (they live in other tabs)
+    const shown = (Array.isArray(p.stages) ? p.stages : []).filter(s => nodeEff(s) !== 'todo');
+    if (!shown.length) return '';   // a plan that is entirely upcoming does not belong on this board
+    const { c, n } = actorRollup(shown);
     const pct = (a) => n ? Math.round(c[a] / n * 100) : 0;
     const bar = `<div class="rollup" title="${c.ai} ai · ${c.human} human · ${c.mix} mix">` +
       ACTORS.map(a => c[a] ? `<i class="${a}" style="width:${pct(a)}%"></i>` : '').join('') + `</div>`;
     const legend = `<span class="rollup-legend">` +
       ACTORS.filter(a => c[a]).map(a => `<span><span class="dot${a[0].toUpperCase() + a.slice(1)}">●</span> <b>${c[a]}</b> ${a}</span>`).join('') + `</span>`;
-    const stages = (Array.isArray(p.stages) ? p.stages : []).map(s => stageRow(s, cbyId)).join('');
+    const stages = shown.map(s => stageRow(s, cbyId)).join('');
     return `<div class="plan ${st}">` +
       `<div class="plan-top"><div class="plan-name">${esc(p.name || '')}</div><span class="plan-status ${st}">${st}</span></div>` +
       `<div class="plan-meta">${p.session ? `<span class="psess">${esc(p.session)}</span>` : ''}${bar}${legend}</div>` +
@@ -506,10 +520,11 @@
     // board shows only live + done (+ stalled). planned lives in other tabs.
     const plans = (Array.isArray(feed && feed.plans) ? feed.plans : []).filter(p => p.status !== 'planned');
     const el = document.getElementById('plans');
-    if (!plans.length) { el.hidden = true; return; }
+    const cards = plans.map(p => planCard(p, cbyId)).filter(Boolean);   // drop entirely-upcoming plans
+    if (!cards.length) { el.hidden = true; return; }
     el.hidden = false;
-    document.getElementById('plans-count').textContent = `${plans.length} plan${plans.length > 1 ? 's' : ''}`;
-    setHtmlCached('plans-body', plans.map(p => planCard(p, cbyId)).join(''));
+    document.getElementById('plans-count').textContent = `${cards.length} plan${cards.length > 1 ? 's' : ''}`;
+    setHtmlCached('plans-body', cards.join(''));
   }
 
   async function fetchJson(url) { const r = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(String(r.status)); return r.json(); }
