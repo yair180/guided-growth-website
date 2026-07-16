@@ -193,11 +193,12 @@
   function fmtTokens(n) { if (n == null || isNaN(n) || n === 0) return ''; if (n < 1000) return n + ' tok'; if (n < 1e6) return Math.round(n / 1000) + 'K tok'; return (n / 1e6).toFixed(1) + 'M tok'; }
 
   function verdictKey(c) {
+    if (c.status === 'stalled') return 'stalled';   // reaped: run died without finishing
     if (c.status === 'deciding' || c.verdict === 'deciding') return 'deciding';
     if (c.verdict === 'green' || c.verdict === 'red' || c.verdict === 'split') return c.verdict;
     return 'pending';
   }
-  function verdictLabel(k) { return { green:'GREEN', red:'RED', split:'SPLIT', deciding:'DECIDING', pending:'QUEUED' }[k] || 'QUEUED'; }
+  function verdictLabel(k) { return { green:'GREEN', red:'RED', split:'SPLIT', deciding:'DECIDING', stalled:'STALLED', pending:'QUEUED' }[k] || 'QUEUED'; }
   function memberClass(m) { return m.status !== 'done' ? 'thinking' : (m.verdict === 'green' ? 'green' : m.verdict === 'red' ? 'red' : ''); }
   function memberTag(m) { return m.status !== 'done' ? 'thinking' : (m.verdict || ''); }
   function currentMembers(c) { const r = Array.isArray(c.rounds) ? c.rounds : []; const last = r[r.length - 1]; return last && Array.isArray(last.members) ? last.members : []; }
