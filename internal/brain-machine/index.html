@@ -164,6 +164,7 @@
   .sgate.committee.green { background:var(--green-bg); color:var(--green); }
   .sgate.committee.red { background:var(--red-bg); color:var(--red); }
   .sgate.checks { color:var(--faint); border:1px solid var(--line); }
+  .sgate.clickable { cursor:pointer; } .sgate.clickable:hover { outline:1px solid currentColor; }
   .snote { flex:none; font-size:10px; color:var(--faint); font-style:italic; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .substeps { margin-left:55px; }
 
@@ -360,6 +361,18 @@
       e.currentTarget.classList.toggle('active', groupBySession);
       renderDoneList(); postHeight();
     });
+    // click a plan stage's committee badge -> open + scroll to that committee
+    const plansEl = document.getElementById('plans');
+    if (plansEl) plansEl.addEventListener('click', (ev) => {
+      const g = ev.target.closest('.sgate.clickable[data-cid]'); if (!g) return;
+      const cid = g.dataset.cid;
+      const card = document.querySelector(`.cm[data-cid="${(window.CSS && CSS.escape) ? CSS.escape(cid) : cid}"]`);
+      if (card) {
+        if (!card.classList.contains('open')) { openState[cid] = true; card.classList.add('open'); }
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        postHeight();
+      }
+    });
   }
 
   // Done column filter (verdict chips + search). The chips + input live in static
@@ -470,7 +483,8 @@
       let gcls = 'committee';
       const c = s.committee_id && cbyId[s.committee_id];
       if (c) { if (c.verdict === 'green') gcls = 'committee green'; else if (c.verdict === 'red') gcls = 'committee red'; }
-      gate = `<span class="sgate ${gcls}">committee</span>`;
+      const link = c ? ` data-cid="${esc(s.committee_id)}" title="open this committee"` : '';
+      gate = `<span class="sgate ${gcls}${c ? ' clickable' : ''}"${link}>committee</span>`;
     } else if (s.gate === 'checks') { gate = `<span class="sgate checks">checks</span>`; }
     const note = s.note ? `<span class="snote" title="${esc(s.note)}">${esc(s.note)}</span>` : '';
     const row = `<div class="stage"><span class="actor ${actor}">${actor}</span><span class="sdotp ${st}"></span>` +
