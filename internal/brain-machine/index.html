@@ -193,7 +193,6 @@
     <div id="plans-body"></div>
   </section>
 
-  <div class="planned-strip" id="planned-strip"></div>
   <div class="board">
     <section class="col col-live">
       <div class="col-head"><span class="col-title"><span class="livedot" id="livedot"></span>Live</span><span class="col-count" id="cnt-live"></span></div>
@@ -442,14 +441,11 @@
     const all = [].concat(Array.isArray(feed.decisions) ? feed.decisions : [], Array.isArray(feed.execution) ? feed.execution : []);
     const seen = new Set(); const uniq = all.filter(c => c && c.id && !seen.has(c.id) && seen.add(c.id));
     const byUpdated = (a, b) => String(b.updated || '').localeCompare(String(a.updated || ''));
-    const planned = uniq.filter(c => c.status === 'planned' || c.status === 'pending').sort(byUpdated);
     const liveAll = uniq.filter(c => c.status === 'deciding');
     const activeLive = liveAll.filter(c => !isStalled(c)).sort(byUpdated);
     const stalledLive = liveAll.filter(c => isStalled(c)).sort(byUpdated);
     const live = activeLive.concat(stalledLive);
     const done = uniq.filter(c => c.status === 'done' || (c.status !== 'deciding' && c.status !== 'planned' && c.status !== 'pending')).sort(byUpdated);
-    const ps = document.getElementById('planned-strip');
-    ps.innerHTML = `<span class="plabel">Planned</span>` + (planned.length ? planned.map(c => `<span class="pchip">${esc(nameOf(c))}</span>`).join('') : `<span>nothing queued right now</span>`);
     const liveParts = [];
     if (activeLive.length) liveParts.push(`${activeLive.length} live`);
     if (stalledLive.length) liveParts.push(`${stalledLive.length} stalled`);
@@ -507,7 +503,8 @@
       `<div class="stages">${stages}</div></div>`;
   }
   function renderPlans(feed, cbyId) {
-    const plans = Array.isArray(feed && feed.plans) ? feed.plans : [];
+    // board shows only live + done (+ stalled). planned lives in other tabs.
+    const plans = (Array.isArray(feed && feed.plans) ? feed.plans : []).filter(p => p.status !== 'planned');
     const el = document.getElementById('plans');
     if (!plans.length) { el.hidden = true; return; }
     el.hidden = false;
