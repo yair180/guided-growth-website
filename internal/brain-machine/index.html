@@ -126,47 +126,6 @@
   .banner { display:none; margin:10px 2px 0; padding:9px 12px; border-radius:8px; font-size:12.5px; background:var(--line2); color:var(--muted); border:1px solid var(--line); }
   .banner.show { display:block; }
 
-  /* PLANS: actor-per-stage + committee cadence (the higher-level view above committees) */
-  .plans { margin-top:14px; }
-  .plans-head { display:flex; align-items:center; gap:8px; padding:2px 2px 8px; border-bottom:1px solid var(--line); }
-  .plans-title { font-size:11px; font-weight:750; letter-spacing:.1em; text-transform:uppercase; color:var(--ink2); }
-  .plans-count { font-size:11px; color:var(--muted); margin-left:auto; }
-  .plan { border:1px solid var(--line); border-radius:10px; background:var(--panel); margin-top:10px; padding:11px 13px; }
-  .plan.stalled { border-color:color-mix(in srgb, var(--red) 40%, var(--line)); }
-  .plan-top { display:flex; align-items:flex-start; gap:9px; }
-  .plan-name { font-size:13.5px; font-weight:650; color:var(--ink); line-height:1.35; flex:1; min-width:0; }
-  .plan-status { flex:none; font-size:8.5px; font-weight:750; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px; margin-top:2px; }
-  .plan-status.live { background:var(--amber-bg); color:var(--amber); }
-  .plan-status.planned { background:var(--line2); color:var(--muted); }
-  .plan-status.done { background:var(--green-bg); color:var(--green); }
-  .plan-status.stalled { background:var(--red-bg); color:var(--red); border:1px dashed var(--red); }
-  .plan-meta { display:flex; align-items:center; gap:8px 12px; flex-wrap:wrap; margin:6px 0 9px; font-size:11px; color:var(--muted); }
-  .psess { font-family:var(--mono); font-weight:600; color:var(--blue); background:var(--line2); border-radius:4px; padding:1px 6px; }
-  .rollup { display:flex; height:6px; border-radius:4px; overflow:hidden; width:140px; flex:none; background:var(--line2); }
-  .rollup i { display:block; height:100%; }
-  .rollup i.ai { background:var(--blue); } .rollup i.human { background:var(--amber); } .rollup i.mix { background:#9a7cff; }
-  .rollup-legend { display:flex; gap:10px; font-size:10.5px; color:var(--muted); }
-  .rollup-legend b { font-weight:600; color:var(--ink2); }
-  .dotAi{color:var(--blue)} .dotHuman{color:var(--amber)} .dotMix{color:#9a7cff}
-  .stages { display:flex; flex-direction:column; }
-  .stage { display:flex; align-items:center; gap:9px; padding:6px 2px; border-top:1px solid var(--line2); font-size:12.5px; }
-  .stage:first-child { border-top:none; }
-  .actor { flex:none; width:46px; font-size:8.5px; font-weight:750; letter-spacing:.03em; text-transform:uppercase; text-align:center; padding:3px 0; border-radius:5px; }
-  .actor.ai { background:color-mix(in srgb, var(--blue) 16%, transparent); color:var(--blue); }
-  .actor.human { background:var(--amber-bg); color:var(--amber); }
-  .actor.mix { background:color-mix(in srgb, #9a7cff 18%, transparent); color:#9a7cff; }
-  .sdotp { width:8px; height:8px; border-radius:50%; flex:none; background:var(--gray); }
-  .sdotp.doing { background:var(--amber); animation:pulse 1.4s infinite; } .sdotp.done { background:var(--green); } .sdotp.blocked, .sdotp.stalled { background:var(--red); }
-  .sname { flex:1; min-width:0; color:var(--ink2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .sname.done { color:var(--muted); }
-  .sgate { flex:none; font-size:8.5px; font-weight:750; letter-spacing:.04em; text-transform:uppercase; padding:2px 6px; border-radius:5px; }
-  .sgate.committee { background:var(--amber-bg); color:var(--amber); }
-  .sgate.committee.green { background:var(--green-bg); color:var(--green); }
-  .sgate.committee.red { background:var(--red-bg); color:var(--red); }
-  .sgate.checks { color:var(--faint); border:1px solid var(--line); }
-  .sgate.clickable { cursor:pointer; } .sgate.clickable:hover { outline:1px solid currentColor; }
-  .snote { flex:none; font-size:10px; color:var(--faint); font-style:italic; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .substeps { margin-left:55px; }
 
   @keyframes pulse { 50% { opacity:.32; } }
   @keyframes breathe { 50% { opacity:.55; } }
@@ -436,78 +395,6 @@
     renderColumn('live', live, 'Nothing deliberating right now. Live committees surface here the moment one convenes.');
     allDone = done; updateDoneCounts(); renderDoneList();
     renderSummary(feed.stats);
-  }
-
-  // ---- PLANS: actor-per-stage + committee cadence ----
-  const ACTORS = ['ai', 'human', 'mix'];
-  // a node's effective status (parent = roll of its steps). Used to drop not-started (planned) stages.
-  function nodeEff(n) {
-    const steps = Array.isArray(n.steps) ? n.steps : [];
-    if (steps.length) {
-      const cs = steps.map(nodeEff);
-      if (cs.some(s => s === 'stalled' || s === 'blocked')) return 'blocked';
-      if (cs.some(s => s === 'doing')) return 'doing';
-      if (cs.every(s => s === 'done')) return 'done';
-      if (cs.some(s => s === 'done')) return 'doing';
-      return 'todo';
-    }
-    return ['todo', 'doing', 'done', 'blocked', 'stalled'].includes(n.status) ? n.status : 'todo';
-  }
-  function actorRollup(stages) {
-    const c = { ai: 0, human: 0, mix: 0 }; let n = 0;
-    const walk = (arr) => (Array.isArray(arr) ? arr : []).forEach(s => {
-      if (Array.isArray(s.steps) && s.steps.length) walk(s.steps);
-      else { const a = ACTORS.includes(s.actor) ? s.actor : 'mix'; c[a]++; n++; }
-    });
-    walk(stages);
-    return { c, n };
-  }
-  function stageRow(s, cbyId) {
-    const steps = Array.isArray(s.steps) ? s.steps : [];
-    const isParent = steps.length > 0;
-    const actor = ACTORS.includes(s.actor) ? s.actor : (isParent ? 'mix' : 'ai');
-    const st = ['todo', 'doing', 'done', 'blocked', 'stalled'].includes(s.status) ? s.status : 'todo';
-    let gate = '';
-    if (s.gate === 'committee') {
-      let gcls = 'committee';
-      const c = s.committee_id && cbyId[s.committee_id];
-      if (c) { if (c.verdict === 'green') gcls = 'committee green'; else if (c.verdict === 'red') gcls = 'committee red'; }
-      const link = c ? ` data-cid="${esc(s.committee_id)}" title="open this committee"` : '';
-      gate = `<span class="sgate ${gcls}${c ? ' clickable' : ''}"${link}>committee</span>`;
-    } else if (s.gate === 'checks') { gate = `<span class="sgate checks">checks</span>`; }
-    const note = s.note ? `<span class="snote" title="${esc(s.note)}">${esc(s.note)}</span>` : '';
-    const row = `<div class="stage"><span class="actor ${actor}">${actor}</span><span class="sdotp ${st}"></span>` +
-      `<span class="sname ${st === 'done' ? 'done' : ''}">${esc(s.name || '')}</span>${gate}${note}</div>`;
-    const subSteps = steps.filter(x => nodeEff(x) !== 'todo');   // hide not-started child steps too
-    const sub = subSteps.length ? `<div class="substeps">${subSteps.map(x => stageRow(x, cbyId)).join('')}</div>` : '';
-    return row + sub;
-  }
-  function planCard(p, cbyId) {
-    const st = ['planned', 'live', 'done', 'stalled'].includes(p.status) ? p.status : 'planned';
-    // only show live + done stages; hide not-started (planned) ones (they live in other tabs)
-    const shown = (Array.isArray(p.stages) ? p.stages : []).filter(s => nodeEff(s) !== 'todo');
-    if (!shown.length) return '';   // a plan that is entirely upcoming does not belong on this board
-    const { c, n } = actorRollup(shown);
-    const pct = (a) => n ? Math.round(c[a] / n * 100) : 0;
-    const bar = `<div class="rollup" title="${c.ai} ai · ${c.human} human · ${c.mix} mix">` +
-      ACTORS.map(a => c[a] ? `<i class="${a}" style="width:${pct(a)}%"></i>` : '').join('') + `</div>`;
-    const legend = `<span class="rollup-legend">` +
-      ACTORS.filter(a => c[a]).map(a => `<span><span class="dot${a[0].toUpperCase() + a.slice(1)}">●</span> <b>${c[a]}</b> ${a}</span>`).join('') + `</span>`;
-    const stages = shown.map(s => stageRow(s, cbyId)).join('');
-    return `<div class="plan ${st}">` +
-      `<div class="plan-top"><div class="plan-name">${esc(p.name || '')}</div><span class="plan-status ${st}">${st}</span></div>` +
-      `<div class="plan-meta">${p.session ? `<span class="psess">${esc(p.session)}</span>` : ''}${bar}${legend}</div>` +
-      `<div class="stages">${stages}</div></div>`;
-  }
-  function renderPlans(feed, cbyId) {
-    // board shows only live + done (+ stalled). planned lives in other tabs.
-    const plans = (Array.isArray(feed && feed.plans) ? feed.plans : []).filter(p => p.status !== 'planned');
-    const el = document.getElementById('plans');
-    const cards = plans.map(p => planCard(p, cbyId)).filter(Boolean);   // drop entirely-upcoming plans
-    if (!cards.length) { el.hidden = true; return; }
-    el.hidden = false;
-    document.getElementById('plans-count').textContent = `${cards.length} plan${cards.length > 1 ? 's' : ''}`;
-    setHtmlCached('plans-body', cards.join(''));
   }
 
   async function fetchJson(url) { const r = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(String(r.status)); return r.json(); }
