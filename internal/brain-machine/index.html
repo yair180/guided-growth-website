@@ -91,6 +91,8 @@
   /* the judge could not seat a reviewer: NOT a quality signal, must never look like a failure */
   .pill.nojudge { background:var(--line2); color:var(--muted); border:1px dashed var(--faint); }
   .cm.nojudge .cname { color:var(--muted); }
+  /* a build (worker/joblog run) chip, distinct from a committee */
+  .btag { font-size:8.5px; font-weight:750; letter-spacing:.05em; text-transform:uppercase; color:var(--blue); background:color-mix(in srgb, var(--blue) 12%, transparent); border-radius:4px; padding:1px 5px; white-space:nowrap; }
   .cm.stalled .cname { color:var(--muted); }
   .cbody { flex:1; min-width:0; }
   .cname { font-size:11.5px; font-weight:600; color:var(--ink); line-height:1.34; overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; }
@@ -224,7 +226,18 @@
     if (g.includes('transitional')) return { cls: 'advisory', label: 'transitional' };
     return null;
   }
-  function typeLabel(c) { return c.type === 'decision' ? 'decision' : 'check'; }
+  function typeLabel(c) { return c.type === 'builder' ? 'build' : c.type === 'decision' ? 'decision' : 'check'; }
+  // a joblog builder run -> the same card shape as a committee, so it shares the Live/Done columns.
+  // A failed BUILD is a real failure (unlike a committee with no judge), so it maps to red.
+  function builderToCard(b) {
+    const m = ({ running: ['deciding', 'deciding'], done: ['done', 'green'], failed: ['done', 'red'], stalled: ['stalled', 'red'] })[b.state] || ['deciding', 'deciding'];
+    const bits = []; if (b.reason) bits.push(b.reason); if (b.stall_count) bits.push(`${b.stall_count} stalls`);
+    return {
+      id: 'builder:' + b.id, type: 'builder', source: 'joblog', name: b.label, topic: b.label,
+      description: bits.join(' · ') || 'build task', session: b.session,
+      status: m[0], verdict: m[1], rounds: [], created: b.started, updated: b.updated,
+    };
+  }
 
   function postHeight() {
     const h = Math.ceil(document.documentElement.scrollHeight);
@@ -278,6 +291,7 @@
         `<div class="cbody">` +
           `<div class="cname">${esc(nameOf(c))}</div>` +
           `<div class="cm-l2">` +
+            (c.type === 'builder' ? `<span class="btag">build</span>` : '') +
             (c.session ? `<span class="csess">${esc(c.session)}</span>` : '') +
             `<span class="csub" title="${esc(sub)}">${esc(sub)}</span>` +
             (grade ? `<span class="grade ${grade.cls}">${grade.label}</span>` : '') +
@@ -394,8 +408,8 @@
       (nj ? `<span class="note">"could not judge" = the reviewers never seated, so that is a broken judge, not bad work</span>` : '');
   }
 
-  function render(feed) {
-    const all = [].concat(Array.isArray(feed.decisions) ? feed.decisions : [], Array.isArray(feed.execution) ? feed.execution : []);
+  function render(feed, builderCards) {
+    const all = [].concat(Array.isArray(feed.decisions) ? feed.decisions : [], Array.isArray(feed.execution) ? feed.execution : [], Array.isArray(builderCards) ? builderCards : []);
     const seen = new Set(); const uniq = all.filter(c => c && c.id && !seen.has(c.id) && seen.add(c.id));
     const byUpdated = (a, b) => String(b.updated || '').localeCompare(String(a.updated || ''));
     const liveAll = uniq.filter(c => c.status === 'deciding');
@@ -414,9 +428,13 @@
 
   async function fetchJson(url) { const r = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(String(r.status)); return r.json(); }
   async function tick() {
-    const [bs, cf] = await Promise.allSettled([fetchJson('/brain-status'), fetchJson('/committee-feed')]);
+    const [bs, cf, bf] = await Promise.allSettled([fetchJson('/brain-status'), fetchJson('/committee-feed'), fetchJson('/builder-feed')]);
     if (bs.status === 'fulfilled' && bs.value && bs.value.box) renderVitals(bs.value); else renderVitalsDown();
-    if (cf.status === 'fulfilled' && cf.value) render(cf.value);
+    let builderCards = [];
+    if (bf.status === 'fulfilled' && bf.value) {
+      builderCards = [].concat(bf.value.running || [], bf.value.recent || []).map(builderToCard);
+    }
+    if (cf.status === 'fulfilled' && cf.value) render(cf.value, builderCards);
     postHeight();
   }
   function schedule() { clearTimeout(timer); if (!document.hidden) timer = setTimeout(loop, POLL_MS); }
