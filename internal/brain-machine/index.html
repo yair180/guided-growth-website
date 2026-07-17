@@ -188,11 +188,6 @@
   <div class="summ" id="summ"></div>
   <div class="banner" id="banner"></div>
 
-  <section class="plans" id="plans" hidden>
-    <div class="plans-head"><span class="plans-title">Plans</span><span class="plans-count" id="plans-count"></span></div>
-    <div id="plans-body"></div>
-  </section>
-
   <div class="board">
     <section class="col col-live">
       <div class="col-head"><span class="col-title"><span class="livedot" id="livedot"></span>Live</span><span class="col-count" id="cnt-live"></span></div>
@@ -360,18 +355,6 @@
       e.currentTarget.classList.toggle('active', groupBySession);
       renderDoneList(); postHeight();
     });
-    // click a plan stage's committee badge -> open + scroll to that committee
-    const plansEl = document.getElementById('plans');
-    if (plansEl) plansEl.addEventListener('click', (ev) => {
-      const g = ev.target.closest('.sgate.clickable[data-cid]'); if (!g) return;
-      const cid = g.dataset.cid;
-      const card = document.querySelector(`.cm[data-cid="${(window.CSS && CSS.escape) ? CSS.escape(cid) : cid}"]`);
-      if (card) {
-        if (!card.classList.contains('open')) { openState[cid] = true; card.classList.add('open'); }
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        postHeight();
-      }
-    });
   }
 
   // Done column filter (verdict chips + search). The chips + input live in static
@@ -529,14 +512,9 @@
 
   async function fetchJson(url) { const r = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(String(r.status)); return r.json(); }
   async function tick() {
-    const [bs, cf, pf] = await Promise.allSettled([fetchJson('/brain-status'), fetchJson('/committee-feed'), fetchJson('/plan-feed')]);
+    const [bs, cf] = await Promise.allSettled([fetchJson('/brain-status'), fetchJson('/committee-feed')]);
     if (bs.status === 'fulfilled' && bs.value && bs.value.box) renderVitals(bs.value); else renderVitalsDown();
-    let cbyId = {};
-    if (cf.status === 'fulfilled' && cf.value) {
-      [].concat(cf.value.decisions || [], cf.value.execution || []).forEach(c => { if (c && c.id) cbyId[c.id] = c; });
-      render(cf.value);
-    }
-    if (pf.status === 'fulfilled' && pf.value) renderPlans(pf.value, cbyId);
+    if (cf.status === 'fulfilled' && cf.value) render(cf.value);
     postHeight();
   }
   function schedule() { clearTimeout(timer); if (!document.hidden) timer = setTimeout(loop, POLL_MS); }
