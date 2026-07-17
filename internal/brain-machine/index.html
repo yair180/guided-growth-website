@@ -45,6 +45,7 @@
   .svc .sdot { width:6px; height:6px; border-radius:50%; background:var(--red); }
   .summ { margin:8px 2px 0; font-size:11.5px; color:var(--muted); font-family:var(--mono); display:flex; flex-wrap:wrap; gap:3px 13px; }
   .summ b { color:var(--ink2); font-weight:600; } .summ .g { color:var(--green); } .summ .r { color:var(--red); } .summ .a { color:var(--amber); }
+  .summ .note { color:var(--faint); font-style:italic; font-family:var(--sans); }
 
   /* three lifecycle columns */
   .board { display:grid; grid-template-columns: 1.05fr 1fr; align-items:start; margin-top:12px; gap:0; }
@@ -87,6 +88,9 @@
   .pill.split { background:var(--amber-bg); color:var(--amber); }
   .pill.pending { background:var(--line2); color:var(--muted); border:1px solid var(--line); }
   .pill.stalled { background:var(--red-bg); color:var(--red); border:1px dashed var(--red); }
+  /* the judge could not seat a reviewer: NOT a quality signal, must never look like a failure */
+  .pill.nojudge { background:var(--line2); color:var(--muted); border:1px dashed var(--faint); }
+  .cm.nojudge .cname { color:var(--muted); }
   .cm.stalled .cname { color:var(--muted); }
   .cbody { flex:1; min-width:0; }
   .cname { font-size:11.5px; font-weight:600; color:var(--ink); line-height:1.34; overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; }
@@ -157,8 +161,9 @@
       <div class="dfilter">
         <button class="dchip active" data-f="all" type="button">All <span class="dc" data-c="all">0</span></button>
         <button class="dchip" data-f="green" type="button">Passed <span class="dc" data-c="green">0</span></button>
-        <button class="dchip" data-f="red" type="button">Failed <span class="dc" data-c="red">0</span></button>
-        <button class="dchip" data-f="split" type="button">Split <span class="dc" data-c="split">0</span></button>
+        <button class="dchip" data-f="red" type="button">Real defects <span class="dc" data-c="red">0</span></button>
+        <button class="dchip" data-f="nojudge" type="button">Could not judge <span class="dc" data-c="nojudge">0</span></button>
+        <button class="dchip" data-f="stalled" type="button">Died <span class="dc" data-c="stalled">0</span></button>
         <button class="dtoggle" id="groupToggle" type="button">Group by session</button>
         <input class="dsearch" id="dsearch" type="search" placeholder="search" aria-label="search done committees">
       </div>
@@ -192,13 +197,17 @@
   function fmtBytes(n) { if (n == null || isNaN(n)) return ''; if (n < 1024) return n + ' B'; if (n < 1048576) return Math.round(n / 1024) + ' KB'; return (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB'; }
   function fmtTokens(n) { if (n == null || isNaN(n) || n === 0) return ''; if (n < 1000) return n + ' tok'; if (n < 1e6) return Math.round(n / 1000) + 'K tok'; return (n / 1e6).toFixed(1) + 'M tok'; }
 
+  // The server classifies by EVIDENCE (did a reviewer actually read it?), because a plain "red"
+  // hid a broken judge as failed work. Prefer that; fall back to the raw verdict for old clients.
   function verdictKey(c) {
-    if (c.status === 'stalled') return 'stalled';   // reaped: run died without finishing
+    const j = c.judgement;
+    if (j) return { green:'green', judged_bad:'red', could_not_judge:'nojudge', died:'stalled', deciding:'deciding' }[j] || 'pending';
+    if (c.status === 'stalled') return 'stalled';
     if (c.status === 'deciding' || c.verdict === 'deciding') return 'deciding';
     if (c.verdict === 'green' || c.verdict === 'red' || c.verdict === 'split') return c.verdict;
     return 'pending';
   }
-  function verdictLabel(k) { return { green:'GREEN', red:'RED', split:'SPLIT', deciding:'DECIDING', stalled:'STALLED', pending:'QUEUED' }[k] || 'QUEUED'; }
+  function verdictLabel(k) { return { green:'GREEN', red:'RED', nojudge:'NO JUDGE', split:'SPLIT', deciding:'DECIDING', stalled:'STALLED', pending:'QUEUED' }[k] || 'QUEUED'; }
   function memberClass(m) { return m.status !== 'done' ? 'thinking' : (m.verdict === 'green' ? 'green' : m.verdict === 'red' ? 'red' : ''); }
   function memberTag(m) { return m.status !== 'done' ? 'thinking' : (m.verdict || ''); }
   function currentMembers(c) { const r = Array.isArray(c.rounds) ? c.rounds : []; const last = r[r.length - 1]; return last && Array.isArray(last.members) ? last.members : []; }
@@ -320,8 +329,8 @@
   // HTML so a poll never steals search focus; only the counts and list update.
   let doneFilter = 'all', groupBySession = false, allDone = [];
   function updateDoneCounts() {
-    const c = { all: allDone.length, green: 0, red: 0, split: 0 };
-    allDone.forEach(x => { const k = verdictKey(x); if (k === 'green' || k === 'red' || k === 'split') c[k]++; });
+    const c = { all: allDone.length, green: 0, red: 0, nojudge: 0, stalled: 0 };
+    allDone.forEach(x => { const k = verdictKey(x); if (c[k] != null) c[k]++; });
     document.querySelectorAll('.dchip .dc').forEach(el => el.textContent = c[el.dataset.c] || 0);
   }
   function renderDoneList() {
@@ -368,15 +377,21 @@
     document.getElementById('svc').hidden = true; document.getElementById('vit').innerHTML = '';
   }
 
+  // Honest summary. A bare "failed" count lied: it lumped real objections together with committees
+  // whose reviewers never seated (broken judge) and with runs that died. Three different facts.
   function renderSummary(stats) {
     const d = (stats && stats.decision) || {}, e = (stats && stats.execution) || {};
-    const total = (d.total || 0) + (e.total || 0), green = (d.green || 0) + (e.green || 0), red = (d.red || 0) + (e.red || 0);
-    const tok = (d.tokens || 0) + (e.tokens || 0), disk = (d.disk || 0) + (e.disk || 0);
+    const sum = (k) => (d[k] || 0) + (e[k] || 0);
+    const total = sum('total'), green = sum('green'), bad = sum('judged_bad'), nj = sum('could_not_judge'), died = sum('died');
+    const tok = sum('tokens'), disk = sum('disk');
     const bits = [`<b>${total}</b> committees on record`];
     if (green) bits.push(`<span class="g">${green} passed</span>`);
-    if (red) bits.push(`<span class="r">${red} failed</span>`);
+    if (bad) bits.push(`<span class="r">${bad} found real defects</span>`);
+    if (nj) bits.push(`<span class="a">${nj} could not judge</span>`);
+    if (died) bits.push(`<span class="a">${died} died</span>`);
     if (tok) bits.push(fmtTokens(tok)); if (disk) bits.push(fmtBytes(disk) + ' on disk');
-    document.getElementById('summ').innerHTML = bits.map(b => `<span>${b}</span>`).join('');
+    document.getElementById('summ').innerHTML = bits.map(b => `<span>${b}</span>`).join('') +
+      (nj ? `<span class="note">"could not judge" = the reviewers never seated, so that is a broken judge, not bad work</span>` : '');
   }
 
   function render(feed) {
