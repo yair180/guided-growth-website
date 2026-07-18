@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Execution Plan Ledger</title>
+  <style>
+    :root { color-scheme: light dark; --bg:#f7f8f9; --surface:#ffffff; --surface-alt:#f2f4f6; --text:#18212b; --muted:#687583; --faint:#95a0aa; --line:#dce2e7; --line-strong:#c8d1d8; --blue:#2672c9; --blue-soft:#e9f2fd; --amber:#b56a00; --amber-soft:#fff3df; --purple:#7959bd; --purple-soft:#f1ecfb; --green:#18845b; --green-soft:#e7f6ee; --red:#b64242; --red-soft:#fbeaea; --shadow:0 1px 2px rgb(20 34 46 / .04), 0 4px 16px rgb(20 34 46 / .035); }
+    :root[data-theme="dark"] { --bg:#11161b; --surface:#192129; --surface-alt:#151c23; --text:#edf2f5; --muted:#a7b1ba; --faint:#74808a; --line:#303b45; --line-strong:#47545f; --blue:#73b4ff; --blue-soft:#193653; --amber:#f2ae4d; --amber-soft:#47351d; --purple:#bdabf3; --purple-soft:#362b55; --green:#6ed3a6; --green-soft:#1d4939; --red:#ef8a8a; --red-soft:#4d272b; --shadow:0 1px 2px rgb(0 0 0 / .18), 0 5px 18px rgb(0 0 0 / .12); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-width:320px; background:var(--bg); color:var(--text); font:14px/1.45 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    button { font:inherit; }
+    .shell { max-width:1640px; margin:0 auto; padding:30px 32px 40px; }
+    .topbar { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; padding-bottom:24px; border-bottom:1px solid var(--line); }
+    .eyebrow { margin:0 0 5px; color:var(--muted); font-size:11px; font-weight:750; letter-spacing:.11em; text-transform:uppercase; }
+    h1 { margin:0; font-size:25px; line-height:1.2; letter-spacing:-.035em; font-weight:680; }
+    .subline { margin:7px 0 0; color:var(--muted); font-size:13px; }
+    .sync { display:flex; gap:8px; align-items:center; color:var(--muted); white-space:nowrap; font-size:12px; padding-top:5px; }
+    .sync-dot { width:7px; height:7px; border-radius:99px; background:var(--green); box-shadow:0 0 0 3px var(--green-soft); }
+    .sync-dot.error { background:var(--red); box-shadow:0 0 0 3px var(--red-soft); }
+    .summary { display:flex; flex-wrap:wrap; gap:8px; padding:20px 0 24px; }
+    .metric { min-width:92px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); }
+    .metric b { display:block; font-size:18px; line-height:1.05; font-weight:680; letter-spacing:-.03em; }
+    .metric span { color:var(--muted); font-size:11px; }
+    .board { display:grid; grid-template-columns:repeat(4,minmax(240px,1fr)); gap:16px; align-items:start; }
+    .lane { min-height:250px; border:1px solid var(--line); border-radius:10px; background:color-mix(in srgb,var(--surface-alt) 72%,transparent); overflow:hidden; }
+    .lane-head { display:flex; align-items:center; justify-content:space-between; padding:13px 14px 12px; border-bottom:1px solid var(--line); }
+    .lane-label { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:720; letter-spacing:.07em; text-transform:uppercase; }
+    .lane-dot { width:8px; height:8px; border-radius:50%; background:var(--faint); }.lane-live .lane-dot{background:var(--blue)} .lane-done .lane-dot{background:var(--green)} .lane-stalled .lane-dot{background:var(--red)}
+    .count { color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+    .cards { display:grid; gap:10px; padding:10px; }
+    .card { width:100%; text-align:left; padding:0; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); cursor:pointer; box-shadow:var(--shadow); transition:border-color .16s ease,transform .16s ease; overflow:hidden; }
+    .card:hover { border-color:var(--line-strong); transform:translateY(-1px); }.card:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+    .card-top { padding:14px 14px 12px; }.card-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .status { padding:3px 7px; border-radius:99px; color:var(--muted); background:var(--surface-alt); font-size:10px; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }.status.live{color:var(--blue);background:var(--blue-soft)} .status.done{color:var(--green);background:var(--green-soft)} .status.stalled{color:var(--red);background:var(--red-soft)}
+    .version { color:var(--faint); font-size:11px; font-variant-numeric:tabular-nums; }.card-name { margin:0; font-size:15px; line-height:1.3; letter-spacing:-.02em; font-weight:680; }.session { overflow:hidden; margin-top:4px; color:var(--muted); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+    .strip-wrap { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:13px; }.stage-strip { display:flex; gap:5px; min-width:0; flex-wrap:wrap; }.stage-chip { position:relative; width:13px; height:13px; border:1.5px solid currentColor; border-radius:50%; color:var(--faint); background:transparent; }.stage-chip.ai{color:var(--blue)}.stage-chip.human{color:var(--amber)}.stage-chip.mix{color:var(--purple)}.stage-chip.doing{background:currentColor; box-shadow:inset 0 0 0 3px var(--surface)}.stage-chip.done{background:currentColor}.stage-chip.done::after{content:"";position:absolute;left:3px;top:1px;width:3px;height:6px;border:solid var(--surface);border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}.stage-chip.blocked{background:var(--red);border-color:var(--red)}.stage-chip.gated::before{content:"";position:absolute;right:-4px;top:-4px;width:5px;height:5px;border:1px solid var(--surface);border-radius:50%;background:var(--text)}
+    .rollup { flex:none; color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }.details { display:none; border-top:1px solid var(--line); }.card[aria-expanded="true"] .details { display:block; }.expand-label { display:block; padding:8px 14px; color:var(--muted); border-top:1px solid var(--line); font-size:11px; }.card[aria-expanded="true"] .expand-label{display:none}
+    .stage-list { margin:0; padding:4px 0; list-style:none; }.stage { padding:10px 14px; border-bottom:1px solid var(--line); }.stage:last-child{border-bottom:0}.stage-title { display:flex; align-items:flex-start; gap:8px; }.actor-dot{width:8px;height:8px;flex:none;margin-top:5px;border-radius:50%;background:var(--faint)}.actor-dot.ai{background:var(--blue)}.actor-dot.human{background:var(--amber)}.actor-dot.mix{background:var(--purple)}.stage-name { flex:1; font-size:12px; font-weight:650; }.progress { padding:2px 5px; border-radius:4px; color:var(--muted); background:var(--surface-alt); font-size:10px; font-weight:700; text-transform:uppercase; }.progress.doing{color:var(--blue);background:var(--blue-soft)}.progress.done{color:var(--green);background:var(--green-soft)}.progress.blocked{color:var(--red);background:var(--red-soft)}
+    .stage-detail { display:flex; align-items:center; gap:6px; margin:4px 0 0 16px; color:var(--muted); font-size:11px; }.actor-word{font-weight:700;text-transform:capitalize}.actor-word.ai{color:var(--blue)}.actor-word.human{color:var(--amber)}.actor-word.mix{color:var(--purple)}.gate { display:inline-flex; align-items:center; gap:4px; padding:2px 5px; border:1px solid var(--line); border-radius:4px; color:var(--text); font-size:10px; font-weight:670; }.gate::before { content:"◆"; font-size:7px; }.check-mark { color:var(--muted); font-size:10px; }.steps { margin:8px 0 0 16px; padding:0; list-style:none; border-left:1px solid var(--line); }.step { display:flex; align-items:flex-start; gap:7px; padding:5px 0 5px 10px; color:var(--muted); font-size:11px; }.step .actor-dot{width:6px;height:6px;margin-top:5px}.empty-card,.message { padding:20px 14px; color:var(--muted); font-size:12px; text-align:center; }.message { margin-top:16px; border:1px solid var(--line); border-radius:9px; background:var(--surface); }.message strong{display:block;margin-bottom:4px;color:var(--text);font-size:13px}.hidden{display:none}
+    @media(max-width:1120px){.board{grid-template-columns:repeat(2,minmax(260px,1fr))}}@media(max-width:620px){.shell{padding:22px 16px 30px}.topbar{gap:12px}.sync{padding-top:1px}.board{grid-template-columns:1fr}.summary{padding-top:16px}.metric{min-width:76px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar"><div><p class="eyebrow">Founder cockpit</p><h1>Execution plan ledger</h1><p class="subline">Stage ownership, committee cadence, and delivery movement.</p></div><div class="sync" id="sync"><i class="sync-dot"></i><span>Connecting</span></div></header>
+    <section class="summary" id="summary" aria-label="Plan totals"></section>
+    <section class="board" id="board" aria-label="Plans by status"></section>
+    <section class="message hidden" id="message" role="status"></section>
+  </main>
+  <script>
+    (() => {
+      const FEED_URL = 'https://guidedgrowthos.com/exec-plan-feed';
+      const ORDER = ['live', 'planned', 'stalled', 'done'];
+      const LABELS = { live: 'Live', planned: 'Planned', stalled: 'Stalled', done: 'Done' };
+      const board = document.getElementById('board'), summary = document.getElementById('summary'), message = document.getElementById('message'), sync = document.getElementById('sync');
+      const forcedTheme = new URLSearchParams(location.search).get('theme');
+      if (forcedTheme === 'dark' || forcedTheme === 'light') document.documentElement.dataset.theme = forcedTheme;
+      const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[character]));
+      const normalize = value => ['ai','human','mix'].includes(value) ? value : 'mix';
+      const progress = value => ['todo','doing','done','blocked'].includes(value) ? value : 'todo';
+      const flatten = nodes => (Array.isArray(nodes) ? nodes : []).flatMap(node => [node, ...flatten(node.steps)]);
+      const rollup = stages => { const list = flatten(stages); const done = list.filter(item => progress(item.progress) === 'done').length; const doing = list.filter(item => progress(item.progress) === 'doing').length; const blocked = list.filter(item => progress(item.progress) === 'blocked').length; return { total:list.length, done, doing, blocked }; };
+      const gateLabel = stage => stage.committee ? `Committee${stage.committee_reason ? ` · ${String(stage.committee_reason).replaceAll('_', ' ')}` : ''}` : stage.checks ? 'Checks' : '';
+      const stepTemplate = step => `<li class="step"><i class="actor-dot ${normalize(step.actor)}"></i><span>${escapeHtml(step.name || step.action || 'Untitled step')}</span><span class="progress ${progress(step.progress)}">${progress(step.progress)}</span></li>`;
+      const stageTemplate = stage => `<li class="stage"><div class="stage-title"><i class="actor-dot ${normalize(stage.actor)}"></i><span class="stage-name">${escapeHtml(stage.name || stage.action || 'Untitled stage')}</span><span class="progress ${progress(stage.progress)}">${progress(stage.progress)}</span></div><div class="stage-detail"><span class="actor-word ${normalize(stage.actor)}">${normalize(stage.actor)}</span>${stage.committee ? `<span class="gate">${escapeHtml(gateLabel(stage))}</span>` : stage.checks ? '<span class="check-mark">Mechanical checks</span>' : '<span>Open handoff</span>'}</div>${Array.isArray(stage.steps) && stage.steps.length ? `<ul class="steps">${stage.steps.map(stepTemplate).join('')}</ul>` : ''}</li>`;
+      const cardTemplate = plan => { const stages = Array.isArray(plan.stages) ? plan.stages : []; const total = rollup(stages); const compact = stages.map(stage => `<i class="stage-chip ${normalize(stage.actor)} ${progress(stage.progress)}${stage.committee ? ' gated' : ''}" title="${escapeHtml(stage.name || 'Stage')}: ${normalize(stage.actor)}, ${progress(stage.progress)}${stage.committee ? ', committee gate' : stage.checks ? ', checks' : ''}"></i>`).join(''); const version = plan.version ? String(plan.version).startsWith('v') ? plan.version : `v${plan.version}` : plan.type || ''; return `<button class="card" type="button" aria-expanded="false"><div class="card-top"><div class="card-meta"><span class="status ${escapeHtml(plan.status)}">${escapeHtml(LABELS[plan.status] || plan.status || 'planned')}</span><span class="version">${escapeHtml(version)}</span></div><p class="card-name">${escapeHtml(plan.name || 'Untitled plan')}</p><div class="session">${escapeHtml(plan.session || 'No session assigned')}</div><div class="strip-wrap"><div class="stage-strip" aria-label="Stage progress">${compact || '<span class="rollup">No stages</span>'}</div><span class="rollup">${total.done}/${total.total} done${total.blocked ? ` · ${total.blocked} blocked` : total.doing ? ` · ${total.doing} active` : ''}</span></div></div><span class="expand-label">Open stage ledger</span><div class="details"><ul class="stage-list">${stages.map(stageTemplate).join('') || '<li class="empty-card">No stages recorded.</li>'}</ul></div></button>`; };
+      const render = payload => { const plans = Array.isArray(payload.plans) ? payload.plans : []; const stats = payload.stats || {}; summary.innerHTML = ['total','live','planned','done','stalled'].map(key => `<div class="metric"><b>${Number.isFinite(stats[key]) ? stats[key] : plans.filter(plan => plan.status === key).length}</b><span>${key === 'total' ? 'total plans' : LABELS[key]}</span></div>`).join(''); board.innerHTML = ORDER.map(status => { const lanePlans = plans.filter(plan => (plan.status || 'planned') === status); return `<section class="lane lane-${status}"><header class="lane-head"><span class="lane-label"><i class="lane-dot"></i>${LABELS[status]}</span><span class="count">${lanePlans.length}</span></header><div class="cards">${lanePlans.map(cardTemplate).join('') || '<div class="empty-card">No plans in this lane.</div>'}</div></section>`; }).join(''); message.classList.toggle('hidden', plans.length > 0); if (!plans.length) message.innerHTML = '<strong>No plans yet</strong>The ledger is connected and waiting for its first plan.'; };
+      board.addEventListener('click', event => { const card = event.target.closest('.card'); if (card) card.setAttribute('aria-expanded', String(card.getAttribute('aria-expanded') !== 'true')); });
+      const setSync = (text, failed) => { sync.innerHTML = `<i class="sync-dot${failed ? ' error' : ''}"></i><span>${escapeHtml(text)}</span>`; };
+      async function load() { try { const response = await fetch(`${FEED_URL}?_=${Date.now()}`, { headers:{ Accept:'application/json' }, cache:'no-store' }); if (!response.ok) throw new Error(`Feed returned ${response.status}`); render(await response.json()); setSync(`Updated ${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`, false); } catch (error) { if (!board.innerHTML) render({ plans:[], stats:{} }); message.classList.remove('hidden'); message.innerHTML = '<strong>Ledger unavailable</strong>We could not refresh the execution-plan feed. Retrying automatically.'; setSync('Feed unavailable', true); } }
+      load(); setInterval(load, 8000);
+    })();
+  </script>
+</body>
+</html>

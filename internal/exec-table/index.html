@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Execution Plan Ledger</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f8fa;
+      --surface: #ffffff;
+      --surface-muted: #f2f4f7;
+      --text: #202733;
+      --muted: #697486;
+      --faint: #8c96a6;
+      --line: #dce1e8;
+      --line-strong: #c8d0db;
+      --blue: #2563b8;
+      --blue-bg: #eaf3ff;
+      --amber: #a55b09;
+      --amber-bg: #fff3df;
+      --purple: #7945ad;
+      --purple-bg: #f3ebff;
+      --green: #237347;
+      --green-bg: #e8f6ed;
+      --red: #ae3b3b;
+      --red-bg: #fff0f0;
+      --gray-bg: #eef1f5;
+      --shadow: 0 1px 2px rgb(22 30 42 / 4%);
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #11151b;
+      --surface: #181d25;
+      --surface-muted: #1d2430;
+      --text: #edf1f7;
+      --muted: #a7b1c0;
+      --faint: #7f8a9b;
+      --line: #303947;
+      --line-strong: #465264;
+      --blue: #8cc5ff;
+      --blue-bg: #162c43;
+      --amber: #ffd08a;
+      --amber-bg: #403015;
+      --purple: #d6b6ff;
+      --purple-bg: #302348;
+      --green: #8ed9aa;
+      --green-bg: #173a26;
+      --red: #ffb3b3;
+      --red-bg: #432020;
+      --gray-bg: #26303c;
+      --shadow: 0 1px 2px rgb(0 0 0 / 20%);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #11151b;
+        --surface: #181d25;
+        --surface-muted: #1d2430;
+        --text: #edf1f7;
+        --muted: #a7b1c0;
+        --faint: #7f8a9b;
+        --line: #303947;
+        --line-strong: #465264;
+        --blue: #8cc5ff;
+        --blue-bg: #162c43;
+        --amber: #ffd08a;
+        --amber-bg: #403015;
+        --purple: #d6b6ff;
+        --purple-bg: #302348;
+        --green: #8ed9aa;
+        --green-bg: #173a26;
+        --red: #ffb3b3;
+        --red-bg: #432020;
+        --gray-bg: #26303c;
+        --shadow: 0 1px 2px rgb(0 0 0 / 20%);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    button { font: inherit; }
+    .shell { max-width: 1600px; margin: 0 auto; padding: 28px 32px 40px; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 22px; }
+    h1 { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 20px; letter-spacing: -0.03em; line-height: 1.15; }
+    .subhead { color: var(--muted); margin: 7px 0 0; font-size: 12px; }
+    .feed-state { display: flex; align-items: center; gap: 8px; color: var(--muted); white-space: nowrap; font-size: 11px; padding-top: 3px; }
+    .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+    .pulse.live { background: var(--green); box-shadow: 0 0 0 3px var(--green-bg); }
+    .pulse.error { background: var(--red); box-shadow: 0 0 0 3px var(--red-bg); }
+
+    .summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .metric { min-width: 104px; padding: 9px 11px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; box-shadow: var(--shadow); }
+    .metric strong { display: block; font-size: 17px; font-weight: 650; line-height: 1; color: var(--text); }
+    .metric span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+    .metric.live strong { color: var(--blue); }
+    .metric.done strong { color: var(--green); }
+    .metric.stalled strong { color: var(--red); }
+
+    .ledger { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow); }
+    table { width: 100%; min-width: 830px; border-collapse: collapse; text-align: left; }
+    thead th { padding: 10px 14px; color: var(--muted); background: var(--surface-muted); border-bottom: 1px solid var(--line-strong); font-size: 10px; font-weight: 600; letter-spacing: .075em; text-transform: uppercase; }
+    th.stage-col { width: 54%; }
+    th.actor-col { width: 12%; }
+    th.gate-col { width: 20%; }
+    th.status-col { width: 14%; }
+    tbody.plan-group + tbody.plan-group .plan-row th { border-top: 1px solid var(--line-strong); }
+    .plan-row th { padding: 0; background: var(--surface-muted); }
+    .plan-head { width: 100%; display: grid; grid-template-columns: minmax(360px, 1fr) auto auto auto; align-items: center; gap: 14px; padding: 12px 14px; color: var(--text); text-align: left; background: transparent; border: 0; cursor: pointer; }
+    .plan-head:hover { background: color-mix(in srgb, var(--surface-muted) 70%, var(--line)); }
+    .plan-title { min-width: 0; display: flex; align-items: center; gap: 9px; }
+    .chevron { width: 12px; color: var(--muted); transition: transform .14s ease; }
+    .is-collapsed .chevron { transform: rotate(-90deg); }
+    .plan-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 650; letter-spacing: -.01em; }
+    .plan-session { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .rollup { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .rollup b { color: var(--text); font-weight: 600; }
+    .status-badge, .actor, .gate, .progress { display: inline-flex; align-items: center; min-height: 20px; padding: 2px 7px; border-radius: 3px; border: 1px solid transparent; font-size: 10px; font-weight: 650; letter-spacing: .035em; line-height: 1.2; text-transform: uppercase; white-space: nowrap; }
+    .status-planned, .progress-todo { color: var(--muted); background: var(--gray-bg); }
+    .status-live, .progress-doing { color: var(--blue); background: var(--blue-bg); }
+    .status-done, .progress-done { color: var(--green); background: var(--green-bg); }
+    .status-stalled, .progress-blocked { color: var(--red); background: var(--red-bg); }
+    .actor-ai { color: var(--blue); background: var(--blue-bg); }
+    .actor-human { color: var(--amber); background: var(--amber-bg); }
+    .actor-mix { color: var(--purple); background: var(--purple-bg); }
+    .gate-none { color: var(--faint); background: transparent; border-color: var(--line); }
+    .gate-check { color: var(--blue); background: var(--blue-bg); }
+    .gate-committee { color: var(--purple); background: var(--purple-bg); }
+    .stage-row td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    .stage-row:last-child td { border-bottom: 0; }
+    .stage-row:hover td { background: color-mix(in srgb, var(--surface) 93%, var(--blue-bg)); }
+    .stage-cell { min-width: 0; }
+    .stage-label { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .stage-index { width: 20px; flex: 0 0 20px; color: var(--faint); font-size: 10px; text-align: right; }
+    .stage-copy { min-width: 0; }
+    .stage-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-weight: 600; }
+    .stage-action { overflow: hidden; margin-top: 2px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .nested .stage-label { padding-left: calc(var(--depth) * 18px); }
+    .nested .stage-index { color: var(--line-strong); }
+    .nested .stage-name { font-weight: 500; }
+    .committee-row td:first-child { box-shadow: inset 3px 0 0 var(--purple); }
+    .empty, .error-panel { padding: 42px 24px; color: var(--muted); text-align: center; }
+    .empty strong, .error-panel strong { display: block; margin-bottom: 5px; color: var(--text); font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; }
+    .error-panel { color: var(--red); }
+    .hidden { display: none; }
+    .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 13px; margin: 13px 0 0; color: var(--muted); font-size: 10px; }
+    .legend-label { color: var(--faint); letter-spacing: .06em; text-transform: uppercase; }
+    .legend .gate { min-height: 18px; }
+    @media (max-width: 700px) {
+      .shell { padding: 20px 16px 28px; }
+      .topbar { display: block; }
+      .feed-state { margin-top: 11px; }
+      .plan-head { grid-template-columns: minmax(230px, 1fr) auto; }
+      .plan-session, .rollup { display: none; }
+      .metric { min-width: 80px; flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1>Execution Plan Ledger</h1>
+        <p class="subhead">Plan state, responsibility, and consequential gates.</p>
+      </div>
+      <div class="feed-state" aria-live="polite"><i class="pulse" id="pulse"></i><span id="feed-status">Loading feed</span></div>
+    </header>
+    <section class="summary" id="summary" aria-label="Plan summary"></section>
+    <section class="ledger" aria-label="Execution plans">
+      <table>
+        <thead><tr><th class="stage-col">Stage</th><th class="actor-col">Actor</th><th class="gate-col">Gate</th><th class="status-col">Status</th></tr></thead>
+        <tbody id="ledger-body"></tbody>
+      </table>
+      <div class="empty hidden" id="empty"><strong>No execution plans</strong>The feed is reachable but has no plans to show.</div>
+      <div class="error-panel hidden" id="error"><strong>Plan feed unavailable</strong><span id="error-message">The last displayed ledger is retained while the next poll retries.</span></div>
+    </section>
+    <div class="legend" aria-label="Gate legend"><span class="legend-label">Gate cadence</span><span class="gate gate-committee">Committee checkpoint</span><span>consequential decision</span><span class="gate gate-check">Mechanical checks</span><span>verification only</span><span class="gate gate-none">No gate</span></div>
+  </main>
+
+  <script>
+    (() => {
+      const FEED_URL = 'https://guidedgrowthos.com/exec-plan-feed';
+      const POLL_MS = 8000;
+      const state = { plans: [], stats: null, expanded: new Set(), hasLoaded: false };
+      const elements = {
+        body: document.getElementById('ledger-body'), summary: document.getElementById('summary'), empty: document.getElementById('empty'),
+        error: document.getElementById('error'), errorMessage: document.getElementById('error-message'), pulse: document.getElementById('pulse'), status: document.getElementById('feed-status')
+      };
+
+      const theme = new URLSearchParams(location.search).get('theme');
+      if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+
+      const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+      const label = (value) => String(value || 'unknown').replace(/_/g, ' ');
+      const titleCase = (value) => label(value).replace(/\b\w/g, (character) => character.toUpperCase());
+      const plural = (count, singular) => `${count} ${singular}${count === 1 ? '' : 's'}`;
+
+      function flatten(nodes, depth = 0, output = []) {
+        (Array.isArray(nodes) ? nodes : []).forEach((node) => {
+          output.push({ ...node, depth });
+          flatten(node.steps, depth + 1, output);
+        });
+        return output;
+      }
+
+      function rollup(plan) {
+        const nodes = flatten(plan.stages);
+        const counts = { todo: 0, doing: 0, done: 0, blocked: 0 };
+        nodes.forEach((node) => { if (Object.hasOwn(counts, node.progress)) counts[node.progress]++; });
+        return { total: nodes.length, ...counts };
+      }
+
+      function gate(node) {
+        if (node.committee) {
+          const reason = node.committee_reason ? `: ${titleCase(node.committee_reason)}` : '';
+          return `<span class="gate gate-committee" title="Committee checkpoint${escapeHtml(reason)}">Committee${reason ? ` · ${escapeHtml(titleCase(node.committee_reason))}` : ''}</span>`;
+        }
+        if (node.checks) return '<span class="gate gate-check" title="Mechanical verification checks">Checks</span>';
+        return '<span class="gate gate-none">None</span>';
+      }
+
+      function stageRow(node, index) {
+        const actor = ['ai', 'human', 'mix'].includes(node.actor) ? node.actor : 'mix';
+        const progress = ['todo', 'doing', 'done', 'blocked'].includes(node.progress) ? node.progress : 'todo';
+        const rowClass = `${node.depth ? 'nested ' : ''}${node.committee ? 'committee-row' : ''}`;
+        const customStyle = node.depth ? ` style="--depth:${node.depth}"` : '';
+        const action = node.action ? `<div class="stage-action">${escapeHtml(node.action)}</div>` : '';
+        return `<tr class="stage-row ${rowClass}"${customStyle}><td class="stage-cell"><div class="stage-label"><span class="stage-index">${String(index + 1).padStart(2, '0')}</span><div class="stage-copy"><div class="stage-name">${escapeHtml(node.name || 'Untitled stage')}</div>${action}</div></div></td><td><span class="actor actor-${actor}">${escapeHtml(actor)}</span></td><td>${gate(node)}</td><td><span class="progress progress-${progress}">${escapeHtml(progress)}</span></td></tr>`;
+      }
+
+      function planGroup(plan) {
+        const planId = String(plan.id || plan.name || Math.random());
+        const expanded = state.expanded.has(planId);
+        const rows = flatten(plan.stages);
+        const progress = rollup(plan);
+        const planStatus = ['planned', 'live', 'done', 'stalled'].includes(plan.status) ? plan.status : 'planned';
+        const rollupText = progress.total ? `<b>${progress.done}</b> done · <b>${progress.doing}</b> active · <b>${progress.blocked}</b> blocked` : 'No stages';
+        const stageMarkup = rows.map(stageRow).join('');
+        return `<tbody class="plan-group ${expanded ? '' : 'is-collapsed'}" data-plan-id="${escapeHtml(planId)}"><tr class="plan-row"><th colspan="4" scope="rowgroup"><button class="plan-head" type="button" aria-expanded="${expanded}" aria-controls="stages-${escapeHtml(planId)}"><span class="plan-title"><span class="chevron">⌄</span><span class="plan-name">${escapeHtml(plan.name || 'Untitled plan')}</span></span><span class="plan-session">${escapeHtml(plan.session || 'No session')}</span><span class="rollup">${rollupText}</span><span class="status-badge status-${planStatus}">${escapeHtml(planStatus)}</span></button></th></tr><tr class="stage-container" id="stages-${escapeHtml(planId)}" ${expanded ? '' : 'hidden'}><td colspan="4" style="padding:0"><table aria-label="Stages for ${escapeHtml(plan.name || 'plan')}"><tbody>${stageMarkup || '<tr class="stage-row"><td colspan="4" class="stage-action" style="padding:12px 14px">No stages recorded.</td></tr>'}</tbody></table></td></tr></tbody>`;
+      }
+
+      function renderSummary(stats, plans) {
+        const values = stats || { planned: 0, live: 0, done: 0, stalled: 0, total: plans.length };
+        const metrics = [['total', 'plans', ''], ['live', 'live', 'live'], ['planned', 'planned', ''], ['done', 'done', 'done'], ['stalled', 'stalled', 'stalled']];
+        elements.summary.innerHTML = metrics.map(([key, text, className]) => `<div class="metric ${className}"><strong>${Number(values[key]) || 0}</strong><span>${text}</span></div>`).join('');
+      }
+
+      function render() {
+        const plans = Array.isArray(state.plans) ? state.plans : [];
+        renderSummary(state.stats, plans);
+        elements.body.innerHTML = plans.map(planGroup).join('');
+        elements.empty.classList.toggle('hidden', plans.length > 0);
+      }
+
+      function setFeedState(kind, text) {
+        elements.pulse.className = `pulse ${kind}`;
+        elements.status.textContent = text;
+      }
+
+      async function refresh() {
+        try {
+          const response = await fetch(`${FEED_URL}?_=${Date.now()}`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const payload = await response.json();
+          if (!payload || !Array.isArray(payload.plans)) throw new Error('Unexpected feed response');
+          state.plans = payload.plans;
+          state.stats = payload.stats || null;
+          if (!state.hasLoaded) state.plans.forEach((plan) => state.expanded.add(String(plan.id || plan.name)));
+          state.hasLoaded = true;
+          elements.error.classList.add('hidden');
+          setFeedState('live', `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · polling 8s`);
+          render();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown connection error';
+          elements.errorMessage.textContent = state.hasLoaded ? `Last displayed ledger is retained. Retry in 8 seconds. (${message})` : `Could not load the execution-plan feed. Retrying in 8 seconds. (${message})`;
+          elements.error.classList.remove('hidden');
+          setFeedState('error', state.hasLoaded ? 'Feed retrying' : 'Feed unavailable');
+          if (!state.hasLoaded) render();
+        }
+      }
+
+      elements.body.addEventListener('click', (event) => {
+        const button = event.target.closest('.plan-head');
+        if (!button) return;
+        const group = button.closest('.plan-group');
+        const planId = group?.dataset.planId;
+        if (!planId) return;
+        if (state.expanded.has(planId)) state.expanded.delete(planId); else state.expanded.add(planId);
+        render();
+      });
+
+      refresh();
+      window.setInterval(refresh, POLL_MS);
+    })();
+  </script>
+</body>
+</html>

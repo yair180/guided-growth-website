@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Execution Plan Ledger</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f7f8fa; --panel:#ffffff; --panel-2:#fbfcfd; --ink:#18212b; --muted:#677484; --faint:#a6b0bb; --border:#dce2e8; --grid:#edf0f3; --shadow:0 1px 2px rgba(20,31,43,.04); --ai:#2d6fd2; --ai-soft:#eaf2ff; --human:#b87512; --human-soft:#fff3db; --mix:#7753c8; --mix-soft:#f1edff; --success:#257756; --success-soft:#e8f6ef; --warn:#b45d13; --warn-soft:#fff0e2; --danger:#b64040; --danger-soft:#ffeceb; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#101419; --panel:#171d24; --panel-2:#141a20; --ink:#e7edf4; --muted:#98a5b4; --faint:#667485; --border:#2b3540; --grid:#222b34; --shadow:none; --ai:#75a7ff; --ai-soft:#1b335a; --human:#efb858; --human-soft:#473517; --mix:#ad96ff; --mix-soft:#302758; --success:#69c99b; --success-soft:#173728; --warn:#f3a968; --warn-soft:#4b2c17; --danger:#f08a8a; --danger-soft:#492121; } }
+  :root[data-theme="light"] { color-scheme: light; --bg:#f7f8fa; --panel:#ffffff; --panel-2:#fbfcfd; --ink:#18212b; --muted:#677484; --faint:#a6b0bb; --border:#dce2e8; --grid:#edf0f3; --shadow:0 1px 2px rgba(20,31,43,.04); --ai:#2d6fd2; --ai-soft:#eaf2ff; --human:#b87512; --human-soft:#fff3db; --mix:#7753c8; --mix-soft:#f1edff; --success:#257756; --success-soft:#e8f6ef; --warn:#b45d13; --warn-soft:#fff0e2; --danger:#b64040; --danger-soft:#ffeceb; }
+  :root[data-theme="dark"] { color-scheme: dark; --bg:#101419; --panel:#171d24; --panel-2:#141a20; --ink:#e7edf4; --muted:#98a5b4; --faint:#667485; --border:#2b3540; --grid:#222b34; --shadow:none; --ai:#75a7ff; --ai-soft:#1b335a; --human:#efb858; --human-soft:#473517; --mix:#ad96ff; --mix-soft:#302758; --success:#69c99b; --success-soft:#173728; --warn:#f3a968; --warn-soft:#4b2c17; --danger:#f08a8a; --danger-soft:#492121; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-width:320px; background:var(--bg); color:var(--ink); font:14px/1.45 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  .shell { max-width:1680px; margin:0 auto; padding:28px clamp(18px,4vw,64px) 48px; }
+  header { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin-bottom:26px; }
+  .eyebrow { margin:0 0 7px; color:var(--muted); font-size:11px; font-weight:750; letter-spacing:.11em; text-transform:uppercase; }
+  h1 { margin:0; font-size:clamp(25px,3vw,36px); line-height:1.1; letter-spacing:-.035em; font-weight:700; }
+  .refresh { display:flex; align-items:center; gap:9px; color:var(--muted); white-space:nowrap; font-size:12px; }
+  .pulse { width:8px; height:8px; border-radius:50%; background:var(--success); box-shadow:0 0 0 4px var(--success-soft); }
+  .pulse.error { background:var(--danger); box-shadow:0 0 0 4px var(--danger-soft); }
+  .summary { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--panel); box-shadow:var(--shadow); margin-bottom:28px; }
+  .summary-item { padding:12px 16px 13px; border-right:1px solid var(--border); }
+  .summary-item:last-child { border:0; }
+  .summary-label { display:block; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+  .summary-value { display:block; margin-top:1px; font-size:21px; font-weight:700; letter-spacing:-.025em; }
+  .summary-item.live .summary-value { color:var(--ai); } .summary-item.done .summary-value { color:var(--success); } .summary-item.stalled .summary-value { color:var(--danger); }
+  .legend { display:flex; flex-wrap:wrap; align-items:center; gap:9px 15px; margin:0 0 13px; color:var(--muted); font-size:12px; }
+  .legend-title { color:var(--ink); font-weight:650; margin-right:2px; }
+  .legend-item { display:inline-flex; align-items:center; gap:6px; }
+  .actor-dot { width:9px; height:9px; border-radius:99px; background:currentColor; } .actor-ai { color:var(--ai); } .actor-human { color:var(--human); } .actor-mix { color:var(--mix); }
+  .gate-icon { display:inline-grid; place-items:center; width:15px; height:15px; border:1.5px solid var(--mix); color:var(--mix); font-size:10px; font-weight:800; border-radius:3px; }
+  .check-icon { display:inline-grid; place-items:center; width:15px; height:15px; border:1px solid var(--muted); color:var(--muted); font-size:10px; border-radius:50%; }
+  .plans { display:grid; gap:14px; }
+  .plan { background:var(--panel); border:1px solid var(--border); border-radius:11px; box-shadow:var(--shadow); overflow:hidden; }
+  .plan-top { display:flex; gap:20px; align-items:flex-start; padding:18px 20px 14px; border-bottom:1px solid var(--border); }
+  .plan-ident { min-width:235px; max-width:335px; }
+  .plan-name { margin:0 0 8px; font-size:16px; line-height:1.2; font-weight:680; letter-spacing:-.018em; }
+  .plan-meta { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { display:inline-flex; align-items:center; min-height:21px; padding:2px 7px; border:1px solid var(--border); border-radius:999px; color:var(--muted); background:var(--panel-2); font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .chip.live { color:var(--ai); border-color:color-mix(in srgb,var(--ai) 35%,var(--border)); background:var(--ai-soft); } .chip.done { color:var(--success); border-color:color-mix(in srgb,var(--success) 35%,var(--border)); background:var(--success-soft); } .chip.planned { color:var(--warn); background:var(--warn-soft); } .chip.stalled { color:var(--danger); background:var(--danger-soft); }
+  .plan-progress { flex:1; min-width:185px; padding-top:3px; }
+  .progress-line { display:flex; justify-content:space-between; gap:12px; margin-bottom:7px; color:var(--muted); font-size:12px; } .progress-line strong { color:var(--ink); font-weight:650; }
+  .progress-bar { height:5px; overflow:hidden; border-radius:99px; background:var(--grid); } .progress-fill { height:100%; border-radius:inherit; background:var(--success); transition:width .25s ease; }
+  .track-wrap { overflow-x:auto; overscroll-behavior-x:contain; }
+  .track { display:flex; min-width:max(100%,720px); padding:21px 20px 25px; }
+  .stage { position:relative; flex:1 0 148px; min-width:148px; padding:0 9px 0 0; }
+  .stage:not(:last-child)::after { content:""; position:absolute; z-index:0; top:13px; left:31px; right:-1px; height:3px; background:var(--grid); }
+  .stage.is-done:not(:last-child)::after { background:var(--stage-color); }
+  .stage-head { position:relative; z-index:1; display:flex; align-items:center; gap:7px; min-height:28px; }
+  .node { position:relative; width:28px; height:28px; flex:0 0 28px; display:grid; place-items:center; border:2px solid var(--stage-color); border-radius:50%; background:var(--panel); color:var(--stage-color); font-size:11px; font-weight:800; }
+  .stage.is-done .node { background:var(--stage-color); color:#fff; } .stage.is-doing .node { background:var(--panel); animation:working 1.65s ease-in-out infinite; } .stage.is-blocked .node { border-color:var(--danger); color:var(--danger); background:var(--danger-soft); }
+  .stage-gate { position:absolute; right:-3px; top:-7px; z-index:2; display:grid; place-items:center; width:17px; height:17px; border:2px solid var(--panel); border-radius:4px; background:var(--mix); color:#fff; font-size:11px; font-weight:900; } .stage.is-doing .stage-gate { animation:working 1.65s ease-in-out infinite; }
+  .stage-body { margin-top:10px; padding-right:7px; } .stage-index { color:var(--muted); font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }
+  .stage-name { display:block; margin-top:3px; color:var(--ink); font-size:12px; line-height:1.3; font-weight:680; } .stage-action { display:block; margin-top:3px; color:var(--muted); font-size:11px; line-height:1.32; }
+  .stage-flags { display:flex; flex-wrap:wrap; gap:4px; margin-top:7px; } .flag { display:inline-flex; align-items:center; gap:3px; color:var(--muted); font-size:10px; font-weight:650; } .flag.committee { color:var(--mix); } .stage-status { display:inline-block; margin-top:7px; color:var(--stage-color); font-size:10px; font-weight:760; letter-spacing:.055em; text-transform:uppercase; } .stage.is-blocked .stage-status { color:var(--danger); }
+  .steps { margin-top:8px; padding-top:8px; border-top:1px solid var(--grid); } .step { position:relative; display:flex; gap:5px; margin-top:5px; color:var(--muted); font-size:10px; line-height:1.32; } .step::before { content:""; width:5px; height:5px; margin-top:4px; flex:0 0 5px; border-radius:50%; background:var(--faint); } .step.done::before { background:var(--success); } .step.doing::before { background:var(--ai); } .step.blocked::before { background:var(--danger); }
+  .empty, .error { padding:52px 24px; text-align:center; background:var(--panel); border:1px solid var(--border); border-radius:11px; color:var(--muted); } .empty h2, .error h2 { margin:0 0 6px; color:var(--ink); font-size:17px; } .empty p, .error p { margin:0; }
+  @keyframes working { 0%,100% { box-shadow:0 0 0 0 color-mix(in srgb,var(--stage-color) 12%,transparent); } 50% { box-shadow:0 0 0 7px color-mix(in srgb,var(--stage-color) 0%,transparent); } }
+  @media (max-width:760px) { .shell { padding-top:21px; } header { align-items:flex-start; flex-direction:column; gap:12px; } .summary { grid-template-columns:repeat(3,1fr); } .summary-item:nth-child(3) { border-right:0; } .summary-item:nth-child(n+4) { border-top:1px solid var(--border); } .plan-top { display:block; } .plan-ident { max-width:none; } .plan-progress { margin-top:15px; } }
+  @media (max-width:430px) { .summary { grid-template-columns:repeat(2,1fr); } .summary-item:nth-child(odd) { border-right:1px solid var(--border); } .summary-item:nth-child(even) { border-right:0; } .summary-item:nth-child(n+3) { border-top:1px solid var(--border); } .summary-item:last-child { grid-column:1 / -1; border-right:0; } }
+</style>
+</head>
+<body>
+<main class="shell">
+  <header>
+    <div><p class="eyebrow">Guided Growth OS</p><h1>Execution plan ledger</h1></div>
+    <div class="refresh"><span class="pulse" id="pulse"></span><span id="refresh-status">Loading ledger</span></div>
+  </header>
+  <section class="summary" id="summary" aria-label="Plan status summary"></section>
+  <div class="legend" aria-label="Timeline legend"><span class="legend-title">Reading the track</span><span class="legend-item actor-ai"><i class="actor-dot"></i>AI</span><span class="legend-item actor-human"><i class="actor-dot"></i>Human</span><span class="legend-item actor-mix"><i class="actor-dot"></i>Mixed</span><span class="legend-item"><i class="gate-icon">◆</i>Committee gate</span><span class="legend-item"><i class="check-icon">✓</i>Mechanical check</span></div>
+  <section class="plans" id="plans" aria-live="polite"></section>
+</main>
+<script>
+(() => {
+  const endpoint = 'https://guidedgrowthos.com/exec-plan-feed';
+  const root = document.documentElement;
+  const queryTheme = new URLSearchParams(location.search).get('theme');
+  if (queryTheme === 'light' || queryTheme === 'dark') root.dataset.theme = queryTheme;
+  const plansEl = document.getElementById('plans');
+  const summaryEl = document.getElementById('summary');
+  const statusEl = document.getElementById('refresh-status');
+  const pulseEl = document.getElementById('pulse');
+  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[character]));
+  const progressOrder = { done: 3, doing: 2, blocked: 1, todo: 0 };
+  const stageClass = stage => ['ai','human','mix'].includes(stage.actor) ? stage.actor : 'mix';
+  function countNodes(nodes) { return (nodes || []).reduce((total, node) => total + 1 + countNodes(node.steps), 0); }
+  function completedNodes(nodes) { return (nodes || []).reduce((total, node) => total + (node.progress === 'done' ? 1 : 0) + completedNodes(node.steps), 0); }
+  function stageSteps(steps) { if (!steps?.length) return ''; return `<div class="steps">${steps.map(step => `<div class="step ${escapeHtml(step.progress || 'todo')}"><span>${escapeHtml(step.name || step.action || 'Untitled step')}</span></div>`).join('')}</div>`; }
+  function stageMarkup(stage, index) {
+    const progress = ['todo','doing','done','blocked'].includes(stage.progress) ? stage.progress : 'todo';
+    const actor = stageClass(stage);
+    const marker = progress === 'done' ? '✓' : progress === 'blocked' ? '!' : index + 1;
+    const reason = stage.committee_reason === 'source_of_truth' ? 'source of truth' : stage.committee_reason === 'stage_end' ? 'stage end' : 'committee';
+    return `<article class="stage is-${progress} actor-${actor}" style="--stage-color:var(--${actor})">
+      <div class="stage-head"><span class="node">${marker}</span>${stage.committee ? '<span class="stage-gate" title="Committee gate">◆</span>' : ''}</div>
+      <div class="stage-body"><span class="stage-index">Stage ${index + 1}</span><span class="stage-name">${escapeHtml(stage.name || 'Untitled stage')}</span>${stage.action ? `<span class="stage-action">${escapeHtml(stage.action)}</span>` : ''}
+      <div class="stage-flags"><span class="flag actor-${actor}"><i class="actor-dot"></i>${actor === 'ai' ? 'AI' : actor === 'human' ? 'Human' : 'Mixed'}</span>${stage.committee ? `<span class="flag committee"><span>◆</span>${reason}</span>` : stage.checks ? '<span class="flag"><span>✓</span>checks</span>' : '<span class="flag">no gate</span>'}</div>
+      <span class="stage-status">${progress}</span>${stageSteps(stage.steps)}</div></article>`;
+  }
+  function planMarkup(plan) {
+    const stages = Array.isArray(plan.stages) ? plan.stages : [];
+    const total = countNodes(stages); const done = completedNodes(stages); const percent = total ? Math.round(done / total * 100) : 0;
+    const active = stages.find(stage => stage.progress === 'doing') || stages.find(stage => stage.progress === 'blocked') || stages.find(stage => stage.progress === 'todo');
+    const flow = active ? `At ${active.name || 'next stage'}` : total ? 'All stages complete' : 'No stages yet';
+    const status = ['planned','live','done','stalled'].includes(plan.status) ? plan.status : 'planned';
+    return `<article class="plan"><div class="plan-top"><div class="plan-ident"><h2 class="plan-name">${escapeHtml(plan.name || 'Untitled plan')}</h2><div class="plan-meta"><span class="chip ${status}">${escapeHtml(status)}</span>${plan.session ? `<span class="chip">${escapeHtml(plan.session)}</span>` : ''}${plan.version != null ? `<span class="chip">v${escapeHtml(plan.version)}</span>` : ''}</div></div><div class="plan-progress"><div class="progress-line"><strong>${done}/${total} stages complete</strong><span>${escapeHtml(flow)}</span></div><div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}" aria-label="${escapeHtml(plan.name || 'Plan')} completion"><div class="progress-fill" style="width:${percent}%"></div></div></div></div><div class="track-wrap"><div class="track">${stages.length ? stages.map(stageMarkup).join('') : '<div class="empty">No stages have been defined for this plan.</div>'}</div></div></article>`;
+  }
+  function renderSummary(stats, plans) { const calculated = { total:plans.length, planned:0, live:0, done:0, stalled:0 }; plans.forEach(plan => { if (calculated[plan.status] !== undefined) calculated[plan.status]++; }); const data = { ...calculated, ...(stats || {}) }; const fields = [['total','Total'],['live','Live'],['planned','Planned'],['done','Done'],['stalled','Stalled']]; summaryEl.innerHTML = fields.map(([key,label]) => `<div class="summary-item ${key}"><span class="summary-label">${label}</span><span class="summary-value">${Number(data[key]) || 0}</span></div>`).join(''); }
+  async function load() {
+    try {
+      const response = await fetch(`${endpoint}?_=${Date.now()}`, { cache:'no-store', headers:{ Accept:'application/json' } });
+      if (!response.ok) throw new Error(`Request failed (${response.status})`);
+      const payload = await response.json();
+      const plans = Array.isArray(payload.plans) ? payload.plans : [];
+      renderSummary(payload.stats, plans);
+      plansEl.innerHTML = plans.length ? plans.map(planMarkup).join('') : '<div class="empty"><h2>No execution plans yet</h2><p>The ledger will appear here when plans are published.</p></div>';
+      statusEl.textContent = `Updated ${new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
+      pulseEl.classList.remove('error');
+    } catch (error) {
+      if (!plansEl.children.length) { summaryEl.innerHTML = ''; plansEl.innerHTML = `<div class="error"><h2>Ledger unavailable</h2><p>${escapeHtml(error.message)}. Retrying automatically.</p></div>`; }
+      statusEl.textContent = 'Connection interrupted. Retrying'; pulseEl.classList.add('error');
+    }
+  }
+  load(); setInterval(load, 8000);
+})();
+</script>
+</body>
+</html>

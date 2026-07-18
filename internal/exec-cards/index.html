@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Execution Plan Ledger</title>
+  <style>
+    :root {
+      --canvas: #f5f7f8;
+      --surface: #ffffff;
+      --surface-soft: #f8fafb;
+      --ink: #17212b;
+      --muted: #687583;
+      --faint: #96a1ac;
+      --line: #dce3e8;
+      --line-strong: #c9d3da;
+      --blue: #2c6db4;
+      --blue-bg: #e9f2fb;
+      --amber: #9a6410;
+      --amber-bg: #fbf2dd;
+      --purple: #7955aa;
+      --purple-bg: #f1ebf8;
+      --green: #287158;
+      --green-bg: #e8f5ef;
+      --red: #a44949;
+      --red-bg: #f9ebeb;
+      --shadow: 0 12px 32px rgba(25, 43, 57, .055), 0 2px 5px rgba(25, 43, 57, .035);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --canvas: #11171d;
+        --surface: #182129;
+        --surface-soft: #1d2831;
+        --ink: #ebf0f4;
+        --muted: #aab5bf;
+        --faint: #71808c;
+        --line: #2b3944;
+        --line-strong: #40505c;
+        --blue: #77b7f7;
+        --blue-bg: #1b354e;
+        --amber: #efbd64;
+        --amber-bg: #42351d;
+        --purple: #c4a7ec;
+        --purple-bg: #352943;
+        --green: #74c9a4;
+        --green-bg: #1b392f;
+        --red: #ef9d9d;
+        --red-bg: #452a2d;
+        --shadow: 0 12px 32px rgba(0, 0, 0, .18), 0 2px 5px rgba(0, 0, 0, .15);
+      }
+    }
+
+    html[data-theme="light"] { color-scheme: light; }
+    html[data-theme="dark"] { color-scheme: dark; }
+    html[data-theme="light"]:root {
+      --canvas: #f5f7f8; --surface: #fff; --surface-soft: #f8fafb; --ink: #17212b; --muted: #687583; --faint: #96a1ac;
+      --line: #dce3e8; --line-strong: #c9d3da; --blue: #2c6db4; --blue-bg: #e9f2fb; --amber: #9a6410; --amber-bg: #fbf2dd;
+      --purple: #7955aa; --purple-bg: #f1ebf8; --green: #287158; --green-bg: #e8f5ef; --red: #a44949; --red-bg: #f9ebeb;
+      --shadow: 0 12px 32px rgba(25, 43, 57, .055), 0 2px 5px rgba(25, 43, 57, .035);
+    }
+    html[data-theme="dark"]:root {
+      --canvas: #11171d; --surface: #182129; --surface-soft: #1d2831; --ink: #ebf0f4; --muted: #aab5bf; --faint: #71808c;
+      --line: #2b3944; --line-strong: #40505c; --blue: #77b7f7; --blue-bg: #1b354e; --amber: #efbd64; --amber-bg: #42351d;
+      --purple: #c4a7ec; --purple-bg: #352943; --green: #74c9a4; --green-bg: #1b392f; --red: #ef9d9d; --red-bg: #452a2d;
+      --shadow: 0 12px 32px rgba(0, 0, 0, .18), 0 2px 5px rgba(0, 0, 0, .15);
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--canvas); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .shell { width: min(1400px, calc(100% - 48px)); margin: 0 auto; padding: 46px 0 68px; }
+    .masthead { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+    .eyebrow { margin: 0 0 9px; color: var(--blue); font-size: 11px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 0; letter-spacing: -.045em; font-size: clamp(30px, 4vw, 48px); line-height: 1.04; font-weight: 680; }
+    .subtitle { max-width: 620px; margin: 12px 0 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+    .feed-status { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); box-shadow: 0 0 0 4px color-mix(in srgb, var(--faint) 12%, transparent); }
+    .pulse.live { background: var(--green); box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 13%, transparent); }
+    .pulse.error { background: var(--red); box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 13%, transparent); }
+    .summary { display: grid; grid-template-columns: 1.35fr repeat(4, 1fr); gap: 1px; margin: 28px 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--line); }
+    .metric { min-height: 78px; padding: 16px 18px; background: var(--surface); }
+    .metric-label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .metric-value { display: block; font-size: 24px; font-weight: 670; letter-spacing: -.035em; line-height: 1; }
+    .metric-value.live { color: var(--blue); } .metric-value.done { color: var(--green); } .metric-value.stalled { color: var(--red); }
+    .plans { display: grid; gap: 22px; }
+    .plan-card { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); }
+    .plan-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 34%); gap: 32px; padding: 30px 32px 26px; }
+    .plan-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .plan-type, .version { color: var(--muted); font-size: 11px; font-weight: 680; letter-spacing: .08em; text-transform: uppercase; }
+    .version { padding-left: 8px; border-left: 1px solid var(--line-strong); }
+    .plan-name { margin: 0; font-size: clamp(22px, 2.5vw, 32px); font-weight: 670; letter-spacing: -.04em; line-height: 1.12; }
+    .session { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+    .plan-status { display: inline-flex; align-items: center; gap: 6px; margin-left: 2px; padding: 5px 9px; border-radius: 999px; font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .status-planned { color: var(--muted); background: var(--surface-soft); } .status-live, .status-doing { color: var(--blue); background: var(--blue-bg); }
+    .status-done { color: var(--green); background: var(--green-bg); } .status-stalled, .status-blocked { color: var(--red); background: var(--red-bg); }
+    .status-todo { color: var(--muted); background: var(--surface-soft); }
+    .rollup { align-self: center; }
+    .rollup-top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 11px; }
+    .rollup-title { font-size: 11px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .rollup-count { color: var(--muted); font-size: 12px; }
+    .actor-bar { display: flex; height: 12px; overflow: hidden; border-radius: 99px; background: var(--line); }
+    .actor-bar > span { min-width: 0; transition: width .2s ease; }
+    .actor-bar .ai { background: var(--blue); } .actor-bar .human { background: var(--amber); } .actor-bar .mix { background: var(--purple); }
+    .actor-key { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 12px; }
+    .key-item { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; }
+    .key-dot { width: 7px; height: 7px; border-radius: 50%; } .key-dot.ai { background: var(--blue); } .key-dot.human { background: var(--amber); } .key-dot.mix { background: var(--purple); }
+    .progress-line { display: flex; gap: 13px; align-items: center; margin-top: 22px; color: var(--muted); font-size: 12px; }
+    .progress-track { width: 130px; height: 5px; overflow: hidden; border-radius: 20px; background: var(--line); } .progress-fill { height: 100%; border-radius: inherit; background: var(--green); }
+    .stage-area { border-top: 1px solid var(--line); }
+    .stage-heading { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto 76px; align-items: center; gap: 16px; min-height: 45px; padding: 0 32px; border-bottom: 1px solid var(--line); color: var(--faint); font-size: 10px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .stage-list { padding: 4px 0 10px; }
+    .stage-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto 76px; align-items: center; gap: 16px; min-height: 74px; padding: 12px 32px; border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent); }
+    .stage-row:last-child { border-bottom: 0; }
+    .stage-order { color: var(--faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .stage-copy { min-width: 0; }
+    .stage-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 660; }
+    .stage-action { overflow: hidden; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+    .actor-badge, .gate-badge { display: inline-flex; align-items: center; justify-content: center; min-height: 27px; border-radius: 6px; padding: 4px 8px; font-size: 10px; font-weight: 760; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+    .actor-badge.ai { color: var(--blue); background: var(--blue-bg); } .actor-badge.human { color: var(--amber); background: var(--amber-bg); } .actor-badge.mix { color: var(--purple); background: var(--purple-bg); }
+    .gate-badge { border: 1px solid var(--line); color: var(--muted); background: var(--surface-soft); }
+    .gate-badge.committee { border-color: color-mix(in srgb, var(--purple) 38%, var(--line)); color: var(--purple); background: var(--purple-bg); }
+    .gate-badge.checks { border-color: color-mix(in srgb, var(--blue) 27%, var(--line)); color: var(--blue); background: var(--blue-bg); }
+    .stage-state { justify-self: end; min-width: 66px; text-align: center; }
+    .nested { grid-column: 2 / -1; display: grid; gap: 2px; margin: 2px 0 4px; padding: 7px 0 2px 15px; border-left: 1px solid var(--line-strong); }
+    .nested-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; min-height: 38px; padding: 5px 10px; border-radius: 7px; background: var(--surface-soft); }
+    .nested-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+    .nested .actor-badge, .nested .gate-badge { min-height: 23px; padding: 3px 6px; font-size: 9px; }
+    .nested .plan-status { margin: 0; padding: 4px 6px; font-size: 9px; }
+    .empty, .notice { padding: 56px 28px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); text-align: center; }
+    .empty h2, .notice h2 { margin: 0; font-size: 20px; letter-spacing: -.025em; } .empty p, .notice p { max-width: 480px; margin: 10px auto 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .notice { border-color: color-mix(in srgb, var(--red) 30%, var(--line)); } .notice h2 { color: var(--red); }
+    @media (max-width: 860px) { .shell { width: min(100% - 28px, 1400px); padding-top: 28px; } .masthead { align-items: flex-start; flex-direction: column; } .summary { grid-template-columns: repeat(2, 1fr); } .summary .metric:first-child { grid-column: span 2; } .plan-head { grid-template-columns: 1fr; gap: 20px; padding: 24px 20px 22px; } .stage-heading { display: none; } .stage-row { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; padding: 14px 20px; } .stage-row > .gate-badge { grid-column: 2; justify-self: start; } .stage-row > .stage-state { grid-column: 3; grid-row: 1 / span 2; align-self: center; } .stage-row > .actor-badge { justify-self: end; } .nested { grid-column: 2 / -1; } }
+    @media (max-width: 500px) { .summary { grid-template-columns: 1fr 1fr; } .metric { min-height: 70px; padding: 14px; } .metric-value { font-size: 21px; } .plan-name { font-size: 25px; } .stage-row { grid-template-columns: 25px minmax(0, 1fr) auto; padding-inline: 14px; } .stage-action { white-space: normal; } .nested { padding-left: 10px; } .nested-row { grid-template-columns: minmax(0, 1fr) auto; } .nested-row .gate-badge { display: none; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Guided Growth OS</p>
+        <h1>Execution plan ledger</h1>
+        <p class="subtitle">A live view of execution ownership, consequential committee gates, and delivery progress.</p>
+      </div>
+      <div class="feed-status" aria-live="polite"><span class="pulse" id="pulse"></span><span id="updated">Connecting to feed</span></div>
+    </header>
+    <section class="summary" id="summary" aria-label="Plan summary"></section>
+    <section class="plans" id="plans" aria-live="polite"><div class="empty"><h2>Loading execution plans</h2><p>Reading the current ledger.</p></div></section>
+  </main>
+  <script>
+    (() => {
+      'use strict';
+      const endpoint = 'https://guidedgrowthos.com/exec-plan-feed';
+      const pollMs = 8000;
+      const state = { hasData: false };
+      const plansElement = document.getElementById('plans');
+      const summaryElement = document.getElementById('summary');
+      const updatedElement = document.getElementById('updated');
+      const pulseElement = document.getElementById('pulse');
+      const queryTheme = new URLSearchParams(window.location.search).get('theme');
+      if (queryTheme === 'dark' || queryTheme === 'light') document.documentElement.dataset.theme = queryTheme;
+
+      const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+      const titleCase = (value) => String(value || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
+      const validActor = (actor) => ['ai', 'human', 'mix'].includes(actor) ? actor : 'mix';
+      const validProgress = (progress) => ['todo', 'doing', 'done', 'blocked'].includes(progress) ? progress : 'todo';
+      const validStatus = (status) => ['planned', 'live', 'done', 'stalled'].includes(status) ? status : 'planned';
+
+      function flattenNodes(nodes) {
+        return (Array.isArray(nodes) ? nodes : []).flatMap((node) => [node, ...flattenNodes(node.steps)]);
+      }
+
+      function actorRollup(nodes) {
+        const counts = { ai: 0, human: 0, mix: 0 };
+        flattenNodes(nodes).forEach((node) => { counts[validActor(node.actor)] += 1; });
+        return counts;
+      }
+
+      function progressRollup(nodes) {
+        const all = flattenNodes(nodes);
+        const complete = all.filter((node) => validProgress(node.progress) === 'done').length;
+        return { total: all.length, complete, percent: all.length ? Math.round((complete / all.length) * 100) : 0 };
+      }
+
+      function gateMarkup(node) {
+        if (node.committee) return `<span class="gate-badge committee" title="Committee checkpoint: ${escapeHtml(titleCase(node.committee_reason || 'review'))}">Committee</span>`;
+        if (node.checks) return '<span class="gate-badge checks">Checks</span>';
+        return '<span class="gate-badge">Open</span>';
+      }
+
+      function nestedMarkup(nodes) {
+        if (!Array.isArray(nodes) || !nodes.length) return '';
+        return `<div class="nested">${nodes.map((node) => {
+          const actor = validActor(node.actor);
+          const progress = validProgress(node.progress);
+          return `<div class="nested-row">
+            <span class="nested-name" title="${escapeHtml(node.action || node.name || '')}">${escapeHtml(node.name || 'Untitled step')}</span>
+            <span class="actor-badge ${actor}">${actor}</span>
+            ${gateMarkup(node)}
+            <span class="plan-status status-${progress}">${progress}</span>
+            ${nestedMarkup(node.steps)}
+          </div>`;
+        }).join('')}</div>`;
+      }
+
+      function stageMarkup(stage, index) {
+        const actor = validActor(stage.actor);
+        const progress = validProgress(stage.progress);
+        return `<article class="stage-row">
+          <div class="stage-order">${String(index + 1).padStart(2, '0')}</div>
+          <div class="stage-copy">
+            <div class="stage-name" title="${escapeHtml(stage.name || '')}">${escapeHtml(stage.name || 'Untitled stage')}</div>
+            <div class="stage-action" title="${escapeHtml(stage.action || '')}">${escapeHtml(stage.action || 'No action specified')}</div>
+          </div>
+          <span class="actor-badge ${actor}">${actor}</span>
+          ${gateMarkup(stage)}
+          <span class="plan-status stage-state status-${progress}">${progress}</span>
+          ${nestedMarkup(stage.steps)}
+        </article>`;
+      }
+
+      function planMarkup(plan) {
+        const stages = Array.isArray(plan.stages) ? plan.stages : [];
+        const actors = actorRollup(stages);
+        const actorTotal = actors.ai + actors.human + actors.mix;
+        const progress = progressRollup(stages);
+        const status = validStatus(plan.status);
+        const width = (count) => actorTotal ? (count / actorTotal) * 100 : 0;
+        return `<article class="plan-card">
+          <div class="plan-head">
+            <div>
+              <div class="plan-kicker"><span class="plan-type">${escapeHtml(plan.type || 'Execution plan')}</span><span class="version">v${escapeHtml(plan.version || '1')}</span><span class="plan-status status-${status}">${status}</span></div>
+              <h2 class="plan-name">${escapeHtml(plan.name || 'Untitled plan')}</h2>
+              <p class="session">Session ${escapeHtml(plan.session || 'Unassigned')}</p>
+              <div class="progress-line"><span>${progress.complete} of ${progress.total} steps complete</span><span class="progress-track" aria-hidden="true"><span class="progress-fill" style="width:${progress.percent}%"></span></span><span>${progress.percent}%</span></div>
+            </div>
+            <div class="rollup" aria-label="Actor distribution">
+              <div class="rollup-top"><span class="rollup-title">Delivery ownership</span><span class="rollup-count">${actorTotal} steps</span></div>
+              <div class="actor-bar" title="AI ${actors.ai}, Human ${actors.human}, Mixed ${actors.mix}"><span class="ai" style="width:${width(actors.ai)}%"></span><span class="human" style="width:${width(actors.human)}%"></span><span class="mix" style="width:${width(actors.mix)}%"></span></div>
+              <div class="actor-key"><span class="key-item"><i class="key-dot ai"></i>AI ${actors.ai}</span><span class="key-item"><i class="key-dot human"></i>Human ${actors.human}</span><span class="key-item"><i class="key-dot mix"></i>Mixed ${actors.mix}</span></div>
+            </div>
+          </div>
+          <div class="stage-area">
+            <div class="stage-heading"><span>Step</span><span>Stage / action</span><span>Actor</span><span>Gate</span><span>Progress</span></div>
+            <div class="stage-list">${stages.length ? stages.map(stageMarkup).join('') : '<div class="empty"><h2>No stages yet</h2><p>This plan has not added executable stages.</p></div>'}</div>
+          </div>
+        </article>`;
+      }
+
+      function summaryMarkup(stats, plans) {
+        const fallback = plans.reduce((totals, plan) => { totals[validStatus(plan.status)] += 1; totals.total += 1; return totals; }, { planned: 0, live: 0, done: 0, stalled: 0, total: 0 });
+        const values = { ...fallback, ...(stats || {}) };
+        return `<div class="metric"><span class="metric-label">Plans in ledger</span><span class="metric-value">${Number(values.total) || 0}</span></div>
+          <div class="metric"><span class="metric-label">Planned</span><span class="metric-value">${Number(values.planned) || 0}</span></div>
+          <div class="metric"><span class="metric-label">Live</span><span class="metric-value live">${Number(values.live) || 0}</span></div>
+          <div class="metric"><span class="metric-label">Complete</span><span class="metric-value done">${Number(values.done) || 0}</span></div>
+          <div class="metric"><span class="metric-label">Stalled</span><span class="metric-value stalled">${Number(values.stalled) || 0}</span></div>`;
+      }
+
+      function render(data) {
+        const plans = Array.isArray(data?.plans) ? data.plans : [];
+        summaryElement.innerHTML = summaryMarkup(data?.stats, plans);
+        plansElement.innerHTML = plans.length ? plans.map(planMarkup).join('') : '<div class="empty"><h2>No execution plans</h2><p>The ledger is connected, but there are no plans to display.</p></div>';
+      }
+
+      async function refresh() {
+        try {
+          const response = await fetch(`${endpoint}?_=${Date.now()}`, { cache: 'no-store', headers: { Accept: 'application/json' } });
+          if (!response.ok) throw new Error(`Feed returned ${response.status}`);
+          const data = await response.json();
+          render(data);
+          state.hasData = true;
+          pulseElement.className = 'pulse live';
+          updatedElement.textContent = `Live feed · updated ${new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date())}`;
+        } catch (error) {
+          pulseElement.className = 'pulse error';
+          updatedElement.textContent = 'Feed unavailable · retrying in 8s';
+          if (!state.hasData) {
+            summaryElement.innerHTML = '';
+            plansElement.innerHTML = '<div class="notice"><h2>Unable to load the ledger</h2><p>The live execution-plan feed could not be reached. This display will keep retrying automatically.</p></div>';
+          }
+          console.warn('Execution plan feed refresh failed:', error);
+        }
+      }
+
+      refresh();
+      window.setInterval(refresh, pollMs);
+    })();
+  </script>
+</body>
+</html>
