@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Command Center</title>
+  <style>
+    :root { color-scheme: light dark; --canvas:#f7f8f6; --paper:#ffffff; --ink:#17201d; --muted:#68716d; --line:#dfe4df; --shadow:0 10px 28px rgba(24,35,29,.06); --accent:#275c4a; --accent-soft:#e6f1ec; --warn:#995d16; --warn-soft:#fff1dc; --danger:#9b3e38; --danger-soft:#fbe7e4; --cool:#28638e; --cool-soft:#e5f1f8; --neutral:#625c91; --neutral-soft:#eceaf8; --warm:#a24d22; --warm-soft:#fbeade; --done:#3d7052; --done-soft:#e6f3e9; }
+    @media (prefers-color-scheme: dark) { :root { --canvas:#121614; --paper:#1a201d; --ink:#edf4ef; --muted:#a9b4ae; --line:#323d37; --shadow:0 12px 30px rgba(0,0,0,.2); --accent:#8ed0af; --accent-soft:#183d2e; --warn:#f5bd75; --warn-soft:#493315; --danger:#ffaaa0; --danger-soft:#482520; --cool:#8bcaef; --cool-soft:#173a4c; --neutral:#c7befb; --neutral-soft:#332e58; --warm:#f6b084; --warm-soft:#4a291a; --done:#9bd8a9; --done-soft:#1e3e28; } }
+    :root[data-theme="light"] { color-scheme: light; --canvas:#f7f8f6; --paper:#ffffff; --ink:#17201d; --muted:#68716d; --line:#dfe4df; --shadow:0 10px 28px rgba(24,35,29,.06); --accent:#275c4a; --accent-soft:#e6f1ec; --warn:#995d16; --warn-soft:#fff1dc; --danger:#9b3e38; --danger-soft:#fbe7e4; --cool:#28638e; --cool-soft:#e5f1f8; --neutral:#625c91; --neutral-soft:#eceaf8; --warm:#a24d22; --warm-soft:#fbeade; --done:#3d7052; --done-soft:#e6f3e9; }
+    :root[data-theme="dark"] { color-scheme: dark; --canvas:#121614; --paper:#1a201d; --ink:#edf4ef; --muted:#a9b4ae; --line:#323d37; --shadow:0 12px 30px rgba(0,0,0,.2); --accent:#8ed0af; --accent-soft:#183d2e; --warn:#f5bd75; --warn-soft:#493315; --danger:#ffaaa0; --danger-soft:#482520; --cool:#8bcaef; --cool-soft:#173a4c; --neutral:#c7befb; --neutral-soft:#332e58; --warm:#f6b084; --warm-soft:#4a291a; --done:#9bd8a9; --done-soft:#1e3e28; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--canvas); color:var(--ink); font:16px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, select { font:inherit; }
+    .shell { max-width:1480px; margin:0 auto; padding:34px clamp(20px,4vw,60px) 64px; }
+    .topbar { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; margin-bottom:42px; }
+    .eyebrow { color:var(--accent); font-size:.76rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; margin:0 0 8px; }
+    h1 { margin:0; font-size:clamp(2rem,4vw,3.55rem); letter-spacing:-.055em; line-height:1; }
+    .subtitle { color:var(--muted); margin:13px 0 0; font-size:1.02rem; }
+    .vitals { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; max-width:700px; }
+    .vital, .session, .chip, .badge, .status { display:inline-flex; align-items:center; gap:6px; border-radius:999px; white-space:nowrap; }
+    .vital { background:var(--paper); border:1px solid var(--line); padding:8px 11px; color:var(--muted); font-size:.82rem; box-shadow:var(--shadow); }
+    .vital b { color:var(--ink); font-weight:750; }
+    .quiet { color:var(--muted); font-size:.83rem; }
+    main { display:grid; gap:48px; }
+    .section-heading { display:flex; gap:18px; align-items:baseline; justify-content:space-between; margin:0 0 18px; }
+    h2 { font-size:clamp(1.35rem,2vw,1.75rem); letter-spacing:-.035em; margin:0; }
+    .section-copy { color:var(--muted); font-size:.9rem; }
+    .section.needs { background:linear-gradient(135deg,var(--accent-soft),transparent 72%); border:1px solid color-mix(in srgb, var(--accent) 20%, var(--line)); border-radius:24px; padding:clamp(20px,3vw,34px); }
+    .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,285px),1fr)); gap:16px; }
+    .card { background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:22px; box-shadow:var(--shadow); min-width:0; }
+    .needs .card { border-color:color-mix(in srgb,var(--accent) 25%, var(--line)); }
+    .card-top, .meta-row, .step-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .card-kicker { color:var(--muted); font-size:.75rem; font-weight:800; text-transform:uppercase; letter-spacing:.09em; }
+    h3 { font-size:1.15rem; letter-spacing:-.02em; margin:5px 0 0; line-height:1.25; }
+    .card p { color:var(--muted); margin:12px 0 0; }
+    .status { padding:5px 9px; font-size:.73rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; border:1px solid transparent; }
+    .status.live, .status.deciding, .status.doing { color:var(--accent); background:var(--accent-soft); }
+    .status.planned, .status.todo { color:var(--neutral); background:var(--neutral-soft); }
+    .status.done, .status.green { color:var(--done); background:var(--done-soft); }
+    .status.blocked, .status.stalled, .status.judged_bad, .status.failed { color:var(--danger); background:var(--danger-soft); }
+    .status.could_not_judge, .status.died { color:var(--warn); background:var(--warn-soft); }
+    .chip { padding:5px 9px; font-size:.78rem; font-weight:750; border:1px solid transparent; }
+    .chip.low { color:var(--cool); background:var(--cool-soft); }
+    .chip.medium { color:var(--neutral); background:var(--neutral-soft); }
+    .chip.high { color:var(--warm); background:var(--warm-soft); }
+    .chip.unknown { color:var(--muted); background:color-mix(in srgb,var(--muted) 12%,transparent); }
+    .session { color:var(--muted); font-size:.78rem; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+    .session::before { content:"Session"; font-size:.67rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; opacity:.8; }
+    .meta-row { border-top:1px solid var(--line); margin-top:17px; padding-top:14px; align-items:center; flex-wrap:wrap; }
+    .member-list { display:grid; gap:9px; border-top:1px solid var(--line); margin-top:16px; padding-top:15px; }
+    .member { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.88rem; }
+    .member-copy { min-width:0; color:var(--muted); }
+    .member-copy b { color:var(--ink); display:block; font-size:.86rem; }
+    .empty { grid-column:1/-1; padding:26px; background:color-mix(in srgb,var(--paper) 80%,transparent); border:1px dashed var(--line); border-radius:16px; color:var(--muted); text-align:center; }
+    .plans { display:grid; gap:18px; }
+    details.plan-card { background:var(--paper); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); overflow:hidden; }
+    details.plan-card[open] { border-color:color-mix(in srgb,var(--accent) 36%, var(--line)); }
+    details summary { list-style:none; cursor:pointer; padding:24px; }
+    details summary::-webkit-details-marker { display:none; }
+    .plan-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:16px; align-items:start; }
+    .plan-title-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .plan-title-row h3 { margin:0; font-size:1.35rem; }
+    .plan-summary { margin:8px 0 0; color:var(--muted); max-width:70ch; }
+    .plan-meta { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:16px; }
+    .rollup { border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:.79rem; padding:5px 9px; }
+    .expand { color:var(--accent); font-weight:800; font-size:.84rem; }
+    details[open] .expand::after { content:"Hide structure"; } details:not([open]) .expand::after { content:"View structure"; }
+    .plan-body { padding:0 24px 24px; border-top:1px solid var(--line); }
+    .phase-list { display:grid; gap:14px; padding-top:20px; }
+    .phase { background:color-mix(in srgb,var(--canvas) 68%, var(--paper)); border:1px solid var(--line); border-radius:15px; padding:18px; }
+    .phase-head { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .phase-name { font-size:1rem; font-weight:800; }
+    .step-list { display:grid; gap:9px; }
+    .step { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:13px 14px; }
+    .step-name { font-weight:730; min-width:0; }
+    .step-sub { margin-top:6px; color:var(--muted); font-size:.86rem; }
+    .badge { padding:4px 8px; font-size:.7rem; font-weight:800; color:var(--accent); background:var(--accent-soft); text-transform:uppercase; letter-spacing:.045em; }
+    .actor { color:var(--muted); font-size:.75rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
+    .done-toolbar { display:flex; align-items:center; gap:10px; }
+    select { border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:9px; padding:7px 10px; font-size:.85rem; }
+    .history { max-height:460px; overflow:auto; padding-right:4px; }
+    .history-grid { display:grid; gap:10px; }
+    .history-row { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:15px 17px; display:flex; justify-content:space-between; gap:16px; align-items:center; }
+    .history-row h3 { margin:0; font-size:1rem; }.history-row p { margin:5px 0 0; color:var(--muted); font-size:.87rem; }
+    @media (max-width:780px) { .shell { padding-top:24px; }.topbar { flex-direction:column; margin-bottom:34px; }.vitals { justify-content:flex-start; }.section-heading { align-items:flex-start; flex-direction:column; gap:4px; }.plan-head { grid-template-columns:1fr; }.history-row { align-items:flex-start; flex-direction:column; }.done-toolbar { width:100%; justify-content:space-between; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div><p class="eyebrow">Operations overview</p><h1>Command Center</h1><p class="subtitle">A calm view of what needs you, what is moving, and what is next.</p></div>
+      <div id="vitals" class="vitals" aria-live="polite"></div>
+    </header>
+    <main>
+      <section class="section needs" aria-labelledby="needs-title"><div class="section-heading"><div><h2 id="needs-title">Needs you</h2><div class="section-copy">Decisions and recovered hangs that deserve Yair's attention.</div></div><span id="needs-note" class="quiet"></span></div><div id="needs-grid" class="card-grid"></div></section>
+      <section class="section" aria-labelledby="live-title"><div class="section-heading"><div><h2 id="live-title">Live</h2><div class="section-copy">Workers, committees, and plan steps actively moving now.</div></div><span id="live-note" class="quiet"></span></div><div id="live-grid" class="card-grid"></div></section>
+      <section class="section" aria-labelledby="planned-title"><div class="section-heading"><div><h2 id="planned-title">Planned</h2><div class="section-copy">Open a plan to read its phases and the work inside each one.</div></div><span id="plans-note" class="quiet"></span></div><div id="plans" class="plans"></div></section>
+      <section class="section" aria-labelledby="done-title"><div class="section-heading"><div><div><h2 id="done-title">Done</h2><div class="section-copy">Completed history with honest outcomes.</div></div><div class="done-toolbar"><label class="quiet" for="history-filter">Show</label><select id="history-filter"><option value="all">All outcomes</option><option value="green">Passed</option><option value="judged_bad">Real defects</option><option value="could_not_judge">Could-not-judge</option><option value="died">Died</option></select></div></div><div id="done-note" class="quiet"></div><div class="history"><div id="history" class="history-grid"></div></div></section>
+    </main>
+  </div>
+  <script>
+    (() => {
+      const endpoints = { vitals: '/brain-status', committees: '/committee-feed', workers: '/builder-feed', plans: '/exec-plan-feed' };
+      const state = { vitals: null, committees: null, workers: null, plans: null, unavailable: new Set(), historyFilter: 'all' };
+      const queryTheme = new URLSearchParams(location.search).get('theme');
+      if (queryTheme === 'light' || queryTheme === 'dark') document.documentElement.dataset.theme = queryTheme;
+      const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[character]));
+      const list = value => Array.isArray(value) ? value : [];
+      const normalized = value => String(value || '').toLowerCase().replace(/\s+/g, '_');
+      const label = value => String(value || 'unknown').replace(/_/g, ' ');
+      const note = feed => state.unavailable.has(feed) ? `${feed} unavailable` : '';
+      const modelChip = (model, effort) => {
+        if (!model && !effort) return '';
+        const tier = ['low','medium','high'].includes(normalized(effort)) ? normalized(effort) : 'unknown';
+        return `<span class="chip ${tier}">${escapeHtml(model || 'model')} @ ${escapeHtml(effort || 'unspecified')}</span>`;
+      };
+      const session = value => value ? `<span class="session" title="${escapeHtml(value)}">${escapeHtml(value)}</span>` : '';
+      const status = value => { const key = normalized(value); return `<span class="status ${key}">${escapeHtml(label(value))}</span>`; };
+      const empty = text => `<div class="empty">${escapeHtml(text)}</div>`;
+      const flattenNodes = (nodes, parent = []) => list(nodes).flatMap(node => [{ node, parent }, ...flattenNodes(node.steps, [...parent, node])]);
+      const allCommittees = () => { const feed = state.committees || {}; return [...list(feed.decisions), ...list(feed.execution)]; };
+      const allPlans = () => list((state.plans || {}).plans);
+      const allWorkers = () => { const feed = state.workers || {}; return [...list(feed.running), ...list(feed.recent)]; };
+      const isStrategic = committee => /strateg|gate|approval|direction|priorit|decision/i.test(`${committee.name || ''} ${committee.description || ''}`);
+      const outcome = committee => normalized(committee.judgement || committee.verdict || committee.status);
+      const decisionText = node => node.action || node.name || 'Decision required';
+      const actorRollup = plan => {
+        const actors = flattenNodes(plan.stages).map(item => normalized(item.node.actor)).filter(Boolean);
+        const counts = actors.reduce((total, actor) => ({ ...total, [actor]: (total[actor] || 0) + 1 }), {});
+        const text = ['ai','human','mix'].filter(actor => counts[actor]).map(actor => `${counts[actor]} ${actor}`).join(' · ');
+        return text || 'No assigned actors yet';
+      };
+      const nodeProgress = node => normalized(node.progress || node.status || 'todo');
+      const latestMembers = committee => list(committee.rounds).flatMap(round => list(round.members));
+      function renderVitals() {
+        const el = document.querySelector('#vitals'); const vitals = state.vitals;
+        if (state.unavailable.has('vitals') || !vitals || /not reporting/i.test(String(vitals.box || ''))) { el.innerHTML = '<span class="quiet">box vitals unavailable</span>'; return; }
+        const entries = [['box', vitals.box], ['load', vitals.load], ['memory', vitals.mem], ['disk', vitals.disk_pct != null ? `${vitals.disk_pct}%` : null], ['agents', vitals.live_agent_count], ['uptime', vitals.uptime]].filter(([, value]) => value !== undefined && value !== null && value !== '');
+        el.innerHTML = entries.map(([name, value]) => `<span class="vital"><b>${escapeHtml(name)}</b> ${escapeHtml(value)}</span>`).join('') || '<span class="quiet">box vitals unavailable</span>';
+      }
+      function renderNeeds() {
+        const items = [];
+        allPlans().forEach(plan => flattenNodes(plan.stages).forEach(({ node }) => { if (normalized(node.actor) === 'human' && nodeProgress(node) === 'todo') items.push({ kind:'Your decision', title:plan.name || 'Untitled plan', text:decisionText(node), plan, node }); }));
+        allCommittees().forEach(committee => { if (outcome(committee) === 'died') items.push({ kind:'Recovered hang', title:committee.name || 'Committee', text:committee.description || 'A committee stopped responding and has been saved for review.', committee, recovered:true }); else if (isStrategic(committee)) items.push({ kind:'Strategic gate', title:committee.name || 'Committee', text:committee.description || committee.verdict || 'Strategic direction is needed.', committee }); });
+        document.querySelector('#needs-note').textContent = note('committees') || note('plans');
+        document.querySelector('#needs-grid').innerHTML = items.length ? items.map(item => `<article class="card"><div class="card-top"><div><div class="card-kicker">${escapeHtml(item.kind)}</div><h3>${escapeHtml(item.title)}</h3></div>${item.recovered ? '<span class="status died">Recovered hang</span>' : '<span class="status todo">Needs input</span>'}</div><p>${escapeHtml(item.text)}</p><div class="meta-row">${item.node ? modelChip(item.node.model, item.node.effort) : modelChip((latestMembers(item.committee)[0] || {}).role, (latestMembers(item.committee)[0] || {}).effort)}${session((item.plan || item.committee || {}).session)}</div></article>`).join('') : empty('No decisions are waiting for you right now.');
+      }
+      function renderLive() {
+        const items = [];
+        allWorkers().filter(worker => normalized(worker.state) === 'running').forEach(worker => items.push({ type:'Worker', title:worker.label || 'Unnamed worker', text:worker.host ? `Working on ${worker.host}` : 'Working now', entity:worker, state:worker.state }));
+        allCommittees().filter(committee => normalized(committee.status) === 'deciding').forEach(committee => items.push({ type:'Committee', title:committee.name || 'Committee', text:committee.description || 'Deliberating now', entity:committee, state:committee.status }));
+        allPlans().forEach(plan => flattenNodes(plan.stages).forEach(({ node, parent }) => { if (nodeProgress(node) === 'doing') items.push({ type:'Plan step', title:node.name || 'Active plan step', text:parent.at(-1)?.name ? `Phase: ${parent.at(-1).name}` : plan.name || 'Plan activity', entity:node, session:plan.session, state:'doing' }); }));
+        document.querySelector('#live-note').textContent = note('workers') || note('committees') || note('plans');
+        document.querySelector('#live-grid').innerHTML = items.length ? items.map(item => { const entity = item.entity; const member = item.type === 'Committee' ? latestMembers(entity)[0] || {} : entity; return `<article class="card"><div class="card-top"><div><div class="card-kicker">${escapeHtml(item.type)}</div><h3>${escapeHtml(item.title)}</h3></div>${status(item.state)}</div><p>${escapeHtml(item.text)}</p><div class="meta-row">${modelChip(member.model || member.role, member.effort)}${session(item.session || entity.session)}</div></article>`; }).join('') : empty('Nothing is actively running at the moment.');
+      }
+      function renderSteps(nodes) {
+        return list(nodes).map(node => `<div class="step"><div class="step-top"><div><div class="actor">${escapeHtml(node.actor || 'unassigned')}</div><div class="step-name">${escapeHtml(node.name || node.action || 'Unnamed step')}</div></div>${status(node.progress || node.status || 'todo')}</div><div class="plan-meta">${normalized(node.actor) === 'ai' ? modelChip(node.model, node.effort) : ''}${node.committee ? '<span class="badge">Committee</span>' : ''}</div>${node.action && node.action !== node.name ? `<div class="step-sub">${escapeHtml(node.action)}</div>` : ''}${list(node.steps).length ? `<div class="step-list" style="margin-top:10px">${renderSteps(node.steps)}</div>` : ''}</div>`).join('');
+      }
+      function renderPlans() {
+        const plans = allPlans().filter(plan => ['planned','live'].includes(normalized(plan.status)));
+        document.querySelector('#plans-note').textContent = note('plans');
+        document.querySelector('#plans').innerHTML = plans.length ? plans.map(plan => `<details class="plan-card" ${normalized(plan.status) === 'live' ? 'open' : ''}><summary><div class="plan-head"><div><div class="plan-title-row"><h3>${escapeHtml(plan.name || 'Untitled plan')}</h3>${status(plan.status || 'planned')}</div><p class="plan-summary">${escapeHtml(plan.type || plan.phase || 'Structured execution plan')}</p><div class="plan-meta">${modelChip(plan.author_model, plan.author_effort)}<span class="rollup">${escapeHtml(actorRollup(plan))}</span>${session(plan.session)}</div></div><span class="expand" aria-hidden="true"></span></div></summary><div class="plan-body"><div class="phase-list">${list(plan.stages).length ? list(plan.stages).map((phase, index) => `<section class="phase"><div class="phase-head"><span class="phase-name">Phase ${index + 1}: ${escapeHtml(phase.name || phase.action || 'Untitled phase')}</span>${status(phase.progress || phase.status || 'todo')}</div><div class="step-list">${list(phase.steps).length ? renderSteps(phase.steps) : '<div class="quiet">No steps have been added to this phase yet.</div>'}</div></section>`).join('') : '<div class="empty">This plan has no phases yet.</div>'}</div></div></details>`).join('') : empty('No plans are currently queued or live.');
+      }
+      function historyItems() {
+        const committees = allCommittees().filter(committee => ['green','judged_bad','could_not_judge','died'].includes(outcome(committee))).map(committee => ({ kind:'Committee', title:committee.name || 'Committee', text:committee.verdict || committee.description || 'Committee completed.', outcome:outcome(committee), session:committee.session }));
+        const workers = allWorkers().filter(worker => ['done','failed','stalled'].includes(normalized(worker.state))).map(worker => ({ kind:'Worker', title:worker.label || 'Worker', text:normalized(worker.state) === 'done' ? 'Completed work.' : `Worker ${label(worker.state)}.`, outcome:normalized(worker.state) === 'done' ? 'green' : 'judged_bad', session:worker.session, model:worker.model, effort:worker.effort }));
+        const plans = allPlans().filter(plan => ['done','stalled'].includes(normalized(plan.status))).map(plan => ({ kind:'Plan', title:plan.name || 'Plan', text:normalized(plan.status) === 'done' ? 'Plan completed.' : 'Plan stalled.', outcome:normalized(plan.status) === 'done' ? 'green' : 'could_not_judge', session:plan.session, model:plan.author_model, effort:plan.author_effort }));
+        return [...committees, ...workers, ...plans];
+      }
+      function outcomeText(value) { return ({ green:'Passed', judged_bad:'Real defects', could_not_judge:'Could-not-judge', died:'Died' }[value] || label(value)); }
+      function renderHistory() {
+        const items = historyItems().filter(item => state.historyFilter === 'all' || item.outcome === state.historyFilter);
+        document.querySelector('#done-note').textContent = note('committees') || note('workers') || note('plans');
+        document.querySelector('#history').innerHTML = items.length ? items.map(item => `<article class="history-row"><div><div class="card-kicker">${escapeHtml(item.kind)}</div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></div><div class="plan-meta">${modelChip(item.model, item.effort)}${session(item.session)}${status(item.outcome).replace(escapeHtml(label(item.outcome)), escapeHtml(outcomeText(item.outcome)))}</div></article>`).join('') : empty('No completed items match this outcome.');
+      }
+      function render() { renderVitals(); renderNeeds(); renderLive(); renderPlans(); renderHistory(); }
+      async function fetchFeed(name, url) { const separator = url.includes('?') ? '&' : '?'; const response = await fetch(`${url}${separator}_=${Date.now()}`, { cache:'no-store', headers:{ 'Cache-Control':'no-store' } }); if (!response.ok) throw new Error(`${name} ${response.status}`); return response.json(); }
+      async function refresh() { const keys = Object.keys(endpoints); const results = await Promise.allSettled(keys.map(key => fetchFeed(key, endpoints[key]))); results.forEach((result, index) => { const key = keys[index]; if (result.status === 'fulfilled') { state[key] = result.value; state.unavailable.delete(key); } else { state.unavailable.add(key); } }); render(); }
+      document.querySelector('#history-filter').addEventListener('change', event => { state.historyFilter = event.target.value; renderHistory(); });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+      render(); refresh(); setInterval(() => { if (!document.hidden) refresh(); }, 6000);
+    })();
+  </script>
+</body>
+</html>

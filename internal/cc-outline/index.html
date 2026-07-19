@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Command Center · Structured Outline</title>
+  <style>
+    :root {
+      --paper: #f8f7f4;
+      --panel: #ffffff;
+      --ink: #20201d;
+      --muted: #72716b;
+      --faint: #a5a39c;
+      --line: #dfddd5;
+      --line-strong: #c8c5bb;
+      --accent: #325b85;
+      --accent-soft: #eaf1f8;
+      --needs: #855a22;
+      --needs-soft: #fbf2e5;
+      --good: #33715d;
+      --bad: #a0443c;
+      --unknown: #766644;
+      --danger: #984740;
+      --chip-cool-bg: #e9f3f4;
+      --chip-cool: #225d68;
+      --chip-mid-bg: #f0eee9;
+      --chip-mid: #56534c;
+      --chip-hot-bg: #f9e9df;
+      --chip-hot: #9a492f;
+      --shadow: 0 10px 30px rgba(45, 42, 35, .05);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #171816;
+        --panel: #1e201d;
+        --ink: #eeede7;
+        --muted: #a9a8a0;
+        --faint: #74756e;
+        --line: #363833;
+        --line-strong: #4a4c45;
+        --accent: #94bce5;
+        --accent-soft: #1e303f;
+        --needs: #e1b878;
+        --needs-soft: #392b1e;
+        --good: #86c6a6;
+        --bad: #ec9b91;
+        --unknown: #dbc580;
+        --danger: #e99a91;
+        --chip-cool-bg: #1e3437;
+        --chip-cool: #9acdd2;
+        --chip-mid-bg: #33342f;
+        --chip-mid: #d5d2c8;
+        --chip-hot-bg: #41291f;
+        --chip-hot: #f0ae94;
+        --shadow: none;
+      }
+    }
+
+    :root[data-theme="light"] { color-scheme: light; }
+    :root[data-theme="dark"] { color-scheme: dark; }
+    :root[data-theme="light"] {
+      --paper: #f8f7f4; --panel: #ffffff; --ink: #20201d; --muted: #72716b; --faint: #a5a39c;
+      --line: #dfddd5; --line-strong: #c8c5bb; --accent: #325b85; --accent-soft: #eaf1f8;
+      --needs: #855a22; --needs-soft: #fbf2e5; --good: #33715d; --bad: #a0443c; --unknown: #766644;
+      --danger: #984740; --chip-cool-bg: #e9f3f4; --chip-cool: #225d68; --chip-mid-bg: #f0eee9;
+      --chip-mid: #56534c; --chip-hot-bg: #f9e9df; --chip-hot: #9a492f; --shadow: 0 10px 30px rgba(45, 42, 35, .05);
+    }
+    :root[data-theme="dark"] {
+      --paper: #171816; --panel: #1e201d; --ink: #eeede7; --muted: #a9a8a0; --faint: #74756e;
+      --line: #363833; --line-strong: #4a4c45; --accent: #94bce5; --accent-soft: #1e303f;
+      --needs: #e1b878; --needs-soft: #392b1e; --good: #86c6a6; --bad: #ec9b91; --unknown: #dbc580;
+      --danger: #e99a91; --chip-cool-bg: #1e3437; --chip-cool: #9acdd2; --chip-mid-bg: #33342f;
+      --chip-mid: #d5d2c8; --chip-hot-bg: #41291f; --chip-hot: #f0ae94; --shadow: none;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.65 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: .002em;
+    }
+    button { font: inherit; }
+    main { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 58px 0 84px; }
+    .masthead { display: flex; justify-content: space-between; gap: 28px; align-items: flex-start; padding-bottom: 30px; border-bottom: 1px solid var(--line-strong); }
+    .eyebrow, .kicker { margin: 0 0 7px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 5px; font: 650 clamp(32px, 5vw, 50px)/1.08 ui-serif, Georgia, serif; letter-spacing: -.035em; }
+    .subtitle { margin: 0; color: var(--muted); max-width: 680px; }
+    .header-meta { min-width: 190px; text-align: right; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .header-meta strong { display: block; color: var(--ink); font-weight: 650; }
+    .vitals { display: flex; flex-wrap: wrap; gap: 9px 20px; margin: 19px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 13px; }
+    .vitals b { color: var(--ink); font-weight: 650; }
+    .quiet { color: var(--faint); }
+
+    .section { padding: 42px 0; border-bottom: 1px solid var(--line); }
+    .section.needs { margin-top: 28px; padding: 28px; border: 1px solid color-mix(in srgb, var(--needs) 28%, var(--line)); border-radius: 5px; background: var(--needs-soft); box-shadow: var(--shadow); }
+    .section-heading { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+    .section-heading h2 { margin: 0; font: 650 26px/1.15 ui-serif, Georgia, serif; letter-spacing: -.022em; }
+    .count { color: var(--muted); font-size: 13px; }
+    .section-note { margin: -9px 0 20px; color: var(--muted); font-size: 14px; }
+    .empty, .unavailable { margin: 0; padding: 16px 0 2px; color: var(--muted); font-style: italic; }
+    .unavailable { font-size: 13px; }
+
+    .call-list, .live-list, .history-list { margin: 0; padding: 0; list-style: none; }
+    .call, .live-item, .history-item { padding: 17px 0; border-top: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
+    .call:first-child, .live-item:first-child, .history-item:first-child { border-top: 0; padding-top: 0; }
+    .call-title, .row-title { font-weight: 700; line-height: 1.35; }
+    .call-context, .row-meta, .step-meta { margin-top: 4px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .call-kind { display: inline-block; margin-right: 8px; color: var(--needs); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; vertical-align: 1px; }
+    .recovered { color: var(--good); }
+    .decision-text { margin: 7px 0 0; font: 500 17px/1.55 ui-serif, Georgia, serif; }
+
+    .live-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 44px; }
+    .subhead { margin: 0 0 12px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; }
+    .state { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .state.running, .state.deciding, .state.doing { color: var(--accent); }
+    .state.blocked, .state.failed, .state.stalled { color: var(--danger); }
+    .state.done { color: var(--good); }
+    .state.todo, .state.planned { color: var(--muted); }
+
+    .plan { margin: 0 0 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; }
+    .plan > summary { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; padding: 22px 24px; cursor: pointer; list-style: none; }
+    .plan > summary::-webkit-details-marker { display: none; }
+    .plan > summary::after { content: "+"; color: var(--muted); font-size: 21px; line-height: 1; }
+    .plan[open] > summary::after { content: "−"; }
+    .plan-title { margin: 0; font: 650 23px/1.25 ui-serif, Georgia, serif; letter-spacing: -.018em; }
+    .plan-summary { margin: 5px 0 0; color: var(--muted); font-size: 14px; }
+    .plan-meta { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 7px; color: var(--muted); font-size: 12px; text-align: right; }
+    .outline { padding: 0 24px 28px; }
+    .outline-intro { display: flex; flex-wrap: wrap; gap: 8px 15px; padding: 3px 0 20px; color: var(--muted); font-size: 13px; }
+    .outline-intro b { color: var(--ink); font-weight: 650; }
+    .phase { padding: 22px 0 0 26px; border-top: 1px solid var(--line); position: relative; }
+    .phase::before { content: ""; position: absolute; top: 29px; left: 0; width: 10px; height: 10px; border: 2px solid var(--line-strong); border-radius: 50%; background: var(--panel); }
+    .phase-title { margin: 0 0 14px; font: 650 19px/1.3 ui-serif, Georgia, serif; letter-spacing: -.012em; }
+    .phase-action { display: block; margin-top: 3px; color: var(--muted); font: 400 14px/1.45 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+    .steps { margin: 0; padding: 0; list-style: none; }
+    .step { padding: 12px 0 13px 20px; border-left: 1px solid var(--line-strong); position: relative; }
+    .step::before { content: ""; position: absolute; left: -4px; top: 22px; width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+    .step:last-child { padding-bottom: 2px; }
+    .step-top { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px 9px; }
+    .step-name { font-weight: 680; line-height: 1.38; }
+    .actor { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .actor.human { color: var(--needs); }
+    .actor.mix { color: var(--accent); }
+    .committee { display: inline-flex; align-items: center; padding: 1px 7px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+    .step-children { margin: 10px 0 0 14px; padding: 0 0 0 16px; list-style: none; border-left: 1px solid var(--line); }
+    .step-children .step { border-left: 0; padding-left: 0; }
+    .step-children .step::before { display: none; }
+
+    .chip { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px; font: 700 11px/1.35 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: -.02em; white-space: nowrap; }
+    .chip.low { background: var(--chip-cool-bg); color: var(--chip-cool); }
+    .chip.medium { background: var(--chip-mid-bg); color: var(--chip-mid); }
+    .chip.high { background: var(--chip-hot-bg); color: var(--chip-hot); }
+    .chip.default { background: var(--chip-mid-bg); color: var(--chip-mid); }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 7px; margin: -3px 0 17px; }
+    .filter { padding: 5px 9px; border: 1px solid var(--line); border-radius: 3px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
+    .filter[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--panel); }
+    .history-scroll { max-height: 400px; overflow: auto; padding-right: 12px; scrollbar-color: var(--line-strong) transparent; }
+    .classification { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .classification.passed { color: var(--good); }
+    .classification.real-defects { color: var(--bad); }
+    .classification.could-not-judge { color: var(--unknown); }
+    .classification.died { color: var(--danger); }
+
+    .footer { padding-top: 20px; color: var(--faint); font-size: 12px; }
+    @media (max-width: 720px) {
+      main { width: min(100% - 28px, 1120px); padding-top: 34px; }
+      .masthead, .plan > summary { display: block; }
+      .header-meta { margin-top: 18px; text-align: left; }
+      .live-grid { grid-template-columns: 1fr; gap: 30px; }
+      .plan-meta { justify-content: flex-start; margin-top: 12px; text-align: left; }
+      .section.needs { margin-left: -2px; margin-right: -2px; padding: 22px; }
+      .plan > summary, .outline { padding-left: 18px; padding-right: 18px; }
+      .phase { padding-left: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Command center</p>
+        <h1>Work, in outline.</h1>
+        <p class="subtitle">A clear reading view of decisions, live work, and the plans moving through the system.</p>
+        <ul class="vitals" id="vitals" aria-live="polite"><li class="quiet">Box vitals loading…</li></ul>
+      </div>
+      <div class="header-meta">
+        <strong id="feed-status">Connecting feeds</strong>
+        <span id="last-updated">Awaiting first update</span>
+      </div>
+    </header>
+
+    <section class="section needs" aria-labelledby="needs-heading">
+      <div class="section-heading"><h2 id="needs-heading">Needs You</h2><span class="count" id="needs-count">0 calls</span></div>
+      <p class="section-note">The decisions and recovered hangs that need Yair’s attention.</p>
+      <div id="needs-content"></div>
+    </section>
+
+    <section class="section" aria-labelledby="live-heading">
+      <div class="section-heading"><h2 id="live-heading">Live</h2><span class="count" id="live-count">0 active</span></div>
+      <p class="section-note">Fresh work in motion across workers, committees, and plans.</p>
+      <div id="live-content"></div>
+    </section>
+
+    <section class="section" aria-labelledby="planned-heading">
+      <div class="section-heading"><h2 id="planned-heading">Planned</h2><span class="count" id="planned-count">0 plans</span></div>
+      <p class="section-note">Open a plan to read its phases and steps as a working outline.</p>
+      <div id="planned-content"></div>
+    </section>
+
+    <section class="section" aria-labelledby="done-heading">
+      <div class="section-heading"><h2 id="done-heading">Done</h2><span class="count" id="done-count">0 records</span></div>
+      <p class="section-note">Bounded history, classified honestly.</p>
+      <div class="filters" aria-label="Done history filters" id="history-filters">
+        <button class="filter" type="button" data-filter="all" aria-pressed="true">All</button>
+        <button class="filter" type="button" data-filter="passed" aria-pressed="false">Passed</button>
+        <button class="filter" type="button" data-filter="real-defects" aria-pressed="false">Real defects</button>
+        <button class="filter" type="button" data-filter="could-not-judge" aria-pressed="false">Could-not-judge</button>
+        <button class="filter" type="button" data-filter="died" aria-pressed="false">Died</button>
+      </div>
+      <div id="done-content"></div>
+    </section>
+
+    <footer class="footer">Feeds refresh every 6 seconds while this tab is visible.</footer>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+      const theme = new URLSearchParams(window.location.search).get('theme');
+      if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+
+      const endpoints = {
+        brain: '/brain-status',
+        committee: '/committee-feed',
+        worker: '/builder-feed',
+        plan: '/exec-plan-feed'
+      };
+      const state = { brain: null, committee: null, worker: null, plan: null, errors: {}, filter: 'all' };
+      const $ = (id) => document.getElementById(id);
+      const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+      const text = (value, fallback = 'Untitled') => value == null || value === '' ? fallback : String(value);
+      const list = (value) => Array.isArray(value) ? value : [];
+      const statusLabel = (value) => text(value, 'unknown').replace(/_/g, ' ');
+      const isStrategicGate = (committee) => /strateg|gate|direction|priority|roadmap|approval|decision/i.test(`${committee.name || ''} ${committee.description || ''}`);
+      const formatTime = (value) => {
+        if (!value) return '';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      };
+      const modelChip = (model, effort) => {
+        if (!model && !effort) return '';
+        const level = String(effort || '').toLowerCase();
+        const tier = ['low', 'medium', 'high'].includes(level) ? level : 'default';
+        return `<span class="chip ${tier}">${escapeHtml(text(model, 'model'))} @ ${escapeHtml(text(effort, 'standard'))}</span>`;
+      };
+      const actorRollup = (nodes) => {
+        const counts = { ai: 0, human: 0, mix: 0 };
+        const walk = (items) => list(items).forEach((node) => { if (counts[node.actor] !== undefined) counts[node.actor] += 1; walk(node.steps); });
+        walk(nodes);
+        return Object.entries(counts).filter(([, count]) => count).map(([actor, count]) => `${count} ${actor}`).join(' · ') || 'No assigned actors';
+      };
+      const flattenNodes = (nodes, accumulator = []) => {
+        list(nodes).forEach((node) => { accumulator.push(node); flattenNodes(node.steps, accumulator); });
+        return accumulator;
+      };
+      const renderVitals = () => {
+        const target = $('vitals');
+        const vitals = state.brain;
+        if (state.errors.brain || !vitals || vitals.box === false || /not reporting/i.test(String(vitals.box || ''))) {
+          target.innerHTML = '<li class="quiet">Box vitals unavailable</li>';
+          return;
+        }
+        const rows = [
+          ['Box', vitals.box], ['Load', vitals.load], ['Memory', vitals.mem], ['Disk', vitals.disk_pct != null ? `${vitals.disk_pct}%` : null],
+          ['Uptime', vitals.uptime], ['Live agents', vitals.live_agent_count]
+        ].filter(([, value]) => value !== undefined && value !== null && value !== '');
+        target.innerHTML = rows.length ? rows.map(([label, value]) => `<li>${escapeHtml(label)} <b>${escapeHtml(value)}</b></li>`).join('') : '<li class="quiet">Box vitals unavailable</li>';
+      };
+      const renderNeeds = () => {
+        const calls = [];
+        if (!state.errors.plan) list(state.plan?.plans).forEach((plan) => flattenNodes(plan.stages).forEach((node) => {
+          if (node.actor === 'human' && node.progress === 'todo') calls.push({ kind: 'Decision', title: text(plan.name, 'Plan'), decision: text(node.action || node.name, 'Decision needed'), context: `${text(node.name, 'Untitled step')} · ${statusLabel(node.progress)}` });
+        }));
+        if (!state.errors.committee) list(state.committee?.decisions).concat(list(state.committee?.execution)).forEach((committee) => {
+          if (committee.judgement === 'died') calls.push({ kind: 'Recovered hang', title: text(committee.name, 'Committee'), decision: 'A stalled committee was saved and needs a clean restart or follow-up.', context: text(committee.description, committee.session || 'No session recorded'), recovered: true });
+          else if (isStrategicGate(committee)) calls.push({ kind: 'Strategic gate', title: text(committee.name, 'Committee'), decision: text(committee.verdict || committee.description, 'Strategic decision needed'), context: committee.session ? `Session ${committee.session}` : 'Committee review' });
+        });
+        $('needs-count').textContent = `${calls.length} ${calls.length === 1 ? 'call' : 'calls'}`;
+        $('needs-content').innerHTML = state.errors.plan && state.errors.committee ? '<p class="unavailable">Needs-you feeds are unavailable.</p>' : calls.length ? `<ol class="call-list">${calls.map((call) => `<li class="call"><div class="call-title"><span class="call-kind ${call.recovered ? 'recovered' : ''}">${escapeHtml(call.kind)}</span>${escapeHtml(call.title)}</div><p class="decision-text">${escapeHtml(call.decision)}</p><div class="call-context">${escapeHtml(call.context)}</div></li>`).join('')}</ol>` : '<p class="empty">No decisions are waiting for you.</p>';
+      };
+      const workerRow = (worker) => `<li class="live-item"><div class="row-title">${escapeHtml(text(worker.label, 'Worker'))} <span class="state ${escapeHtml(worker.state)}">${escapeHtml(statusLabel(worker.state))}</span></div><div class="row-meta">${modelChip(worker.model, worker.effort)} ${worker.session ? ` <span>Session ${escapeHtml(worker.session)}</span>` : ''}${worker.host ? ` <span>· ${escapeHtml(worker.host)}</span>` : ''}</div></li>`;
+      const committeeRow = (committee) => `<li class="live-item"><div class="row-title">${escapeHtml(text(committee.name, 'Committee'))} <span class="state deciding">deciding</span></div><div class="row-meta">${committee.session ? `Session ${escapeHtml(committee.session)} · ` : ''}${escapeHtml(text(committee.description, 'Committee deliberation'))}</div></li>`;
+      const livePlanRow = (plan, node) => `<li class="live-item"><div class="row-title">${escapeHtml(text(node.name, 'Plan step'))} <span class="state ${escapeHtml(node.progress)}">${escapeHtml(statusLabel(node.progress))}</span></div><div class="row-meta">${escapeHtml(text(plan.name, 'Plan'))} · <span class="actor ${escapeHtml(node.actor || 'ai')}">${escapeHtml(text(node.actor, 'ai'))}</span> ${node.actor === 'ai' ? modelChip(node.model, node.effort) : ''}${plan.session ? ` · Session ${escapeHtml(plan.session)}` : ''}</div></li>`;
+      const renderLive = () => {
+        const workers = state.errors.worker ? [] : list(state.worker?.running).filter((worker) => worker.state === 'running');
+        const committees = state.errors.committee ? [] : list(state.committee?.decisions).concat(list(state.committee?.execution)).filter((committee) => committee.status === 'deciding' && committee.judgement !== 'died');
+        const planRows = [];
+        if (!state.errors.plan) list(state.plan?.plans).forEach((plan) => flattenNodes(plan.stages).filter((node) => node.progress === 'doing').forEach((node) => planRows.push([plan, node])));
+        const total = workers.length + committees.length + planRows.length;
+        $('live-count').textContent = `${total} active`;
+        const unavailable = state.errors.worker && state.errors.committee && state.errors.plan;
+        $('live-content').innerHTML = unavailable ? '<p class="unavailable">Live feeds are unavailable.</p>' : total ? `<div class="live-grid"><div><h3 class="subhead">Workers</h3>${workers.length ? `<ol class="live-list">${workers.map(workerRow).join('')}</ol>` : '<p class="empty">No workers running.</p>'}</div><div><h3 class="subhead">Committees & plan steps</h3>${committees.length || planRows.length ? `<ol class="live-list">${committees.map(committeeRow).join('')}${planRows.map(([plan, node]) => livePlanRow(plan, node)).join('')}</ol>` : '<p class="empty">No deliberations or active steps.</p>'}</div></div>` : '<p class="empty">Nothing is actively running right now.</p>';
+      };
+      const renderStep = (node) => {
+        const isAi = node.actor === 'ai';
+        const action = node.action && node.action !== node.name ? `<div class="step-meta">${escapeHtml(node.action)}</div>` : '';
+        const children = list(node.steps).length ? `<ol class="step-children">${list(node.steps).map(renderStep).join('')}</ol>` : '';
+        return `<li class="step"><div class="step-top"><span class="actor ${escapeHtml(node.actor || 'ai')}">${escapeHtml(text(node.actor, 'ai'))}</span><span class="step-name">${escapeHtml(text(node.name, 'Untitled step'))}</span><span class="state ${escapeHtml(node.progress || 'todo')}">${escapeHtml(statusLabel(node.progress || 'todo'))}</span>${isAi ? modelChip(node.model, node.effort) : ''}${node.committee ? `<span class="committee" title="${escapeHtml(text(node.committee_reason, 'Committee review'))}">Committee</span>` : ''}</div>${action}${children}</li>`;
+      };
+      const renderPlan = (plan, index) => {
+        const phases = list(plan.stages);
+        const summary = plan.phase || (phases[0] && (phases[0].action || phases[0].name)) || 'No summary provided.';
+        const open = index === 0 ? ' open' : '';
+        return `<details class="plan"${open}><summary><div><h3 class="plan-title">${escapeHtml(text(plan.name, 'Untitled plan'))}</h3><p class="plan-summary">${escapeHtml(summary)}</p></div><div class="plan-meta">${modelChip(plan.author_model, plan.author_effort)}<span>${escapeHtml(statusLabel(plan.status))}</span>${plan.session ? `<span>Session ${escapeHtml(plan.session)}</span>` : ''}</div></summary><div class="outline"><div class="outline-intro"><span><b>Author</b> ${modelChip(plan.author_model, plan.author_effort) || 'Not recorded'}</span><span><b>Actors</b> ${escapeHtml(actorRollup(phases))}</span></div>${phases.length ? phases.map((phase) => `<section class="phase"><h4 class="phase-title">${escapeHtml(text(phase.name, 'Phase'))}${phase.action && phase.action !== phase.name ? `<span class="phase-action">${escapeHtml(phase.action)}</span>` : ''}</h4>${list(phase.steps).length ? `<ol class="steps">${list(phase.steps).map(renderStep).join('')}</ol>` : '<p class="empty">No steps recorded for this phase.</p>'}</section>`).join('') : '<p class="empty">This plan does not have phases yet.</p>'}</div></details>`;
+      };
+      const renderPlans = () => {
+        const plans = state.errors.plan ? [] : list(state.plan?.plans).filter((plan) => ['planned', 'live'].includes(plan.status));
+        $('planned-count').textContent = `${plans.length} ${plans.length === 1 ? 'plan' : 'plans'}`;
+        $('planned-content').innerHTML = state.errors.plan ? '<p class="unavailable">Plan feed unavailable.</p>' : plans.length ? plans.map(renderPlan).join('') : '<p class="empty">No plans are queued or live.</p>';
+      };
+      const classification = (committee) => {
+        if (committee.judgement === 'judged_bad') return ['real-defects', 'Real defects'];
+        if (committee.judgement === 'could_not_judge') return ['could-not-judge', 'Could-not-judge'];
+        if (committee.judgement === 'died') return ['died', 'Died'];
+        return ['passed', 'Passed'];
+      };
+      const renderDone = () => {
+        const committees = state.errors.committee ? [] : list(state.committee?.decisions).concat(list(state.committee?.execution)).filter((committee) => committee.status === 'done' || ['judged_bad', 'could_not_judge', 'died'].includes(committee.judgement));
+        const workers = state.errors.worker ? [] : list(state.worker?.recent).filter((worker) => ['done', 'failed', 'stalled'].includes(worker.state));
+        const plans = state.errors.plan ? [] : list(state.plan?.plans).filter((plan) => plan.status === 'done' || plan.status === 'stalled');
+        let items = [
+          ...committees.map((committee) => { const [key, label] = classification(committee); return { key, label, title: text(committee.name, 'Committee'), detail: committee.verdict || committee.description || committee.session, time: committee.updated || committee.created }; }),
+          ...workers.map((worker) => ({ key: worker.state === 'done' ? 'passed' : 'real-defects', label: worker.state === 'done' ? 'Passed' : 'Real defects', title: text(worker.label, 'Worker'), detail: `${text(worker.state, 'finished')} · ${text(worker.session, 'No session')}`, time: worker.updated || worker.started })),
+          ...plans.map((plan) => ({ key: plan.status === 'done' ? 'passed' : 'real-defects', label: plan.status === 'done' ? 'Passed' : 'Real defects', title: text(plan.name, 'Plan'), detail: statusLabel(plan.status), time: null }))
+        ];
+        items.sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
+        const visible = state.filter === 'all' ? items : items.filter((item) => item.key === state.filter);
+        $('done-count').textContent = `${items.length} ${items.length === 1 ? 'record' : 'records'}`;
+        $('done-content').innerHTML = state.errors.committee && state.errors.worker && state.errors.plan ? '<p class="unavailable">History feeds are unavailable.</p>' : visible.length ? `<div class="history-scroll"><ol class="history-list">${visible.slice(0, 80).map((item) => `<li class="history-item"><div class="row-title"><span class="classification ${item.key}">${item.label}</span> ${escapeHtml(item.title)}</div><div class="row-meta">${escapeHtml(text(item.detail, 'No detail recorded'))}${item.time ? ` · ${escapeHtml(formatTime(item.time))}` : ''}</div></li>`).join('')}</ol></div>` : '<p class="empty">No history matches this filter.</p>';
+      };
+      const render = () => { renderVitals(); renderNeeds(); renderLive(); renderPlans(); renderDone(); };
+      const fetchFeed = async (key, url) => {
+        const separator = url.includes('?') ? '&' : '?';
+        const response = await fetch(`${url}${separator}_=${Date.now()}`, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        return response.json();
+      };
+      const refresh = async () => {
+        if (document.hidden) return;
+        const keys = Object.keys(endpoints);
+        const results = await Promise.allSettled(keys.map((key) => fetchFeed(key, endpoints[key])));
+        results.forEach((result, index) => {
+          const key = keys[index];
+          if (result.status === 'fulfilled') { state[key] = result.value; delete state.errors[key]; }
+          else state.errors[key] = result.reason;
+        });
+        const failed = Object.keys(state.errors).length;
+        $('feed-status').textContent = failed ? `${failed} feed${failed === 1 ? '' : 's'} unavailable` : 'All feeds current';
+        $('last-updated').textContent = `Updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}`;
+        render();
+      };
+      $('history-filters').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-filter]');
+        if (!button) return;
+        state.filter = button.dataset.filter;
+        document.querySelectorAll('[data-filter]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        renderDone();
+      });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+      render();
+      refresh();
+      window.setInterval(refresh, 6000);
+    })();
+  </script>
+</body>
+</html>

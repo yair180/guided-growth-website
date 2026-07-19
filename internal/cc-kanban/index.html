@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flowboard</title>
+  <style>
+    :root { color-scheme: light dark; --bg:#f4f5f7; --surface:#fff; --surface-2:#f8f9fb; --text:#17202b; --muted:#697386; --line:#dfe3e8; --accent:#5b4bdb; --accent-soft:#edeaff; --urgent:#a14627; --urgent-soft:#fff0e9; --live:#087667; --live-soft:#e2f6f0; --done:#496276; --shadow:0 10px 26px rgba(29,36,47,.08); }
+    @media (prefers-color-scheme: dark) { :root { --bg:#101419; --surface:#192028; --surface-2:#202832; --text:#edf2f7; --muted:#9aa9ba; --line:#303b47; --accent:#b5aaff; --accent-soft:#2b2850; --urgent:#ffad8b; --urgent-soft:#3d2926; --live:#6ee0c7; --live-soft:#153a38; --done:#afc2d3; --shadow:0 10px 26px rgba(0,0,0,.2); } }
+    :root[data-theme="light"] { color-scheme: light; --bg:#f4f5f7; --surface:#fff; --surface-2:#f8f9fb; --text:#17202b; --muted:#697386; --line:#dfe3e8; --accent:#5b4bdb; --accent-soft:#edeaff; --urgent:#a14627; --urgent-soft:#fff0e9; --live:#087667; --live-soft:#e2f6f0; --done:#496276; --shadow:0 10px 26px rgba(29,36,47,.08); }
+    :root[data-theme="dark"] { color-scheme: dark; --bg:#101419; --surface:#192028; --surface-2:#202832; --text:#edf2f7; --muted:#9aa9ba; --line:#303b47; --accent:#b5aaff; --accent-soft:#2b2850; --urgent:#ffad8b; --urgent-soft:#3d2926; --live:#6ee0c7; --live-soft:#153a38; --done:#afc2d3; --shadow:0 10px 26px rgba(0,0,0,.2); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-width:320px; background:var(--bg); color:var(--text); font:15px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, select { font:inherit; }
+    .shell { max-width:1880px; margin:0 auto; padding:28px clamp(18px,3vw,54px) 36px; }
+    .topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:25px; }
+    .eyebrow { margin:0 0 7px; color:var(--accent); font-size:11px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    h1 { margin:0; font-size:clamp(30px,4vw,48px); line-height:1.02; letter-spacing:-.05em; }
+    .subhead { margin:9px 0 0; color:var(--muted); font-size:16px; }
+    .vitals { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; max-width:660px; }
+    .vital { padding:8px 11px; border:1px solid var(--line); border-radius:9px; background:var(--surface); color:var(--muted); font-size:12px; white-space:nowrap; }
+    .vital strong { color:var(--text); font-weight:750; }
+    .quiet { color:var(--muted); font-size:12px; }
+    .board { display:grid; grid-template-columns:minmax(285px,1.05fr) minmax(285px,1fr) minmax(440px,1.6fr) minmax(285px,1fr); gap:16px; align-items:start; overflow-x:auto; padding-bottom:12px; }
+    .lane { min-width:0; background:color-mix(in srgb, var(--surface) 62%, transparent); border:1px solid var(--line); border-radius:16px; padding:13px; }
+    .needs { border-color:color-mix(in srgb, var(--urgent) 38%, var(--line)); box-shadow:0 0 0 3px color-mix(in srgb, var(--urgent-soft) 68%, transparent); }
+    .lane-head { display:flex; align-items:center; justify-content:space-between; gap:9px; padding:3px 2px 13px; }
+    .lane-title { display:flex; align-items:center; gap:8px; margin:0; font-size:18px; letter-spacing:-.02em; }
+    .lane-title::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--lane-color,var(--accent)); box-shadow:0 0 0 4px color-mix(in srgb, var(--lane-color,var(--accent)) 18%, transparent); }
+    .count { min-width:25px; padding:2px 7px; border-radius:999px; background:var(--surface-2); color:var(--muted); font-size:12px; font-weight:750; text-align:center; }
+    .lane-stack { display:grid; gap:11px; max-height:calc(100vh - 200px); overflow-y:auto; padding:2px 3px 4px; scrollbar-color:var(--line) transparent; }
+    .planned .lane-stack { max-height:calc(100vh - 180px); }
+    .card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:13px; box-shadow:0 2px 8px rgba(0,0,0,.025); }
+    .attention { border-left:4px solid var(--urgent); padding-left:10px; }
+    .card-kicker { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .badge { display:inline-flex; align-items:center; gap:5px; width:max-content; max-width:100%; padding:3px 7px; border:1px solid var(--line); border-radius:999px; background:var(--surface-2); color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.06em; white-space:nowrap; }
+    .badge.urgent { border-color:color-mix(in srgb, var(--urgent) 40%, var(--line)); background:var(--urgent-soft); color:var(--urgent); }
+    .badge.live { border-color:color-mix(in srgb, var(--live) 40%, var(--line)); background:var(--live-soft); color:var(--live); }
+    .card h3 { margin:0; font-size:16px; line-height:1.25; letter-spacing:-.015em; }
+    .card p { margin:7px 0 0; color:var(--muted); font-size:13px; }
+    .meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:11px; }
+    .meta-text { display:inline-flex; align-items:center; min-height:25px; padding:3px 7px; border-radius:6px; background:var(--surface-2); color:var(--muted); font-size:11px; }
+    .chip { display:inline-flex; align-items:center; min-height:25px; padding:3px 8px; border-radius:6px; color:#12222e; font-size:11px; font-weight:800; white-space:nowrap; }
+    .tier-low { background:#bfe9e6; } .tier-medium { background:#dce1e8; } .tier-high { background:#ffd09b; }
+    :root[data-theme="dark"] .tier-low { color:#062d2c; } :root[data-theme="dark"] .tier-medium { color:#1f2933; } :root[data-theme="dark"] .tier-high { color:#4a2600; }
+    .empty { padding:20px 13px; border:1px dashed var(--line); border-radius:11px; color:var(--muted); font-size:13px; text-align:center; }
+    .unavailable { margin:0 2px 8px; color:var(--muted); font-size:11px; }
+    .plan { padding:0; overflow:hidden; }
+    .plan-top { padding:15px 15px 12px; }
+    .plan-summary { min-height:20px; }
+    .rollup { display:flex; flex-wrap:wrap; gap:6px; margin-top:11px; }
+    .rollup span { padding:3px 7px; border-radius:6px; background:var(--surface-2); color:var(--muted); font-size:11px; font-weight:700; }
+    .plan details { border-top:1px solid var(--line); }
+    .plan summary { cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 15px; color:var(--accent); font-size:13px; font-weight:800; }
+    .plan summary::-webkit-details-marker { display:none; }
+    .plan summary::after { content:"Show structure +"; color:var(--muted); font-size:11px; font-weight:700; }
+    .plan details[open] summary::after { content:"Hide structure −"; }
+    .structure { display:grid; gap:12px; padding:0 15px 15px; }
+    .phase { border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .phase-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 11px; background:var(--surface-2); }
+    .phase-name { font-size:13px; font-weight:800; }
+    .phase-state { color:var(--muted); font-size:11px; font-weight:750; text-transform:uppercase; }
+    .step-list { display:grid; gap:0; }
+    .step { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:start; gap:8px; padding:10px 11px; border-top:1px solid var(--line); }
+    .step:first-child { border-top:0; }
+    .actor { min-width:37px; padding:3px 5px; border-radius:5px; background:var(--accent-soft); color:var(--accent); font-size:9px; font-weight:900; letter-spacing:.06em; text-align:center; text-transform:uppercase; }
+    .actor.human { background:var(--urgent-soft); color:var(--urgent); } .actor.mix { background:var(--live-soft); color:var(--live); }
+    .step-title { min-width:0; font-size:13px; font-weight:700; line-height:1.3; }
+    .step-action { display:block; margin-top:2px; color:var(--muted); font-size:11px; font-weight:400; }
+    .step-meta { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; }
+    .state { font-size:10px; font-weight:850; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+    .state.doing { color:var(--live); } .state.blocked { color:var(--urgent); } .state.done { color:var(--done); }
+    .done-tools { display:flex; align-items:center; gap:8px; }
+    select { max-width:125px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--text); padding:4px 6px; font-size:11px; }
+    .committee-members { display:grid; gap:6px; margin-top:10px; padding-top:9px; border-top:1px solid var(--line); }
+    .member { display:flex; justify-content:space-between; gap:8px; color:var(--muted); font-size:11px; }
+    .member strong { color:var(--text); font-weight:700; }
+    @media (max-width:1250px) { .board { grid-template-columns:repeat(4, minmax(300px,1fr)); } }
+    @media (max-width:700px) { .shell { padding-top:20px; } .topbar { flex-direction:column; gap:16px; } .vitals { justify-content:flex-start; } .board { grid-template-columns:repeat(4, minmax(290px,1fr)); } .lane-stack { max-height:none; } .step { grid-template-columns:auto minmax(0,1fr); } .step-meta { grid-column:2; justify-content:flex-start; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><p class="eyebrow">Command center</p><h1>Machine flow, at a glance.</h1><p class="subhead">A live board of calls, work, plans, and outcomes.</p></div>
+      <div id="vitals" class="vitals" aria-live="polite"></div>
+    </header>
+    <section class="board" aria-label="Machine flow board">
+      <section class="lane needs" style="--lane-color:var(--urgent)" aria-labelledby="needs-title"><div class="lane-head"><h2 id="needs-title" class="lane-title">Needs You</h2><span id="needs-count" class="count">0</span></div><div id="needs-unavailable"></div><div id="needs-list" class="lane-stack"></div></section>
+      <section class="lane" style="--lane-color:var(--live)" aria-labelledby="live-title"><div class="lane-head"><h2 id="live-title" class="lane-title">Live</h2><span id="live-count" class="count">0</span></div><div id="live-unavailable"></div><div id="live-list" class="lane-stack"></div></section>
+      <section class="lane planned" style="--lane-color:var(--accent)" aria-labelledby="planned-title"><div class="lane-head"><h2 id="planned-title" class="lane-title">Planned</h2><span id="planned-count" class="count">0</span></div><div id="plans-unavailable"></div><div id="planned-list" class="lane-stack"></div></section>
+      <section class="lane" style="--lane-color:var(--done)" aria-labelledby="done-title"><div class="lane-head"><h2 id="done-title" class="lane-title">Done</h2><div class="done-tools"><select id="done-filter" aria-label="Filter completed history"><option value="all">All</option><option value="passed">Passed</option><option value="defect">Real defects</option><option value="unknown">Could-not-judge</option><option value="died">Died</option></select><span id="done-count" class="count">0</span></div></div><div id="done-unavailable"></div><div id="done-list" class="lane-stack"></div></section>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const feeds = { brain: null, committee: null, worker: null, plans: null };
+      const failures = new Set();
+      const empty = (message) => `<div class="empty">${escapeHtml(message)}</div>`;
+      const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" })[char]);
+      const list = (value) => Array.isArray(value) ? value : [];
+      const text = (value, fallback = "Not provided") => value ? String(value) : fallback;
+      const normalized = (value) => String(value || "").toLowerCase();
+      const session = (value) => `<span class="meta-text">${escapeHtml(value ? `Session ${value}` : "No session")}</span>`;
+      const modelChip = (model, effort) => {
+        if (!model && !effort) return "";
+        const tier = normalized(effort).includes("high") ? "tier-high" : normalized(effort).includes("low") ? "tier-low" : "tier-medium";
+        return `<span class="chip ${tier}">${escapeHtml(model || "Model")} @ ${escapeHtml(effort || "standard")}</span>`;
+      };
+      const badge = (label, tone = "") => `<span class="badge ${tone}">${escapeHtml(label)}</span>`;
+      const setContent = (id, content) => { document.getElementById(id).innerHTML = content; };
+      const setCount = (id, value) => { document.getElementById(id).textContent = String(value); };
+      const unavailable = (id, keys) => {
+        const isDown = keys.some(key => failures.has(key));
+        setContent(id, isDown ? '<p class="unavailable">Some live data is unavailable. Other feeds remain current.</p>' : "");
+      };
+      const nodeWalk = (nodes, callback) => list(nodes).forEach(node => { callback(node); nodeWalk(node.steps, callback); });
+      const allNodes = (plan) => { const nodes = []; nodeWalk(plan.stages, node => nodes.push(node)); return nodes; };
+      const planSummary = (plan) => plan.type || plan.phase || "Execution plan";
+      const actorCounts = (plan) => allNodes(plan).reduce((counts, node) => { const actor = ["ai", "human", "mix"].includes(node.actor) ? node.actor : "ai"; counts[actor] += 1; return counts; }, { ai:0, human:0, mix:0 });
+      const phaseNodes = (plan) => list(plan.stages).length ? list(plan.stages) : [];
+      const nodeState = (node) => normalized(node.progress || node.status || "todo");
+      const decisionText = (node) => node.action || node.name || "Decision required";
+      const committeeText = (committee) => `${committee.name || ""} ${committee.description || ""}`.toLowerCase();
+      const strategic = (committee) => /strateg|gate|direction|priority|roadmap|governance|decision/.test(committeeText(committee));
+      function standardCard({ kicker, title, description, meta = "", tag = "", attention = false, members = "" }) {
+        return `<article class="card ${attention ? "attention" : ""}"><div class="card-kicker"><span>${escapeHtml(kicker)}</span>${tag}</div><h3>${escapeHtml(title)}</h3>${description ? `<p>${escapeHtml(description)}</p>` : ""}${members}${meta ? `<div class="meta">${meta}</div>` : ""}</article>`;
+      }
+      function renderNeeds() {
+        const cards = [];
+        list(feeds.plans?.plans).forEach(plan => nodeWalk(plan.stages, node => {
+          if (normalized(node.actor) === "human" && nodeState(node) === "todo") cards.push(standardCard({ kicker:"Your call", title:plan.name || "Untitled plan", description:decisionText(node), tag:badge("Decision", "urgent"), attention:true, meta:session(plan.session) }));
+        }));
+        const committees = [...list(feeds.committee?.decisions), ...list(feeds.committee?.execution)];
+        committees.filter(committee => strategic(committee) || normalized(committee.judgement) === "died").forEach(committee => {
+          const recovered = normalized(committee.judgement) === "died";
+          cards.push(standardCard({ kicker:recovered ? "Recovered hang" : "Strategic gate", title:committee.name || "Unnamed committee", description:committee.description || committee.verdict || "A committee decision needs your attention.", tag:badge(recovered ? "Saved" : "Review", "urgent"), attention:true, meta:session(committee.session) }));
+        });
+        setCount("needs-count", cards.length); setContent("needs-list", cards.join("") || empty("No calls are waiting for you.")); unavailable("needs-unavailable", ["plans", "committee"]);
+      }
+      function renderLive() {
+        const cards = [];
+        list(feeds.worker?.running).filter(worker => normalized(worker.state) === "running").forEach(worker => cards.push(standardCard({ kicker:"Worker", title:worker.label || "Unnamed worker", description:worker.host ? `On ${worker.host}` : "Working now", tag:badge("Running", "live"), meta:`${modelChip(worker.model, worker.effort)}${session(worker.session)}` })));
+        const committees = [...list(feeds.committee?.decisions), ...list(feeds.committee?.execution)];
+        committees.filter(committee => normalized(committee.status) === "deciding").forEach(committee => cards.push(committeeCard(committee, true)));
+        list(feeds.plans?.plans).forEach(plan => nodeWalk(plan.stages, node => { if (["doing", "in_progress", "live"].includes(nodeState(node))) cards.push(standardCard({ kicker:"Plan step", title:node.name || plan.name || "Active step", description:node.action || `Part of ${plan.name || "a plan"}`, tag:badge("In progress", "live"), meta:`${node.actor === "ai" ? modelChip(node.model, node.effort) : ""}${session(plan.session)}` })); }));
+        setCount("live-count", cards.length); setContent("live-list", cards.join("") || empty("Nothing is actively running right now.")); unavailable("live-unavailable", ["worker", "committee", "plans"]);
+      }
+      function committeeCard(committee, live = false) {
+        const recentRound = list(committee.rounds).at(-1);
+        const members = list(recentRound?.members).slice(0, 3).map(member => `<div class="member"><span><strong>${escapeHtml(member.role || "Member")}</strong>${member.does ? ` · ${escapeHtml(member.does)}` : ""}</span>${modelChip(member.role, member.effort)}</div>`).join("");
+        return standardCard({ kicker:"Committee", title:committee.name || "Unnamed committee", description:committee.description || committee.verdict || "Committee review", tag:badge(live ? "Deciding" : classification(committee).label, live ? "live" : ""), meta:session(committee.session), members:members ? `<div class="committee-members">${members}</div>` : "" });
+      }
+      function stepMarkup(node) {
+        const actor = normalized(node.actor) || "ai";
+        const state = nodeState(node);
+        return `<div class="step"><span class="actor ${actor}">${escapeHtml(actor)}</span><div class="step-title">${escapeHtml(node.name || "Untitled step")}${node.action ? `<span class="step-action">${escapeHtml(node.action)}</span>` : ""}</div><div class="step-meta"><span class="state ${escapeHtml(state)}">${escapeHtml(state)}</span>${actor === "ai" ? modelChip(node.model, node.effort) : ""}${node.committee ? badge("Committee") : ""}</div></div>`;
+      }
+      function phaseMarkup(phase) {
+        const children = list(phase.steps);
+        const steps = children.length ? children.map(stepMarkup).join("") : stepMarkup(phase);
+        return `<section class="phase"><div class="phase-head"><span class="phase-name">${escapeHtml(phase.name || "Untitled phase")}</span><span class="phase-state">${escapeHtml(nodeState(phase))}</span></div><div class="step-list">${steps}</div></section>`;
+      }
+      function planCard(plan) {
+        const counts = actorCounts(plan); const phases = phaseNodes(plan);
+        return `<article class="card plan"><div class="plan-top"><div class="card-kicker"><span>Plan</span>${badge(normalized(plan.status) === "live" ? "Live plan" : "Queued")}</div><h3>${escapeHtml(plan.name || "Untitled plan")}</h3><p class="plan-summary">${escapeHtml(planSummary(plan))}</p><div class="meta">${modelChip(plan.author_model, plan.author_effort)}${session(plan.session)}</div><div class="rollup"><span>${counts.ai} AI</span><span>${counts.human} human</span><span>${counts.mix} mixed</span></div></div><details open><summary>Plan phases and steps</summary><div class="structure">${phases.length ? phases.map(phaseMarkup).join("") : empty("This plan has no phases yet.")}</div></details></article>`;
+      }
+      function renderPlans() {
+        const plans = list(feeds.plans?.plans).filter(plan => ["planned", "live"].includes(normalized(plan.status)));
+        setCount("planned-count", plans.length); setContent("planned-list", plans.map(planCard).join("") || empty("No plans are queued or live.")); unavailable("plans-unavailable", ["plans"]);
+      }
+      function classification(committee) {
+        const judgement = normalized(committee.judgement);
+        if (judgement === "judged_bad") return { key:"defect", label:"Real defect" };
+        if (judgement === "could_not_judge") return { key:"unknown", label:"Could-not-judge" };
+        if (judgement === "died") return { key:"died", label:"Died" };
+        return { key:"passed", label:"Passed" };
+      }
+      function renderDone() {
+        const filter = document.getElementById("done-filter").value;
+        const cards = [];
+        const committees = [...list(feeds.committee?.decisions), ...list(feeds.committee?.execution)];
+        committees.filter(committee => normalized(committee.status) === "done" || ["green", "judged_bad", "could_not_judge", "died"].includes(normalized(committee.judgement))).forEach(committee => { if (filter === "all" || classification(committee).key === filter) cards.push(committeeCard(committee)); });
+        list(feeds.worker?.recent).filter(worker => ["done", "failed", "stalled"].includes(normalized(worker.state))).forEach(worker => { const state = normalized(worker.state); const key = state === "done" ? "passed" : "defect"; if (filter === "all" || filter === key) cards.push(standardCard({ kicker:"Worker", title:worker.label || "Unnamed worker", description:state === "done" ? "Completed work" : `Worker ${state}`, tag:badge(state === "done" ? "Passed" : "Real defect"), meta:`${modelChip(worker.model, worker.effort)}${session(worker.session)}` })); });
+        list(feeds.plans?.plans).filter(plan => ["done", "stalled"].includes(normalized(plan.status))).forEach(plan => { const key = normalized(plan.status) === "done" ? "passed" : "defect"; if (filter === "all" || filter === key) cards.push(standardCard({ kicker:"Plan", title:plan.name || "Untitled plan", description:normalized(plan.status) === "done" ? "Plan completed" : "Plan stalled", tag:badge(normalized(plan.status) === "done" ? "Passed" : "Real defect"), meta:`${modelChip(plan.author_model, plan.author_effort)}${session(plan.session)}` })); });
+        setCount("done-count", cards.length); setContent("done-list", cards.join("") || empty("No completed history matches this filter.")); unavailable("done-unavailable", ["worker", "committee", "plans"]);
+      }
+      function renderVitals() {
+        const vitals = feeds.brain;
+        if (!vitals || !vitals.box || /not reporting|unavailable/i.test(String(vitals.box))) { setContent("vitals", '<span class="quiet">box vitals unavailable</span>'); return; }
+        const items = [["Box", vitals.box], ["Load", vitals.load], ["Memory", vitals.mem], ["Disk", vitals.disk_pct != null ? `${vitals.disk_pct}%` : null], ["Workers", vitals.live_agent_count], ["Uptime", vitals.uptime]];
+        setContent("vitals", items.filter(([, value]) => value !== null && value !== undefined && value !== "").map(([label, value]) => `<span class="vital">${escapeHtml(label)} <strong>${escapeHtml(value)}</strong></span>`).join(""));
+      }
+      function render() { renderVitals(); renderNeeds(); renderLive(); renderPlans(); renderDone(); }
+      async function fetchFeed(key, url) {
+        const response = await fetch(`${url}?_=${Date.now()}`, { cache:"no-store", headers:{ "Cache-Control":"no-store" } });
+        if (!response.ok) throw new Error(`${key} unavailable`);
+        return response.json();
+      }
+      async function refresh() {
+        const requests = [["brain", "/brain-status"], ["committee", "/committee-feed"], ["worker", "/builder-feed"], ["plans", "/exec-plan-feed"]];
+        const results = await Promise.allSettled(requests.map(([key, url]) => fetchFeed(key, url)));
+        results.forEach((result, index) => { const key = requests[index][0]; if (result.status === "fulfilled") { feeds[key] = result.value; failures.delete(key); } else { failures.add(key); } });
+        render();
+      }
+      const theme = new URLSearchParams(location.search).get("theme");
+      if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
+      document.getElementById("done-filter").addEventListener("change", renderDone);
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+      render(); refresh(); setInterval(() => { if (!document.hidden) refresh(); }, 6000);
+    })();
+  </script>
+</body>
+</html>
