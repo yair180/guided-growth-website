@@ -1,28 +1,38 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark"><title>Command Center - pick a template</title>
+<title>Command Center Templates</title>
 <style>
-:root{--bg:#f6f8fb;--fg:#142033;--mut:#6b7a90;--line:#e3e9f0;--card:#fff;--blue:#2563eb}
-@media(prefers-color-scheme:dark){:root{--bg:#0b1120;--fg:#eef3fa;--mut:#8595ab;--line:#26334a;--card:#111a2b;--blue:#67a4ff}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.wrap{max-width:1400px;margin:0 auto;padding:22px}
-.top{display:flex;align-items:baseline;gap:12px;margin:2px 0 16px}
-.top b{font-size:15px;font-weight:650}.top span{color:var(--mut);font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-.hd{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line)}
-.hd b{font-weight:650}.hd a{color:var(--blue);text-decoration:none;font-size:13px;font-weight:600}
-.frame{position:relative;height:520px;overflow:hidden;background:var(--bg)}
-.frame iframe{position:absolute;top:0;left:0;width:1400px;height:1486px;border:0;transform:scale(.5);transform-origin:top left}
-</style></head><body><div class="wrap">
-<div class="top"><b>Command Center</b><span>pick the directions you like. we combine the best into the real one.</span></div>
-<div class="grid">
-<div class="card"><div class="hd"><b>Linear clean</b><a href="./linear.html" target="_blank">open full &#8599;</a></div><div class="frame"><iframe src="./linear.html" loading="lazy"></iframe></div></div>
-<div class="card"><div class="hd"><b>Ops console (dark)</b><a href="./console.html" target="_blank">open full &#8599;</a></div><div class="frame"><iframe src="./console.html" loading="lazy"></iframe></div></div>
-<div class="card"><div class="hd"><b>Kanban lanes</b><a href="./kanban.html" target="_blank">open full &#8599;</a></div><div class="frame"><iframe src="./kanban.html" loading="lazy"></iframe></div></div>
-<div class="card"><div class="hd"><b>Timeline stream</b><a href="./timeline.html" target="_blank">open full &#8599;</a></div><div class="frame"><iframe src="./timeline.html" loading="lazy"></iframe></div></div>
-<div class="card"><div class="hd"><b>Metric dashboard</b><a href="./dashboard.html" target="_blank">open full &#8599;</a></div><div class="frame"><iframe src="./dashboard.html" loading="lazy"></iframe></div></div>
-<div class="card"><div class="hd"><b>Split master-detail</b><a href="./masterdetail.html" target="_blank">open full &#8599;</a></div><div class="frame"><iframe src="./masterdetail.html" loading="lazy"></iframe></div></div>
-<div class="card"><div class="hd"><b>Card gallery</b><a href="./cards.html" target="_blank">open full &#8599;</a></div><div class="frame"><iframe src="./cards.html" loading="lazy"></iframe></div></div>
-<div class="card"><div class="hd"><b>Outline tree</b><a href="./outline.html" target="_blank">open full &#8599;</a></div><div class="frame"><iframe src="./outline.html" loading="lazy"></iframe></div></div>
-</div></div></body></html>
+:root{color-scheme:light dark;--bg:#f5f8fc;--bar:rgba(255,255,255,.92);--text:#172033;--muted:#667085;--line:#dbe3ef;--blue:#1677ff;--blue-soft:#e8f2ff;--focus:#0b63ce}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1018;--bar:rgba(13,20,31,.94);--text:#e8eef8;--muted:#9aa8bb;--line:#263449;--blue:#5aa2ff;--blue-soft:#102b4d;--focus:#8bbcff}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font:13px/1.35 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{display:grid;grid-template-rows:auto minmax(0,1fr)}
+nav{display:flex;gap:7px;align-items:center;overflow-x:auto;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--bar);scrollbar-width:thin}
+.chip{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);padding:6px 11px;font:inherit;font-weight:700;cursor:pointer;transition:background .14s,border-color .14s,color .14s,box-shadow .14s}
+.chip:hover{border-color:var(--blue);color:var(--blue)}
+.chip[aria-selected="true"]{border-color:var(--blue);background:var(--blue-soft);color:var(--blue);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--blue) 18%,transparent)}
+.chip:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+main{min-height:0}
+iframe{display:block;width:100%;height:100%;border:0;background:var(--bg)}
+</style>
+</head>
+<body>
+<nav role="tablist" aria-label="Command center templates">
+<button class="chip" role="tab" aria-selected="true" data-src="linear.html">Linear</button>
+<button class="chip" role="tab" aria-selected="false" data-src="console.html">Console</button>
+<button class="chip" role="tab" aria-selected="false" data-src="kanban.html">Kanban</button>
+<button class="chip" role="tab" aria-selected="false" data-src="timeline.html">Timeline</button>
+<button class="chip" role="tab" aria-selected="false" data-src="dashboard.html">Dashboard</button>
+<button class="chip" role="tab" aria-selected="false" data-src="masterdetail.html">Master-detail</button>
+<button class="chip" role="tab" aria-selected="false" data-src="cards.html">Cards</button>
+<button class="chip" role="tab" aria-selected="false" data-src="outline.html">Outline</button>
+</nav>
+<main><iframe id="preview" src="linear.html" title="Linear command center template"></iframe></main>
+<script>
+(()=>{'use strict';const chips=[...document.querySelectorAll('.chip')],frame=document.getElementById('preview');function select(chip){chips.forEach(item=>item.setAttribute('aria-selected',String(item===chip)));frame.src=chip.dataset.src;frame.title=`${chip.textContent} command center template`}chips.forEach((chip,index)=>{chip.addEventListener('click',()=>select(chip));chip.addEventListener('keydown',event=>{if(event.key!=='ArrowRight'&&event.key!=='ArrowLeft')return;event.preventDefault();const offset=event.key==='ArrowRight'?1:-1,next=chips[(index+offset+chips.length)%chips.length];next.focus();select(next)})})})();
+</script>
+</body>
+</html>
